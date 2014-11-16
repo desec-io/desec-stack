@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from utils import utils
 from django.db import transaction
+from desecapi.models import Domain
 
 
 class UnauthenticatedDomainTests(APITestCase):
@@ -73,7 +74,7 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.get(url)
         newname = utils.generateDomainname()
         response.data['name'] = newname
-        self.client.put(url, response.data)
+        response = self.client.put(url, response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -89,3 +90,25 @@ class AuthenticatedDomainTests(APITestCase):
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def testExtractSerialNumberFromCertificateInformation(self):
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=utils.getDeSecCertificate())
+        domain.save()
+        self.assertEqual(domain.cert_serial_no, 1332420)
+        self.assertEqual(domain.cert_fingerprint, '8D:2E:F1:35:05:08:78:D3:FD:09:30:8A:A4:9C:D6:90:3E:04:8F:56')
+        domain.delete()
+
+    def testWrongCertInformation(self):
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info='This doesnt make any sense.')
+        domain.save()
+        self.assertEqual(domain.cert_serial_no, None)
+        self.assertEqual(domain.cert_fingerprint, None)
+        domain.delete()
+
+        # create a broken certificate-looking string
+        fake_cert = utils.getDeSecCertificate().replace('a', 'x')
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=fake_cert)
+        domain.save()
+        self.assertEqual(domain.cert_serial_no, None)
+        self.assertEqual(domain.cert_fingerprint, None)
+        domain.delete()

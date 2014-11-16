@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
+from OpenSSL import crypto
 
 
 class MyUserManager(BaseUserManager):
@@ -78,7 +79,29 @@ class User(AbstractBaseUser):
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, unique=True)
+    cert_info = models.TextField(blank=True)
+    cert_serial_no = models.IntegerField(null=True,blank=True)
+    cert_fingerprint = models.CharField(max_length=1024,null=True,blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+
+    def save(self, *args, **kwargs):
+        if (not self.cert_serial_no and self.cert_info):
+            self.updateCertificateData()
+        super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
+
+    def getCertificateObj(self):
+        if '--BEGIN CERTIFICATE--' in self.cert_info:
+            try:
+                return crypto.load_certificate(crypto.FILETYPE_PEM, self.cert_info)
+            except:
+                return
+        return
+
+    def updateCertificateData(self):
+        x509 = self.getCertificateObj()
+        if x509:
+            self.cert_serial_no = x509.get_serial_number()
+            self.cert_fingerprint = x509.digest('sha1')
 
     class Meta:
         ordering = ('created',)
