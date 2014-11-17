@@ -79,6 +79,7 @@ class User(AbstractBaseUser):
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, unique=True)
+    port = models.IntegerField()
     cert_info = models.TextField(blank=True)
     cert_serial_no = models.IntegerField(null=True,blank=True)
     cert_fingerprint = models.CharField(max_length=1024,null=True,blank=True)
@@ -101,7 +102,7 @@ class Domain(models.Model):
         x509 = self.getCertificateObj()
         if x509:
             self.cert_serial_no = x509.get_serial_number()
-            self.cert_fingerprint = x509.digest('sha256')
+            self.cert_fingerprint = x509.digest('sha256').replace(':', '')
 
     class Meta:
         ordering = ('created',)

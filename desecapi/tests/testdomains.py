@@ -87,19 +87,19 @@ class AuthenticatedDomainTests(APITestCase):
 
     def testCanPostDomains(self):
         url = reverse('domain-list')
-        data = {'name': utils.generateDomainname()}
+        data = {'name': utils.generateDomainname(), 'port': 443}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def testExtractSerialNumberFromCertificateInformation(self):
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=utils.getDeSecCertificate())
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=utils.getDeSecCertificate(), port=443)
         domain.save()
         self.assertEqual(domain.cert_serial_no, 1332420)
-        self.assertEqual(domain.cert_fingerprint, '8E:F3:F2:83:36:1C:F8:EC:8D:ED:4E:B8:05:82:4F:06:7D:47:86:05:B2:79:97:AB:FE:A7:64:60:4C:62:9D:6D')
+        self.assertEqual(domain.cert_fingerprint, '8EF3F283361CF8EC8DED4EB805824F067D478605B27997ABFEA764604C629D6D')
         domain.delete()
 
     def testWrongCertInformation(self):
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info='This doesnt make any sense.')
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info='This doesnt make any sense.', port=443)
         domain.save()
         self.assertEqual(domain.cert_serial_no, None)
         self.assertEqual(domain.cert_fingerprint, None)
@@ -107,7 +107,7 @@ class AuthenticatedDomainTests(APITestCase):
 
         # create a broken certificate-looking string
         fake_cert = utils.getDeSecCertificate().replace('a', 'x')
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=fake_cert)
+        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=fake_cert, port=443)
         domain.save()
         self.assertEqual(domain.cert_serial_no, None)
         self.assertEqual(domain.cert_fingerprint, None)
