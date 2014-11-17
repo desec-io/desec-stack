@@ -56,6 +56,7 @@ class utils(object):
     Returns a certificate for (www.)desec.io, signed by startssl.com,
     valid until 2015-11-15, serial number 0x1454C4 = 1332420 (base 10).
     SHA1 fingerprint is 8D:2E:F1:35:05:08:78:D3:FD:09:30:8A:A4:9C:D6:90:3E:04:8F:56
+    SHA256 fingerprint is 8E:F3:F2:83:36:1C:F8:EC:8D:ED:4E:B8:05:82:4F:06:7D:47:86:05:B2:79:97:AB:FE:A7:64:60:4C:62:9D:6D
     """
     @classmethod
     def getDeSecCertificate(self):

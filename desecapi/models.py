@@ -101,7 +101,7 @@ class Domain(models.Model):
         x509 = self.getCertificateObj()
         if x509:
             self.cert_serial_no = x509.get_serial_number()
-            self.cert_fingerprint = x509.digest('sha1')
+            self.cert_fingerprint = x509.digest('sha256')
 
     class Meta:
         ordering = ('created',)
