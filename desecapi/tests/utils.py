@@ -42,7 +42,7 @@ class utils(object):
     def createDomain(cls, owner=None, port=80):
         if owner is None:
             owner = cls.createUser(username=None)
-        domain = Domain(name=cls.generateDomainname(), owner=owner, port=443)
+        domain = Domain(name=cls.generateDomainname(), owner=owner)
         domain.save()
         return domain
 

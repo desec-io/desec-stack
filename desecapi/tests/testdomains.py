@@ -87,28 +87,6 @@ class AuthenticatedDomainTests(APITestCase):
 
     def testCanPostDomains(self):
         url = reverse('domain-list')
-        data = {'name': utils.generateDomainname(), 'port': 443}
+        data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def testExtractSerialNumberFromCertificateInformation(self):
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=utils.getDeSecCertificate(), port=443)
-        domain.save()
-        self.assertEqual(domain.cert_serial_no, 1332420)
-        self.assertEqual(domain.cert_fingerprint, '8EF3F283361CF8EC8DED4EB805824F067D478605B27997ABFEA764604C629D6D')
-        domain.delete()
-
-    def testWrongCertInformation(self):
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info='This doesnt make any sense.', port=443)
-        domain.save()
-        self.assertEqual(domain.cert_serial_no, None)
-        self.assertEqual(domain.cert_fingerprint, None)
-        domain.delete()
-
-        # create a broken certificate-looking string
-        fake_cert = utils.getDeSecCertificate().replace('a', 'x')
-        domain = Domain(owner=utils.createUser(), name='desec.io', cert_info=fake_cert, port=443)
-        domain.save()
-        self.assertEqual(domain.cert_serial_no, None)
-        self.assertEqual(domain.cert_fingerprint, None)
-        domain.delete()

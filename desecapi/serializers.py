@@ -9,4 +9,4 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('id', 'name', 'port', 'owner', 'cert_info', 'cert_serial_no', 'cert_fingerprint')
+        fields = ('id', 'name', 'owner')
