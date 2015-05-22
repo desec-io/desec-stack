@@ -7,6 +7,7 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from dns import resolver
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -52,3 +53,38 @@ class Root(APIView):
                 'login': reverse('login'),
                 'register': reverse('register'),
             })
+
+class DnsQuery(APIView):
+    def get(self, request, format=None):
+        desecio = resolver.Resolver()
+        domain = str(request.GET['domain'])
+
+        def getRecords(domain, type):
+            records = []
+            try:
+                for ip in desecio.query(domain, type):
+                    records.append(str(ip))
+            except resolver.NoAnswer:
+                return []
+            return records
+
+        # find currently active NS records
+        nsrecords = getRecords(domain, 'NS')
+
+        # find desec.io IP address with standard nameserver
+        ips = desecio.query('desec.io')
+        desecio.nameservers = []
+        for ip in ips:
+            desecio.nameservers.append(str(ip))
+
+        # query desec.io nameserver for A and AAAA records
+        arecords = getRecords(domain, 'A')
+        aaaarecords = getRecords(domain, 'AAAA')
+
+        return Response({
+            'domain': domain,
+            'ns': nsrecords,
+            'a': arecords,
+            'aaaa': aaaarecords,
+            '_nameserver': desecio.nameservers
+        })

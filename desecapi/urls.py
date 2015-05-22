@@ -7,6 +7,7 @@ apiurls = [
     url(r'^$', Root.as_view(), name='root'),
     url(r'^domains/$', DomainList.as_view(), name='domain-list'),
     url(r'^domains/(?P<pk>[0-9]+)/$', DomainDetail.as_view(), name='domain-detail'),
+    url(r'^dns$', DnsQuery.as_view(), name='dns-query'),
 ]
 
 apiurls = format_suffix_patterns(apiurls)

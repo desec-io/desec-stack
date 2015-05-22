@@ -7,6 +7,7 @@ coverage==3.7.1
 cryptography==0.6.1
 djangorestframework==2.4.4
 djoser==0.1.0
+dnspython==1.12.0
 pyOpenSSL==0.14
 pycparser==2.10
 six==1.8.0
