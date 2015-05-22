@@ -90,3 +90,23 @@ class AuthenticatedDomainTests(APITestCase):
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def testCanUpdateARecord(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+        response.data['arecord'] = '10.13.3.7'
+        response = self.client.put(url, response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['arecord'], '10.13.3.7')
+
+    def testCanUpdateAAAARecord(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+        response.data['aaaarecord'] = 'fe80::a11:10ff:fee0:ff77'
+        response = self.client.put(url, response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['aaaarecord'], 'fe80::a11:10ff:fee0:ff77')

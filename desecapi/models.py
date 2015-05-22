@@ -79,6 +79,8 @@ class User(AbstractBaseUser):
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, unique=True)
+    arecord = models.CharField(max_length=255, blank=True)
+    aaaarecord = models.CharField(max_length=1024, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
 
     def save(self, *args, **kwargs):
