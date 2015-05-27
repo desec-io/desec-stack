@@ -95,16 +95,26 @@ class ScanLogjam(APIView):
     def get(self, request, format=None):
         # retrieve address to connect to
         addr = str(request.GET['host']) + ':' + str(int(request.GET['port']))
+        starttls = str(request.GET['starttls'])
 
-        def getOpenSSLOutput(cipher, connect):
-            p_openssl = subprocess.Popen([
-                                             'openssl-1.0.2a',
-                                             's_client',
-                                             '-cipher',
-                                             cipher,
-                                             '-connect',
-                                             connect
-                                         ],
+        def getOpenSSLOutput(cipher, connect, starttls=None):
+            if starttls not in ['smtp', 'pop3', 'imap', 'ftp', 'xmpp']:
+                starttls = None
+
+            if starttls:
+                starttlsparams = ['-starttls', starttls]
+            else:
+                starttlsparams = []
+
+            cmd = [
+                      'openssl-1.0.2a',
+                      's_client',
+                      '-cipher',
+                      cipher,
+                      '-connect',
+                      connect
+                  ] + starttlsparams
+            p_openssl = subprocess.Popen(cmd,
                                          stdin=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
@@ -117,7 +127,7 @@ class ScanLogjam(APIView):
 
         # find DH size
         dhsize = None
-        output = getOpenSSLOutput('EDH', addr)
+        output = getOpenSSLOutput('EDH', addr, starttls)
         res = re.search('Server Temp Key: DH, ([0-9]+) bits', output[0])
         if res:
             dhsize = int(res.group(1))
@@ -130,7 +140,7 @@ class ScanLogjam(APIView):
 
         # check EXP cipher suits
         exp = True
-        output = getOpenSSLOutput('EXP', addr)
+        output = getOpenSSLOutput('EXP', addr, starttls)
         res = re.search('handshake failure:', output[1])
         if res:
             exp = False
