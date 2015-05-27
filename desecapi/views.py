@@ -146,7 +146,7 @@ class ScanLogjam(APIView):
                 'addr': addr,
                 'logjam': {
                     'dhsize': dhsize,
-                    'exp-cipher': exp
+                    'expcipher': exp
                 },
                 'version': 'openssl-1.0.2a',
             }
