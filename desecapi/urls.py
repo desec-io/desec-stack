@@ -8,6 +8,7 @@ apiurls = [
     url(r'^domains/$', DomainList.as_view(), name='domain-list'),
     url(r'^domains/(?P<pk>[0-9]+)/$', DomainDetail.as_view(), name='domain-detail'),
     url(r'^dns$', DnsQuery.as_view(), name='dns-query'),
+    url(r'^scan/logjam$', ScanLogjam.as_view(), name='scan-logjam'),
 ]
 
 apiurls = format_suffix_patterns(apiurls)

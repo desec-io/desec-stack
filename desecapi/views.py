@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from dns import resolver
+import subprocess
+import re
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -87,4 +89,65 @@ class DnsQuery(APIView):
             'a': arecords,
             'aaaa': aaaarecords,
             '_nameserver': desecio.nameservers
+        })
+
+class ScanLogjam(APIView):
+    def get(self, request, format=None):
+        # retrieve address to connect to
+        addr = str(request.GET['host']) + ':' + str(int(request.GET['port']))
+
+        def getOpenSSLOutput(cipher, connect):
+            p_openssl = subprocess.Popen([
+                                             'openssl-1.0.2a',
+                                             's_client',
+                                             '-cipher',
+                                             cipher,
+                                             '-connect',
+                                             connect
+                                         ],
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE)
+            p_openssl.stdin.close()
+            p_openssl.wait()
+
+            stdout = p_openssl.stdout.read()
+            stderr = p_openssl.stderr.read()
+            return (stdout, stderr)
+
+        # find DH size
+        dhsize = None
+        output = getOpenSSLOutput('EDH', addr)
+        res = re.search('Server Temp Key: DH, ([0-9]+) bits', output[0])
+        if res:
+            dhsize = int(res.group(1))
+        else:
+            if (re.search('handshake failure:', output[1])):
+                # server does not accept EDH connections, or no connections at all
+                pass
+            else:
+                raise Exception('Failed to determine DH key size.')
+
+        # check EXP cipher suits
+        exp = True
+        output = getOpenSSLOutput('EXP', addr)
+        res = re.search('handshake failure:', output[1])
+        if res:
+            exp = False
+        else:
+            if (re.search('SSL-Session:', output[0])):
+                # connection was established
+                exp = True
+            else:
+                raise Exception('Failed to check for EXP cipher suits.')
+
+        return Response({
+            'openssl': {
+                'addr': addr,
+                'logjam': {
+                    'dhsize': dhsize,
+                    'exp-cipher': exp
+                },
+                'version': 'openssl-1.0.2a',
+            }
         })
