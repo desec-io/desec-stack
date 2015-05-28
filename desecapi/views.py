@@ -97,7 +97,7 @@ class ScanLogjam(APIView):
         addr = str(request.GET['host']) + ':' + str(int(request.GET['port']))
         starttls = str(request.GET['starttls'])
 
-        def getOpenSSLOutput(cipher, connect, starttls=None):
+        def getOpenSSLOutput(cipher, connect, starttls=None, openssl='openssl-1.0.2a'):
             if starttls not in ['smtp', 'pop3', 'imap', 'ftp', 'xmpp']:
                 starttls = None
 
@@ -106,14 +106,17 @@ class ScanLogjam(APIView):
             else:
                 starttlsparams = []
 
+            if cipher:
+                cipherparams = ['-cipher', cipher]
+            else:
+                cipherparams = []
+
             cmd = [
-                      'openssl-1.0.2a',
+                      openssl,
                       's_client',
-                      '-cipher',
-                      cipher,
                       '-connect',
                       connect
-                  ] + starttlsparams
+                  ] + starttlsparams + cipherparams
             p_openssl = subprocess.Popen(cmd,
                                          stdin=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
@@ -124,6 +127,11 @@ class ScanLogjam(APIView):
             stdout = p_openssl.stdout.read()
             stderr = p_openssl.stderr.read()
             return (stdout, stderr)
+
+        # check if there is an SSL-enabled host
+        output = getOpenSSLOutput(None, addr, openssl='openssl')
+        if (not re.search('SSL-Session:', output[0])):
+            raise Exception('Can\'t connect via SSL/TLS')
 
         # find DH size
         dhsize = None
