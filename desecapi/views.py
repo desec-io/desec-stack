@@ -68,6 +68,8 @@ class DnsQuery(APIView):
                     records.append(str(ip))
             except resolver.NoAnswer:
                 return []
+            except resolver.NoNameservers:
+                return []
             return records
 
         # find currently active NS records
