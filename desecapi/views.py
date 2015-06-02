@@ -1,3 +1,4 @@
+from django.core.mail import EmailMessage
 from models import Domain
 from serializers import DomainSerializer
 from rest_framework import generics
@@ -10,6 +11,8 @@ from rest_framework.reverse import reverse
 from dns import resolver
 import subprocess
 import re
+from django.template.loader import get_template
+from django.template import Context
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -21,6 +24,26 @@ class DomainList(generics.ListCreateAPIView):
 
     def pre_save(self, obj):
         obj.owner = self.request.user
+
+    def post_save(self, obj, created=False):
+        def sendDynDnsEmail(domain):
+            content_tmpl = get_template('emails/domain-dyndns/content.txt')
+            subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
+            from_tmpl = get_template('emails/from.txt')
+            context = Context({
+                'domain': domain.name,
+                'url': 'https://update.dedyn.io/',
+                'username': domain.name,
+                'password': self.request.auth.key
+            })
+            email = EmailMessage(subject_tmpl.render(context),
+                                 content_tmpl.render(context),
+                                 from_tmpl.render(context),
+                                 [self.request.user.email])
+            email.send()
+
+        if created and obj.dyn:
+            sendDynDnsEmail(obj)
 
 
 class DomainDetail(generics.RetrieveUpdateDestroyAPIView):

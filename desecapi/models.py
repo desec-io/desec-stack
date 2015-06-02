@@ -81,6 +81,7 @@ class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
+    dyn = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
 
     def save(self, *args, **kwargs):

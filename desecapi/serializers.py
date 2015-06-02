@@ -7,4 +7,4 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('id', 'name', 'owner', 'arecord', 'aaaarecord')
+        fields = ('id', 'name', 'owner', 'arecord', 'aaaarecord', 'dyn')

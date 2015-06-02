@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 from utils import utils
 from django.db import transaction
 from desecapi.models import Domain
-
+from django.core import mail
 
 class UnauthenticatedDomainTests(APITestCase):
     def testExpectUnauthorizedOnGet(self):
@@ -90,6 +90,19 @@ class AuthenticatedDomainTests(APITestCase):
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(response.data['dyn'], False)
+
+    def testCanPostDynDomains(self):
+        url = reverse('domain-list')
+        data = {'name': utils.generateDomainname(), 'dyn': True}
+        response = self.client.post(url, data)
+        email = str(mail.outbox[0].message())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(data['name'] in email)
+        self.assertTrue(self.token in email)
+        self.assertEqual(response.data['dyn'], True)
 
     def testCanUpdateARecord(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
