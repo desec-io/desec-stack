@@ -70,6 +70,8 @@ class DnsQuery(APIView):
                 return []
             except resolver.NoNameservers:
                 return []
+            except resolver.NXDOMAIN:
+                return []
             return records
 
         # find currently active NS records
