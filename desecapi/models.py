@@ -87,7 +87,7 @@ class Domain(models.Model):
 
     headers = {
         'User-Agent': 'desecapi',
-        'X-API-Key:': settings.POWERDNS_API_TOKEN,
+        'X-API-Key': settings.POWERDNS_API_TOKEN,
     }
 
     def save(self, *args, **kwargs):
