@@ -100,7 +100,7 @@ class Domain(models.Model):
     def pdnsCreate(self):
         payload = {
             "name": self.name,
-            "kind": "Native",
+            "kind": "master",
             "masters": [],
             "nameservers": [
                 "ns1.desec.io",
