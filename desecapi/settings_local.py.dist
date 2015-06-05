@@ -15,3 +15,5 @@ DATABASES = {
         'HOST': '',
     }
 }
+POWERDNS_API = 'http://localhost:8081/servers/localhost' # no trailing slash, please!
+POWERDNS_API_TOKEN = 'MyAuthToken'

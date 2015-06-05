@@ -5,6 +5,9 @@ from utils import utils
 from django.db import transaction
 from desecapi.models import Domain
 from django.core import mail
+import httpretty
+from django.conf import settings
+
 
 class UnauthenticatedDomainTests(APITestCase):
     def testExpectUnauthorizedOnGet(self):
@@ -123,3 +126,26 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['aaaarecord'], 'fe80::a11:10ff:fee0:ff77')
+
+    def testPostingCausesPdnsAPICall(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+
+        url = reverse('domain-list')
+        data = {'name': utils.generateDomainname(), 'dyn': True}
+        response = self.client.post(url, data)
+
+        self.assertTrue(data['name'] in httpretty.last_request().body)
+        self.assertTrue('ns1.desec.io' in httpretty.last_request().body)
+
+    def testUpdateingCausesPdnsAPICall(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + response.data['name'])
+
+        response.data['arecord'] = '10.13.3.7'
+        response = self.client.put(url, response.data)
+
+        self.assertTrue('10.13.3.7' in httpretty.last_request().body)

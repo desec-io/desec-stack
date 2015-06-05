@@ -3,7 +3,8 @@ from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
-from OpenSSL import crypto
+import requests
+import json
 
 
 class MyUserManager(BaseUserManager):
@@ -84,8 +85,55 @@ class Domain(models.Model):
     dyn = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
 
+    headers = {
+        'User-Agent': 'desecapi',
+        'X-API-Key:': settings.POWERDNS_API_TOKEN,
+    }
+
     def save(self, *args, **kwargs):
+        if self.id is None:
+            self.pdnsCreate()
+        if self.arecord:
+            self.pdnsUpdate()
         super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
+
+    def pdnsCreate(self):
+        payload = {
+            "name": self.name,
+            "kind": "Native",
+            "masters": [],
+            "nameservers": [
+                "ns1.desec.io",
+                "ns2.desec.io"
+            ],
+            "soa_edit": "INCREMENT-WEEKS"
+        }
+        r = requests.post(settings.POWERDNS_API + '/zones', data=json.dumps(payload), headers=self.headers)
+        if r.status_code < 200 or r.status_code >= 300:
+            raise Exception
+
+    def pdnsUpdate(self):
+        payload = {
+            "rrsets": [
+                {
+                    "records": [
+                            {
+                                "type": "A",
+                                "ttl": 60,
+                                "name": self.name,
+                                "disabled": False,
+                                "content": self.arecord,
+                            }
+                        ],
+                    "changetype": "REPLACE",
+                    "type": "A",
+                    "name": self.name,
+                }
+            ]
+        }
+        r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
+        if r.status_code < 200 or r.status_code >= 300:
+            raise Exception
 
     class Meta:
         ordering = ('created',)
