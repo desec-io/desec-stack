@@ -65,6 +65,10 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
         return super(DomainDetail, self).put(request, pk, format)
 
 
+class DomainDetailByName(DomainDetail):
+    lookup_field = 'name'
+
+
 class Root(APIView):
     def get(self, request, format=None):
         if self.request.user and self.request.user.is_authenticated():
