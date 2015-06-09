@@ -145,7 +145,6 @@ class Domain(models.Model):
             raise Exception
 
         env = os.environ.copy()
-        print os.environ['PATH']
         env['APITOKEN'] = settings.POWERDNS_API_TOKEN
 
         cmd = [cmd, self.name]
