@@ -5,7 +5,8 @@ from django.contrib.auth.models import (
 )
 import requests
 import json
-
+import subprocess
+import os
 
 class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -112,6 +113,8 @@ class Domain(models.Model):
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception
 
+        self.postCreateHook()
+
     def pdnsUpdate(self):
         payload = {
             "rrsets": [
@@ -134,6 +137,36 @@ class Domain(models.Model):
         r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception
+
+        self.postUpdateHook()
+
+    def hook(self, cmd):
+        if not self.name:
+            raise Exception
+
+        env = os.environ.copy()
+        print os.environ['PATH']
+        env['APITOKEN'] = settings.POWERDNS_API_TOKEN
+
+        cmd = [cmd, self.name]
+        p_hook = subprocess.Popen(cmd,
+                                  stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  env=env)
+        p_hook.stdin.close()
+        p_hook.wait()
+
+        if not p_hook.returncode == 0:
+            raise Exception
+
+        return
+
+    def postCreateHook(self):
+        self.hook(cmd='domain_post_create.sh')
+
+    def postUpdateHook(self):
+        self.hook(cmd='domain_post_update.sh')
 
     class Meta:
         ordering = ('created',)
