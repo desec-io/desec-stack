@@ -58,8 +58,6 @@ $log .= print_r($settings, true) . "\n";
 $log .= print_r($data, true) . "\n";
 $log .= "\n\n\n";
 
-file_put_contents('log.txt', $log, FILE_APPEND);
-
 echo "<TITLE>success</TITLE>\n";
 echo "return code: NOERROR\n";
 echo "error code: NOERROR\n";
