@@ -149,3 +149,10 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.put(url, response.data)
 
         self.assertTrue('10.13.3.7' in httpretty.last_request().body)
+
+    def testDomainDetailURL(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        urlByName = reverse('domain-detail/byName', args=(self.ownedDomains[1].name,))
+
+        self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
+        self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
