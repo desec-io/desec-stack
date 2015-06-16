@@ -12,6 +12,12 @@ the following credentials:
   username: {{ username }}
   password: {{ password }}
 
+Alternatively, you can update your dynDNS IP record by visiting 
+this page:
+https://update.dedyn.io/update?username={{ username }}&password={{ password }}
+If your router does not support dynDNS, you might want to 
+bookmark this URL.
+
 You can use our website to see if everything works as expected:
 https://desec.io/#!/en/tools/dyndns-check?domain={{ domain }}
 
