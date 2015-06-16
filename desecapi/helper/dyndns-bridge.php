@@ -1,7 +1,11 @@
 <?php
 
-if (!isset($_SERVER['PHP_AUTH_USER'])) {
-    header('WWW-Authenticate: Basic realm="My Realm"');
+error_reporting(E_ALL);
+
+$auth = getAuthenticationDetails();
+
+if ($auth === false) {
+    header('WWW-Authenticate: Basic realm="dynDNS"');
     header('HTTP/1.0 401 Unauthorized');
     exit;
 }
@@ -29,13 +33,44 @@ function getIpv4Addr() {
  */
 function getAuthenticationDetails() {
     $headers = getallheaders();
-    $auth = explode(':', base64_decode(substr($headers['Authorization'], strlen('Basic '))));
-    return $auth;
+    
+    // Work around the fact that the following just produces NULL (on some machines):
+    // if(isset($headers["Authorization"])) $authorization = $headers["Authorization"];
+    foreach($headers as $key => $value) {
+        if($key == "Authorization") {
+            $authorization = $value;
+            break;
+        }
+    }
+    
+    if(isset($authorization)) {
+        $auth = explode(':', base64_decode(substr($authorization, strlen('Basic '))));
+        
+        if(isset($auth[1])) {
+            return $auth;
+        }
+    }
+    
+    if (isset($_REQUEST['username']) && isset($_REQUEST['password'])) {
+        $username = $_REQUEST['username'];
+        $password = $_REQUEST['password'];
+        
+        if(!isset($_SERVER['HTTPS']) || !strlen($_SERVER['HTTPS'])) {
+            $url = sprintf('https://%s/update?username=%s&password=%s', $_SERVER['HTTP_HOST'], urlencode($username), urlencode($password));
+            header("HTTP/1.1 301 Moved Permanently");
+            header("Location: $url");
+            exit;
+        }
+        
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains;');
+        
+        return [$username, $password];
+    }
+    
+    return false;
 }
 
 $now = new DateTime();
-
-$auth = getAuthenticationDetails();
 
 $settings = [
     'token' => $auth[1],
