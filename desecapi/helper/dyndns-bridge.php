@@ -1,7 +1,5 @@
 <?php
 
-error_reporting(E_ALL);
-
 $auth = getAuthenticationDetails();
 
 if ($auth === false) {
