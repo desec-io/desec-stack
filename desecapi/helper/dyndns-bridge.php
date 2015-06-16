@@ -86,6 +86,7 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Token ' . $settings['token'], 'Content-Type: application/json', 'Content-Length: ' . strlen($body)]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
 $data = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 $log  = '';
@@ -97,7 +98,13 @@ $log .= print_r($settings, true) . "\n";
 $log .= print_r($data, true) . "\n";
 $log .= "\n\n\n";
 
-echo "<TITLE>success</TITLE>\n";
-echo "return code: NOERROR\n";
-echo "error code: NOERROR\n";
-echo "Your hostname has been updated.\n";
+if ($status === 200) {
+    echo "<TITLE>success</TITLE>\n";
+    echo "return code: NOERROR\n";
+    echo "error code: NOERROR\n";
+    echo "Your hostname has been updated.\n";
+} else {
+    header('HTTP/1.1 ' . $status);
+    echo $data;
+}
+
