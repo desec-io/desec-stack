@@ -3,9 +3,8 @@
 if (!isset($_SERVER['PHP_AUTH_USER'])) {
     header('WWW-Authenticate: Basic realm="My Realm"');
     header('HTTP/1.0 401 Unauthorized');
-    echo 'Text to send if user hits Cancel button';
     exit;
-} else {
+}
 
 /**
  * Determines the IPv4 address for dynDNS update.
@@ -69,5 +68,3 @@ echo "<TITLE>success</TITLE>\n";
 echo "return code: NOERROR\n";
 echo "error code: NOERROR\n";
 echo "Your hostname has been updated.\n";
-
-}
