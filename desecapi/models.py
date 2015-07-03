@@ -154,7 +154,7 @@ class Domain(models.Model):
                                   stderr=subprocess.PIPE,
                                   env=env)
         p_hook.stdin.close()
-        p_hook.wait()
+        p_hook.communicate()
 
         if not p_hook.returncode == 0:
             raise Exception

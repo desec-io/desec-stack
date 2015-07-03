@@ -153,7 +153,7 @@ class ScanLogjam(APIView):
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
             p_openssl.stdin.close()
-            p_openssl.wait()
+            p_openssl.communicate()
 
             stdout = p_openssl.stdout.read()
             stderr = p_openssl.stderr.read()
