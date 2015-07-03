@@ -153,7 +153,6 @@ class Domain(models.Model):
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   env=env)
-        p_hook.stdin.close()
         p_hook.communicate()
 
         if not p_hook.returncode == 0:
