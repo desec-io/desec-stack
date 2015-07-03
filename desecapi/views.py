@@ -152,10 +152,8 @@ class ScanLogjam(APIView):
                                          stdin=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
-            p_openssl.communicate()
+            stdout, stderr = p_openssl.communicate()
 
-            stdout = p_openssl.stdout.read()
-            stderr = p_openssl.stderr.read()
             return (stdout, stderr)
 
         # check if there is an SSL-enabled host
