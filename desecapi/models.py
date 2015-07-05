@@ -94,7 +94,7 @@ class Domain(models.Model):
     def save(self, *args, **kwargs):
         if self.id is None:
             self.pdnsCreate()
-        if self.arecord:
+        if self.arecord or self.aaaarecord:
             self.pdnsUpdate()
         super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
 
@@ -116,8 +116,8 @@ class Domain(models.Model):
         self.postCreateHook()
 
     def pdnsUpdate(self):
-        payload = {
-            "rrsets": [
+        if self.arecord:
+            a = \
                 {
                     "records": [
                             {
@@ -132,8 +132,39 @@ class Domain(models.Model):
                     "type": "A",
                     "name": self.name,
                 }
-            ]
-        }
+        else:
+            a = \
+                {
+                    "changetype": "DELETE",
+                    "type": "A",
+                    "name": self.name
+                }
+
+        if self.aaaarecord:
+            aaaa = \
+                {
+                    "records": [
+                            {
+                                "type": "AAAA",
+                                "ttl": 60,
+                                "name": self.name,
+                                "disabled": False,
+                                "content": self.aaaarecord,
+                            }
+                        ],
+                    "changetype": "REPLACE",
+                    "type": "AAAA",
+                    "name": self.name,
+                }
+        else:
+            aaaa = \
+                {
+                    "changetype": "DELETE",
+                    "type": "AAAA",
+                    "name": self.name
+                }
+
+        payload = { "rrsets": [a, aaaa] }
         r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception
