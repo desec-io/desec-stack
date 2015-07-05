@@ -16,14 +16,37 @@ function getIpv4Addr() {
         @$_REQUEST['myip'],
         @$_REQUEST['ip'],
         @$_REQUEST['dnsto'],
-        @$_SERVER['REMOTE_ADDR'],
     ];
 
     foreach($ipv4_sources as $ip) {
       if ($ip) return $ip;
     }
 
-    throw \Exception();
+    if (@$_SERVER['REMOTE_ADDR'] && strpos(@$_SERVER['REMOTE_ADDR'], '.') !== false) {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+
+    return "";
+}
+
+/**
+ * Determines the IPv6 address for dynDNS update.
+ */
+function getIpv6Addr() {
+    $ipv6_sources = [
+        @$_REQUEST['myipv6'],
+        @$_REQUEST['ipv6'],
+    ];
+
+    foreach($ipv6_sources as $ip) {
+        if ($ip) return $ip;
+    }
+
+    if (@$_SERVER['REMOTE_ADDR'] && strpos(@$_SERVER['REMOTE_ADDR'], ':') !== false) {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+
+    return "";
 }
 
 /**
@@ -73,10 +96,11 @@ $now = new DateTime();
 $settings = [
     'token' => $auth[1],
     'domain' => $auth[0],
-    'ip' => getIpv4Addr(),
+    'a' => getIpv4Addr(),
+    'aaaa' => getIpv6Addr(),
 ];
 
-$body = '{"arecord":"' . $settings['ip'] . '"}';
+$body = '{"arecord":"' . $settings['a'] . '","aaaarecord":"' . $settings['aaaa'] . '"}';
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, 'https://desec.io/api/domains/' . $settings['domain'] . '/');
