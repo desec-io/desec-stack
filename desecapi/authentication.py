@@ -3,7 +3,7 @@ import base64
 
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import BaseAuthentication, get_authorization_header
+from rest_framework.authentication import BaseAuthentication, get_authorization_header, authenticate
 
 
 class BasicTokenAuthentication(BaseAuthentication):
@@ -56,3 +56,38 @@ class BasicTokenAuthentication(BaseAuthentication):
 
     def authenticate_header(self, request):
         return 'Basic'
+
+
+class URLParamAuthentication(BaseAuthentication):
+    """
+    Authentication against username/password as provided in URL parameters.
+    """
+
+    model = Token
+
+    def authenticate(self, request):
+        """
+        Returns a `User` if a correct username and password have been supplied
+        using URL parameters.  Otherwise returns `None`.
+        """
+
+        if not 'username' in request.QUERY_PARAMS:
+            msg = 'No username URL parameter provided.'
+            raise exceptions.AuthenticationFailed(msg)
+        if not 'password' in request.QUERY_PARAMS:
+            msg = 'No password URL parameter provided.'
+            raise exceptions.AuthenticationFailed(msg)
+
+        return self.authenticate_credentials(request.QUERY_PARAMS['username'], request.QUERY_PARAMS['password'])
+
+    def authenticate_credentials(self, userid, key):
+
+        try:
+            token = self.model.objects.get(key=key)
+        except self.model.DoesNotExist:
+            raise exceptions.AuthenticationFailed('Invalid token')
+
+        if not token.user.is_active:
+            raise exceptions.AuthenticationFailed('User inactive or deleted')
+
+        return token.user, token
