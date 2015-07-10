@@ -8,11 +8,14 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework.authentication import TokenAuthentication, get_authorization_header
 from dns import resolver
 import subprocess
 import re
 from django.template.loader import get_template
 from django.template import Context
+from authentication import BasicTokenAuthentication, URLParamAuthentication
+import base64
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -197,3 +200,92 @@ class ScanLogjam(APIView):
                 'version': 'openssl-1.0.2a',
             }
         })
+
+
+class DynDNS12Update(APIView):
+    authentication_classes = (TokenAuthentication, BasicTokenAuthentication, URLParamAuthentication,)
+
+    def findDomain(self, request):
+
+        def findDomainname(request):
+            # 1. hostname parameter
+            if 'hostname' in request.QUERY_PARAMS and request.QUERY_PARAMS['hostname'] != 'YES':
+                return request.QUERY_PARAMS['hostname']
+
+            # 2. host_id parameter
+            if 'host_id' in request.QUERY_PARAMS:
+                return request.QUERY_PARAMS['host_id']
+
+            # 3. http basic auth username
+            try:
+                return base64.b64decode(get_authorization_header(request).split(' ')[1]).split(':')[0]
+            except:
+                pass
+
+            # 4. username parameter
+            if 'username' in request.QUERY_PARAMS:
+                return request.QUERY_PARAMS['username']
+
+            # 5. only domain associated with this user account
+            if len(request.user.domains.all()) == 1:
+                return request.user.domains[0].name
+
+            return None
+
+        domainname = findDomainname(request)
+        domain = None
+
+        # load and check permissions
+        try:
+            domain = Domain.objects.filter(owner=self.request.user.pk, name=domainname).all()[0]
+        except:
+            pass
+
+        return domain
+
+    def findIP(self, request, params, version=4):
+        if version == 4:
+            lookfor = '.'
+        elif version == 6:
+            lookfor = ':'
+        else:
+            raise Exception
+
+        # Check URL parameters
+        for p in params:
+            if p in request.QUERY_PARAMS and lookfor in request.QUERY_PARAMS[p]:
+                return request.QUERY_PARAMS[p]
+
+        # Check remote IP address
+        client_ip = self.get_client_ip(request)
+        if lookfor in client_ip:
+            return client_ip
+
+        # give up
+        return ''
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    def findIPv4(self, request):
+        return self.findIP(request, ['myip', 'myipv4', 'ip'])
+
+    def findIPv6(self, request):
+        return self.findIP(request, ['myipv6', 'ipv6', 'myip', 'ip'], version=6)
+
+    def get(self, request, format=None):
+        domain = self.findDomain(request)
+
+        if domain is None:
+            raise Http404
+
+        domain.arecord = self.findIPv4(request)
+        domain.aaaarecord = self.findIPv6(request)
+        domain.save()
+
+        return Response('good')

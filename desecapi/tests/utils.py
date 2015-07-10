@@ -18,6 +18,10 @@ class utils(object):
     def generateDomainname(cls):
         return random.choice(string.ascii_lowercase) + cls.generateRandomString() + '.de'
 
+    @classmethod
+    def generateDynDomainname(cls):
+        return random.choice(string.ascii_lowercase) + cls.generateRandomString() + '.dedyn.io'
+
     """
     Creates a new user and saves it to the database.
     The user object is returned.

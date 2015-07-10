@@ -10,6 +10,7 @@ apiurls = [
     url(r'^domains/(?P<name>[a-zA-Z\.\-0-9]+)/$', DomainDetailByName.as_view(), name='domain-detail/byName'),
     url(r'^dns$', DnsQuery.as_view(), name='dns-query'),
     url(r'^scan/logjam$', ScanLogjam.as_view(), name='scan-logjam'),
+    url(r'^dyndns/update$', DynDNS12Update.as_view(), name='dyndns12update'),
 ]
 
 apiurls = format_suffix_patterns(apiurls)
