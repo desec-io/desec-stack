@@ -105,7 +105,7 @@ class DnsQuery(APIView):
         nsrecords = getRecords(domain, 'NS')
 
         # find desec.io nameserver IP address with standard nameserver
-        ips = desecio.query('ns1.desec.io')
+        ips = desecio.query('ns2.desec.io')
         desecio.nameservers = []
         for ip in ips:
             desecio.nameservers.append(str(ip))
