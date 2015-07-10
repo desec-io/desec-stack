@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authentication import TokenAuthentication, get_authorization_header
+from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 import subprocess
 import re
@@ -204,6 +205,7 @@ class ScanLogjam(APIView):
 
 class DynDNS12Update(APIView):
     authentication_classes = (TokenAuthentication, BasicTokenAuthentication, URLParamAuthentication,)
+    renderer_classes = [StaticHTMLRenderer]
 
     def findDomain(self, request):
 
