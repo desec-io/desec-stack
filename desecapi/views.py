@@ -163,7 +163,7 @@ class ScanLogjam(APIView):
         # check if there is an SSL-enabled host
         output = getOpenSSLOutput(None, addr, openssl='openssl')
         if (not re.search('SSL-Session:', output[0])):
-            raise Exception('Can\'t connect via SSL/TLS')
+            raise Http404('Can\'t connect via SSL/TLS')
 
         # find DH size
         dhsize = None
@@ -176,7 +176,7 @@ class ScanLogjam(APIView):
                 # server does not accept EDH connections, or no connections at all
                 pass
             else:
-                raise Exception('Failed to determine DH key size.')
+                raise Http404('Failed to determine DH key size.')
 
         # check EXP cipher suits
         exp = True
