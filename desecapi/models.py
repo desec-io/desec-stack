@@ -184,10 +184,10 @@ class Domain(models.Model):
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   env=env)
-        p_hook.communicate()
+        stdout, stderr = p_hook.communicate()
 
         if not p_hook.returncode == 0:
-            raise Exception
+            raise Exception((stdout, stderr))
 
         return
 
