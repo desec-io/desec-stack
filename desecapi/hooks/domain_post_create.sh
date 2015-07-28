@@ -31,7 +31,8 @@ echo $DATA | jq .
 echo "Setting DS records in parent zone $PARENT (command follows)"
 echo curl -X PATCH --data "$DATA" -H "X-API-Key: [secret]" http://127.0.0.1:8081/servers/localhost/zones/$PARENT
 echo Output:
-curl -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/servers/localhost/zones/$PARENT || exit 3
+#curl -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/servers/localhost/zones/$PARENT || exit 3
+curl -v -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/servers/localhost/zones/$PARENT &> /tmp/`date -Ins`_$ZONE.log || exit 3
 echo
 
 echo "rectify, increase-serial, notify $PARENT"
