@@ -111,7 +111,7 @@ class Domain(models.Model):
         }
         r = requests.post(settings.POWERDNS_API + '/zones', data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
-            raise Exception
+            raise Exception(r)
 
         self.postCreateHook()
 
