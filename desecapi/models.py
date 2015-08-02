@@ -178,7 +178,7 @@ class Domain(models.Model):
         env = os.environ.copy()
         env['APITOKEN'] = settings.POWERDNS_API_TOKEN
 
-        cmd = [cmd, self.name]
+        cmd = [cmd, self.name.lower()]
         p_hook = subprocess.Popen(cmd,
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE,
