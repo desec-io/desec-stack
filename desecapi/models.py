@@ -167,7 +167,7 @@ class Domain(models.Model):
         payload = { "rrsets": [a, aaaa] }
         r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
-            raise Exception
+            raise Exception(r)
 
         self.postUpdateHook()
 
