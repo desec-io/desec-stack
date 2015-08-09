@@ -90,6 +90,10 @@ class Root(APIView):
 class DnsQuery(APIView):
     def get(self, request, format=None):
         desecio = resolver.Resolver()
+
+        if not 'domain' in request.GET:
+            return Response(status=400)
+
         domain = str(request.GET['domain'])
 
         def getRecords(domain, type):
