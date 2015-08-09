@@ -156,3 +156,26 @@ class AuthenticatedDomainTests(APITestCase):
 
         self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
+
+    def testCantUseInvalidCharactersInDomainName(self):
+        outboxlen = len(mail.outbox)
+        invalidnames = [
+            'with space.dedyn.io',
+            'another space.de',
+            ' spaceatthebeginning.com',
+            'percentage%sign.com',
+            '%percentagesign.dedyn.io',
+            'slash/desec.io',
+            '/slashatthebeginning.dedyn.io',
+            '\\backslashatthebeginning.dedyn.io',
+            'backslash\\inthemiddle.at',
+            '@atsign.com',
+            'at@sign.com',
+        ]
+
+        url = reverse('domain-list')
+        for domainname in invalidnames:
+            data = {'name': domainname, 'dyn': True}
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(len(mail.outbox), outboxlen)
