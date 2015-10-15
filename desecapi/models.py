@@ -3,10 +3,12 @@ from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
+from django.utils import timezone
 import requests
 import json
 import subprocess
 import os
+import datetime, time
 
 class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -196,6 +198,38 @@ class Domain(models.Model):
 
     def postUpdateHook(self):
         self.hook(cmd='domain_post_update.sh')
+
+    class Meta:
+        ordering = ('created',)
+
+
+def get_default_value_created():
+    return timezone.now()
+
+def get_default_value_due():
+    return timezone.now() + datetime.timedelta(days=7)
+
+def get_default_value_mref():
+    return "ONDON" + str((timezone.now() - timezone.datetime(1970,1,1,tzinfo=timezone.utc)).total_seconds())
+
+
+class Donation(models.Model):
+
+    created = models.DateTimeField(default=get_default_value_created)
+    name = models.CharField(max_length=255)
+    iban = models.CharField(max_length=34)
+    bic = models.CharField(max_length=11)
+    amount = models.DecimalField(max_digits=8,decimal_places=2)
+    message = models.CharField(max_length=255, blank=True)
+    due = models.DateTimeField(default=get_default_value_due)
+    mref = models.CharField(max_length=32,default=get_default_value_mref)
+    email = models.EmailField(max_length=255, blank=True)
+
+
+    def save(self, *args, **kwargs):
+        self.iban = self.iban[:6] + "xxx" # do NOT save account details
+        super(Donation, self).save(*args, **kwargs) # Call the "real" save() method.
+
 
     class Meta:
         ordering = ('created',)

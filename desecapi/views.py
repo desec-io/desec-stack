@@ -1,6 +1,7 @@
+from __future__ import unicode_literals
 from django.core.mail import EmailMessage
 from models import Domain
-from serializers import DomainSerializer
+from serializers import DomainSerializer, DonationSerializer
 from rest_framework import generics
 from permissions import IsOwner
 from rest_framework import permissions
@@ -295,3 +296,44 @@ class DynDNS12Update(APIView):
         domain.save()
 
         return Response('good')
+
+class DonationList(generics.CreateAPIView):
+    serializer_class = DonationSerializer
+
+    def pre_save(self, obj):
+        def sendDonationEmails(donation):
+            context = Context({
+                'donation': donation
+            })
+
+            # internal desec notification
+            content_tmpl = get_template('emails/donation/desec-content.txt')
+            subject_tmpl = get_template('emails/donation/desec-subject.txt')
+            attachment_tmpl = get_template('emails/donation/desec-attachment-jameica.txt')
+            from_tmpl = get_template('emails/from.txt')
+            email = EmailMessage(subject_tmpl.render(context),
+                                 content_tmpl.render(context),
+                                 from_tmpl.render(context),
+                                 ['donation@desec.io'],
+                                 attachments=[
+                                     ('jameica-directdebit.xml',
+                                      attachment_tmpl.render(context),
+                                      'text/xml')
+                                 ])
+            email.send()
+
+            # donor notification
+            if donation.email:
+                content_tmpl = get_template('emails/donation/donor-content.txt')
+                subject_tmpl = get_template('emails/donation/donor-subject.txt')
+                test = content_tmpl.render(context)
+                email = EmailMessage(subject_tmpl.render(context),
+                                     content_tmpl.render(context),
+                                     from_tmpl.render(context),
+                                     [donation.email])
+                email.send()
+
+
+        # send emails
+        sendDonationEmails(obj)
+

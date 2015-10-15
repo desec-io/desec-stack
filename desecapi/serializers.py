@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from models import Domain
+from models import Domain, Donation
 
 
 class DomainSerializer(serializers.ModelSerializer):
@@ -9,3 +9,9 @@ class DomainSerializer(serializers.ModelSerializer):
     class Meta:
         model = Domain
         fields = ('id', 'name', 'owner', 'arecord', 'aaaarecord', 'dyn')
+
+class DonationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Donation
+        fields = ('name', 'iban', 'bic', 'amount', 'message', 'email')

@@ -11,6 +11,7 @@ apiurls = [
     url(r'^dns$', DnsQuery.as_view(), name='dns-query'),
     url(r'^scan/logjam$', ScanLogjam.as_view(), name='scan-logjam'),
     url(r'^dyndns/update$', DynDNS12Update.as_view(), name='dyndns12update'),
+    url(r'^donation/', DonationList.as_view(), name='donation'),
 ]
 
 apiurls = format_suffix_patterns(apiurls)

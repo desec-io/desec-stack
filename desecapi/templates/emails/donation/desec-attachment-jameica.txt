@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects>
+  <object type="de.willuhn.jameica.hbci.server.SepaLastschriftImpl" id="2">
+    {# Ende-zu-Ende ID #}
+    <endtoendid type="java.lang.String"></endtoendid>
+
+    {# Unterschriftsdatum der Referenz #}
+    <sigdate type="java.sql.Date">{{ donation.created | date:"d.m.Y H:i:s" }}</sigdate>
+
+    {# mandatsreferenz #}
+    <mandateid type="java.lang.String">{{ donation.mref }}</mandateid>
+
+    {# Gläubiger-ID #}
+    <creditorid type="java.lang.String">DE84ZZZ00001034223</creditorid>
+
+    {% load sepa_extras %}
+    {# Name des Kontos, das belastet wird [sic!] #}
+    <empfaenger_name type="java.lang.String">{{ donation.name | clean }}</empfaenger_name>
+
+    {# IBAN des Kontos, das belastet wird [sic!] #}
+    <empfaenger_konto type="java.lang.String">{{ donation.iban }}</empfaenger_konto>
+
+    {# Noch nicht ausgeführt #}
+    <ausgefuehrt type="java.lang.Integer">0</ausgefuehrt>
+
+    {# Basis-Lastschrift #}
+    <sepatype type="java.lang.String">CORE</sepatype>
+
+    {# Betrag #}
+    <betrag type="java.lang.Double">{{ donation.amount }}</betrag>
+
+    {# Einzugstermin #}
+    <termin type="java.sql.Date">{{ donation.due | date:"d.m.Y H:i:s" }}</termin>
+
+    {# deSEC Spende #}
+    <zweck type="java.lang.String">deSEC Spende/Donation authorized at {{ donation.created | date:"Y-m-d H:i:s" }} UTC</zweck>
+
+    {# Einmal-Lastschrift #}
+    <sequencetype type="java.lang.String">OOFF</sequencetype>
+
+    {# Empfänger BIC #}
+    <empfaenger_bic type="java.lang.String">BYLADEM1001</empfaenger_bic>
+
+    {# Jameica-Konto ID #}
+    <konto_id type="java.lang.Integer">1</konto_id>
+  </object>
+</objects>
