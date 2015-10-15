@@ -14,6 +14,12 @@ DATABASES = {
         'USER': '',
         'PASSWORD': '',
         'HOST': '',
+        'CHARSET': 'utf8',
+        'COLLATION': 'utf8_general_ci',
+        'TEST': {
+            'CHARSET': 'utf8',
+            'COLLATION': 'utf8_general_ci',
+        }
     }
 }
 POWERDNS_API = 'http://localhost:8081/servers/localhost' # no trailing slash, please!

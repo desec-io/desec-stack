@@ -70,7 +70,14 @@ DATABASES = {
         'USER': '',
         'PASSWORD': '',
         'HOST': '127.0.0.1',
-    }
+        'CHARSET': 'utf8',
+        'COLLATION': 'utf8_general_ci',
+        'TEST': {
+            'CHARSET': 'utf8',
+            'COLLATION': 'utf8_general_ci',
+        }
+    },
+
 }
 
 # Internationalization
