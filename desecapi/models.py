@@ -82,6 +82,7 @@ class User(AbstractBaseUser):
 
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=255, unique=True)
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
@@ -98,6 +99,7 @@ class Domain(models.Model):
             self.pdnsCreate()
         if self.arecord or self.aaaarecord:
             self.pdnsUpdate()
+        self.updated = timezone.now()
         super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
 
     def pdnsCreate(self):
