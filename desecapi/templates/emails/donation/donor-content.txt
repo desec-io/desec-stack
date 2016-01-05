@@ -6,7 +6,8 @@ we use your money, or if we can do anything else for you: please do not
 hestitate to contact us at input@desec.io or reply to this email.
 
 We will debit {{ donation.amount }}€ from your account within the next
-two weeks.
+two weeks. Your mandate reference number is {{ donation.mref }}; our
+creditor identifier is {{ creditoridentifier }}.
 
 Again, thank you so much.
 
