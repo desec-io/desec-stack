@@ -1,12 +1,13 @@
 Dear supporter,
 
-we herby confirm your donation to deSEC. We would like to THANK YOU for
+We hereby confirm your donation to deSEC. We would like to THANK YOU for
 your support. If you have any questions concerning your donation, how
-we use your money, or if we can do anything else for you: please do not
+we use your money, or if we can do anything else for you: Please do not
 hestitate to contact us at input@desec.io or reply to this email.
 
-We will debit {{ donation.amount }}€ from your account within the next
-two weeks.
+We will debit {{ donation.amount }} € from your account within the next
+two weeks. Please note that the payment is handled by "enit", which may 
+be the name appearing on your bank statement.
 
 Again, thank you so much.
 
