@@ -39,7 +39,7 @@
     <sequencetype type="java.lang.String">OOFF</sequencetype>
 
     {# Empfänger BIC #}
-    <empfaenger_bic type="java.lang.String">BYLADEM1001</empfaenger_bic>
+    <empfaenger_bic type="java.lang.String">{{ donation.bic | clean }}</empfaenger_bic>
 
     {# Jameica-Konto ID #}
     <konto_id type="java.lang.Integer">1</konto_id>
