@@ -18,7 +18,7 @@ from django.template.loader import get_template
 from django.template import Context
 from authentication import BasicTokenAuthentication, URLParamAuthentication
 import base64
-
+from desecapi import settings
 
 class DomainList(generics.ListCreateAPIView):
     serializer_class = DomainSerializer
@@ -303,7 +303,8 @@ class DonationList(generics.CreateAPIView):
     def pre_save(self, obj):
         def sendDonationEmails(donation):
             context = Context({
-                'donation': donation
+                'donation': donation,
+                'creditoridentifier': settings.SEPA['CREDITOR_ID'],
             })
 
             # internal desec notification

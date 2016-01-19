@@ -6,8 +6,11 @@ we use your money, or if we can do anything else for you: Please do not
 hestitate to contact us at input@desec.io or reply to this email.
 
 We will debit {{ donation.amount }} € from your account within the next
-two weeks. Please note that the payment is handled by "enit", which may 
-be the name appearing on your bank statement.
+two weeks. Your mandate reference number is {{ donation.mref }}; our
+creditor identifier is {{ creditoridentifier }}.
+
+Please note that the payment is handled by "enit", which may be the name 
+appearing on your bank statement.
 
 Again, thank you so much.
 
