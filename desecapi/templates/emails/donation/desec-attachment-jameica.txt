@@ -30,8 +30,8 @@
     <betrag type="java.lang.Double">{{ donation.amount }}</betrag>
 
     {# Einzugstermin #}
-    <termin type="java.sql.Date">{{ donation.due | date:"d.m.Y H:i:s" }}</termin>
-
+    <targetdate type="java.sql.Date">{{ donation.due | date:"d.m.Y H:i:s" }}</targetdate>
+        
     {# deSEC Spende #}
     <zweck type="java.lang.String">deSEC Spende/Donation authorized at {{ donation.created | date:"Y-m-d H:i:s" }} UTC</zweck>
 
