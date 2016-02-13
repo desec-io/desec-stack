@@ -1,0 +1,39 @@
+www:
+  build: desec-www
+  ports:
+   - "80:80"
+   - "443:443"
+  volumes:
+   - ./desec-certs/nils.dedyn.io:/etc/ssl/private
+  links:
+   - static
+   - api
+
+static:
+  build: desec-static
+
+db:
+  build: desec-db
+  environment:
+   - MYSQL_ROOT_PASSWORD=test123
+
+api:
+  build: desec-api
+  links:
+   - db
+   - ns
+  volumes:
+   - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
+
+ns:
+  build: desec-ns
+  links:
+   - db
+
+poweradmin:
+  build: desec-poweradmin
+  links:
+   - db
+  ports:
+   - "81:80"
+
