@@ -1,0 +1,8 @@
+ns-tests:
+  build: desec-ns
+  dockerfile: Dockerfile.regression-tests
+  links:
+   - db
+  environment:
+   - GMYSQLPASSWD=test123a
+   - GMYSQLHOST=db
