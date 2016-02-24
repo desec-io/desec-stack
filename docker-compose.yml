@@ -27,17 +27,5 @@ api:
 
 ns:
   build: desec-ns
-  ports:
-    - "5300:53"
-    - "5300:53/udp"
-    - "8081:8081"
   links:
    - db
-
-poweradmin:
-  build: desec-poweradmin
-  links:
-   - db
-  ports:
-   - "81:80"
-
