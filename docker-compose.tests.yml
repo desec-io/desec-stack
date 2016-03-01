@@ -4,5 +4,5 @@ ns-tests:
   links:
    - db
   environment:
-   - GMYSQLPASSWD=test123a
+   - GMYSQLPASSWD=test123
    - GMYSQLHOST=db
