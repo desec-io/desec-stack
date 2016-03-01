@@ -1,0 +1,3 @@
+ns-tests-api:
+  build: desec-ns
+  dockerfile: Dockerfile.regression-tests.api
