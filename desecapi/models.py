@@ -104,12 +104,12 @@ class Domain(models.Model):
 
     def pdnsCreate(self):
         payload = {
-            "name": self.name,
+            "name": self.name + ".",
             "kind": "master",
             "masters": [],
             "nameservers": [
-                "ns1.desec.io",
-                "ns2.desec.io"
+                "ns1.desec.io.",
+                "ns2.desec.io."
             ],
             "soa_edit": "INCREMENT-WEEKS"
         }
@@ -126,22 +126,22 @@ class Domain(models.Model):
                     "records": [
                             {
                                 "type": "A",
-                                "ttl": 60,
-                                "name": self.name,
+                                "name": self.name + ".",
                                 "disabled": False,
                                 "content": self.arecord,
                             }
                         ],
+                    "ttl": 60,
                     "changetype": "REPLACE",
                     "type": "A",
-                    "name": self.name,
+                    "name": self.name + ".",
                 }
         else:
             a = \
                 {
                     "changetype": "DELETE",
                     "type": "A",
-                    "name": self.name
+                    "name": self.name + "."
                 }
 
         if self.aaaarecord:
@@ -150,22 +150,22 @@ class Domain(models.Model):
                     "records": [
                             {
                                 "type": "AAAA",
-                                "ttl": 60,
-                                "name": self.name,
+                                "name": self.name + ".",
                                 "disabled": False,
                                 "content": self.aaaarecord,
                             }
                         ],
+                    "ttl": 60,
                     "changetype": "REPLACE",
                     "type": "AAAA",
-                    "name": self.name,
+                    "name": self.name + ".",
                 }
         else:
             aaaa = \
                 {
                     "changetype": "DELETE",
                     "type": "AAAA",
-                    "name": self.name
+                    "name": self.name + "."
                 }
 
         payload = { "rrsets": [a, aaaa] }

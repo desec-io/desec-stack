@@ -4,7 +4,7 @@ Pygments==2.0.1
 argparse==1.2.1
 cffi>=1.0.2
 coverage==3.7.1
-cryptography==0.9
+cryptography>=0.9
 djangorestframework==2.4.4
 djoser==0.1.0
 dnspython==1.12.0

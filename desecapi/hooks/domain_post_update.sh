@@ -10,11 +10,11 @@ ZONE=$1
 
 echo "rectify, increase-serial, notify $ZONE"
 
-echo running: pdnssec rectify-zone $ZONE
-pdnssec rectify-zone $ZONE || exit 2
+echo running: pdnsutil rectify-zone $ZONE
+pdnsutil rectify-zone $ZONE || exit 2
 
-echo running: pdnssec increase-serial $ZONE
-pdnssec increase-serial $ZONE || exit 2
+echo running: pdnsutil increase-serial $ZONE
+pdnsutil increase-serial $ZONE || exit 2
 
 echo running: pdns_control notify $ZONE
 pdns_control notify $ZONE || exit 2
