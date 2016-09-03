@@ -15,7 +15,7 @@ COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
-RUN rm desecapi/settings_local.py
+RUN rm -f desecapi/settings_local.py
 
 VOLUME /usr/src/app/desecapi/settings_local.py
 
