@@ -19,6 +19,6 @@ RUN apt-get update && apt-get install -y \
 
 COPY ./pdns-mysql.conf /etc/powerdns/pdns.d/pdns.local.gmysql.conf
 COPY ./pdns.conf /etc/powerdns/pdns.conf
+COPY ./entrypoint.sh /root/
 
-CMD ["pdns_server","--daemon=no"]
-
+CMD ["/root/entrypoint.sh"]
