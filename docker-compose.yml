@@ -8,6 +8,7 @@ www:
   links:
    - static
    - api
+  mac_address: 06:42:ac:11:00:01
 
 static:
   build: desec-static
