@@ -13,3 +13,4 @@ poweradmin:
    - "81:80"
   volumes:
    - ./desec-poweradmin/html:/var/www/html
+   - ./desec-poweradmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
