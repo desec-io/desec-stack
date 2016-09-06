@@ -11,4 +11,5 @@ poweradmin:
    - db
   ports:
    - "81:80"
-
+  volumes:
+   - ./desec-poweradmin/html:/var/www/html
