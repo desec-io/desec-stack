@@ -4,7 +4,7 @@ www:
    - "80:80"
    - "443:443"
   volumes:
-   - ./desec-certs/nils.dedyn.io:/etc/ssl/private
+   - ./desec-certs/dev.desec.io:/etc/ssl/private
   links:
    - static
    - api
