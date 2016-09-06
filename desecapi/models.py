@@ -110,8 +110,7 @@ class Domain(models.Model):
             "nameservers": [
                 "ns1.desec.io.",
                 "ns2.desec.io."
-            ],
-            "soa_edit": "INCREMENT-WEEKS"
+            ]
         }
         r = requests.post(settings.POWERDNS_API + '/zones', data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
