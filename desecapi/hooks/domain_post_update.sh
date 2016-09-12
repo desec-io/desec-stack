@@ -6,18 +6,16 @@ if [ -z "$1" ]; then
         exit 1
 fi
 
+set -ex
+
 ZONE=$1
 
-echo "rectify, increase-serial, notify $ZONE"
+pdnsutil rectify-zone $ZONE
+pdnsutil increase-serial $ZONE
 
-echo running: pdnsutil rectify-zone $ZONE
-pdnsutil rectify-zone $ZONE || exit 2
-
-echo running: pdnsutil increase-serial $ZONE
-pdnsutil increase-serial $ZONE || exit 2
-
-echo running: pdns_control notify $ZONE
-pdns_control notify $ZONE || exit 2
+#pdns_control notify $ZONE
+dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @ns1.desec.io
+dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @ns2.desec.io
 
 echo -n "This was $0: "
 date
