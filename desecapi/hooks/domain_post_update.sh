@@ -14,8 +14,8 @@ pdnsutil rectify-zone $ZONE
 pdnsutil increase-serial $ZONE
 
 #pdns_control notify $ZONE
-dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @ns1.desec.io
-dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @ns2.desec.io
+dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @54.88.76.245
+dig -b 178.63.189.78 +opcode=NOTIFY SOA $ZONE @178.63.189.72
 
 echo -n "This was $0: "
 date
