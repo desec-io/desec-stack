@@ -10,36 +10,25 @@ ZONE=$1
 PARENT=${ZONE#*.}
 SALT=`head -c300 /dev/urandom | sha512sum | cut -b 1-16`
 
-echo "sign, rectify, increase-serial, notify $ZONE"
-pdnsutil secure-zone $ZONE; pdnsutil set-nsec3 $ZONE "1 0 10 $SALT" && `dirname $0`/domain_post_update.sh $ZONE || exit 2
-
-echo "getting DS records for $ZONE"
-IFS=$'\n'
-DS=( $(pdnsutil show-zone $ZONE | grep "^DS " | egrep -o "([0-9]+ ){3}[0-9a-fA-F]+") );
-
-DATA='{"rrsets": [ {"name": "'"$ZONE".'", "type": "DS", "ttl": 60, "changetype": "REPLACE", "records": [ '
-for (( i=0; i<=$(( ${#DS[*]} - 1 )); i++ )); do
-        DATA+='{"content": "'"${DS[$i]}"'", "disabled": false }'
-        if (($i < ${#DS[*]} - 1)); then
-                DATA+=", "
-        fi
-done
-DATA+=" ] } ] }"
-
-echo $DATA | jq .
-
-echo "Setting DS records in parent zone $PARENT (command follows)"
-echo curl -X PATCH --data "$DATA" -H "X-API-Key: [secret]" http://127.0.0.1:8081/api/v1/servers/localhost/zones/$PARENT
-echo Output:
-#curl -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/api/v1/servers/localhost/zones/$PARENT || exit 3
 filename=/tmp/`date -Ins`_$ZONE.log
 touch $filename
 chmod 640 $filename
-curl -v -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/api/v1/servers/localhost/zones/$PARENT &> $filename || exit 3
-echo
+echo $DATA > $filename
 
-echo "rectify, increase-serial, notify $PARENT"
-pdnsutil rectify-zone $PARENT; pdnsutil increase-serial $PARENT && pdns_control notify $PARENT || exit 4
+echo "sign, post-update $ZONE"
+pdnsutil secure-zone $ZONE; pdnsutil set-nsec3 $ZONE "1 0 10 $SALT" && `dirname $0`/domain_post_update.sh $ZONE || exit 2
+
+echo "getting DS records for $ZONE"
+DATA='{"rrsets": [ {"name": "'"$ZONE".'", "type": "DS", "ttl": 60, "changetype": "REPLACE", "records": '
+DATA+=`curl -sS -X GET -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/api/v1/servers/localhost/zones/$ZONE/cryptokeys \
+	| jq -c '[.[] | select(.active == true) | {content: .ds[]?, disabled: false}]'`
+DATA+=" } ] }"
+
+echo "Setting DS records in parent zone $PARENT"
+curl -sSv -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://127.0.0.1:8081/api/v1/servers/localhost/zones/$PARENT &>> $filename || exit 3
+
+echo "post-update $PARENT"
+`dirname $0`/domain_post_update.sh $PARENT || exit 4
 
 echo -n "This was $0: "
 date
