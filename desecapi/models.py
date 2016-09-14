@@ -97,9 +97,12 @@ class Domain(models.Model):
     def save(self, *args, **kwargs):
         if self.id is None:
             self.pdnsCreate()
-        orig = Domain.objects.get(id=self.id)
-        if self.arecord != orig.arecord or self.aaaarecord != orig.aaaarecord:
-            self.pdnsUpdate()
+            if self.arecord or self.aaaarecord:
+                self.pdnsUpdate()
+        else:
+            orig = Domain.objects.get(id=self.id)
+            if self.arecord != orig.arecord or self.aaaarecord != orig.aaaarecord:
+                self.pdnsUpdate()
         self.updated = timezone.now()
         super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
 
