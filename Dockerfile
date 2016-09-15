@@ -1,6 +1,5 @@
 FROM debian:jessie
 
-COPY ./FD380FBB-pub.asc /root/
 RUN echo 'deb http://repo.powerdns.com/debian jessie-auth-40 main' \
       >> /etc/apt/sources.list \
  && echo 'Package: pdns-*' \
