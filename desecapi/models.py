@@ -176,8 +176,6 @@ class Domain(models.Model):
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception(r)
 
-        self.postUpdateHook()
-
     def hook(self, cmd):
         if not self.name:
             raise Exception
@@ -200,9 +198,6 @@ class Domain(models.Model):
 
     def postCreateHook(self):
         self.hook(cmd='domain_post_create.sh')
-
-    def postUpdateHook(self):
-        self.hook(cmd='domain_post_update.sh')
 
     class Meta:
         ordering = ('created',)
