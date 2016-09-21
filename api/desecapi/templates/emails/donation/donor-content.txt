@@ -1,0 +1,19 @@
+Dear supporter,
+
+We hereby confirm your donation to deSEC. We would like to THANK YOU for
+your support. If you have any questions concerning your donation, how
+we use your money, or if we can do anything else for you: Please do not
+hestitate to contact us at input@desec.io or reply to this email.
+
+We will debit {{ donation.amount }} € from your account within the next
+two weeks. Your mandate reference number is {{ donation.mref }}; our
+creditor identifier is {{ creditoridentifier }}.
+
+Please note that the payment is handled by "enit", which may be the name 
+appearing on your bank statement.
+
+Again, thank you so much.
+
+--
+Nils Wisiol
+deSEC

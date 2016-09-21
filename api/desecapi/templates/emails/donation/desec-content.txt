@@ -1,0 +1,9 @@
+Woha,
+
+{{ donation.name }} <{{ donation.email }}> hat {{ donation.amount }}€ gespendet.
+
+Nachricht:
+{{ donation.message | default:"(keine)" }}
+
+Schöne Grüße
+API-Server

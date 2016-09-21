@@ -19,7 +19,7 @@ db:
    - MYSQL_ROOT_PASSWORD=test123
 
 api:
-  build: desec-api
+  build: api
   links:
    - db
    - ns
