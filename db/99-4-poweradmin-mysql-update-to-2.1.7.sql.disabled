@@ -1,4 +1,4 @@
-USE pdns;
+USE pdnslord;
 
 ALTER TABLE users ADD use_ldap BOOLEAN NOT NULL;
 

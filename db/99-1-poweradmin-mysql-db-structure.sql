@@ -1,4 +1,4 @@
-USE pdns;
+USE pdnslord;
 -- PowerAdmin
 -- MySQL Database Structure
 --

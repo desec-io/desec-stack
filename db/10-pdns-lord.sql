@@ -1,4 +1,4 @@
-USE pdns;
+USE pdnslord;
 
 CREATE TABLE domains (
   id                    INT AUTO_INCREMENT,
