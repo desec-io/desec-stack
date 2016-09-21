@@ -5,12 +5,12 @@ ns:
     - "5300:53/udp"
     - "8081:8081"
 
-poweradmin:
-  build: desec-poweradmin
+devadmin:
+  build: devadmin
   links:
    - db
   ports:
    - "81:80"
   volumes:
-   - ./desec-poweradmin/html:/var/www/html
-   - ./desec-poweradmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
+   - ./devadmin/html:/var/www/html
+   - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
