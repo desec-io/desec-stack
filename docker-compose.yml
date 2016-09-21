@@ -14,7 +14,7 @@ static:
   build: desec-static
 
 db:
-  build: desec-db
+  build: db
   environment:
    - MYSQL_ROOT_PASSWORD=test123
 
