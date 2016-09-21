@@ -22,11 +22,11 @@ api:
   build: api
   links:
    - db
-   - ns
+   - nslord
   volumes:
    - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
 
-ns:
-  build: desec-ns
+nslord:
+  build: nslord
   links:
    - db

@@ -1,5 +1,5 @@
-ns-tests:
-  build: desec-ns
+nslord-tests:
+  build: nslord
   dockerfile: Dockerfile.regression-tests
   links:
    - db

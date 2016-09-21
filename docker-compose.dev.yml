@@ -1,4 +1,4 @@
-ns:
+nslord:
   # extending from main .yml
   ports:
     - "5300:53"
