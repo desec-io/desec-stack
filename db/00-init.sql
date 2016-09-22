@@ -6,6 +6,9 @@ CREATE DATABASE pdnslord;
 CREATE USER pdnslord IDENTIFIED BY '123test';
 GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO pdnslord;
 
+CREATE DATABASE pdnsmaster;
+CREATE USER pdnsmaster IDENTIFIED BY '456test';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnsmaster.* TO pdnsmaster;
+
 CREATE USER poweradmin IDENTIFIED BY '123passphrase';
 GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO poweradmin;
-

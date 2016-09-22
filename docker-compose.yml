@@ -45,7 +45,18 @@ services:
     depends_on:
     - db
     networks:
-    - back
+      back:
+        ipv4_address: 172.16.1.1
+
+  nsmaster:
+    build: nsmaster
+    volumes:
+    - ./nsmaster/conf:/etc/powerdns
+    depends_on:
+    - db
+    networks:
+      back:
+        ipv4_address: 172.16.1.2
 
 networks:
   back:
@@ -53,12 +64,12 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet: 172.16.0.0/24
+      - subnet: 172.16.0.0/16
         gateway: 172.16.0.1
   front:
     driver: bridge
     ipam:
       driver: default
       config:
-      - subnet: 172.16.1.0/24
-        gateway: 172.16.1.1
+      - subnet: 172.15.0.0/16
+        gateway: 172.15.0.1
