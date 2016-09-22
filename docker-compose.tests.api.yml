@@ -1,3 +1,0 @@
-nslord-tests-api:
-  build: nslord
-  dockerfile: Dockerfile.regression-tests.api

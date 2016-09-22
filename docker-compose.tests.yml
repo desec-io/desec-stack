@@ -1,8 +1,0 @@
-nslord-tests:
-  build: nslord
-  dockerfile: Dockerfile.regression-tests
-  links:
-   - db
-  environment:
-   - GMYSQLPASSWD=test123
-   - GMYSQLHOST=db
