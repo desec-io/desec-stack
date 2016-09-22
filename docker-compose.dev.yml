@@ -1,16 +1,18 @@
-nslord:
-  # extending from main .yml
-  ports:
-    - "5300:53"
-    - "5300:53/udp"
-    - "8081:8081"
+version: '2'
 
-devadmin:
-  build: devadmin
-  links:
-   - db
-  ports:
-   - "81:80"
-  volumes:
-   - ./devadmin/html:/var/www/html
-   - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
+services:
+  nslord:
+    # extending from main .yml
+    ports:
+     - "5300:53"
+     - "5300:53/udp"
+
+  devadmin:
+    build: devadmin
+    ports:
+     - "81:80"
+    volumes:
+     - ./devadmin/html:/var/www/html
+     - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
+    networks:
+    - back

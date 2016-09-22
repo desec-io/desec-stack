@@ -1,34 +1,64 @@
-www:
-  build: desec-www
-  ports:
-   - "80:80"
-   - "443:443"
-  volumes:
-   - ./desec-certs/dev.desec.io:/etc/ssl/private
-  links:
-   - static
-   - api
-  mac_address: 06:42:ac:11:00:01
+version: '2'
 
-static:
-  build: desec-static
+services:
+  www:
+    build: desec-www
+    ports:
+    - "80:80"
+    - "443:443"
+    volumes:
+    - ./desec-certs/dev.desec.io:/etc/ssl/private
+    depends_on:
+    - static
+    - api
+    mac_address: 06:42:ac:11:00:01
+    networks:
+    - front
 
-db:
-  build: db
-  environment:
-   - MYSQL_ROOT_PASSWORD=test123
+  static:
+    build: desec-static
+    networks:
+    - front
 
-api:
-  build: api
-  links:
-   - db
-   - nslord
-  volumes:
-   - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
+  db:
+    build: db
+    environment:
+    - MYSQL_ROOT_PASSWORD=test123
+    networks:
+    - back
 
-nslord:
-  build: nslord
-  volumes:
-   - ./nslord/conf:/etc/powerdns
-  links:
-   - db
+  api:
+    build: api
+    depends_on:
+    - db
+    - nslord
+    volumes:
+    - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
+    networks:
+    - back
+    - front
+
+  nslord:
+    build: nslord
+    volumes:
+    - ./nslord/conf:/etc/powerdns
+    depends_on:
+    - db
+    networks:
+    - back
+
+networks:
+  back:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.0.0/24
+        gateway: 172.16.0.1
+  front:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.1.0/24
+        gateway: 172.16.1.1
