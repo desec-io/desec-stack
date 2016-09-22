@@ -22,6 +22,10 @@ services:
 
   db:
     build: db
+    ports:
+    - "3306:3306"
+    volumes:
+    - ./desec-certs/dev.desec.io:/etc/ssl/private
     environment:
     - MYSQL_ROOT_PASSWORD=test123
     networks:
