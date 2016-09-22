@@ -16,8 +16,8 @@ RUN set -ex \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY ./pdns-mysql.conf /etc/powerdns/pdns.d/pdns.local.gmysql.conf
-COPY ./pdns.conf /etc/powerdns/pdns.conf
+VOLUME /etc/powerdns/
+
 COPY ./entrypoint.sh /root/
 
 CMD ["/root/entrypoint.sh"]

@@ -28,5 +28,7 @@ api:
 
 nslord:
   build: nslord
+  volumes:
+   - ./nslord/conf:/etc/powerdns
   links:
    - db
