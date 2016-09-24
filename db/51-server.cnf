@@ -1,7 +1,7 @@
 [mysqld]
-ssl-ca   = /etc/ssl/private/sca.server2.crt
-ssl-cert = /etc/ssl/private/WILDCARD.dev.desec.io.crt
-ssl-key  = /etc/ssl/private/WILDCARD.dev.desec.io.key
+ssl-ca   = /etc/ssl/private/db/ca.pem
+ssl-cert = /etc/ssl/private/db/dev.desec.io-cert.pem
+ssl-key  = /etc/ssl/private/db/dev.desec.io-key.pem
 
 server-id               = 1
 log_bin                 = /var/log/mysql/mysql-bin.log

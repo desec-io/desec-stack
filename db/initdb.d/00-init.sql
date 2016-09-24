@@ -18,7 +18,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON pdnsmaster.* TO pdnsmaster;
 
 -- replication
 CREATE USER ns1@'%' IDENTIFIED BY "test234";
-GRANT REPLICATION SLAVE ON *.* TO ns1@'%' REQUIRE SUBJECT '/CN=ns1.desec.io' AND ISSUER "/C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3";
+GRANT REPLICATION SLAVE ON *.* TO ns1@'%' REQUIRE SUBJECT '/CN=ns1.desec.io';
 
 CREATE USER ns2@'%' IDENTIFIED BY "test345";
-GRANT REPLICATION SLAVE ON *.* TO ns2@'%' REQUIRE SUBJECT '/CN=ns2.desec.io' AND ISSUER "/C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3";
+GRANT REPLICATION SLAVE ON *.* TO ns2@'%' REQUIRE SUBJECT '/CN=ns2.desec.io';
