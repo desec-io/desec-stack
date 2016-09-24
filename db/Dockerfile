@@ -1,4 +1,4 @@
-FROM mariadb
+FROM mariadb:10.1
 
 # mountable ssl certificate and key directory
 # (we don't want any keys in this repository)
