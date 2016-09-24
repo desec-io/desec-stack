@@ -54,6 +54,8 @@ services:
 
   nsmaster:
     build: nsmaster
+    ports:
+    - "53:53"
     volumes:
     - ./nsmaster/conf:/etc/powerdns
     depends_on:
