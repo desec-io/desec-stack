@@ -16,8 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
 RUN set -ex && \
-	rm -f desecapi/settings_local.py && \
-	ln -s /usr/src/app/desecapi/hooks/mock/domain_post_create.sh /usr/local/bin
+	rm -f desecapi/settings_local.py
 
 VOLUME /usr/src/app/desecapi/settings_local.py
 

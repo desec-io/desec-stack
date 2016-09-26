@@ -46,6 +46,8 @@ services:
     build: nslord
     volumes:
     - ./nslord/conf:/etc/powerdns
+    - ./nslord/cronhook/insecure-zones.list:/root/cronhook/insecure-zones.list
+    - ./nslord/cronhook/my.cnf:/root/cronhook/my.cnf
     depends_on:
     - db
     networks:

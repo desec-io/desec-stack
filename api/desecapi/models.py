@@ -120,8 +120,6 @@ class Domain(models.Model):
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception(r)
 
-        self.postCreateHook()
-
     def pdnsUpdate(self):
         if self.arecord:
             a = \
@@ -175,29 +173,6 @@ class Domain(models.Model):
         r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
             raise Exception(r)
-
-    def hook(self, cmd):
-        if not self.name:
-            raise Exception
-
-        env = os.environ.copy()
-        env['APITOKEN'] = settings.POWERDNS_API_TOKEN
-
-        cmd = [cmd, self.name.lower()]
-        p_hook = subprocess.Popen(cmd,
-                                  stdin=subprocess.PIPE,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  env=env)
-        stdout, stderr = p_hook.communicate()
-
-        if not p_hook.returncode == 0:
-            raise Exception((stdout, stderr))
-
-        return
-
-    def postCreateHook(self):
-        self.hook(cmd='domain_post_create.sh')
 
     class Meta:
         ordering = ('created',)
