@@ -4,8 +4,14 @@ services:
   nslord:
     # extending from main .yml
     ports:
-     - "5300:53"
-     - "5300:53/udp"
+     - "5311:53"
+     - "5311:53/udp"
+
+  nsmaster:
+    # extending from main .yml
+    ports:
+     - "5321:53"
+     - "5321:53/udp"
 
   devadmin:
     build: devadmin
