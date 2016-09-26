@@ -2,12 +2,12 @@ version: '2'
 
 services:
   www:
-    build: desec-www
+    build: www
     ports:
     - "80:80"
     - "443:443"
     volumes:
-    - ./desec-certs/dev.desec.io:/etc/ssl/private
+    - ./certs/dev.desec.io:/etc/ssl/private
     depends_on:
     - static
     - api
@@ -16,7 +16,7 @@ services:
     - front
 
   static:
-    build: desec-static
+    build: static
     networks:
     - front
 
@@ -25,7 +25,7 @@ services:
     ports:
     - "3306:3306"
     volumes:
-    - ./desec-certs/dev.desec.io:/etc/ssl/private
+    - ./certs/dev.desec.io:/etc/ssl/private
     environment:
     - MYSQL_ROOT_PASSWORD=test123
     networks:
