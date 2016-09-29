@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-docker-compose -f docker-compose.yml -f docker-compose.tests.yml build \
-	&& docker-compose -f docker-compose.yml -f docker-compose.tests.yml up --abort-on-container-exit ns-tests
