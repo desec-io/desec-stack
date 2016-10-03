@@ -21,4 +21,4 @@ services:
      - ./devadmin/html:/var/www/html
      - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
     networks:
-    - back
+    - back1

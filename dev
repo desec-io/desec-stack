@@ -1,3 +1,10 @@
 #!/usr/bin/env bash
+# The following options should be set by default: -o "com.docker.network.bridge.enable_icc"="true" -o "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" -o "com.docker.network.driver.mtu"="1500" 
+docker network inspect desecstack_front &>/dev/null \
+	|| docker network create --subnet=172.16.0.0/24 --gateway=172.16.0.1 \
+		--ipv6 --subnet=2a01:4f8:a0:12eb:deec::/80 \
+		-o "com.docker.network.bridge.enable_ip_masquerade"="true" \
+		desecstack_front
+
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml build \
 	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --abort-on-container-exit

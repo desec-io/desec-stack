@@ -37,8 +37,32 @@ How to Run
 
 Development:
 
-    ./dev
+    $ ./dev
 
 Production:
 
-    docker-compose build && docker-compose up
+    $ docker-compose build && docker-compose up
+
+
+Notes on IPv6
+-----
+
+This stack is IPv6-capable. Caveats:
+
+  - It is not necessary to start the Docker daemon with `--ipv6` or `--fixed-cidr-v6`.
+  - Due to various issues with Docker and docker-compose, IP addresses are current hardcoded (see [`docker-compose.yml`](docker-compose.yml) and the `TODO` flags therein).
+  - Docker currently exposes IPv6-capable containers fully, without restriction. Therefore, it is necessary to set up a firewall, like (`ip6tables`)
+
+        -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+        -A FORWARD -d 2a01:4f8:a0:12eb:deec:642:ac10:0/108 -i eth0 -j ACCEPT
+        -A FORWARD -d 2a01:4f8:a0:12eb:deec::/80 -i eth0 -j REJECT --reject-with icmp6-port-unreachable
+
+    Topology: 2a01:4f8:a0:12eb::/64 is the host network, and we reserve 2a01:4f8:a0:12eb:deec::/80 for the deSEC stack. Docker has more or less established that IPv6 
+    addresses be composed of the /80 prefix and the container MAC address. We choose the private 06:42:ac MAC prefix, defining a /104 subnet. For the remaining 24 bits of 
+    the MAC and IPv6 address, we again follow the convention and use the 24 last bits from the assigned IPv4 address, the first 4 of which are constant (since IPv4 
+    addresses reside in 172.16.0.0/12). We thus arrive at the subnet 2a01:4f8:a0:12eb:deec:642:ac10:0/108 for our public IPv6-enabled Docker containers.
+
+    All other traffic in the /80 subnet is unexpected and therefore rejected. This includes traffic for IPv6 addresses that Docker assigns. (If Docker uses the MAC address 
+    for this purpose, the prefix is 02:42:ac which is not part of our public network, so we're safe.)
+
+    Since the above topology is strictly determined by the /80 prefix and the MAC address, we hope that most of the hardcoding can be removed in the future.

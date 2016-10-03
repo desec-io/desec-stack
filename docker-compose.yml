@@ -11,14 +11,17 @@ services:
     depends_on:
     - static
     - api
-    mac_address: 06:42:ac:11:00:01
+    mac_address: 06:42:ac:10:00:80
     networks:
-    - front
+      front:
+        ipv4_address: 172.16.0.128
+        ipv6_address: 2a01:4f8:a0:12eb:deec:0642:ac10:0080
+#      - back2 # TODO add when https://github.com/docker/docker/issues/27101 is fixed
 
   static:
     build: static
     networks:
-    - front
+    - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
 
   db:
     build: db
@@ -29,7 +32,7 @@ services:
     environment:
     - MYSQL_ROOT_PASSWORD=test123
     networks:
-    - back
+    - back1
 
   api:
     build: api
@@ -39,8 +42,8 @@ services:
     volumes:
     - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
     networks:
-    - back
-    - front
+    - back1
+    - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
 
   nslord:
     build: nslord
@@ -51,8 +54,8 @@ services:
     depends_on:
     - db
     networks:
-      back:
-        ipv4_address: 172.16.1.1
+      back1:
+        ipv4_address: 172.16.1.11
 
   nsmaster:
     build: nsmaster
@@ -61,21 +64,24 @@ services:
     depends_on:
     - db
     networks:
-      back:
-        ipv4_address: 172.16.1.2
+      back1:
+        ipv4_address: 172.16.1.12
 
 networks:
-  back:
+  back1:
     driver: bridge
     ipam:
       driver: default
       config:
-      - subnet: 172.16.0.0/16
-        gateway: 172.16.0.1
+      - subnet: 172.16.1.0/24
+        gateway: 172.16.1.1
+  back2:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.2.0/24
+        gateway: 172.16.2.1
   front:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.15.0.0/16
-        gateway: 172.15.0.1
+    external: # TODO define network here when https://github.com/docker/compose/issues/3988 is fixed
+      name: desecstack_front
