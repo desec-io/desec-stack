@@ -18,7 +18,7 @@ services:
     ports:
      - "81:80"
     volumes:
-     - ./devadmin/html:/var/www/html
-     - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php
+     - ./devadmin/html:/var/www/html:ro
+     - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php:ro
     networks:
     - back1

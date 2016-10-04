@@ -7,7 +7,7 @@ services:
     - "80:80"
     - "443:443"
     volumes:
-    - ./certs/dev.desec.io:/etc/ssl/private
+    - ./certs/dev.desec.io:/etc/ssl/private:ro
     depends_on:
     - static
     - api
@@ -28,7 +28,7 @@ services:
     ports:
     - "3306:3306"
     volumes:
-    - ./certs/dev.desec.io:/etc/ssl/private
+    - ./certs/dev.desec.io:/etc/ssl/private:ro
     environment:
     - MYSQL_ROOT_PASSWORD=test123
     networks:
@@ -40,7 +40,7 @@ services:
     - db
     - nslord
     volumes:
-    - ./api-settings.py:/usr/src/app/desecapi/settings_local.py
+    - ./api-settings.py:/usr/src/app/desecapi/settings_local.py:ro
     networks:
     - back1
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
@@ -48,9 +48,9 @@ services:
   nslord:
     build: nslord
     volumes:
-    - ./nslord/conf:/etc/powerdns
-    - ./nslord/cronhook/insecure-zones.list:/root/cronhook/insecure-zones.list
-    - ./nslord/cronhook/my.cnf:/root/cronhook/my.cnf
+    - ./nslord/conf:/etc/powerdns:ro
+    - ./nslord/cronhook/insecure-zones.list:/root/cronhook/insecure-zones.list:ro
+    - ./nslord/cronhook/my.cnf:/root/cronhook/my.cnf:ro
     depends_on:
     - db
     networks:
@@ -60,7 +60,7 @@ services:
   nsmaster:
     build: nsmaster
     volumes:
-    - ./nsmaster/conf:/etc/powerdns
+    - ./nsmaster/conf:/etc/powerdns:ro
     depends_on:
     - db
     networks:
@@ -68,7 +68,7 @@ services:
         ipv4_address: 172.16.1.12
 
 networks:
-  back1:
+  back1: # TODO can we declare this internal? compose 1.9.0 will allow it: https://github.com/docker/compose/pull/3488 May break apt inside nslord etc.
     driver: bridge
     ipam:
       driver: default
