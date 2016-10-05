@@ -44,6 +44,12 @@ Production:
     $ docker-compose build && docker-compose up
 
 
+Storage
+---
+All important data is stored in the database managed by the `db` container. It uses a Docker volume which, by default, resides in `/var/lib/docker/volumes/desecstack_mysql`.
+This is the location you will want to back up. (Be sure to follow standard MySQL backup practices, i.e. make sure things are consistent.)
+
+
 Notes on IPv6
 -----
 

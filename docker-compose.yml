@@ -29,6 +29,7 @@ services:
     - "3306:3306"
     volumes:
     - ./certs/dev.desec.io:/etc/ssl/private:ro
+    - mysql:/var/lib/mysql
     environment:
     - MYSQL_ROOT_PASSWORD=test123
     networks:
@@ -66,6 +67,9 @@ services:
     networks:
       back1:
         ipv4_address: 172.16.1.12
+
+volumes:
+  mysql:
 
 networks:
   back1: # TODO can we declare this internal? compose 1.9.0 will allow it: https://github.com/docker/compose/pull/3488 May break apt inside nslord etc.
