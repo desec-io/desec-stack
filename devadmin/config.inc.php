@@ -18,7 +18,7 @@
 $db_host = 'db';
 $db_port = '';
 $db_user = 'poweradmin';
-$db_pass = '123passphrase';
+$db_pass = getenv('DESECSTACK_DB_PASSWORD_poweradmin');
 $db_name = 'pdnslord';
 $db_type = 'mysql';
 //$db_file		= '';		# used only for SQLite, provide full path to database file

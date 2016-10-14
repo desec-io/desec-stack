@@ -1,7 +1,0 @@
-inc/config.inc.php
-.DS_Store
-/nbproject
-/scripts
-/tests
-/.idea
-/docs
