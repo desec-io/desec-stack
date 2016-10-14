@@ -40,6 +40,7 @@ services:
     - DESECSTACK_DB_SUBJECT_ns1replication
     - DESECSTACK_DB_PASSWORD_ns2replication
     - DESECSTACK_DB_SUBJECT_ns2replication
+    - DESECSTACK_DEVADMIN_PASSWORDmd5
     networks:
     - back1
 
