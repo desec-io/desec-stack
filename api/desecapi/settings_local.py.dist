@@ -2,7 +2,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-SECRET_KEY = ''
+SECRET_KEY = os.environ['DESECSTACK_API_SECRETKEY']
 EMAIL_HOST = ''
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
@@ -11,13 +11,13 @@ DEBUG = True
 ALLOWED_HOSTS = []
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        #'ENGINE': 'django.db.backends.mysql',
-        #'NAME': '',
-        #'USER': '',
-        #'PASSWORD': '',
-        #'HOST': '',
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'desec',
+        'USER': 'desec',
+        'PASSWORD': os.environ['DESECSTACK_DB_PASSWORD_desec'],
+        'HOST': 'db',
         #'CHARSET': 'utf8',
         #'COLLATION': 'utf8_general_ci',
         #'TEST': {
@@ -27,7 +27,7 @@ DATABASES = {
     }
 }
 POWERDNS_API = 'http://localhost:8081/servers/localhost' # no trailing slash, please!
-POWERDNS_API_TOKEN = 'MyAuthToken'
+POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 ADMINS = (('Nils', 'nils@desec.io'), )
 
 SEPA = {

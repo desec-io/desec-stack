@@ -1,0 +1,24 @@
+-- deSEC user and domain database
+CREATE DATABASE desec;
+CREATE USER desec IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_desec}';
+GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES, INDEX, CREATE, ALTER, DROP ON desec.* TO desec;
+
+-- nslord database, including devadmin access
+CREATE DATABASE pdnslord;
+CREATE USER pdnslord IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnslord}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO pdnslord;
+
+CREATE USER poweradmin IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_poweradmin}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO poweradmin;
+
+-- nsmaster database
+CREATE DATABASE pdnsmaster;
+CREATE USER pdnsmaster IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnsmaster}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnsmaster.* TO pdnsmaster;
+
+-- replication
+CREATE USER ns1@'%' IDENTIFIED BY "${DESECSTACK_DB_PASSWORD_ns1replication}";
+GRANT REPLICATION SLAVE ON *.* TO ns1@'%' REQUIRE SUBJECT '/CN=${DESECSTACK_DB_SUBJECT_ns1replication}';
+
+CREATE USER ns2@'%' IDENTIFIED BY "${DESECSTACK_DB_PASSWORD_ns2replication}";
+GRANT REPLICATION SLAVE ON *.* TO ns2@'%' REQUIRE SUBJECT '/CN=${DESECSTACK_DB_SUBJECT_ns2replication}';

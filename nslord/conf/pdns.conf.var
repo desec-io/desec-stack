@@ -1,13 +1,11 @@
 allow-axfr-ips=172.16.1.0/24
 also-notify=172.16.1.12
 api=yes
-api-key=123password
+api-key=${DESECSTACK_NSLORD_APIKEY}
 default-soa-edit=INCREMENT-WEEKS
 default-soa-mail=hostmaster.desec.io
 default-soa-name=ns1.desec.io
 default-ttl=60
-include-dir=/etc/powerdns/pdns.d
-launch=
 master=yes
 only-notify=0.0.0.0/0 # IPv4
 setgid=pdns
@@ -17,3 +15,11 @@ version-string=powerdns
 webserver=yes
 webserver-address=0.0.0.0
 webserver-allow-from=172.16.1.0/24
+
+launch=gmysql
+gmysql-host=db
+gmysql-port=
+gmysql-dbname=pdnslord
+gmysql-user=pdnslord
+gmysql-password=${DESECSTACK_DB_PASSWORD_pdnslord}
+gmysql-dnssec=yes

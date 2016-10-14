@@ -13,10 +13,13 @@ RUN set -ex \
 	&& apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv 0x1B0C6205FD380FBB \
 	&& apt-get update \
 	&& apt-get install -y pdns-server pdns-backend-mysql \
+	# credentials management via envsubst
+	&& apt-get -y install gettext-base \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-VOLUME /etc/powerdns/
+RUN rm -rf /etc/powerdns/
+COPY conf/ /etc/powerdns/
 
 COPY ./entrypoint.sh /root/
 

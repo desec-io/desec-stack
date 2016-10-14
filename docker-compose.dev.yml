@@ -15,10 +15,9 @@ services:
 
   devadmin:
     build: devadmin
+    environment:
+    - DESECSTACK_DB_PASSWORD_poweradmin
     ports:
      - "81:80"
-    volumes:
-     - ./devadmin/html:/var/www/html:ro
-     - ./devadmin/config.inc.php:/var/www/html/poweradmin/inc/config.inc.php:ro
     networks:
     - back1

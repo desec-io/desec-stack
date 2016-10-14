@@ -19,7 +19,7 @@ CREATE TABLE users (
 START TRANSACTION;
     INSERT INTO users ( id, username, `password`, fullname, email
                       , description, perm_templ, active, use_ldap )
-    VALUES ( 1, 'admin', '21232f297a57a5a743894a0e4a801fc3', 'Administrator'
+    VALUES ( 1, 'admin', '${DESECSTACK_DEVADMIN_PASSWORDmd5}', 'Administrator'
            , 'admin@example.net', 'Administrator with full rights.', 1, 1, 0 );
 COMMIT;
 

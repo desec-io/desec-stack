@@ -31,7 +31,15 @@ services:
     - ./certs/dev.desec.io:/etc/ssl/private:ro
     - mysql:/var/lib/mysql
     environment:
-    - MYSQL_ROOT_PASSWORD=test123
+    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DB_PASSWORD_root}
+    - DESECSTACK_DB_PASSWORD_desec
+    - DESECSTACK_DB_PASSWORD_pdnslord
+    - DESECSTACK_DB_PASSWORD_pdnsmaster
+    - DESECSTACK_DB_PASSWORD_poweradmin
+    - DESECSTACK_DB_PASSWORD_ns1replication
+    - DESECSTACK_DB_SUBJECT_ns1replication
+    - DESECSTACK_DB_PASSWORD_ns2replication
+    - DESECSTACK_DB_SUBJECT_ns2replication
     networks:
     - back1
 
@@ -40,6 +48,10 @@ services:
     depends_on:
     - db
     - nslord
+    environment:
+    - DESECSTACK_API_SECRETKEY
+    - DESECSTACK_DB_PASSWORD_desec
+    - DESECSTACK_NSLORD_APIKEY
     volumes:
     - ./api-settings.py:/usr/src/app/desecapi/settings_local.py:ro
     networks:
@@ -48,10 +60,9 @@ services:
 
   nslord:
     build: nslord
-    volumes:
-    - ./nslord/conf:/etc/powerdns:ro
-    - ./nslord/cronhook/insecure-zones.list:/root/cronhook/insecure-zones.list:ro
-    - ./nslord/cronhook/my.cnf:/root/cronhook/my.cnf:ro
+    environment:
+    - DESECSTACK_DB_PASSWORD_pdnslord
+    - DESECSTACK_NSLORD_APIKEY
     depends_on:
     - db
     networks:
@@ -60,8 +71,8 @@ services:
 
   nsmaster:
     build: nsmaster
-    volumes:
-    - ./nsmaster/conf:/etc/powerdns:ro
+    environment:
+    - DESECSTACK_DB_PASSWORD_pdnsmaster
     depends_on:
     - db
     networks:

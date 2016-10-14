@@ -29,6 +29,20 @@ Although most configuration is contained in this repository, some external depen
 
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
+5.  Set passwords etc. using environment variables or an `.env` file. You need:
+    - `DESECSTACK_API_SECRETKEY`: Django secret
+    - `DESECSTACK_DB_PASSWORD_root`: mysql root password
+    - `DESECSTACK_DB_PASSWORD_desec`: mysql password for desecapi
+    - `DESECSTACK_DB_PASSWORD_pdnslord`: mysql password for pdnslord
+    - `DESECSTACK_DB_PASSWORD_pdnsmaster`: mysql password for pdnslord
+    - `DESECSTACK_DB_PASSWORD_poweradmin`: poweradmin password
+    - `DESECSTACK_DB_PASSWORD_ns1replication`: slave 1 replication password
+    - `DESECSTACK_DB_SUBJECT_ns1replication`: slave 1 replication SSL certificate subject name
+    - `DESECSTACK_DB_PASSWORD_ns2replication`: slave 2 replication password
+    - `DESECSTACK_DB_SUBJECT_ns2replication`: slave 2 replication SSL certificate subject name
+    - `DESECSTACK_DEVADMIN_PASSWORDmd5`: poweradmin password MD5 hash (if you're planning to use the dev environment)
+    - `DESECSTACK_NSLORD_APIKEY`: pdns API key
+
 Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink. TLS certificates are assumed to be located in `certs`.
 
 

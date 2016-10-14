@@ -1,0 +1,13 @@
+disable-axfr=yes
+setgid=pdns
+setuid=pdns
+slave=yes
+version-string=powerdns
+
+launch=gmysql
+gmysql-host=db
+gmysql-port=
+gmysql-dbname=pdnsmaster
+gmysql-user=pdnsmaster
+gmysql-password=${DESECSTACK_DB_PASSWORD_pdnsmaster}
+gmysql-dnssec=yes
