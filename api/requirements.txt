@@ -1,11 +1,11 @@
-Django==1.7.11
+Django==1.10.3
 MySQL-python==1.2.5
 Pygments==2.0.1
 argparse==1.2.1
-cffi>=1.0.2
+cffi==1.9.1
 coverage==3.7.1
-cryptography>=0.9
-djangorestframework==2.4.4
+cryptography==1.5.3
+djangorestframework==3.5.3
 djoser==0.1.0
 dnspython==1.12.0
 enum34==1.0.4
