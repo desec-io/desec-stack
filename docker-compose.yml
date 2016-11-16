@@ -7,7 +7,7 @@ services:
     - "80:80"
     - "443:443"
     volumes:
-    - ./certs/dev.desec.io:/etc/ssl/private:ro
+    - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
     depends_on:
     - static
     - api
@@ -15,7 +15,7 @@ services:
     networks:
       front:
         ipv4_address: 172.16.0.128
-        ipv6_address: 2a01:4f8:a0:12eb:deec:0642:ac10:0080
+        ipv6_address: ${DESECSTACK_IPV6_ADDRESS}
 #      - back2 # TODO add when https://github.com/docker/docker/issues/27101 is fixed
 
   static:
@@ -28,7 +28,7 @@ services:
     ports:
     - "3306:3306"
     volumes:
-    - ./certs/dev.desec.io:/etc/ssl/private:ro
+    - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
     - mysql:/var/lib/mysql
     environment:
     - MYSQL_ROOT_PASSWORD=${DESECSTACK_DB_PASSWORD_root}
