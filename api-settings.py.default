@@ -1,0 +1,35 @@
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+SECRET_KEY = os.environ['DESECSTACK_API_SECRETKEY']
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = '25'
+DEBUG = False
+#ALLOWED_HOSTS = ['localhost']
+DATABASES = {
+    'default': {
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'desec',
+        'USER': 'desec',
+        'PASSWORD': os.environ['DESECSTACK_DB_PASSWORD_desec'],
+        'HOST': 'db',
+        #'CHARSET': 'utf8',
+        #'COLLATION': 'utf8_general_ci',
+        #'TEST': {
+        #    'CHARSET': 'utf8',
+        #    'COLLATION': 'utf8_general_ci',
+        #}
+    }
+}
+POWERDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
+POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
+ADMINS = (('Admin', 'root@localhost'), )
+
+SEPA = {
+    'CREDITOR_ID': 'TESTCREDITORID',
+}
+
