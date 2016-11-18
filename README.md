@@ -69,8 +69,11 @@ Notes on IPv6
 
 This stack is IPv6-capable. Caveats:
 
-  - It is not necessary to start the Docker daemon with `--ipv6` or `--fixed-cidr-v6`.
+  - It is not necessary to start the Docker daemon with `--ipv6` or `--fixed-cidr-v6`. However, it is recommended to run `dockerd` with `--userland-proxy=false` to avoid 
+    exposing ports on the host IPv6 address through `docker-proxy`.
+
   - Due to various issues with Docker and docker-compose, IP addresses are current hardcoded (see [`docker-compose.yml`](docker-compose.yml) and the `TODO` flags therein).
+
   - Docker currently exposes IPv6-capable containers fully, without restriction. Therefore, it is necessary to set up a firewall, like (`ip6tables`)
 
         -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
