@@ -15,6 +15,7 @@ for ZONE in `(echo "SELECT name FROM domains WHERE id NOT IN(SELECT domain_id FR
 
 	if [ "$PARENT" == "dedyn.io" ]; then
 		filename=/tmp/`date -Ins`_$ZONE.log
+		set +x # don't write commands with sensitive information to the screen
 		touch $filename
 		chmod 640 $filename
 
