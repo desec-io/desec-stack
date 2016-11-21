@@ -1,3 +1,5 @@
+allow-unsigned-notify=yes
+allow-unsigned-supermaster=yes
 disable-axfr=yes
 setgid=pdns
 setuid=pdns
