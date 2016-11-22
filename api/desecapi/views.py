@@ -27,10 +27,9 @@ class DomainList(generics.ListCreateAPIView):
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
 
-    def pre_save(self, obj):
-        obj.owner = self.request.user
+    def perform_create(self, serializer):
+        obj = serializer.save(owner=self.request.user)
 
-    def post_save(self, obj, created=False):
         def sendDynDnsEmail(domain):
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
@@ -47,7 +46,7 @@ class DomainList(generics.ListCreateAPIView):
                                  [self.request.user.email])
             email.send()
 
-        if created and obj.dyn:
+        if obj.dyn:
             sendDynDnsEmail(obj)
 
 
