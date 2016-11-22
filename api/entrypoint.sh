@@ -13,4 +13,4 @@ ls -lh /usr/src/app/desecapi/settings_local.py || exit 1
 python manage.py migrate || exit 1
 
 echo Finished migrations, starting API server ...
-python manage.py runserver 0.0.0.0:8000
+uwsgi --ini uwsgi.ini
