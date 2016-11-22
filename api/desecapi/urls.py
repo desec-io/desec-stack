@@ -16,8 +16,8 @@ apiurls = [
 
 apiurls = format_suffix_patterns(apiurls)
 
-urlpatterns = patterns('',
-                       url(r'^admin/', include(admin.site.urls)),
-                       url(r'^api/auth/', include('djoser.urls')),
-                       url(r'^api/', include(apiurls)),
-)
+urlpatterns = [
+   url(r'^admin/', include(admin.site.urls, namespace='admin')),
+   url(r'^api/auth/', include('djoser.urls.authtoken')),
+   url(r'^api/', include(apiurls)),
+]
