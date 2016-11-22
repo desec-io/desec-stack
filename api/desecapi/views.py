@@ -83,8 +83,8 @@ class Root(APIView):
             })
         else:
             return Response({
-                'login': reverse('login'),
-                'register': reverse('register'),
+                'login': reverse('login', request=request, format=format),
+                'register': reverse('register', request=request, format=format),
             })
 
 class DnsQuery(APIView):
