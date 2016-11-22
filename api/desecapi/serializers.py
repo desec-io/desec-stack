@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from models import Domain, Donation
+from desecapi.models import Domain, Donation
 
 
 class DomainSerializer(serializers.ModelSerializer):

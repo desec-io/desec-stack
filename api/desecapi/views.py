@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from models import Domain
-from serializers import DomainSerializer, DonationSerializer
+from desecapi.models import Domain
+from desecapi.serializers import DomainSerializer, DonationSerializer
 from rest_framework import generics
-from permissions import IsOwner
+from desecapi.permissions import IsOwner
 from rest_framework import permissions
 from django.http import Http404
 from rest_framework.views import APIView
@@ -16,7 +16,7 @@ import subprocess
 import re
 from django.template.loader import get_template
 from django.template import Context
-from authentication import BasicTokenAuthentication, URLParamAuthentication
+from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentication
 import base64
 from desecapi import settings
 
