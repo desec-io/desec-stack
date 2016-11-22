@@ -8,6 +8,7 @@ services:
     - "443:443"
     volumes:
     - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
+    - ./www/html:/usr/share/nginx/html:ro
     depends_on:
     - static
     - api
