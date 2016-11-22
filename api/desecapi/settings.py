@@ -144,7 +144,4 @@ DEFAULT_FROM_EMAIL = 'deSEC.io <support@desec.io>'
 AUTH_USER_MODEL = 'desecapi.User'
 
 # Import local settings
-try:
-    from settings_local import *
-except ImportError, exp:
-    pass
+from .settings_local import *
