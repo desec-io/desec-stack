@@ -216,12 +216,12 @@ class DynDNS12Update(APIView):
 
         def findDomainname(request):
             # 1. hostname parameter
-            if 'hostname' in request.QUERY_PARAMS and request.QUERY_PARAMS['hostname'] != 'YES':
-                return request.QUERY_PARAMS['hostname']
+            if 'hostname' in request.query_params and request.query_params['hostname'] != 'YES':
+                return request.query_params['hostname']
 
             # 2. host_id parameter
-            if 'host_id' in request.QUERY_PARAMS:
-                return request.QUERY_PARAMS['host_id']
+            if 'host_id' in request.query_params:
+                return request.query_params['host_id']
 
             # 3. http basic auth username
             try:
@@ -230,8 +230,8 @@ class DynDNS12Update(APIView):
                 pass
 
             # 4. username parameter
-            if 'username' in request.QUERY_PARAMS:
-                return request.QUERY_PARAMS['username']
+            if 'username' in request.query_params:
+                return request.query_params['username']
 
             # 5. only domain associated with this user account
             if len(request.user.domains.all()) == 1:
@@ -260,8 +260,8 @@ class DynDNS12Update(APIView):
 
         # Check URL parameters
         for p in params:
-            if p in request.QUERY_PARAMS and lookfor in request.QUERY_PARAMS[p]:
-                return request.QUERY_PARAMS[p]
+            if p in request.query_params and lookfor in request.query_params[p]:
+                return request.query_params[p]
 
         # Check remote IP address
         client_ip = self.get_client_ip(request)

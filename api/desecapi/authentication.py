@@ -71,14 +71,14 @@ class URLParamAuthentication(BaseAuthentication):
         using URL parameters.  Otherwise returns `None`.
         """
 
-        if not 'username' in request.QUERY_PARAMS:
+        if not 'username' in request.query_params:
             msg = 'No username URL parameter provided.'
             raise exceptions.AuthenticationFailed(msg)
-        if not 'password' in request.QUERY_PARAMS:
+        if not 'password' in request.query_params:
             msg = 'No password URL parameter provided.'
             raise exceptions.AuthenticationFailed(msg)
 
-        return self.authenticate_credentials(request.QUERY_PARAMS['username'], request.QUERY_PARAMS['password'])
+        return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
 
     def authenticate_credentials(self, userid, key):
 
