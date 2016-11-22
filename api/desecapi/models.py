@@ -118,7 +118,7 @@ class Domain(models.Model):
         }
         r = requests.post(settings.POWERDNS_API + '/zones', data=json.dumps(payload), headers=self.headers)
         if r.status_code < 200 or r.status_code >= 300:
-            raise Exception(r)
+            raise Exception(r.text)
 
     def pdnsUpdate(self):
         if self.arecord:
