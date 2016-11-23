@@ -1,20 +1,25 @@
+-- Narrow down root logins
+USE mysql;
+UPDATE user SET Host = 'localhost' WHERE User = 'root';
+FLUSH PRIVILEGES;
+
 -- deSEC user and domain database
 CREATE DATABASE desec;
-CREATE USER desec IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_desec}';
-GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES, INDEX, CREATE, ALTER, DROP ON desec.* TO desec;
+CREATE USER 'desec'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_desec}';
+GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES, INDEX, CREATE, ALTER, DROP ON desec.* TO 'desec'@'172.16.1.%';
 
 -- nslord database, including devadmin access
 CREATE DATABASE pdnslord;
-CREATE USER pdnslord IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnslord}';
-GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO pdnslord;
+CREATE USER 'pdnslord'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnslord}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO 'pdnslord'@'172.16.1.%';
 
-CREATE USER poweradmin IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_poweradmin}';
-GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO poweradmin;
+CREATE USER 'poweradmin'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_poweradmin}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnslord.* TO 'poweradmin'@'172.16.1.%';
 
 -- nsmaster database
 CREATE DATABASE pdnsmaster;
-CREATE USER pdnsmaster IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnsmaster}';
-GRANT SELECT, INSERT, UPDATE, DELETE ON pdnsmaster.* TO pdnsmaster;
+CREATE USER 'pdnsmaster'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DB_PASSWORD_pdnsmaster}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdnsmaster.* TO 'pdnsmaster'@'172.16.1.%';
 
 -- replication
 CREATE USER ns1@'%' IDENTIFIED BY "${DESECSTACK_DB_PASSWORD_ns1replication}";
