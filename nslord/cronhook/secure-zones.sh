@@ -9,7 +9,7 @@ for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(S
 
 	PARENT=${ZONE#*.}
 	SALT=`head -c300 /dev/urandom | sha512sum | cut -b 1-16`
-	pdnsutil secure-zone $ZONE && pdnsutil set-nsec3 $ZONE "1 0 10 $SALT" && pdnsutil set-kind $ZONE MASTER
+	pdnsutil secure-zone $ZONE && pdnsutil set-nsec3 $ZONE "1 0 300 $SALT" && pdnsutil set-kind $ZONE MASTER
 
 	if [ "$PARENT" == "dedyn.io" ]; then
 		filename=/tmp/`date -Ins`_$ZONE.log
