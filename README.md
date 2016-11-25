@@ -21,15 +21,13 @@ Although most configuration is contained in this repository, some external depen
 
 1.  `./api-settings.py`: `api` configuration, in the style of `api/desecapi/settings_local.py.dist`
 
-2.  `./nslord/cronhook/insecure-zones.list`: list of zones that should not be DNSSEC-secured by the `nslord` cron hook. One zone per line, no trailing dot.
+2.  `./nslord/cronhook/my.cnf`: Configuration for the MariaDB/MySQL client, used by the `nslord` cron hook, to get the list of insecure zones from the `pdnslord` database.
 
-3.  `./nslord/cronhook/my.cnf`: Configuration for the MariaDB/MySQL client, used by the `nslord` cron hook, to get the list of insecure zones from the `pdnslord` database.
-
-4.  Set up TLS-secured replication of the `pdnsmaster` database to feed your PowerDNS slaves.
+3.  Set up TLS-secured replication of the `pdnsmaster` database to feed your PowerDNS slaves.
 
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
-5.  Set passwords etc. using environment variables or an `.env` file. You need:
+4.  Set passwords etc. using environment variables or an `.env` file. You need:
     - `DESECSTACK_API_SECRETKEY`: Django secret
     - `DESECSTACK_DB_PASSWORD_root`: mysql root password
     - `DESECSTACK_DB_PASSWORD_desec`: mysql password for desecapi

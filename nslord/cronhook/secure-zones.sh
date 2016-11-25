@@ -4,9 +4,7 @@ APITOKEN=`pdns_control current-config | awk -F= -v key="api-key" '$1==key {print
 
 cd /root/cronhook
 
-echo post-create cron hook: skipzones `wc -l $(pwd)/insecure-zones.list`
-
-for ZONE in `(echo "SELECT name FROM domains WHERE id NOT IN(SELECT domain_id FROM cryptokeys WHERE active = 1);" | mysql --defaults-file=my.cnf -N && sed 'p;p' insecure-zones.list) | sort | uniq -u`; do
+for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(SELECT domain_id FROM cryptokeys WHERE active = 1);" | mysql --defaults-file=my.cnf -N`; do
 	set -ex
 
 	PARENT=${ZONE#*.}
