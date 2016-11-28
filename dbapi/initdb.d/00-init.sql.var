@@ -1,0 +1,9 @@
+-- Narrow down root logins
+USE mysql;
+UPDATE user SET Host = 'localhost' WHERE User = 'root';
+FLUSH PRIVILEGES;
+
+-- deSEC user and domain database
+CREATE DATABASE desec;
+CREATE USER 'desec'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DBAPI_PASSWORD_desec}';
+GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES, INDEX, CREATE, ALTER, DROP ON desec.* TO 'desec'@'172.16.1.%';

@@ -1,0 +1,13 @@
+-- Narrow down root logins
+USE mysql;
+UPDATE user SET Host = 'localhost' WHERE User = 'root';
+FLUSH PRIVILEGES;
+
+-- nslord database
+CREATE DATABASE pdns;
+CREATE USER 'pdns'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DBLORD_PASSWORD_pdns}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdns.* TO 'pdns'@'172.16.1.%';
+
+-- poweradmin database (for devadmin)
+CREATE USER 'poweradmin'@'172.16.1.%' IDENTIFIED BY '${DESECSTACK_DBLORD_PASSWORD_poweradmin}';
+GRANT SELECT, INSERT, UPDATE, DELETE ON pdns.* TO 'poweradmin'@'172.16.1.%';

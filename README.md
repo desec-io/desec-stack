@@ -7,11 +7,8 @@ This is a docker-compose application providing the basic stack for deSEC name se
   - There is a cron hook installed to secure new zones with DNSSEC and to set NSEC3 parameters. For new zones under `dedyn.io`, `DS` records are set in the parent zone. Expected to be superseded by native DNSSEC support in the PowerDNS API.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains. Currently used for dynDNS purposes only.
-- `db`: MariaDB database service for `nslord`, `nsmaster`, and `api`. Exposes `nsmaster` database (`pdnsmaster`) at 3306 for TLS-secured replication.
-  - Note that, at the moment, storage is not a Docker volume, but local to the container. Thus, destroying the container destroys the database.
+- `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively. The `dbmaster` database is exposed at 3306 for TLS-secured replication.
 - `devadmin`: Web server with phpmyadmin and poweradmin for dev purposes.
-
-**Note:** All passwords / keys are currently set to dummy values. You are supposed to replace them with sensible non-default values. We will make this easier in the future.
 
 
 Requirements
@@ -19,27 +16,39 @@ Requirements
 
 Although most configuration is contained in this repository, some external dependencies need to be met before the application can be run. Dependencies are:
 
-1.  `./api-settings.py`: `api` configuration, in the style of `api/desecapi/settings_local.py.dist`
+1.  We run this software with the `--userland-proxy=false` flag of the `dockerd` daemon, and recommend you do the same.
 
-2.  `./nslord/cronhook/my.cnf`: Configuration for the MariaDB/MySQL client, used by the `nslord` cron hook, to get the list of insecure zones from the `pdnslord` database.
+2.  `./api-settings.py`: `api` configuration
 
 3.  Set up TLS-secured replication of the `pdnsmaster` database to feed your PowerDNS slaves.
 
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
-4.  Set passwords etc. using environment variables or an `.env` file. You need:
-    - `DESECSTACK_API_SECRETKEY`: Django secret
-    - `DESECSTACK_DB_PASSWORD_root`: mysql root password
-    - `DESECSTACK_DB_PASSWORD_desec`: mysql password for desecapi
-    - `DESECSTACK_DB_PASSWORD_pdnslord`: mysql password for pdnslord
-    - `DESECSTACK_DB_PASSWORD_pdnsmaster`: mysql password for pdnslord
-    - `DESECSTACK_DB_PASSWORD_poweradmin`: poweradmin password
-    - `DESECSTACK_DB_PASSWORD_ns1replication`: slave 1 replication password
-    - `DESECSTACK_DB_SUBJECT_ns1replication`: slave 1 replication SSL certificate subject name
-    - `DESECSTACK_DB_PASSWORD_ns2replication`: slave 2 replication password
-    - `DESECSTACK_DB_SUBJECT_ns2replication`: slave 2 replication SSL certificate subject name
-    - `DESECSTACK_DEVADMIN_PASSWORDmd5`: poweradmin password MD5 hash (if you're planning to use the dev environment)
-    - `DESECSTACK_NSLORD_APIKEY`: pdns API key
+4.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `env` file as a template):
+    - network
+      - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
+      - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
+    - certificates
+      - `DESECSTACK_CERT_FOLDER`: `./path/to/certificates`
+    - API-related
+      - `DESECSTACK_API_SECRETKEY`: Djange secret
+      - `DESECSTACK_DBAPI_PASSWORD_root`: mysql root password for API database
+      - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
+    - nslord-related
+      - `DESECSTACK_DBLORD_PASSWORD_root`: mysql root password for nslord database
+      - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
+      - `DESECSTACK_DBLORD_PASSWORD_poweradmin`: mysql password for poweradmin (can write to nslord database! use for development only.)
+      - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord
+    - nsmaster-related
+      - `DESECSTACK_DBMASTER_PASSWORD_root`: mysql root password for nsmaster database
+      - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
+      - `DESECSTACK_DBMASTER_PASSWORD_ns1replication`: slave 1 replication password
+      - `DESECSTACK_DBMASTER_SUBJECT_ns1replication`: slave 1 replication SSL certificate subject name
+      - `DESECSTACK_DBMASTER_PASSWORD_ns2replication`: slave 2 replication password
+      - `DESECSTACK_DBMASTER_SUBJECT_ns2replication`: slave 1 replication SSL certificate subject name
+    - devadmin-related
+      - `DESECSTACK_DEVADMIN_PASSWORD_poweradmin`: poweradmin password (if you're planning to use the dev environment)
+      - `DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin`: poweradmin session key
 
 Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink. TLS certificates are assumed to be located in `certs`.
 
@@ -58,7 +67,7 @@ Production:
 
 Storage
 ---
-All important data is stored in the database managed by the `db` container. It uses a Docker volume which, by default, resides in `/var/lib/docker/volumes/desecstack_mysql`.
+All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desecstack_{dbapi,dblord,dbmaster}_mysql`.
 This is the location you will want to back up. (Be sure to follow standard MySQL backup practices, i.e. make sure things are consistent.)
 
 

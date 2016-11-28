@@ -1,4 +1,4 @@
-USE pdnsmaster;
+USE pdns;
 
 CREATE TABLE domains (
   id                    INT AUTO_INCREMENT,

@@ -24,35 +24,53 @@ services:
     networks:
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
 
-  db:
-    build: db
+  dbapi:
+    build: dbapi
+    volumes:
+    - dbapi_mysql:/var/lib/mysql
+    environment:
+    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_root}
+    - DESECSTACK_DBAPI_PASSWORD_desec
+    networks:
+    - back1
+
+  dblord:
+    build: dblord
+    volumes:
+    - dblord_mysql:/var/lib/mysql
+    environment:
+    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBLORD_PASSWORD_root}
+    - DESECSTACK_DBLORD_PASSWORD_pdns
+    - DESECSTACK_DBLORD_PASSWORD_poweradmin
+    - DESECSTACK_DEVADMIN_PASSWORD_poweradmin
+    networks:
+    - back1
+
+  dbmaster:
+    build: dbmaster
     ports:
     - "3306:3306"
     volumes:
     - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
-    - mysql:/var/lib/mysql
+    - dbmaster_mysql:/var/lib/mysql
     environment:
-    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DB_PASSWORD_root}
-    - DESECSTACK_DB_PASSWORD_desec
-    - DESECSTACK_DB_PASSWORD_pdnslord
-    - DESECSTACK_DB_PASSWORD_pdnsmaster
-    - DESECSTACK_DB_PASSWORD_poweradmin
-    - DESECSTACK_DB_PASSWORD_ns1replication
-    - DESECSTACK_DB_SUBJECT_ns1replication
-    - DESECSTACK_DB_PASSWORD_ns2replication
-    - DESECSTACK_DB_SUBJECT_ns2replication
-    - DESECSTACK_DEVADMIN_PASSWORDmd5
+    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBMASTER_PASSWORD_root}
+    - DESECSTACK_DBMASTER_PASSWORD_pdns
+    - DESECSTACK_DBMASTER_PASSWORD_ns1replication
+    - DESECSTACK_DBMASTER_SUBJECT_ns1replication
+    - DESECSTACK_DBMASTER_PASSWORD_ns2replication
+    - DESECSTACK_DBMASTER_SUBJECT_ns2replication
     networks:
     - back1
 
   api:
     build: api
     depends_on:
-    - db
+    - dbapi
     - nslord
     environment:
     - DESECSTACK_API_SECRETKEY
-    - DESECSTACK_DB_PASSWORD_desec
+    - DESECSTACK_DBAPI_PASSWORD_desec
     - DESECSTACK_NSLORD_APIKEY
     volumes:
     - ./api-settings.py:/usr/src/app/desecapi/settings_local.py:ro
@@ -63,10 +81,10 @@ services:
   nslord:
     build: nslord
     environment:
-    - DESECSTACK_DB_PASSWORD_pdnslord
+    - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_NSLORD_APIKEY
     depends_on:
-    - db
+    - dblord
     networks:
       back1:
         ipv4_address: 172.16.1.11
@@ -74,15 +92,17 @@ services:
   nsmaster:
     build: nsmaster
     environment:
-    - DESECSTACK_DB_PASSWORD_pdnsmaster
+    - DESECSTACK_DBMASTER_PASSWORD_pdns
     depends_on:
-    - db
+    - dbmaster
     networks:
       back1:
         ipv4_address: 172.16.1.12
 
 volumes:
-  mysql:
+  dbapi_mysql:
+  dblord_mysql:
+  dbmaster_mysql:
 
 networks:
   back1: # TODO can we declare this internal? compose 1.9.0 will allow it: https://github.com/docker/compose/pull/3488 May break apt inside nslord etc.

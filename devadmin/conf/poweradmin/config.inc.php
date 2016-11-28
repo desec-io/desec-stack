@@ -15,11 +15,11 @@
 // Better description of available configuration settings you can find here:
 // <https://github.com/poweradmin/poweradmin/wiki/Configuration-File>
 // Database settings
-$db_host = 'db';
+$db_host = 'dblord';
 $db_port = '';
 $db_user = 'poweradmin';
-$db_pass = getenv('DESECSTACK_DB_PASSWORD_poweradmin');
-$db_name = 'pdnslord';
+$db_pass = getenv('DESECSTACK_DBLORD_PASSWORD_poweradmin');
+$db_name = 'pdns';
 $db_type = 'mysql';
 //$db_file		= '';		# used only for SQLite, provide full path to database file
 //$db_debug		= false;	# show all SQL queries
@@ -27,7 +27,7 @@ $db_layer		= 'PDO';	# or MDB2
 //$db_ssl_ca            = '';
 // Security settings
 // This should be changed upon install
-$session_key = 'p0w3r4dm1n';
+$session_key = getenv('DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin');
 $password_encryption = 'md5'; // or md5salt
 
 // Interface settings
@@ -40,10 +40,10 @@ $iface_title = 'Poweradmin';
 $iface_add_reverse_record = true;
 
 // Predefined DNS settings
-$dns_hostmaster = '';
-$dns_ns1 = '';
-$dns_ns2 = '';
-$dns_ttl = 86400;
+$dns_hostmaster = 'hostmaster.desec.io.';
+$dns_ns1 = 'ns1.desec.io';
+$dns_ns2 = 'ns1.desec.io';
+$dns_ttl = 3600;
 $dns_fancy = false;
 $dns_strict_tld_check = false;
 $dns_top_level_tld_check = false;     // Don't allow to create top level TLDs

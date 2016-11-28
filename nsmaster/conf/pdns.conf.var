@@ -7,9 +7,9 @@ slave=yes
 version-string=powerdns
 
 launch=gmysql
-gmysql-host=db
+gmysql-host=dbmaster
 gmysql-port=
-gmysql-dbname=pdnsmaster
-gmysql-user=pdnsmaster
-gmysql-password=${DESECSTACK_DB_PASSWORD_pdnsmaster}
+gmysql-dbname=pdns
+gmysql-user=pdns
+gmysql-password=${DESECSTACK_DBMASTER_PASSWORD_pdns}
 gmysql-dnssec=yes

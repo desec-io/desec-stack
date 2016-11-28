@@ -6,7 +6,7 @@ RUN set -ex && apt-get update && apt-get -y install gettext-base && apt-get clea
 COPY initdb.d/* /docker-entrypoint-initdb.d/
 RUN chown -R mysql:mysql /docker-entrypoint-initdb.d/
 
-# Replication master configuration
+# Additional configuration
 COPY ./51-server.cnf /etc/mysql/conf.d/51-server.cnf
 
 # mountable ssl certificate and key directory

@@ -16,7 +16,8 @@ services:
   devadmin:
     build: devadmin
     environment:
-    - DESECSTACK_DB_PASSWORD_poweradmin
+    - DESECSTACK_DBLORD_PASSWORD_poweradmin
+    - DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin
     ports:
      - "127.0.0.1:81:80"
     networks:

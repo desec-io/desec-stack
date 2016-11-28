@@ -7,7 +7,7 @@ server-id               = 1
 log_bin                 = /var/log/mysql/mysql-bin.log
 binlog_format=ROW
 log-basename=nsmaster
-binlog-do-db=pdnsmaster
+binlog-do-db=pdns
 expire_logs_days        = 10
 
 wait_timeout = 28800

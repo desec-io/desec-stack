@@ -17,9 +17,9 @@ webserver-address=0.0.0.0
 webserver-allow-from=172.16.1.0/24
 
 launch=gmysql
-gmysql-host=db
+gmysql-host=dblord
 gmysql-port=
-gmysql-dbname=pdnslord
-gmysql-user=pdnslord
-gmysql-password=${DESECSTACK_DB_PASSWORD_pdnslord}
+gmysql-dbname=pdns
+gmysql-user=pdns
+gmysql-password=${DESECSTACK_DBLORD_PASSWORD_pdns}
 gmysql-dnssec=yes
