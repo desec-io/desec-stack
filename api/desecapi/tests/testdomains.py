@@ -38,7 +38,6 @@ class AuthenticatedDomainTests(APITestCase):
             self.ownedDomains = [utils.createDomain(self.owner), utils.createDomain(self.owner)]
             self.otherDomains = [utils.createDomain(), utils.createDomain()]
             self.token = utils.createToken(user=self.owner)
-            transaction.commit()
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
     def testExpectOnlyOwnedDomains(self):

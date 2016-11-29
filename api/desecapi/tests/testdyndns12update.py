@@ -17,11 +17,11 @@ class DynDNS12UpdateTest(APITestCase):
     def setUp(self):
         self.owner = utils.createUser()
         self.token = utils.createToken(user=self.owner)
-        transaction.commit()
+        self.domain = utils.generateDynDomainname()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
         url = reverse('domain-list')
-        data = {'name': utils.generateDynDomainname(), 'dyn': True}
+        data = {'name': self.domain, 'dyn': True}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['dyn'], True)
