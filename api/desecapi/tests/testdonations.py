@@ -40,9 +40,9 @@ class SuccessfulDonationTests(APITestCase):
                 'email': 'email@example.com',
             }
         response = self.client.post(url, data)
+        self.assertTrue(len(mail.outbox) > 0)
         email_internal = str(mail.outbox[0].message())
         direct_debit = str(mail.outbox[0].attachments[0][1])
-        email_external = str(mail.outbox[1].message())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(response.data['iban'], 'DE8937xxx')
