@@ -28,7 +28,7 @@ class DynDNS12UpdateTest(APITestCase):
 
         self.username = response.data['name']
         self.password = self.token
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode(self.username + ':' + self.password))
+        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
 
     def assertIP(self, ipv4=None, ipv6=None):
         old_credentials = self.client._credentials['HTTP_AUTHORIZATION']
