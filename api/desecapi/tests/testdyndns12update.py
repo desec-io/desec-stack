@@ -1,9 +1,11 @@
 from django.core.urlresolvers import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from utils import utils
+from .utils import utils
 from django.db import transaction
 import base64
+import httpretty
+from django.conf import settings
 
 
 class DynDNS12UpdateTest(APITestCase):
