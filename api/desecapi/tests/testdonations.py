@@ -32,11 +32,11 @@ class SuccessfulDonationTests(APITestCase):
         url = reverse('donation')
         data = \
             {
-                'name': u'KÖmplißier你好ter Vornamö',
+                'name': 'Komplizierter Vörnämü-ßßß 马大为',
                 'iban': 'DE89370400440532013000',
                 'bic': 'BYLADEM1SWU',
                 'amount': 123.45,
-                'message': u'hi there, thank you. Also, some random special chars: ß, ä, é, µ, 我爱你',
+                'message': 'hi there, thank you. Also, some random chars:  ™ • ½ ¼ ¾ ⅓ ⅔ † ‡ µ ¢ £ € « » ♤ ♧ ♥ ♢ ¿ ',
                 'email': 'email@example.com',
             }
         response = self.client.post(url, data)
@@ -46,5 +46,5 @@ class SuccessfulDonationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(response.data['iban'], 'DE8937xxx')
-        self.assertTrue('KOmpliierter Vornamo' in direct_debit)
+        self.assertTrue('Komplizierter Vornamu' in direct_debit)
         self.assertTrue(data['iban'] in email_internal)
