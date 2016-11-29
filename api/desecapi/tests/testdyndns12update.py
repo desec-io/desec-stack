@@ -30,6 +30,10 @@ class DynDNS12UpdateTest(APITestCase):
         self.password = self.token
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
 
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain)
+
     def assertIP(self, ipv4=None, ipv6=None):
         old_credentials = self.client._credentials['HTTP_AUTHORIZATION']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.password)

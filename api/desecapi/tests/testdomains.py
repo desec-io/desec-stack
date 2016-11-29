@@ -157,6 +157,9 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
 
     def testCantUseInvalidCharactersInDomainName(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+
         outboxlen = len(mail.outbox)
         invalidnames = [
             'with space.dedyn.io',
