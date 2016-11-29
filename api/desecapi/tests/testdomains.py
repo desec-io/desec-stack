@@ -134,8 +134,8 @@ class AuthenticatedDomainTests(APITestCase):
         data = {'name': utils.generateDomainname(), 'dyn': True}
         response = self.client.post(url, data)
 
-        self.assertTrue(data['name'] in httpretty.last_request().body)
-        self.assertTrue('ns1.desec.io' in httpretty.last_request().body)
+        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
+        self.assertTrue('ns1.desec.io' in httpretty.last_request().parsed_body)
 
     def testUpdateingCausesPdnsAPICall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -147,7 +147,7 @@ class AuthenticatedDomainTests(APITestCase):
         response.data['arecord'] = '10.13.3.7'
         response = self.client.put(url, response.data)
 
-        self.assertTrue('10.13.3.7' in httpretty.last_request().body)
+        self.assertTrue('10.13.3.7' in httpretty.last_request().parsed_body)
 
     def testDomainDetailURL(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
