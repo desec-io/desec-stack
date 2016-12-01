@@ -57,10 +57,6 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
 
-    def pre_save(self, obj):
-        # Set the owner of this domain to the current user (important for new domains)
-        obj.owner = self.request.user
-
     def put(self, request, pk, format=None):
         # Don't accept PUT requests for non-existent or non-owned domains.
         domain = Domain.objects.filter(owner=self.request.user.pk, pk=pk)
