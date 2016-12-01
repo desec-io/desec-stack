@@ -154,7 +154,7 @@ class DynDNS12Update(APIView):
 
             # 5. only domain associated with this user account
             if len(request.user.domains.all()) == 1:
-                return request.user.domains[0].name
+                return request.user.domains.all()[0].name
 
             return None
 
