@@ -15,14 +15,12 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'desec',
         'USER': 'desec',
-        'PASSWORD': os.environ['DESECSTACK_DB_PASSWORD_desec'],
-        'HOST': 'db',
-        #'CHARSET': 'utf8',
-        #'COLLATION': 'utf8_general_ci',
-        #'TEST': {
-        #    'CHARSET': 'utf8',
-        #    'COLLATION': 'utf8_general_ci',
-        #}
+        'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
+        'HOST': 'dbapi',
+        'CHARSET': 'utf8mb4',
+        'TEST': {
+            'CHARSET': 'utf8mb4',
+        },
        'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }

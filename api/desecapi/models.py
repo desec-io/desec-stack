@@ -43,7 +43,7 @@ class MyUserManager(BaseUserManager):
 class User(AbstractBaseUser):
     email = models.EmailField(
         verbose_name='email address',
-        max_length=255,
+        max_length=191,
         unique=True,
     )
     is_active = models.BooleanField(default=True)
@@ -83,7 +83,7 @@ class User(AbstractBaseUser):
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=191, unique=True)
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
     dyn = models.BooleanField(default=False)
