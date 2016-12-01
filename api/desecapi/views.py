@@ -299,11 +299,15 @@ class DynDNS12Update(APIView):
 class DonationList(generics.CreateAPIView):
     serializer_class = DonationSerializer
 
-    def pre_save(self, obj):
+    def perform_create(self, serializer):
+        iban = serializer.validated_data['iban']
+        obj = serializer.save()
+
         def sendDonationEmails(donation):
             context = Context({
                 'donation': donation,
                 'creditoridentifier': settings.SEPA['CREDITOR_ID'],
+                'complete_iban': iban
             })
 
             # internal desec notification

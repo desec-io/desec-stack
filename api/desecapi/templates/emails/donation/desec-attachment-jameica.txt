@@ -18,7 +18,7 @@
     <empfaenger_name type="java.lang.String">{{ donation.name | clean }}</empfaenger_name>
 
     {# IBAN des Kontos, das belastet wird [sic!] #}
-    <empfaenger_konto type="java.lang.String">{{ donation.iban | clean }}</empfaenger_konto>
+    <empfaenger_konto type="java.lang.String">{{ complete_iban | clean }}</empfaenger_konto>
 
     {# Noch nicht ausgeführt #}
     <ausgefuehrt type="java.lang.Integer">0</ausgefuehrt>
