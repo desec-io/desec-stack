@@ -1,0 +1,38 @@
+sudo: required
+
+env:
+  global:
+   - DESECSTACK_API_SECRETKEY=9Fn33T5yGuds
+   - DESECSTACK_DBLORD_PASSWORD_root=9Fn33T5yGutwetwet
+   - DESECSTACK_DBMASTER_PASSWORD_root=9Fn33T5yGutSADFASDF
+   - DESECSTACK_DBAPI_PASSWORD_root=9Fn33T5yGut884sjkdjd
+   - DESECSTACK_DBAPI_PASSWORD_desec=9Fn33T5yGueeee
+   - DESECSTACK_DB_PASSWORD_pdnslord=9Fn33T5yGulkjlskdf
+   - DESECSTACK_DB_PASSWORD_pdnsmaster=9Fn33T5yGukjwelt
+   - DESECSTACK_DB_PASSWORD_poweradmin=9Fn33T5yGuiewhjtwie
+   - DESECSTACK_DB_PASSWORD_ns1replication=9Fn33T5yGuejeje
+   - DESECSTACK_DB_SUBJECT_ns1replication=9Fn33T5yGufacv
+   - DESECSTACK_DB_PASSWORD_ns2replication=9Fn33T5yGulkjhetrlkjew
+   - DESECSTACK_DB_SUBJECT_ns2replication=9Fn33T5yGukjnrtj
+   - DESECSTACK_DEVADMIN_PASSWORDmd5=.
+   - DESECSTACK_NSLORD_APIKEY=9Fn33T5yGukjekwjew
+   - DESECSTACK_IPV6_SUBNET=fd80::/8
+   - DESECSTACK_IPV6_ADDRESS=fd80::1
+   - DESECSTACK_CERT_FOLDER=/dev/null
+
+language: python
+
+services:
+  - docker
+
+before_install:
+  - cp api-settings.py.default api-settings.py
+  - rm -f www
+  - rm -f static
+  - git clone https://github.com/desec-io/desec-www.git www
+  - git clone https://github.com/desec-io/desec-static.git static
+  - mkdir static/dist
+  - docker-compose build --no-cache --pull
+
+script:
+  - ./test
