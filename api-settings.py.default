@@ -1,36 +1,17 @@
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-SECRET_KEY = os.environ['DESECSTACK_API_SECRETKEY']
-EMAIL_HOST = 'localhost'
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_PORT = '25'
 DEBUG = False
-#ALLOWED_HOSTS = ['localhost']
-DATABASES = {
-    'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'desec',
-        'USER': 'desec',
-        'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
-        'HOST': 'dbapi',
-        'CHARSET': 'utf8mb4',
-        'TEST': {
-            'CHARSET': 'utf8mb4',
-        },
-       'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        }
-    }
-}
-POWERDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
-POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
-ADMINS = (('Admin', 'root@localhost'), )
+
+EMAIL_HOST = 'mail.your.hostname.example.com'
+EMAIL_HOST_USER = 'user'
+EMAIL_HOST_PASSWORD = 'password'
+EMAIL_PORT = '25'
+
+ALLOWED_HOSTS = ['desec.your.hostname.example.com', 'update.dedyn.your.hostname.example.com']
+
+ADMINS = (('John Doe', 'john.doe@example.com'), )
 
 SEPA = {
     'CREDITOR_ID': 'TESTCREDITORID',
 }
-

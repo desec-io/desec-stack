@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'lk*42u45uy9dg8l+o9$x56&%_@+85u+20#m82+f8r#w_*cj483'
+SECRET_KEY = os.environ['DESECSTACK_API_SECRETKEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -61,13 +61,11 @@ WSGI_APPLICATION = 'desecapi.wsgi.application'
 
 DATABASES = {
     'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
+        'NAME': 'desec',
+        'USER': 'desec',
+        'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
+        'HOST': 'dbapi',
         'CHARSET': 'utf8mb4',
         'TEST': {
             'CHARSET': 'utf8mb4',
@@ -138,6 +136,10 @@ DEFAULT_FROM_EMAIL = 'deSEC.io <support@desec.io>'
 
 # use our own user model
 AUTH_USER_MODEL = 'desecapi.User'
+
+# power DNS API access
+POWERDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
+POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 
 # Import local settings
 from .settings_local import *
