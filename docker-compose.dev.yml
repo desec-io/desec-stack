@@ -1,18 +1,46 @@
 version: '2'
 
+# mostly extending from main .yml
 services:
+  www:
+    logging:
+      driver: "json-file"
+
+  static:
+    logging:
+      driver: "json-file"
+
+  dbapi:
+    logging:
+      driver: "json-file"
+
+  dblord:
+    logging:
+      driver: "json-file"
+
+  dbmaster:
+    logging:
+      driver: "json-file"
+
+  api:
+    logging:
+      driver: "json-file"
+
   nslord:
-    # extending from main .yml
     ports:
      - "5311:53"
      - "5311:53/udp"
+    logging:
+      driver: "json-file"
 
   nsmaster:
-    # extending from main .yml
     ports:
      - "5321:53"
      - "5321:53/udp"
+    logging:
+      driver: "json-file"
 
+  # this container is dev-only
   devadmin:
     build: devadmin
     environment:

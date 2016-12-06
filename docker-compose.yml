@@ -18,11 +18,19 @@ services:
         ipv4_address: 172.16.0.128
         ipv6_address: ${DESECSTACK_IPV6_ADDRESS}
 #      - back2 # TODO add when https://github.com/docker/docker/issues/27101 is fixed
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/www"
 
   static:
     build: static
     networks:
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/static"
 
   dbapi:
     build: dbapi
@@ -33,6 +41,10 @@ services:
     - DESECSTACK_DBAPI_PASSWORD_desec
     networks:
     - back1
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/dbapi"
 
   dblord:
     build: dblord
@@ -45,6 +57,10 @@ services:
     - DESECSTACK_DEVADMIN_PASSWORD_poweradmin
     networks:
     - back1
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/dblord"
 
   dbmaster:
     build: dbmaster
@@ -62,6 +78,10 @@ services:
     - DESECSTACK_DBMASTER_SUBJECT_ns2replication
     networks:
     - back1
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/dbmaster"
 
   api:
     build: api
@@ -77,6 +97,10 @@ services:
     networks:
     - back1
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/api"
 
   nslord:
     build: nslord
@@ -88,6 +112,10 @@ services:
     networks:
       back1:
         ipv4_address: 172.16.1.11
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/nslord"
 
   nsmaster:
     build: nsmaster
@@ -98,6 +126,10 @@ services:
     networks:
       back1:
         ipv4_address: 172.16.1.12
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/nsmaster"
 
 volumes:
   dbapi_mysql:
