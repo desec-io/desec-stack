@@ -20,11 +20,11 @@ Although most configuration is contained in this repository, some external depen
 
 2.  `./api-settings.py`: `api` configuration
 
-3.  Set up TLS-secured replication of the `pdnsmaster` database to feed your PowerDNS slaves.
+3.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves.
 
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
-4.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `env` file as a template):
+4.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
     - network
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
