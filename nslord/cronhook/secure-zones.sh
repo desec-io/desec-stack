@@ -12,17 +12,13 @@ for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(S
 	pdnsutil secure-zone $ZONE && pdnsutil set-nsec3 $ZONE "1 0 300 $SALT" && pdnsutil set-kind $ZONE MASTER
 
 	if [ "$PARENT" == "dedyn.io" ]; then
-		filename=/tmp/`date -Ins`_$ZONE.log
 		set +x # don't write commands with sensitive information to the screen
-		touch $filename
-		chmod 640 $filename
 
 		echo "Setting DS records for $ZONE and put them in parent zone"
 		DATA='{"rrsets": [ {"name": "'"$ZONE".'", "type": "DS", "ttl": 60, "changetype": "REPLACE", "records": '
 		DATA+=`curl -sS -X GET -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$ZONE/cryptokeys \
 			| jq -c '[.[] | select(.active == true) | {content: .ds[]?, disabled: false}]'`
 		DATA+=" } ] }"
-		echo $DATA >> $filename
-		curl -sSv -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$PARENT &>> $filename
+		curl -sSv -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$PARENT
 	fi
 done
