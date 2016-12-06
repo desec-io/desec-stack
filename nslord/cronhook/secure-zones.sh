@@ -19,6 +19,6 @@ for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(S
 		DATA+=`curl -sS -X GET -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$ZONE/cryptokeys \
 			| jq -c '[.[] | select(.active == true) | {content: .ds[]?, disabled: false}]'`
 		DATA+=" } ] }"
-		curl -sSv -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$PARENT
+		curl -sS -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$PARENT
 	fi
 done
