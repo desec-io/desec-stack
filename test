@@ -13,6 +13,7 @@ docker network inspect desecstack_front &>/dev/null \
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml build \
 	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d dbapi \
 	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d dblord \
-	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d nslord \
 	&& sleep 30 \
+	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d nslord \
+	&& sleep 5 \
 	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml run api python3 manage.py test -v 3
