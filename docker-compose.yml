@@ -3,7 +3,7 @@ version: '2'
 services:
   www:
     build: www
-    image: desec-io/dedyn/www:latest
+    image: desec/dedyn-www:latest
     ports:
     - "80:80"
     - "443:443"
@@ -26,7 +26,7 @@ services:
 
   static:
     build: static
-    image: desec-io/dedyn/static:latest
+    image: desec/dedyn-static:latest
     networks:
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
     logging:
@@ -36,7 +36,7 @@ services:
 
   dbapi:
     build: dbapi
-    image: desec-io/dedyn/dbapi:latest
+    image: desec/dedyn-dbapi:latest
     volumes:
     - dbapi_mysql:/var/lib/mysql
     environment:
@@ -51,7 +51,7 @@ services:
 
   dblord:
     build: dblord
-    image: desec-io/dedyn/dblord:latest
+    image: desec/dedyn-dblord:latest
     volumes:
     - dblord_mysql:/var/lib/mysql
     environment:
@@ -68,7 +68,7 @@ services:
 
   dbmaster:
     build: dbmaster
-    image: desec-io/dedyn/dbmaster:latest
+    image: desec/dedyn-dbmaster:latest
     ports:
     - "3306:3306"
     volumes:
@@ -90,7 +90,7 @@ services:
 
   api:
     build: api
-    image: desec-io/dedyn/api:latest
+    image: desec/dedyn-api:latest
     depends_on:
     - dbapi
     - nslord
@@ -110,7 +110,7 @@ services:
 
   nslord:
     build: nslord
-    image: desec-io/dedyn/nslord:latest
+    image: desec/dedyn-nslord:latest
     environment:
     - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_NSLORD_APIKEY
@@ -126,7 +126,7 @@ services:
 
   nsmaster:
     build: nsmaster
-    image: desec-io/dedyn/nsmaster:latest
+    image: desec/dedyn-nsmaster:latest
     environment:
     - DESECSTACK_DBMASTER_PASSWORD_pdns
     depends_on:
