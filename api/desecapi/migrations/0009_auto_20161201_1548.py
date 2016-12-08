@@ -12,14 +12,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='domain',
-            name='name',
-            field=models.CharField(max_length=191, unique=True),
+        migrations.RunSQL(
+            [('alter table desecapi_user change column email email varchar(191) not null;', None)],
+            migrations.RunSQL.noop
         ),
-        migrations.AlterField(
-            model_name='user',
-            name='email',
-            field=models.EmailField(max_length=191, unique=True, verbose_name='email address'),
+        migrations.RunSQL(
+            [('alter table desecapi_domain change column name name varchar(191) not null;', None)],
+            migrations.RunSQL.noop
         ),
     ]
