@@ -1,7 +1,8 @@
 [mysqld]
-ssl-ca   = /etc/ssl/private/db/ca.pem
-ssl-cert = /etc/ssl/private/db/dev.desec.io-cert.pem
-ssl-key  = /etc/ssl/private/db/dev.desec.io-key.pem
+ssl-ca     = /etc/ssl/private/db/ca.pem
+ssl-cert   = /etc/ssl/private/db/dev.desec.io-cert.pem
+ssl-key    = /etc/ssl/private/db/dev.desec.io-key.pem
+ssl-cipher = EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH
 
 server-id               = 1
 log_bin                 = /var/log/mysql/mysql-bin.log
