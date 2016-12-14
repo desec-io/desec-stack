@@ -11,4 +11,4 @@ docker network inspect desecstack_front &>/dev/null \
 )
 
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml build \
-	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --abort-on-container-exit
+	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
