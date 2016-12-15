@@ -46,7 +46,7 @@ class BasicTokenAuthentication(BaseAuthentication):
         try:
             user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
             token = self.model.objects.get(key=key)
-        except self.model.DoesNotExist:
+        except:
             raise exceptions.AuthenticationFailed('Invalid basic auth token')
 
         if not token.user.is_active:

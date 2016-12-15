@@ -28,11 +28,11 @@ class utils(object):
     """
 
     @classmethod
-    def createUser(cls, username=None):
+    def createUser(cls, username=None, password=None):
         if username is None:
             username = cls.generateUsername()
         user = User(email=username)
-        user.plainPassword = cls.generateRandomString(size=12)
+        user.plainPassword = cls.generateRandomString(size=12) if password is None else password
         user.set_password(user.plainPassword)
         user.save()
         return user
