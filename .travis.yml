@@ -35,4 +35,4 @@ before_install:
   - docker-compose build --no-cache --pull
 
 script:
-  - ./test
+  - ./test-api

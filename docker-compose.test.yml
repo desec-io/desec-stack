@@ -1,0 +1,9 @@
+version: '2'
+
+# mostly extending from main .yml
+services:
+  api:
+    command: python3 manage.py test -v 3 --noinput --failfast
+    logging:
+      driver: "json-file"
+    restart: "no"
