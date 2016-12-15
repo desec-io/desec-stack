@@ -16,6 +16,6 @@ apiurls = [
 apiurls = format_suffix_patterns(apiurls)
 
 urlpatterns = [
-   url(r'^api/auth/', include('djoser.urls.authtoken')),
-   url(r'^api/', include(apiurls)),
+   url(r'^api/v1/auth/', include('djoser.urls.authtoken')),
+   url(r'^api/v1/', include(apiurls)),
 ]
