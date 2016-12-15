@@ -1,5 +1,10 @@
 FROM debian:jessie
 
+RUN apt-get update && apt-get install -y \
+		dnsutils \
+		net-tools \
+	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN echo 'deb http://repo.powerdns.com/debian jessie-auth-40 main' \
       >> /etc/apt/sources.list \
  && echo 'Package: pdns-*' \
