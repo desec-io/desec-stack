@@ -15,7 +15,8 @@ env:
    - DESECSTACK_NSLORD_APIKEY=9Fn33T5yGukjekwjew
    - DESECSTACK_IPV6_SUBNET=fd80::/8
    - DESECSTACK_IPV6_ADDRESS=fd80::1
-   - DESECSTACK_CERT_FOLDER=/dev/null
+   - DESECSTACK_WWW_CERTS=/dev/null
+   - DESECSTACK_DBMASTER_CERTS=/dev/null
 
 language: python
 

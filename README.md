@@ -29,7 +29,8 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
     - certificates
-      - `DESECSTACK_CERT_FOLDER`: `./path/to/certificates`
+      - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container
+      - `DESECSTACK_DBMASTER_CERTS`: `./path/to/certificates` for `dbmaster` container
     - API-related
       - `DESECSTACK_API_SECRETKEY`: Djange secret
       - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
@@ -47,7 +48,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_DEVADMIN_PASSWORD_poweradmin`: poweradmin password (if you're planning to use the dev environment)
       - `DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin`: poweradmin session key
 
-Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink. TLS certificates are assumed to be located in `certs`.
+Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink.
 
 
 How to Run

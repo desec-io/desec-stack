@@ -8,7 +8,7 @@ services:
     - "80:80"
     - "443:443"
     volumes:
-    - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
+    - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
     - ./www/html:/usr/share/nginx/html:ro
     depends_on:
     - static
@@ -74,7 +74,7 @@ services:
     ports:
     - "3306:3306"
     volumes:
-    - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
+    - ${DESECSTACK_DBMASTER_CERTS}:/etc/ssl/private:ro
     - dbmaster_mysql:/var/lib/mysql
     environment:
     - DESECSTACK_DBMASTER_PASSWORD_pdns
