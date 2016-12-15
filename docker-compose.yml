@@ -42,7 +42,6 @@ services:
     volumes:
     - dbapi_mysql:/var/lib/mysql
     environment:
-    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_root}
     - DESECSTACK_DBAPI_PASSWORD_desec
     networks:
     - back1
@@ -58,7 +57,6 @@ services:
     volumes:
     - dblord_mysql:/var/lib/mysql
     environment:
-    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBLORD_PASSWORD_root}
     - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_DBLORD_PASSWORD_poweradmin
     - DESECSTACK_DEVADMIN_PASSWORD_poweradmin
@@ -79,7 +77,6 @@ services:
     - ${DESECSTACK_CERT_FOLDER}:/etc/ssl/private:ro
     - dbmaster_mysql:/var/lib/mysql
     environment:
-    - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBMASTER_PASSWORD_root}
     - DESECSTACK_DBMASTER_PASSWORD_pdns
     - DESECSTACK_DBMASTER_PASSWORD_ns1replication
     - DESECSTACK_DBMASTER_SUBJECT_ns1replication

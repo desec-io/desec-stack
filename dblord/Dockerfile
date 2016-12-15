@@ -1,5 +1,8 @@
 FROM mariadb:10.1
 
+# Use random throw-away root password. Our init scripts switch authentication to socket logins only
+ENV MYSQL_RANDOM_ROOT_PASSWORD=yes
+
 # install tools used in init script
 RUN set -ex && apt-get update && apt-get -y install gettext-base && apt-get clean && rm -rf /var/lib/apt/lists/*
 
