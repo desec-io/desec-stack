@@ -12,13 +12,13 @@ from rest_framework.reverse import reverse
 from rest_framework.authentication import TokenAuthentication, get_authorization_header
 from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
-import subprocess
-import re
 from django.template.loader import get_template
 from django.template import Context
 from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentication
 import base64
 from desecapi import settings
+from rest_framework.exceptions import ValidationError
+
 
 class DomainList(generics.ListCreateAPIView):
     serializer_class = DomainSerializer
@@ -28,6 +28,12 @@ class DomainList(generics.ListCreateAPIView):
         return Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
+        queryset = Domain.objects.filter(name=serializer.validated_data['name'])
+        if queryset.exists():
+            ex = ValidationError(detail={"detail": "This domain name is already registered.", "code": "domain-taken"})
+            ex.status_code = 409
+            raise ex
+
         obj = serializer.save(owner=self.request.user)
 
         def sendDynDnsEmail(domain):

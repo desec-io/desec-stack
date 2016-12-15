@@ -106,6 +106,14 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(self.token in email)
         self.assertEqual(response.data['dyn'], True)
 
+    def testCantPostSameDomainTwice(self):
+        url = reverse('domain-list')
+        data = {'name': utils.generateDomainname(), 'dyn': True}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
     def testCanUpdateARecord(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
