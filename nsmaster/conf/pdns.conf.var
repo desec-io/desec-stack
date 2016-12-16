@@ -5,6 +5,8 @@ setgid=pdns
 setuid=pdns
 slave=yes
 version-string=powerdns
+carbon-server=${DESECSTACK_NSMASTER_CARBONSERVER}
+carbon-ourname=${DESECSTACK_NSMASTER_CARBONOURNAME}
 
 launch=gmysql
 gmysql-host=dbmaster

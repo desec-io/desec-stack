@@ -38,12 +38,16 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
       - `DESECSTACK_DBLORD_PASSWORD_poweradmin`: mysql password for poweradmin (can write to nslord database! use for development only.)
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord
+      - `DESECSTACK_NSLORD_CARBONSERVER`: pdns `carbon-server` setting on nslord (optional)
+      - `DESECSTACK_NSLORD_CARBONOURNAME`: pdns `carbon-ourname` setting on nslord (optional)
     - nsmaster-related
       - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
       - `DESECSTACK_DBMASTER_PASSWORD_ns1replication`: slave 1 replication password
       - `DESECSTACK_DBMASTER_SUBJECT_ns1replication`: slave 1 replication SSL certificate subject name
       - `DESECSTACK_DBMASTER_PASSWORD_ns2replication`: slave 2 replication password
       - `DESECSTACK_DBMASTER_SUBJECT_ns2replication`: slave 1 replication SSL certificate subject name
+      - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
+      - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
     - devadmin-related
       - `DESECSTACK_DEVADMIN_PASSWORD_poweradmin`: poweradmin password (if you're planning to use the dev environment)
       - `DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin`: poweradmin session key

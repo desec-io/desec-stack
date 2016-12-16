@@ -15,6 +15,8 @@ version-string=powerdns
 webserver=yes
 webserver-address=0.0.0.0
 webserver-allow-from=172.16.1.0/24
+carbon-server=${DESECSTACK_NSLORD_CARBONSERVER}
+carbon-ourname=${DESECSTACK_NSLORD_CARBONOURNAME}
 
 launch=gmysql
 gmysql-host=dblord
