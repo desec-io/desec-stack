@@ -11,7 +11,7 @@ import os
 import datetime, time
 
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, registration_remote_ip=None):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -21,6 +21,7 @@ class MyUserManager(BaseUserManager):
 
         user = self.model(
             email=self.normalize_email(email),
+            registration_remote_ip=registration_remote_ip,
         )
 
         user.set_password(password)
@@ -48,6 +49,8 @@ class User(AbstractBaseUser):
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    registration_remote_ip = models.CharField(max_length=1024, blank=True)
+    captcha_required = models.BooleanField(default=False)
 
     objects = MyUserManager()
 

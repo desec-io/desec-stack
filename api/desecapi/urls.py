@@ -16,6 +16,7 @@ apiurls = [
 apiurls = format_suffix_patterns(apiurls)
 
 urlpatterns = [
+   url(r'^api/v1/auth/register/$', RegistrationView.as_view(), name='register'),
    url(r'^api/v1/auth/', include('djoser.urls.authtoken')),
    url(r'^api/v1/', include(apiurls)),
 ]

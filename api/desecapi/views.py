@@ -18,6 +18,17 @@ from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentica
 import base64
 from desecapi import settings
 from rest_framework.exceptions import ValidationError
+from djoser import views, signals
+from rest_framework import status
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -189,20 +200,12 @@ class DynDNS12Update(APIView):
                 return request.query_params[p]
 
         # Check remote IP address
-        client_ip = self.get_client_ip(request)
+        client_ip = get_client_ip(request)
         if lookfor in client_ip:
             return client_ip
 
         # give up
         return ''
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
 
     def findIPv4(self, request):
         return self.findIP(request, ['myip', 'myipv4', 'ip'])
@@ -266,4 +269,21 @@ class DonationList(generics.CreateAPIView):
 
         # send emails
         sendDonationEmails(obj)
+
+
+class RegistrationView(views.RegistrationView):
+    """
+    Extends the djoser RegistrationView to record the remote IP address of any registration.
+    """
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer, get_client_ip(request))
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer, remote_ip):
+        user = serializer.save(registration_remote_ip=remote_ip)
+        signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
