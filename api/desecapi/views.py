@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain
+from desecapi.models import Domain, User
 from desecapi.serializers import DomainSerializer, DonationSerializer
 from rest_framework import generics
 from desecapi.permissions import IsOwner
@@ -20,6 +20,12 @@ from desecapi import settings
 from rest_framework.exceptions import ValidationError
 from djoser import views, signals
 from rest_framework import status
+from datetime import datetime, timedelta
+from django.utils import timezone
+from desecapi.forms import UnlockForm
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from desecapi.emails import send_account_lock_email
 
 
 def get_client_ip(request):
@@ -284,6 +290,38 @@ class RegistrationView(views.RegistrationView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, remote_ip):
-        user = serializer.save(registration_remote_ip=remote_ip)
+        captcha = User.objects.filter(
+                created__gte=timezone.now()-timedelta(hours=settings.ABUSE_LOCK_ACCOUNT_BY_REGISTRATION_IP_PERIOD_HRS),
+                registration_remote_ip=remote_ip
+            ).exists()
+        user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
+        if captcha:
+            send_account_lock_email(self.request, user.email)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
+
+def unlock(request, email):
+    # if this is a POST request we need to process the form data
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = UnlockForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            try:
+                user = User.objects.get(email=email)
+                user.captcha_required = False
+                user.save()
+            except User.DoesNotExist:
+                pass # fail silently, otherwise people can find out if email addresses are registered with us
+
+            return HttpResponseRedirect(reverse('unlock/done'))
+
+    # if a GET (or any other method) we'll create a blank form
+    else:
+        form = UnlockForm()
+
+    return render(request, 'unlock.html', {'form': form})
+
+
+def unlock_done(request):
+    return render(request, 'unlock-done.html')

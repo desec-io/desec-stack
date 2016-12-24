@@ -107,6 +107,8 @@ services:
     - DESECSTACK_API_SECRETKEY
     - DESECSTACK_DBAPI_PASSWORD_desec
     - DESECSTACK_NSLORD_APIKEY
+    - DESECSTACK_NORECAPTCHA_SITE_KEY
+    - DESECSTACK_NORECAPTCHA_SECRET_KEY
     networks:
     - back1
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
