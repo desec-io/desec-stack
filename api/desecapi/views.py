@@ -308,9 +308,7 @@ def unlock(request, email):
         # check whether it's valid:
         if form.is_valid():
             try:
-                user = User.objects.get(email=email)
-                user.captcha_required = False
-                user.save()
+                User.objects.get(email=email).unlock()
             except User.DoesNotExist:
                 pass # fail silently, otherwise people can find out if email addresses are registered with us
 

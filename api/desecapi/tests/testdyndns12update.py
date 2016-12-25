@@ -32,7 +32,7 @@ class DynDNS12UpdateTest(APITestCase):
 
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain)
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
 
     def assertIP(self, ipv4=None, ipv6=None):
         old_credentials = self.client._credentials['HTTP_AUTHORIZATION']

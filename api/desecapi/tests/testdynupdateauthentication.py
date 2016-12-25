@@ -32,7 +32,7 @@ class DynUpdateAuthenticationTests(APITestCase):
 
             httpretty.enable()
             httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-            httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain)
+            httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
 
     def testSuccessfulAuthentication(self):
         response = self.client.get(self.url)

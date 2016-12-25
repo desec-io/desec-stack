@@ -150,7 +150,7 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.get(url)
 
         httpretty.enable()
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + response.data['name'])
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + response.data['name'] + '.')
 
         response.data['arecord'] = '10.13.3.7'
         response = self.client.put(url, response.data)
