@@ -33,9 +33,23 @@ then
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build dbapi
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d dbapi
   sleep 60
-fi
+fi &
+
+if [ -z "$(docker volume ls | grep desecstack_nslord)" ]
+then
+  echo "NO NSLORD FOUND, PREPARING DBLORD, DBAPI"
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build dblord
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build nslord
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d dblord
+  sleep 60
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d nslord
+  sleep 10
+fi &
+
+wait
 
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build api
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up api
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up --abort-on-container-exit api
 
+exit $(docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -v 0 | wc -l | tr -d ' ')
 
