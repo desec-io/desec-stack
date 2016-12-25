@@ -84,8 +84,8 @@ class User(AbstractBaseUser):
 
     def unlock(self):
         self.captcha_required = False
-        for domain in self.domain_set:
-            domain.pdns_sync()
+        for domain in self.domains.all():
+            domain.pdns_resync()
         self.save()
 
 
@@ -106,7 +106,7 @@ class Domain(models.Model):
 
         # Create zone if needed
         if not pdns.zone_exists(self.name):
-            pdns.create_native_zone(self.name)
+            pdns.create_zone(self.name)
 
         # update zone to latest information
         pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
@@ -118,14 +118,14 @@ class Domain(models.Model):
 
         if self.owner.captcha_required:
             # suspend all updates
-            pass
+            return
 
         new_domain = self.id is None
         changes_required = False
 
         # if this zone is new, create it
         if new_domain:
-            pdns.create_native_zone(self.name)
+            pdns.create_zone(self.name)
 
         # for existing domains, see if records are changed
         if not new_domain:

@@ -31,6 +31,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
 
         httpretty.enable()
+        httpretty.HTTPretty.allow_net_connect = False
         httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
 
@@ -122,3 +123,27 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
+
+    def testSuspendedUpdates(self):
+        self.owner.captcha_required = True
+        self.owner.save()
+
+        httpretty.reset()
+        httpretty.enable()
+        httpretty.HTTPretty.allow_net_connect = False
+
+        domain = self.owner.domains.all()[0]
+        domain.arecord = '10.1.1.1'
+        domain.save()
+
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
+        httpretty.register_uri(httpretty.GET, settings.POWERDNS_API + '/zones/' + self.domain + '.', status=200)
+
+        self.owner.unlock()
+
+        self.assertEqual(httpretty.last_request().method, 'PATCH')
+        self.assertTrue((settings.POWERDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.last_request().path))
+        self.assertTrue(self.domain in httpretty.last_request().parsed_body)
+        self.assertTrue('10.1.1.1' in httpretty.last_request().parsed_body)
+

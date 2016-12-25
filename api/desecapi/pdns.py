@@ -36,9 +36,9 @@ def _pdns_get(url):
     return r
 
 
-def _delete_or_replace(name, type, value):
+def _delete_or_replace_rrset(name, type, value, ttl=60):
     """
-    Return pdns API json to either replace or delete a record, depending on value is empty or not.
+    Return pdns API json to either replace or delete a record set, depending on value is empty or not.
     """
     if value != "":
         return \
@@ -51,7 +51,7 @@ def _delete_or_replace(name, type, value):
                         "content": value,
                     }
                 ],
-                "ttl": 60,
+                "ttl": ttl,
                 "changetype": "REPLACE",
                 "type": type,
                 "name": name,
@@ -65,13 +65,13 @@ def _delete_or_replace(name, type, value):
             }
 
 
-def create_native_zone(name):
+def create_zone(name, kind='NATIVE'):
     """
     Commands pdns to create a zone with the given name.
     """
     payload = {
         "name": normalize_hostname(name),
-        "kind": "NATIVE",
+        "kind": kind.upper(),
         "masters": [],
         "nameservers": [
             "ns1.desec.io.",
@@ -81,7 +81,7 @@ def create_native_zone(name):
     _pdns_post('/zones', payload)
 
 
-def get_zone_exists(name):
+def zone_exists(name):
     """
     Returns whether pdns knows a zone with the given name.
     """
@@ -98,7 +98,7 @@ def set_dyn_records(name, a, aaaa):
 
     _pdns_patch('/zones/' + name, {
         "rrsets": [
-            _delete_or_replace(name, 'a', a),
-            _delete_or_replace(name, 'aaaa', aaaa),
+            _delete_or_replace_rrset(name, 'a', a),
+            _delete_or_replace_rrset(name, 'aaaa', aaaa),
         ]
     })
