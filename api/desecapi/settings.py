@@ -22,8 +22,10 @@ SECRET_KEY = os.environ['DESECSTACK_API_SECRETKEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+if os.environ.get('DESECSTACK_API_DEBUG', "").upper() == "TRUE":
+    DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ['DESECSTACK_API_ALLOWED_HOSTS'].split()
 
 
 # Application definition
@@ -127,19 +129,22 @@ TEMPLATES = [
     },
 ]
 
-# How to send mail
-EMAIL_HOST = ''
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_PORT = ''
-DEFAULT_FROM_EMAIL = 'deSEC.io <support@desec.io>'
+# How and where to send mail
+EMAIL_HOST = os.environ['DESECSTACK_API_EMAIL_HOST']
+EMAIL_HOST_USER = os.environ['DESECSTACK_API_EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = os.environ['DESECSTACK_API_EMAIL_HOST_PASSWORD']
+EMAIL_PORT = os.environ['DESECSTACK_API_EMAIL_PORT']
+DEFAULT_FROM_EMAIL = 'deSEC <support@desec.io>'
+ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK_API_ADMIN'].split()]
 
 # use our own user model
 AUTH_USER_MODEL = 'desecapi.User'
 
-# power DNS API access
+# PowerDNS API access
 POWERDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
 POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 
-# Import local settings
-from .settings_local import *
+# SEPA direct debit settings
+SEPA = {
+    'CREDITOR_ID': os.environ['DESECSTACK_API_SEPA_CREDITOR_ID'],
+}

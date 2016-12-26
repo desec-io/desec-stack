@@ -23,6 +23,8 @@ services:
       driver: "json-file"
 
   api:
+    environment:
+    - DESECSTACK_API_DEBUG=True
     logging:
       driver: "json-file"
 

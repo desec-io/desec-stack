@@ -33,9 +33,3 @@ coverage.xml
 
 # Translations
 *.mo
-
-# Local settings
-desecapi/settings_local.py
-
-# local database
-db.sqlite3

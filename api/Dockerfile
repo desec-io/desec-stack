@@ -16,10 +16,6 @@ RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
-RUN set -ex && \
-	rm -f desecapi/settings_local.py
-
-VOLUME /usr/src/app/desecapi/settings_local.py
 
 EXPOSE 8000
 CMD ["./entrypoint.sh"]
