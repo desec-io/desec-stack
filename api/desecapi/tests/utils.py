@@ -28,10 +28,10 @@ class utils(object):
     """
 
     @classmethod
-    def createUser(cls, username=None, password=None):
+    def createUser(cls, username=None, password=None, dyn=False):
         if username is None:
             username = cls.generateUsername()
-        user = User(email=username)
+        user = User(email=username, dyn=dyn)
         user.plainPassword = cls.generateRandomString(size=12) if password is None else password
         user.set_password(user.plainPassword)
         user.save()
@@ -43,10 +43,14 @@ class utils(object):
     """
 
     @classmethod
-    def createDomain(cls, owner=None, port=80):
+    def createDomain(cls, owner=None, dyn=False):
         if owner is None:
-            owner = cls.createUser(username=None)
-        domain = Domain(name=cls.generateDomainname(), owner=owner)
+            owner = cls.createUser(username=None, dyn=False)
+        if dyn:
+            name = cls.generateDynDomainname()
+        else:
+            name = cls.generateDomainname()
+        domain = Domain(name=name, owner=owner)
         domain.save()
         return domain
 

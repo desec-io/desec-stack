@@ -69,7 +69,7 @@ class DomainList(generics.ListCreateAPIView):
                                  [self.request.user.email])
             email.send()
 
-        if obj.dyn:
+        if self.request.user.dyn:
             sendDynDnsEmail(obj)
 
 

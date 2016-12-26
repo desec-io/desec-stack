@@ -7,7 +7,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('id', 'name', 'owner', 'arecord', 'aaaarecord', 'dyn')
+        fields = ('id', 'name', 'owner', 'arecord', 'aaaarecord')
 
 class DonationSerializer(serializers.ModelSerializer):
 

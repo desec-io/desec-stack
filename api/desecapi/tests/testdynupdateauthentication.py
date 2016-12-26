@@ -25,10 +25,9 @@ class DynUpdateAuthenticationTests(APITestCase):
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
             self.domain = utils.generateDynDomainname()
             url = reverse('domain-list')
-            data = {'name': self.domain, 'dyn': True}
+            data = {'name': self.domain}
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(response.data['dyn'], True)
 
             httpretty.enable()
             httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
