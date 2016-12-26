@@ -97,11 +97,16 @@ services:
     - dbapi
     - nslord
     environment:
+    - DESECSTACK_API_ADMIN
+    - DESECSTACK_API_ALLOWED_HOSTS
+    - DESECSTACK_API_SEPA_CREDITOR_ID
+    - DESECSTACK_API_EMAIL_HOST
+    - DESECSTACK_API_EMAIL_HOST_USER
+    - DESECSTACK_API_EMAIL_HOST_PASSWORD
+    - DESECSTACK_API_EMAIL_PORT
     - DESECSTACK_API_SECRETKEY
     - DESECSTACK_DBAPI_PASSWORD_desec
     - DESECSTACK_NSLORD_APIKEY
-    volumes:
-    - ./api-settings.py:/usr/src/app/desecapi/settings_local.py:ro
     networks:
     - back1
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed

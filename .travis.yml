@@ -2,6 +2,13 @@ sudo: required
 
 env:
   global:
+   - DESECSTACK_API_ADMIN=john.doe@example.com
+   - DESECSTACK_API_ALLOWED_HOSTS=desec.your.hostname.example.com update.dedyn.your.hostname.example.com
+   - DESECSTACK_API_SEPA_CREDITOR_ID=TESTCREDITORID
+   - DESECSTACK_API_EMAIL_HOST=mail.your.hostname.example.com
+   - DESECSTACK_API_EMAIL_HOST_USER=user
+   - DESECSTACK_API_EMAIL_HOST_PASSWORD=password
+   - DESECSTACK_API_EMAIL_PORT=25
    - DESECSTACK_API_SECRETKEY=9Fn33T5yGuds
    - DESECSTACK_DBAPI_PASSWORD_desec=9Fn33T5yGueeee
    - DESECSTACK_DB_PASSWORD_pdnslord=9Fn33T5yGulkjlskdf
@@ -24,7 +31,6 @@ services:
   - docker
 
 before_install:
-  - cp api-settings.py.default api-settings.py
   - rm -f www
   - rm -f static
   - git clone https://github.com/desec-io/desec-www.git www

@@ -18,13 +18,11 @@ Although most configuration is contained in this repository, some external depen
 
 1.  We run this software with the `--userland-proxy=false` flag of the `dockerd` daemon, and recommend you do the same.
 
-2.  `./api-settings.py`: `api` configuration
-
-3.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves.
+2.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves.
 
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
-4.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
+3.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
     - network
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
@@ -32,7 +30,15 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container
       - `DESECSTACK_DBMASTER_CERTS`: `./path/to/certificates` for `dbmaster` container
     - API-related
-      - `DESECSTACK_API_SECRETKEY`: Djange secret
+      - `DESECSTACK_API_ADMIN`: white-space separated list of Django admin email addresses
+      - `DESECSTACK_API_ALLOWED_HOSTS`: white-space separated list of hostnames for which the API listens
+      - `DESECSTACK_API_DEBUG`: Django debug setting. Must be True (default in `docker-compose.dev.yml`) or False (default otherwise)
+      - `DESECSTACK_API_SEPA_CREDITOR_ID`: SEPA creditor ID for donations
+      - `DESECSTACK_API_EMAIL_HOST`: when sending email, use this mail server
+      - `DESECSTACK_API_EMAIL_HOST_USER`: username for sending email
+      - `DESECSTACK_API_EMAIL_HOST_PASSWORD`: password for sending email
+      - `DESECSTACK_API_EMAIL_PORT`: port for sending email
+      - `DESECSTACK_API_SECRETKEY`: Django secret
       - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
