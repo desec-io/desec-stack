@@ -51,5 +51,7 @@ wait
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build api
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up --abort-on-container-exit api
 
+docker-compose ps
+
 exit $(docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -v 0 | wc -l | tr -d ' ')
 
