@@ -51,6 +51,7 @@ class User(AbstractBaseUser):
     registration_remote_ip = models.CharField(max_length=1024, blank=True)
     captcha_required = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
+    limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
 
     objects = MyUserManager()
 

@@ -189,3 +189,21 @@ class AuthenticatedDomainTests(APITestCase):
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(mail.outbox), outboxlen)
+
+    def testLimitDomains(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+
+        outboxlen = len(mail.outbox)
+
+        url = reverse('domain-list')
+        for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
+            data = {'name': utils.generateDomainname(), 'dyn': True}
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(len(mail.outbox), outboxlen+i+1)
+
+        data = {'name': utils.generateDomainname(), 'dyn': True}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(len(mail.outbox), outboxlen + settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2)

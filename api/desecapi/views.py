@@ -51,6 +51,11 @@ class DomainList(generics.ListCreateAPIView):
             ex.status_code = 409
             raise ex
 
+        if self.request.user.limit_domains is not None and self.request.user.domains.count() >= self.request.user.limit_domains:
+            ex = ValidationError(detail={"detail": "You reached the maximum number of domains allowed for your account.", "code": "domain-limit"})
+            ex.status_code = 403
+            raise ex
+
         obj = serializer.save(owner=self.request.user)
 
         def sendDynDnsEmail(domain):
