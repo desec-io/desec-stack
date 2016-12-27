@@ -11,7 +11,8 @@ from desecapi import settings
 
 
 class RegistrationTest(APITestCase):
-    def testRegistrationSuccessful(self):
+
+    def test_registration_successful(self):
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
@@ -20,7 +21,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
 
-    def testMultipleRegistrationCaptchaRequiredSameIpShortTime(self):
+    def test_multiple_registration_captcha_required_same_ip_short_time(self):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
@@ -31,7 +32,6 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
         self.assertEqual(user.captcha_required, False)
-        print(user.created)
 
         self.assertEqual(len(mail.outbox), outboxlen)
 
@@ -57,7 +57,7 @@ class RegistrationTest(APITestCase):
 
         self.assertEqual(len(mail.outbox), outboxlen + 2)
 
-    def testMultipleRegistrationNoCaptchaRequiredDifferentIp(self):
+    def test_multiple_registration_no_captcha_required_different_ip(self):
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.8")
@@ -76,7 +76,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.registration_remote_ip, "1.3.3.9")
         self.assertEqual(user.captcha_required, False)
 
-    def testMultipleRegistrationNoCaptchaRequiredSameIpLongTime(self):
+    def test_multiple_registration_no_captcha_required_same_ip_long_time(self):
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
@@ -99,7 +99,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.registration_remote_ip, "1.3.3.10")
         self.assertEqual(user.captcha_required, False)
 
-    def testSendCaptchaEmailManually(self):
+    def test_send_captcha_email_manually(self):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
@@ -107,6 +107,6 @@ class RegistrationTest(APITestCase):
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
-        send_account_lock_email(None, user.email)
+        send_account_lock_email(None, user)
 
         self.assertEqual(len(mail.outbox), outboxlen+1)
