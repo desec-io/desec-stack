@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain
+from desecapi.models import Domain, User
 from desecapi.serializers import DomainSerializer, DonationSerializer
 from rest_framework import generics
 from desecapi.permissions import IsOwner
@@ -18,6 +18,23 @@ from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentica
 import base64
 from desecapi import settings
 from rest_framework.exceptions import ValidationError
+from djoser import views, signals
+from rest_framework import status
+from datetime import datetime, timedelta
+from django.utils import timezone
+from desecapi.forms import UnlockForm
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from desecapi.emails import send_account_lock_email
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -32,6 +49,11 @@ class DomainList(generics.ListCreateAPIView):
         if queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is already registered.", "code": "domain-taken"})
             ex.status_code = 409
+            raise ex
+
+        if self.request.user.limit_domains is not None and self.request.user.domains.count() >= self.request.user.limit_domains:
+            ex = ValidationError(detail={"detail": "You reached the maximum number of domains allowed for your account.", "code": "domain-limit"})
+            ex.status_code = 403
             raise ex
 
         obj = serializer.save(owner=self.request.user)
@@ -189,20 +211,12 @@ class DynDNS12Update(APIView):
                 return request.query_params[p]
 
         # Check remote IP address
-        client_ip = self.get_client_ip(request)
+        client_ip = get_client_ip(request)
         if lookfor in client_ip:
             return client_ip
 
         # give up
         return ''
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
 
     def findIPv4(self, request):
         return self.findIP(request, ['myip', 'myipv4', 'ip'])
@@ -267,3 +281,50 @@ class DonationList(generics.CreateAPIView):
         # send emails
         sendDonationEmails(obj)
 
+
+class RegistrationView(views.RegistrationView):
+    """
+    Extends the djoser RegistrationView to record the remote IP address of any registration.
+    """
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer, get_client_ip(request))
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer, remote_ip):
+        captcha = User.objects.filter(
+                created__gte=timezone.now()-timedelta(hours=settings.ABUSE_LOCK_ACCOUNT_BY_REGISTRATION_IP_PERIOD_HRS),
+                registration_remote_ip=remote_ip
+            ).exists()
+        user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
+        if captcha:
+            send_account_lock_email(self.request, user)
+        signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
+
+
+def unlock(request, email):
+    # if this is a POST request we need to process the form data
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = UnlockForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            try:
+                User.objects.get(email=email).unlock()
+            except User.DoesNotExist:
+                pass # fail silently, otherwise people can find out if email addresses are registered with us
+
+            return HttpResponseRedirect(reverse('unlock/done'))
+
+    # if a GET (or any other method) we'll create a blank form
+    else:
+        form = UnlockForm()
+
+    return render(request, 'unlock.html', {'form': form})
+
+
+def unlock_done(request):
+    return render(request, 'unlock-done.html')

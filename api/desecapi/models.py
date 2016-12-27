@@ -4,14 +4,12 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 from django.utils import timezone
-import requests
-import json
-import subprocess
-import os
+from desecapi import pdns
 import datetime, time
 
+
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, registration_remote_ip=None, captcha_required=False):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -21,6 +19,8 @@ class MyUserManager(BaseUserManager):
 
         user = self.model(
             email=self.normalize_email(email),
+            registration_remote_ip=registration_remote_ip,
+            captcha_required=captcha_required,
         )
 
         user.set_password(password)
@@ -48,6 +48,10 @@ class User(AbstractBaseUser):
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    registration_remote_ip = models.CharField(max_length=1024, blank=True)
+    captcha_required = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
 
     objects = MyUserManager()
 
@@ -79,6 +83,12 @@ class User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
+    def unlock(self):
+        self.captcha_required = False
+        for domain in self.domains.all():
+            domain.pdns_resync()
+        self.save()
+
 
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
@@ -89,90 +99,48 @@ class Domain(models.Model):
     dyn = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
 
-    headers = {
-        'User-Agent': 'desecapi',
-        'X-API-Key': settings.POWERDNS_API_TOKEN,
-    }
+    def pdns_resync(self):
+        """
+        Make sure that pdns gets the latest information about this domain/zone.
+        Re-Syncing is relatively expensive and should not happen routinely.
+        """
+
+        # Create zone if needed
+        if not pdns.zone_exists(self.name):
+            pdns.create_zone(self.name)
+
+        # update zone to latest information
+        pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
+
+    def pdns_sync(self):
+        """
+        Command pdns updates as indicated by the local changes.
+        """
+
+        if self.owner.captcha_required:
+            # suspend all updates
+            return
+
+        new_domain = self.id is None
+        changes_required = False
+
+        # if this zone is new, create it
+        if new_domain:
+            pdns.create_zone(self.name)
+
+        # for existing domains, see if records are changed
+        if not new_domain:
+            orig_domain = Domain.objects.get(id=self.id)
+            changes_required = self.arecord != orig_domain.arecord or self.aaaarecord != orig_domain.aaaarecord
+
+        # make changes if necessary
+        if changes_required:
+            pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
     def save(self, *args, **kwargs):
-        if self.id is None:
-            self.pdnsCreate()
-            if self.arecord or self.aaaarecord:
-                self.pdnsUpdate()
-        else:
-            orig = Domain.objects.get(id=self.id)
-            if self.arecord != orig.arecord or self.aaaarecord != orig.aaaarecord:
-                self.pdnsUpdate()
         self.updated = timezone.now()
-        super(Domain, self).save(*args, **kwargs) # Call the "real" save() method.
-
-    def pdnsCreate(self):
-        payload = {
-            "name": self.name + ".",
-            "kind": "NATIVE",
-            "masters": [],
-            "nameservers": [
-                "ns1.desec.io.",
-                "ns2.desec.io."
-            ]
-        }
-        r = requests.post(settings.POWERDNS_API + '/zones', data=json.dumps(payload), headers=self.headers)
-        if r.status_code < 200 or r.status_code >= 300:
-            raise Exception(r.text)
-
-    def pdnsUpdate(self):
-        if self.arecord:
-            a = \
-                {
-                    "records": [
-                            {
-                                "type": "A",
-                                "name": self.name + ".",
-                                "disabled": False,
-                                "content": self.arecord,
-                            }
-                        ],
-                    "ttl": 60,
-                    "changetype": "REPLACE",
-                    "type": "A",
-                    "name": self.name + ".",
-                }
-        else:
-            a = \
-                {
-                    "changetype": "DELETE",
-                    "type": "A",
-                    "name": self.name + "."
-                }
-
-        if self.aaaarecord:
-            aaaa = \
-                {
-                    "records": [
-                            {
-                                "type": "AAAA",
-                                "name": self.name + ".",
-                                "disabled": False,
-                                "content": self.aaaarecord,
-                            }
-                        ],
-                    "ttl": 60,
-                    "changetype": "REPLACE",
-                    "type": "AAAA",
-                    "name": self.name + ".",
-                }
-        else:
-            aaaa = \
-                {
-                    "changetype": "DELETE",
-                    "type": "AAAA",
-                    "name": self.name + "."
-                }
-
-        payload = { "rrsets": [a, aaaa] }
-        r = requests.patch(settings.POWERDNS_API + '/zones/' + self.name, data=json.dumps(payload), headers=self.headers)
-        if r.status_code < 200 or r.status_code >= 300:
-            raise Exception(r)
+        self.pdns_sync()
+        super(Domain, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ('created',)
