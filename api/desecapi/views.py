@@ -296,7 +296,7 @@ class RegistrationView(views.RegistrationView):
             ).exists()
         user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
         if captcha:
-            send_account_lock_email(self.request, user.email)
+            send_account_lock_email(self.request, user)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
 

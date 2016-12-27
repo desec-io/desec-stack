@@ -1,1 +1,1 @@
-deSEC dedyn.io Account Suspended
+{{domainname}} Account Suspended
