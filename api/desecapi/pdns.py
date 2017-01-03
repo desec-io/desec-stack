@@ -31,7 +31,7 @@ def _pdns_patch(url, body):
 
 def _pdns_get(url):
     r = requests.get(settings.POWERDNS_API + url, headers=headers)
-    if (r.status_code < 200 or r.status_code >= 300) and r.status_code != 404:
+    if (r.status_code < 200 or r.status_code >= 500):
         raise Exception(r.text)
     return r
 
@@ -85,7 +85,13 @@ def zone_exists(name):
     """
     Returns whether pdns knows a zone with the given name.
     """
-    return _pdns_get('/zones/' + normalize_hostname(name)).status_code != 404
+    reply = _pdns_get('/zones/' + normalize_hostname(name))
+    if reply.status_code == 200:
+        return True
+    elif reply.status_code == 422 and 'Could not find domain' in reply.text:
+        return False
+    else:
+        raise Exception(reply.text)
 
 
 def set_dyn_records(name, a, aaaa):
