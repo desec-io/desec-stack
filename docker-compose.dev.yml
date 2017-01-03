@@ -32,6 +32,7 @@ services:
     ports:
      - "5311:53"
      - "5311:53/udp"
+     - "127.0.0.1:8081:8081"
     logging:
       driver: "json-file"
 

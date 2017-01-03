@@ -87,7 +87,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.captcha_required, False)
 
         #fake registration time
-        user.created = timezone.now() - timedelta(hours=settings.ABUSE_LOCK_ACCOUNT_BY_REGISTRATION_IP_PERIOD_HRS+1)
+        user.created = timezone.now() - timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
         user.save()
 
         url = reverse('register')
@@ -110,3 +110,58 @@ class RegistrationTest(APITestCase):
         send_account_lock_email(None, user)
 
         self.assertEqual(len(mail.outbox), outboxlen+1)
+
+    def test_multiple_registration_captcha_required_same_email_host(self):
+        outboxlen = len(mail.outbox)
+
+        url = reverse('register')
+        for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
+            data = {'email': utils.generateRandomString() + '@test-same-email.desec.io', 'password': utils.generateRandomString(size=12)}
+            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            user = models.User.objects.get(email=data['email'])
+            self.assertEqual(user.email, data['email'])
+            self.assertEqual(user.captcha_required, False)
+
+        self.assertEqual(len(mail.outbox), outboxlen)
+
+        url = reverse('register')
+        data = {'email': utils.generateRandomString() + '@test-same-email.desec.io',
+                'password': utils.generateRandomString(size=12)}
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = models.User.objects.get(email=data['email'])
+        self.assertEqual(user.email, data['email'])
+        self.assertEqual(user.captcha_required, True)
+
+        self.assertEqual(len(mail.outbox), outboxlen + 1)
+
+    def test_multiple_registration_no_captcha_required_same_email_host_long_time(self):
+        outboxlen = len(mail.outbox)
+
+        url = reverse('register')
+        for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
+            data = {'email': utils.generateRandomString() + '@test-same-email-1.desec.io', 'password': utils.generateRandomString(size=12)}
+            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            user = models.User.objects.get(email=data['email'])
+            self.assertEqual(user.email, data['email'])
+            self.assertEqual(user.captcha_required, False)
+
+            #fake registration time
+            user = models.User.objects.get(email=data['email'])
+            user.created = timezone.now() - timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
+            user.save()
+
+        self.assertEqual(len(mail.outbox), outboxlen)
+
+        url = reverse('register')
+        data = {'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
+                'password': utils.generateRandomString(size=12)}
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = models.User.objects.get(email=data['email'])
+        self.assertEqual(user.email, data['email'])
+        self.assertEqual(user.captcha_required, False)
+
+        self.assertEqual(len(mail.outbox), outboxlen)

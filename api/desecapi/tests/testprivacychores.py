@@ -22,7 +22,7 @@ class PrivacyChoresCommandTest(TestCase):
             registration_remote_ip='1.3.3.8',
         ).save()
         user2 = User.objects.get(email=name2)
-        user2.created = timezone.now()-timedelta(hours=settings.ABUSE_LOCK_ACCOUNT_BY_REGISTRATION_IP_PERIOD_HRS+1)
+        user2.created = timezone.now()-timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
         user2.save()
 
         user_count = User.objects.all().count()
