@@ -290,10 +290,19 @@ class RegistrationView(views.RegistrationView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, remote_ip):
-        captcha = User.objects.filter(
-                created__gte=timezone.now()-timedelta(hours=settings.ABUSE_LOCK_ACCOUNT_BY_REGISTRATION_IP_PERIOD_HRS),
-                registration_remote_ip=remote_ip
-            ).exists()
+        captcha = \
+            (
+                User.objects.filter(
+                    created__gte=timezone.now()-timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS),
+                    registration_remote_ip=remote_ip
+                ).count() >= settings.ABUSE_BY_REMOTE_IP_LIMIT
+                or
+                User.objects.filter(
+                    created__gte=timezone.now() - timedelta(hours=settings.ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS),
+                    email__endswith=serializer.validated_data['email'].split('@')[-1]
+                ).count() >= settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT
+            )
+
         user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
         if captcha:
             send_account_lock_email(self.request, user)

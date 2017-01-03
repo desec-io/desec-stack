@@ -12,7 +12,7 @@ class utils(object):
 
     @classmethod
     def generateUsername(cls):
-        return cls.generateRandomString() + '@desec.io'
+        return cls.generateRandomString() + '@' + cls.generateRandomString() + 'desec.io'
 
     @classmethod
     def generateDomainname(cls):
