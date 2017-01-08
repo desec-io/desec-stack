@@ -114,6 +114,24 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
+    def testIdentificationByUsernameDomainname(self):
+        # To force identification by the provided username (which is the domain name)
+        # we add a second domain for the current user.
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        url = reverse('domain-list')
+        data = {'name': 'second-' + self.domain, 'dyn': True}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['dyn'], True)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
+        url = reverse('dyndns12update')
+        response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='10.5.5.5')
+
     def testManualIPv6(self):
         #/update?username=foobar.dedyn.io&password=secret
         self.client.credentials(HTTP_AUTHORIZATION='')

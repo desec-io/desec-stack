@@ -167,8 +167,10 @@ class DynDNS12Update(APIView):
 
             # 3. http basic auth username
             try:
-                return base64.b64decode(get_authorization_header(request).split(' ')[1]).split(':')[0]
-            except:
+                return base64.b64decode(get_authorization_header(request).decode().split(' ')[1].encode()).decode().split(':')[0]
+            except IndexError:
+                pass
+            except UnicodeDecodeError:
                 pass
 
             # 4. username parameter
