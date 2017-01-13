@@ -73,7 +73,7 @@ def _delete_or_replace_rrset(name, type, value, ttl=60):
     """
     Return pdns API json to either replace or delete a record set, depending on whether value is empty or not.
     """
-    if value != "":
+    if value:
         return \
             {
                 "records": [

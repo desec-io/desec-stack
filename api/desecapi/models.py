@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from desecapi import pdns
 import datetime, time
+import django.core.exceptions
+import rest_framework.exceptions
 
 
 class MyUserManager(BaseUserManager):
@@ -96,8 +98,8 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=191, unique=True)
-    arecord = models.CharField(max_length=255, blank=True)
-    aaaarecord = models.CharField(max_length=1024, blank=True)
+    arecord = models.GenericIPAddressField(protocol='IPv4', blank=False, null=True)
+    aaaarecord = models.GenericIPAddressField(protocol='IPv6', blank=False, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
     acme_challenge = models.CharField(max_length=255, blank=True)
     _dirtyName = False
