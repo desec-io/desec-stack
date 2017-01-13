@@ -134,7 +134,7 @@ class Domain(models.Model):
             changes_required = self.arecord != orig_domain.arecord or self.aaaarecord != orig_domain.aaaarecord
 
         # make changes if necessary
-        if changes_required:
+        if changes_required or new_domain:
             pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
     def save(self, *args, **kwargs):
