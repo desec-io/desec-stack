@@ -1,7 +1,7 @@
 Hello,
 
-your activity on the deSEC dedyn.io dynamic DNS service looks
-suspiciously similar to those of bots. As mass registrations
+Your activity on the deSEC dedyn.io dynamic DNS service looks
+suspiciously similar to the one of bots. As mass registrations
 by bots have been a problem for us in the past, we need to
 ask you to prove you are not a bot by solving a CAPTCHA. Sorry
 to bother you with that!
@@ -12,7 +12,7 @@ Please go to
 
 and unlock your account for future use. Until unlocked, your
 account will be kept in read-only mode, that is, you won't be able
-to register any domains or update IP addresses (or any other
+to register any new domains or update IP addresses (or any other
 records). Accounts that are not unlocked are subject to deletion
 after two weeks.
 
@@ -27,11 +27,11 @@ Cheers,
 Nils
 
 --
-deSEC GbR
+deSEC
 Maybachufer 9
 12047 Berlin
 Germany
 
 phone: +49-30-47384344
 
-Vertreten durch: Jan Binger, Peter Thomassen, Nils Wisiol
+Vertreten durch: Dr. Peter Thomassen, Nils Wisiol
