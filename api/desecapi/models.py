@@ -128,13 +128,15 @@ class Domain(models.Model):
         if new_domain:
             pdns.create_zone(self.name)
 
-        # for existing domains, see if records are changed
-        if not new_domain:
+        # check if current A and AAAA record values require updating pdns
+        if new_domain:
+            changes_required = bool(self.arecord) or bool(self.aaaarecord)
+        else:
             orig_domain = Domain.objects.get(id=self.id)
             changes_required = self.arecord != orig_domain.arecord or self.aaaarecord != orig_domain.aaaarecord
 
         # make changes if necessary
-        if changes_required or new_domain:
+        if changes_required:
             pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
     def save(self, *args, **kwargs):

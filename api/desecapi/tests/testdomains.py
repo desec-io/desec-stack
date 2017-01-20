@@ -145,6 +145,22 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
         self.assertTrue('ns1.desec.io' in httpretty.last_request().parsed_body)
 
+    def testPostingWithRecordsCausesPdnsAPIPatch(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + name + '.')
+
+        url = reverse('domain-list')
+        data = {'name': name, 'dyn': True, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef'}
+        response = self.client.post(url, data)
+
+        self.assertEqual(httpretty.last_request().method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
+        self.assertTrue('1.3.3.7' in httpretty.last_request().parsed_body)
+        self.assertTrue('dead::beef' in httpretty.last_request().parsed_body)
+
     def testUpdateingCausesPdnsAPICall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
