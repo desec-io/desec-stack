@@ -1,4 +1,4 @@
-FROM richarvey/nginx-php-fpm
+FROM richarvey/nginx-php-fpm:php5
 
 RUN apk add --no-cache \
 	php5-gettext \
