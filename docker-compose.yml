@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 services:
   www:
@@ -16,9 +16,9 @@ services:
     mac_address: 06:42:ac:10:00:80
     networks:
       front:
-        ipv4_address: 172.16.0.128
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.128
         ipv6_address: ${DESECSTACK_IPV6_ADDRESS}
-#      - back2 # TODO add when https://github.com/docker/docker/issues/27101 is fixed
+      rearwww:
     logging:
       driver: "syslog"
       options:
@@ -29,7 +29,7 @@ services:
     build: static
     image: desec/dedyn-static:latest
     networks:
-    - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
+    - rearwww
     logging:
       driver: "syslog"
       options:
@@ -42,9 +42,10 @@ services:
     volumes:
     - dbapi_mysql:/var/lib/mysql
     environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBAPI_PASSWORD_desec
     networks:
-    - back1
+    - rearapi2
     logging:
       driver: "syslog"
       options:
@@ -57,11 +58,12 @@ services:
     volumes:
     - dblord_mysql:/var/lib/mysql
     environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_DBLORD_PASSWORD_poweradmin
     - DESECSTACK_DEVADMIN_PASSWORD_poweradmin
     networks:
-    - back1
+    - rearlord
     logging:
       driver: "syslog"
       options:
@@ -77,13 +79,14 @@ services:
     - ${DESECSTACK_DBMASTER_CERTS}:/etc/ssl/private:ro
     - dbmaster_mysql:/var/lib/mysql
     environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBMASTER_PASSWORD_pdns
     - DESECSTACK_DBMASTER_PASSWORD_ns1replication
     - DESECSTACK_DBMASTER_SUBJECT_ns1replication
     - DESECSTACK_DBMASTER_PASSWORD_ns2replication
     - DESECSTACK_DBMASTER_SUBJECT_ns2replication
     networks:
-    - back1
+    - rearmaster
     logging:
       driver: "syslog"
       options:
@@ -110,8 +113,9 @@ services:
     - DESECSTACK_NORECAPTCHA_SITE_KEY
     - DESECSTACK_NORECAPTCHA_SECRET_KEY
     networks:
-    - back1
-    - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
+    - rearapi1
+    - rearapi2
+    - rearwww
     logging:
       driver: "syslog"
       options:
@@ -122,6 +126,7 @@ services:
     build: nslord
     image: desec/dedyn-nslord:latest
     environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_NSLORD_APIKEY
     - DESECSTACK_NSLORD_CARBONSERVER
@@ -129,8 +134,9 @@ services:
     depends_on:
     - dblord
     networks:
-      back1:
-        ipv4_address: 172.16.1.11
+      rearapi1:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.11
+      rearlord:
     logging:
       driver: "syslog"
       options:
@@ -147,8 +153,9 @@ services:
     depends_on:
     - dbmaster
     networks:
-      back1:
-        ipv4_address: 172.16.1.12
+      rearapi1:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
+      rearmaster:
     logging:
       driver: "syslog"
       options:
@@ -161,20 +168,51 @@ volumes:
   dbmaster_mysql:
 
 networks:
-  back1: # TODO can we declare this internal? compose 1.9.0 will allow it: https://github.com/docker/compose/pull/3488 May break apt inside nslord etc.
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.16.1.0/24
-        gateway: 172.16.1.1
-  back2:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.16.2.0/24
-        gateway: 172.16.2.1
+  # Note that it is required that the front network ranks lower (in lexical order)
+  # than the other networks. See https://github.com/docker/docker/issues/27101
   front:
-    external: # TODO define network here when https://github.com/docker/compose/issues/3988 is fixed
-      name: desecstack_front
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.1
+      - subnet: ${DESECSTACK_IPV6_SUBNET}
+  # Make sure these come after the front network (lexical order). This is why we 
+  # call it rear, not back. See https://github.com/docker/docker/issues/27101
+  rearapi1:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.1
+  rearapi2:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.1
+  rearwww:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.2.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.2.1
+  rearlord:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.3.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.3.1
+  rearmaster:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.4.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.4.1

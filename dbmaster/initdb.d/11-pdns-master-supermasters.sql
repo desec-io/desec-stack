@@ -1,3 +1,2 @@
-USE pdns;
-
-INSERT INTO supermasters SET ip="172.16.1.11", nameserver="ns1.desec.io";
+-- This file is required to exist and will be overriden by 00-init.sh.
+-- If it is created only by 00-init.sh, the entrypoint script will miss it.
