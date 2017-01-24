@@ -30,6 +30,7 @@ class UnauthenticatedDomainTests(APITestCase):
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class AuthenticatedDomainTests(APITestCase):
     def setUp(self):
         if not hasattr(self, 'owner'):
@@ -101,6 +102,12 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+    def testCanPostComplicatedDomains(self):
+        url = reverse('domain-list')
+        data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
     def testCanUpdateARecord(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
@@ -167,6 +174,7 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
 
+
 class AuthenticatedDynDomainTests(APITestCase):
     def setUp(self):
         if not hasattr(self, 'owner'):
@@ -185,6 +193,18 @@ class AuthenticatedDynDomainTests(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(data['name'] in email)
         self.assertTrue(self.token in email)
+
+    def testCantPostNonDynDomains(self):
+        url = reverse('domain-list')
+
+        data = {'name': utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        data = {'name': 'very.long.domain.' + utils.generateDynDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
 
     def testLimitDynDomains(self):
         httpretty.enable()
