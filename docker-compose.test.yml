@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 # mostly extending from main .yml
 services:

@@ -1,5 +1,5 @@
-allow-axfr-ips=172.16.1.0/24
-also-notify=172.16.1.12
+allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+also-notify=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
 api=yes
 api-key=${DESECSTACK_NSLORD_APIKEY}
 default-soa-edit=INCREMENT-WEEKS
@@ -14,7 +14,7 @@ soa-minimum-ttl=60
 version-string=powerdns
 webserver=yes
 webserver-address=0.0.0.0
-webserver-allow-from=172.16.1.0/24
+webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
 carbon-server=${DESECSTACK_NSLORD_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSLORD_CARBONOURNAME}
 

@@ -1,6 +1,8 @@
 sudo: required
 
 env:
+  matrix:
+   - DOCKER_COMPOSE_VERSION: 1.9.0
   global:
    - DESECSTACK_API_ADMIN=john.doe@example.com
    - DESECSTACK_API_ALLOWED_HOSTS=desec.your.hostname.example.com update.dedyn.your.hostname.example.com
@@ -20,6 +22,7 @@ env:
    - DESECSTACK_DB_SUBJECT_ns2replication=9Fn33T5yGukjnrtj
    - DESECSTACK_DEVADMIN_PASSWORDmd5=.
    - DESECSTACK_NSLORD_APIKEY=9Fn33T5yGukjekwjew
+   - DESECSTACK_IPV4_REAR_PREFIX16=172.19
    - DESECSTACK_IPV6_SUBNET=fd80::/8
    - DESECSTACK_IPV6_ADDRESS=fd80::1
    - DESECSTACK_WWW_CERTS=/dev/null
@@ -33,6 +36,12 @@ services:
   - docker
 
 before_install:
+  # Get our own docker-compose
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  # Get web content
   - rm -f www
   - rm -f static
   - git clone https://github.com/desec-io/desec-www.git www

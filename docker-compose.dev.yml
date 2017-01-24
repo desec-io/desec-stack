@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 
 # mostly extending from main .yml
 services:
@@ -52,4 +52,5 @@ services:
     ports:
      - "127.0.0.1:81:80"
     networks:
-    - back1
+    - rearwww
+    - rearlord
