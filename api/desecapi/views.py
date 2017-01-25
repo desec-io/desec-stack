@@ -26,6 +26,11 @@ from desecapi.forms import UnlockForm
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from desecapi.emails import send_account_lock_email
+import re
+
+# TODO Generalize?
+patternDyn = re.compile(r'^[A-Za-z][A-Za-z0-9-]*\.dedyn\.io$')
+patternNonDyn = re.compile(r'^([A-Za-z][A-Za-z0-9-]*\.)+[A-Za-z]+$')
 
 
 def get_client_ip(request):
@@ -40,15 +45,21 @@ class DomainList(generics.ListCreateAPIView):
         return Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
+        pattern = patternDyn if self.request.user.dyn else patternNonDyn
+        if pattern.match(serializer.validated_data['name']) is None or "--" in serializer.validated_data['name']:
+            ex = ValidationError(detail={"detail": "This domain name is not well-formed, by policy.", "code": "domain-illformed"})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
+
         queryset = Domain.objects.filter(name=serializer.validated_data['name'])
         if queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is already registered.", "code": "domain-taken"})
-            ex.status_code = 409
+            ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
         if self.request.user.limit_domains is not None and self.request.user.domains.count() >= self.request.user.limit_domains:
             ex = ValidationError(detail={"detail": "You reached the maximum number of domains allowed for your account.", "code": "domain-limit"})
-            ex.status_code = 403
+            ex.status_code = status.HTTP_403_FORBIDDEN
             raise ex
 
         obj = serializer.save(owner=self.request.user)
@@ -69,7 +80,7 @@ class DomainList(generics.ListCreateAPIView):
                                  [self.request.user.email])
             email.send()
 
-        if obj.dyn:
+        if self.request.user.dyn:
             sendDynDnsEmail(obj)
 
 
@@ -111,7 +122,7 @@ class DnsQuery(APIView):
         desecio = resolver.Resolver()
 
         if not 'domain' in request.GET:
-            return Response(status=400)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         domain = str(request.GET['domain'])
 

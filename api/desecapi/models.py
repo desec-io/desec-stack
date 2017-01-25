@@ -52,6 +52,7 @@ class User(AbstractBaseUser):
     captcha_required = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
+    dyn = models.BooleanField(default=True)
 
     objects = MyUserManager()
 
@@ -96,7 +97,6 @@ class Domain(models.Model):
     name = models.CharField(max_length=191, unique=True)
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
-    dyn = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
 
     def pdns_resync(self):

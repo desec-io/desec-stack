@@ -21,10 +21,9 @@ class DynDNS12UpdateTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
         url = reverse('domain-list')
-        data = {'name': self.domain, 'dyn': True}
+        data = {'name': self.domain}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['dyn'], True)
 
         self.username = response.data['name']
         self.password = self.token
@@ -120,10 +119,9 @@ class DynDNS12UpdateTest(APITestCase):
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
-        data = {'name': 'second-' + self.domain, 'dyn': True}
+        data = {'name': 'second-' + self.domain}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['dyn'], True)
 
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
         url = reverse('dyndns12update')
@@ -181,7 +179,6 @@ class DynDNS12UpdateTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['dyn'], True)
 
         domain = self.owner.domains.all()[0]
         domain.arecord = '10.1.1.1'

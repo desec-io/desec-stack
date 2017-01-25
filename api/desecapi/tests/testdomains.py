@@ -93,26 +93,20 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 0)
-        self.assertEqual(response.data['dyn'], False)
-
-    def testCanPostDynDomains(self):
-        url = reverse('domain-list')
-        data = {'name': utils.generateDomainname(), 'dyn': True}
-        response = self.client.post(url, data)
-        email = str(mail.outbox[0].message())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertTrue(data['name'] in email)
-        self.assertTrue(self.token in email)
-        self.assertEqual(response.data['dyn'], True)
 
     def testCantPostSameDomainTwice(self):
         url = reverse('domain-list')
-        data = {'name': utils.generateDomainname(), 'dyn': True}
+        data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def testCanPostComplicatedDomains(self):
+        url = reverse('domain-list')
+        data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def testCanUpdateARecord(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -139,7 +133,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
 
         url = reverse('domain-list')
-        data = {'name': utils.generateDomainname(), 'dyn': True}
+        data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
 
         self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
@@ -153,7 +147,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + name + '.')
 
         url = reverse('domain-list')
-        data = {'name': name, 'dyn': True, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef'}
+        data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef'}
         response = self.client.post(url, data)
 
         self.assertEqual(httpretty.last_request().method, 'PATCH')
@@ -180,7 +174,57 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
 
-    def testCantUseInvalidCharactersInDomainName(self):
+
+class AuthenticatedDynDomainTests(APITestCase):
+    def setUp(self):
+        if not hasattr(self, 'owner'):
+            self.owner = utils.createUser(dyn=True)
+            self.ownedDomains = [utils.createDomain(self.owner, dyn=True), utils.createDomain(self.owner, dyn=True)]
+            self.otherDomains = [utils.createDomain(), utils.createDomain()]
+            self.token = utils.createToken(user=self.owner)
+            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+
+    def testCanPostDynDomains(self):
+        url = reverse('domain-list')
+        data = {'name': utils.generateDynDomainname()}
+        response = self.client.post(url, data)
+        email = str(mail.outbox[0].message())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(data['name'] in email)
+        self.assertTrue(self.token in email)
+
+    def testCantPostNonDynDomains(self):
+        url = reverse('domain-list')
+
+        data = {'name': utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        data = {'name': 'very.long.domain.' + utils.generateDynDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+
+    def testLimitDynDomains(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+
+        outboxlen = len(mail.outbox)
+
+        url = reverse('domain-list')
+        for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
+            data = {'name': utils.generateDynDomainname()}
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(len(mail.outbox), outboxlen+i+1)
+
+        data = {'name': utils.generateDynDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(len(mail.outbox), outboxlen + settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2)
+
+    def testCantUseInvalidCharactersInDomainNamePDNS(self):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
 
@@ -201,25 +245,7 @@ class AuthenticatedDomainTests(APITestCase):
 
         url = reverse('domain-list')
         for domainname in invalidnames:
-            data = {'name': domainname, 'dyn': True}
+            data = {'name': domainname}
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(mail.outbox), outboxlen)
-
-    def testLimitDomains(self):
-        httpretty.enable()
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-
-        outboxlen = len(mail.outbox)
-
-        url = reverse('domain-list')
-        for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
-            data = {'name': utils.generateDomainname(), 'dyn': True}
-            response = self.client.post(url, data)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(len(mail.outbox), outboxlen+i+1)
-
-        data = {'name': utils.generateDomainname(), 'dyn': True}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(len(mail.outbox), outboxlen + settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2)
