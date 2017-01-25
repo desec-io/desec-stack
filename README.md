@@ -54,6 +54,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_DBMASTER_SUBJECT_ns1replication`: slave 1 replication SSL certificate subject name
       - `DESECSTACK_DBMASTER_PASSWORD_ns2replication`: slave 2 replication password
       - `DESECSTACK_DBMASTER_SUBJECT_ns2replication`: slave 1 replication SSL certificate subject name
+      - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the slaves)
       - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
     - devadmin-related

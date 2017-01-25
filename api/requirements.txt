@@ -9,7 +9,7 @@ djangorestframework==3.5.3
 djoser==0.5.1
 dnspython==1.15.0
 enum34==1.1.6
-httpretty==0.8.10
+httpretty==0.8.14
 idna==2.0
 ipaddress==1.0.7
 pyOpenSSL==0.15.1

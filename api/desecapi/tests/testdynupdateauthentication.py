@@ -30,8 +30,8 @@ class DynUpdateAuthenticationTests(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
             httpretty.enable()
-            httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-            httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
+            httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+            httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
 
     def testSuccessfulAuthentication(self):
         response = self.client.get(self.url)

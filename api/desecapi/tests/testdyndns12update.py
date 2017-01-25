@@ -31,8 +31,8 @@ class DynDNS12UpdateTest(APITestCase):
 
         httpretty.enable()
         httpretty.HTTPretty.allow_net_connect = False
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
 
     def tearDown(self):
         httpretty.disable()
@@ -155,13 +155,13 @@ class DynDNS12UpdateTest(APITestCase):
         domain.arecord = '10.1.1.1'
         domain.save()
 
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
-        httpretty.register_uri(httpretty.GET, settings.POWERDNS_API + '/zones/' + self.domain + '.', status=200)
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
+        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.', status=200)
 
         self.owner.unlock()
 
         self.assertEqual(httpretty.last_request().method, 'PATCH')
-        self.assertTrue((settings.POWERDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.last_request().path))
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.last_request().path))
         self.assertTrue(self.domain in httpretty.last_request().parsed_body)
         self.assertTrue('10.1.1.1' in httpretty.last_request().parsed_body)
 
@@ -184,17 +184,17 @@ class DynDNS12UpdateTest(APITestCase):
         domain.arecord = '10.1.1.1'
         domain.save()
 
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + newdomain + '.')
-        httpretty.register_uri(httpretty.GET, settings.POWERDNS_API + '/zones/' + newdomain + '.', status=200)
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + self.domain + '.')
-        httpretty.register_uri(httpretty.GET, settings.POWERDNS_API + '/zones/' + self.domain + '.', status=200)
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
+        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.', status=200)
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
+        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.', status=200)
 
         self.owner.unlock()
 
         self.assertEqual(httpretty.last_request().method, 'PATCH')
         self.assertTrue(
-                (settings.POWERDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.last_request().path) \
-                or (settings.POWERDNS_API + '/zones/' + newdomain + '.').endswith(httpretty.last_request().path)
+                (settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.last_request().path) \
+                or (settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.').endswith(httpretty.last_request().path)
             )
         self.assertTrue('10.2.2.2' in httpretty.last_request().parsed_body)

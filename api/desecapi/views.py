@@ -91,13 +91,6 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
 
-    def put(self, request, pk, format=None):
-        # Don't accept PUT requests for non-existent or non-owned domains.
-        domain = Domain.objects.filter(owner=self.request.user.pk, pk=pk)
-        if len(domain) is 0:
-            raise Http404
-        return super(DomainDetail, self).put(request, pk, format)
-
 
 class DomainDetailByName(DomainDetail):
     lookup_field = 'name'

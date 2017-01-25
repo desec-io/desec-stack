@@ -141,8 +141,10 @@ ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK
 AUTH_USER_MODEL = 'desecapi.User'
 
 # PowerDNS API access
-POWERDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
-POWERDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
+NSLORD_PDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
+NSLORD_PDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
+NSMASTER_PDNS_API = 'http://nsmaster:8081/api/v1/servers/localhost'
+NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 
 # SEPA direct debit settings
 SEPA = {

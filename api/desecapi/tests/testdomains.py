@@ -33,6 +33,8 @@ class UnauthenticatedDomainTests(APITestCase):
 
 class AuthenticatedDomainTests(APITestCase):
     def setUp(self):
+        httpretty.reset()
+        httpretty.disable()
         if not hasattr(self, 'owner'):
             self.owner = utils.createUser()
             self.ownedDomains = [utils.createDomain(self.owner), utils.createDomain(self.owner)]
@@ -49,16 +51,33 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.data[1]['name'], self.ownedDomains[1].name)
 
     def testCanDeleteOwnedDomain(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(httpretty.last_request().method, 'DELETE')
+        self.assertEqual(httpretty.last_request().headers['Host'], 'nsmaster:8081')
+
+        httpretty.reset()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
 
     def testCantDeleteOtherDomains(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
+
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
 
     def testCanGetOwnedDomains(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -130,7 +149,7 @@ class AuthenticatedDomainTests(APITestCase):
 
     def testPostingCausesPdnsAPICall(self):
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
 
         url = reverse('domain-list')
         data = {'name': utils.generateDomainname()}
@@ -143,8 +162,8 @@ class AuthenticatedDomainTests(APITestCase):
         name = utils.generateDomainname()
 
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + name + '.')
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
 
         url = reverse('domain-list')
         data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef'}
@@ -160,7 +179,7 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.get(url)
 
         httpretty.enable()
-        httpretty.register_uri(httpretty.PATCH, settings.POWERDNS_API + '/zones/' + response.data['name'] + '.')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.')
 
         response.data['arecord'] = '10.13.3.7'
         response = self.client.put(url, response.data)
@@ -177,12 +196,47 @@ class AuthenticatedDomainTests(APITestCase):
 
 class AuthenticatedDynDomainTests(APITestCase):
     def setUp(self):
+        httpretty.reset()
+        httpretty.disable()
         if not hasattr(self, 'owner'):
             self.owner = utils.createUser(dyn=True)
             self.ownedDomains = [utils.createDomain(self.owner, dyn=True), utils.createDomain(self.owner, dyn=True)]
             self.otherDomains = [utils.createDomain(), utils.createDomain()]
             self.token = utils.createToken(user=self.owner)
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+
+    def testCanDeleteOwnedDynDomain(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/dedyn.io.')
+
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(httpretty.last_request().method, 'PATCH')
+        self.assertEqual(httpretty.last_request().headers['Host'], 'nslord:8081')
+        self.assertTrue('"NS"' in httpretty.last_request().parsed_body
+                        and '"' + self.ownedDomains[1].name + '."' in httpretty.last_request().parsed_body
+                        and '"DELETE"' in httpretty.last_request().parsed_body)
+
+        httpretty.reset()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
+
+    def testCantDeleteOtherDynDomains(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
+        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
+
+        url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
 
     def testCanPostDynDomains(self):
         url = reverse('domain-list')
@@ -208,7 +262,7 @@ class AuthenticatedDynDomainTests(APITestCase):
 
     def testLimitDynDomains(self):
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
 
         outboxlen = len(mail.outbox)
 
@@ -226,7 +280,7 @@ class AuthenticatedDynDomainTests(APITestCase):
 
     def testCantUseInvalidCharactersInDomainNamePDNS(self):
         httpretty.enable()
-        httpretty.register_uri(httpretty.POST, settings.POWERDNS_API + '/zones')
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
 
         outboxlen = len(mail.outbox)
         invalidnames = [
