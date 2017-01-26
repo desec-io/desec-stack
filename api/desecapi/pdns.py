@@ -3,9 +3,14 @@ import json
 from desecapi import settings
 
 
-headers = {
+headers_nslord = {
     'User-Agent': 'desecapi',
-    'X-API-Key': settings.POWERDNS_API_TOKEN,
+    'X-API-Key': settings.NSLORD_PDNS_API_TOKEN,
+}
+
+headers_nsmaster = {
+    'User-Agent': 'desecapi',
+    'X-API-Key': settings.NSMASTER_PDNS_API_TOKEN,
 }
 
 
@@ -14,23 +19,40 @@ def normalize_hostname(name):
         raise Exception('Invalid hostname ' + name)
     return name if name.endswith('.') else name + '.'
 
+def _pdns_delete(url):
+    # We first delete the zone from nslord, the main authoritative source of our DNS data.
+    # However, we do not want to wait for the zone to expire on the slave ("nsmaster").
+    # We thus issue a second delete request on nsmaster to delete the zone there immediately.
+    r1 = requests.delete(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
+    if r1.status_code < 200 or r1.status_code >= 300:
+        raise Exception(r1.text)
+
+    # Delete from nsmaster as well
+    r2 = requests.delete(settings.NSMASTER_PDNS_API + url, headers=headers_nsmaster)
+    if r2.status_code < 200 or r2.status_code >= 300:
+        # Allow this to fail if nsmaster does not know the zone yet
+        if r2.status_code == 422 and 'Could not find domain' in r2.text:
+            pass
+        else:
+            raise Exception(r2.text)
+
+    return (r1, r2)
 
 def _pdns_post(url, body):
-    r = requests.post(settings.POWERDNS_API + url, data=json.dumps(body), headers=headers)
+    r = requests.post(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
         raise Exception(r.text)
     return r
 
-
 def _pdns_patch(url, body):
-    r = requests.patch(settings.POWERDNS_API + url, data=json.dumps(body), headers=headers)
+    r = requests.patch(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
         raise Exception(r.text)
     return r
 
 
 def _pdns_get(url):
-    r = requests.get(settings.POWERDNS_API + url, headers=headers)
+    r = requests.get(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
     if (r.status_code < 200 or r.status_code >= 500):
         raise Exception(r.text)
     return r
@@ -38,7 +60,7 @@ def _pdns_get(url):
 
 def _delete_or_replace_rrset(name, type, value, ttl=60):
     """
-    Return pdns API json to either replace or delete a record set, depending on value is empty or not.
+    Return pdns API json to either replace or delete a record set, depending on whether value is empty or not.
     """
     if value != "":
         return \
@@ -81,6 +103,13 @@ def create_zone(name, kind='NATIVE'):
     _pdns_post('/zones', payload)
 
 
+def delete_zone(name):
+    """
+    Commands pdns to delete a zone with the given name.
+    """
+    _pdns_delete('/zones/' + normalize_hostname(name))
+
+
 def zone_exists(name):
     """
     Returns whether pdns knows a zone with the given name.
@@ -98,7 +127,7 @@ def set_dyn_records(name, a, aaaa):
     """
     Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
     Only supports one A, one AAAA record.
-    If a or aaaa is None, pdns will be commanded to delete the record.
+    If a or aaaa is empty, pdns will be commanded to delete the record.
     """
     name = normalize_hostname(name)
 
@@ -106,5 +135,20 @@ def set_dyn_records(name, a, aaaa):
         "rrsets": [
             _delete_or_replace_rrset(name, 'a', a),
             _delete_or_replace_rrset(name, 'aaaa', aaaa),
+        ]
+    })
+
+
+def set_rrset(zone, name, type, value):
+    """
+    Commands pdns to set or delete a record set for the zone with the given name.
+    If value is empty, the rrset will be deleted.
+    """
+    zone = normalize_hostname(zone)
+    name = normalize_hostname(name)
+
+    _pdns_patch('/zones/' + zone, {
+        "rrsets": [
+            _delete_or_replace_rrset(name, type, value),
         ]
     })

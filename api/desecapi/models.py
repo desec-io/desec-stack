@@ -139,6 +139,13 @@ class Domain(models.Model):
         if changes_required:
             pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
+    def delete(self, *args, **kwargs):
+        pdns.delete_zone(self.name)
+        if self.name.endswith('.dedyn.io'):
+            pdns.set_rrset('dedyn.io', self.name, 'DS', '')
+            pdns.set_rrset('dedyn.io', self.name, 'NS', '')
+        super(Domain, self).delete(*args, **kwargs)
+
     def save(self, *args, **kwargs):
         self.updated = timezone.now()
         self.pdns_sync()

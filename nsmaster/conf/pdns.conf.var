@@ -1,10 +1,15 @@
 allow-unsigned-notify=yes
 allow-unsigned-supermaster=yes
+api=yes
+api-key=${DESECSTACK_NSMASTER_APIKEY}
 disable-axfr=yes
 setgid=pdns
 setuid=pdns
 slave=yes
 version-string=powerdns
+webserver=yes
+webserver-address=0.0.0.0
+webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
 carbon-server=${DESECSTACK_NSMASTER_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSMASTER_CARBONOURNAME}
 

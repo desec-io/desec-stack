@@ -25,11 +25,10 @@ then
   sleep 60
 fi &
 
-if [ -z "$(docker volume ls | grep desecstack_nslord)" ]
+if [ -z "$(docker volume ls | grep 'desecstack_dblord')" ]
 then
-  echo "NO NSLORD FOUND, PREPARING DBLORD, DBAPI"
-  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build dblord
-  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build nslord
+  echo "NO NSLORD/NSMASTER FOUND, PREPARING"
+  docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml build dblord nslord
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d dblord
   sleep 60
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.test.yml up -d nslord
