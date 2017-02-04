@@ -1,6 +1,28 @@
 version: '2'
 
 services:
+
+  elasticsearch:
+    build: elasticsearch
+    ports:
+    - "9200:9200"
+    environment:
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+
+  logstash:
+    build: logstash/
+    ports:
+      - "5000:5000"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    build: kibana
+    depends_on:
+    - elasticsearch
+    ports:
+    - "5601:5601"
+
   www:
     build: www
     image: desec/dedyn-www:latest
@@ -13,6 +35,7 @@ services:
     depends_on:
     - static
     - api
+    - logstash
     mac_address: 06:42:ac:10:00:80
     networks:
       front:
@@ -23,16 +46,20 @@ services:
       driver: "syslog"
       options:
         tag: "desec/www"
+        syslog-address: "tcp://localhost:5000"
 
   static:
     build: static
     image: desec/dedyn-static:latest
     networks:
     - front # TODO change to back2 when https://github.com/docker/docker/issues/27101 is fixed
+    depends_on:
+    - logstash
     logging:
       driver: "syslog"
       options:
         tag: "desec/static"
+        syslog-address: "tcp://localhost:5000"
 
   dbapi:
     build: dbapi
@@ -42,12 +69,15 @@ services:
     environment:
     - MYSQL_ROOT_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_root}
     - DESECSTACK_DBAPI_PASSWORD_desec
+    depends_on:
+    - logstash
     networks:
     - back1
     logging:
       driver: "syslog"
       options:
         tag: "desec/dbapi"
+#        syslog-address: "tcp://localhost:5000"
 
   dblord:
     build: dblord
@@ -59,12 +89,15 @@ services:
     - DESECSTACK_DBLORD_PASSWORD_pdns
     - DESECSTACK_DBLORD_PASSWORD_poweradmin
     - DESECSTACK_DEVADMIN_PASSWORD_poweradmin
+    depends_on:
+    - logstash
     networks:
     - back1
     logging:
       driver: "syslog"
       options:
         tag: "desec/dblord"
+#        syslog-address: "tcp://localhost:5000"
 
   dbmaster:
     build: dbmaster
@@ -81,12 +114,15 @@ services:
     - DESECSTACK_DBMASTER_SUBJECT_ns1replication
     - DESECSTACK_DBMASTER_PASSWORD_ns2replication
     - DESECSTACK_DBMASTER_SUBJECT_ns2replication
+    depends_on:
+    - logstash
     networks:
     - back1
     logging:
       driver: "syslog"
       options:
         tag: "desec/dbmaster"
+#        syslog-address: "tcp://localhost:5000"
 
   api:
     build: api
@@ -94,6 +130,7 @@ services:
     depends_on:
     - dbapi
     - nslord
+    - logstash
     environment:
     - DESECSTACK_API_SECRETKEY
     - DESECSTACK_DBAPI_PASSWORD_desec
@@ -107,6 +144,7 @@ services:
       driver: "syslog"
       options:
         tag: "desec/api"
+#        syslog-address: "tcp://localhost:5000"
 
   nslord:
     build: nslord
@@ -116,6 +154,7 @@ services:
     - DESECSTACK_NSLORD_APIKEY
     depends_on:
     - dblord
+    - logstash
     networks:
       back1:
         ipv4_address: 172.16.1.11
@@ -123,6 +162,7 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nslord"
+#        syslog-address: "tcp://localhost:5000"
 
   nsmaster:
     build: nsmaster
@@ -131,6 +171,7 @@ services:
     - DESECSTACK_DBMASTER_PASSWORD_pdns
     depends_on:
     - dbmaster
+    - logstash
     networks:
       back1:
         ipv4_address: 172.16.1.12
@@ -138,6 +179,7 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nsmaster"
+#        syslog-address: "tcp://localhost:5000"
 
 volumes:
   dbapi_mysql:

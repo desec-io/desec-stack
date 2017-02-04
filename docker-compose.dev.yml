@@ -2,6 +2,19 @@ version: '2'
 
 # mostly extending from main .yml
 services:
+ 
+  kibana:
+    logging:
+      driver: "none"
+
+  elasticsearch:
+    logging:
+      driver: "none"
+  
+  logstash:
+    logging:
+      driver: "none"
+ 
   www:
     logging:
       driver: "json-file"
