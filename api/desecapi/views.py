@@ -171,7 +171,9 @@ class DynDNS12Update(APIView):
 
             # 3. http basic auth username
             try:
-                return base64.b64decode(get_authorization_header(request).decode().split(' ')[1].encode()).decode().split(':')[0]
+                domainname = base64.b64decode(get_authorization_header(request).decode().split(' ')[1].encode()).decode().split(':')[0]
+                if domainname:
+                    return domainname
             except IndexError:
                 pass
             except UnicodeDecodeError:
@@ -184,6 +186,10 @@ class DynDNS12Update(APIView):
             # 5. only domain associated with this user account
             if len(request.user.domains.all()) == 1:
                 return request.user.domains.all()[0].name
+            if len(request.user.domains.all()) > 1:
+                ex = ValidationError(detail={"detail": "Request does not specify domain unambiguously.", "code": "domain-ambiguous"})
+                ex.status_code = status.HTTP_409_CONFLICT
+                raise ex
 
             return None
 
