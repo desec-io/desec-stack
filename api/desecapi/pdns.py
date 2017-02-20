@@ -138,7 +138,7 @@ def notify_zone(name):
     """
     Commands pdns to notify the zone to the pdns slaves.
     """
-    return _pdns_put('/zones/%s/notify' % normalize_hostname(name))
+    _pdns_put('/zones/%s/notify' % normalize_hostname(name))
 
 
 def set_dyn_records(name, a, aaaa, acme_challenge=''):
