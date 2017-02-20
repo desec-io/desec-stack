@@ -194,6 +194,21 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
 
+    def testRollback(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones', body="some error", status=500)
+
+        url = reverse('domain-list')
+        data = {'name': name}
+        try:
+            response = self.client.post(url, data)
+        except:
+            pass
+
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+
 
 class AuthenticatedDynDomainTests(APITestCase):
     def setUp(self):
