@@ -76,8 +76,9 @@ class AuthenticatedDomainTests(APITestCase):
 
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
+        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanGetOwnedDomains(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -235,8 +236,9 @@ class AuthenticatedDynDomainTests(APITestCase):
 
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
+        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanPostDynDomains(self):
         url = reverse('domain-list')

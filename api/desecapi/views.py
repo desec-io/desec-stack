@@ -88,6 +88,13 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
     permission_classes = (permissions.IsAuthenticated, IsOwner,)
 
+    def delete(self, request, *args, **kwargs):
+        try:
+            super(DomainDetail, self).delete(request, *args, **kwargs)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
 
