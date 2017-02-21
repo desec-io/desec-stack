@@ -122,6 +122,18 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+    def testCantPostUnavailableDomain(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones',
+                               body='{"error": "Domain \'' + name + '.\' already exists"}', status=422)
+
+        url = reverse('domain-list')
+        data = {'name': name}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
     def testCanPostComplicatedDomains(self):
         url = reverse('domain-list')
         data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
