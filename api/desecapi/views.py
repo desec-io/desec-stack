@@ -18,6 +18,7 @@ from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentica
 import base64
 from desecapi import settings
 from rest_framework.exceptions import ValidationError
+import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
 from datetime import datetime, timedelta
@@ -105,6 +106,14 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(DomainDetail, self).update(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail={"detail": str(e)})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
 
 
 class DomainDetailByName(DomainDetail):

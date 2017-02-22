@@ -111,6 +111,10 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'LOGIN_AFTER_ACTIVATION': True,
     'SEND_ACTIVATION_EMAIL': False,
+    'SERIALIZERS': {
+        'user': 'desecapi.serializers.UserSerializer',
+        'user_registration': 'desecapi.serializers.UserRegistrationSerializer',
+    },
 }
 
 TEMPLATES = [

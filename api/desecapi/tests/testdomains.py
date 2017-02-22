@@ -94,13 +94,23 @@ class AuthenticatedDomainTests(APITestCase):
     def testCanPutOwnedDomain(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
-        newname = utils.generateDomainname()
-        response.data['name'] = newname
+        response.data['arecord'] = '1.2.3.4'
         response = self.client.put(url, response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], newname)
+        self.assertEqual(response.data['arecord'], '1.2.3.4')
+
+    def testCantChangeDomainName(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+        newname = utils.generateDomainname()
+        response.data['name'] = newname
+        response = self.client.put(url, response.data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], self.ownedDomains[1].name)
 
     def testCantPutOtherDomains(self):
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))

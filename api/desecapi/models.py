@@ -4,6 +4,7 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from desecapi import pdns
 import datetime, time
 
@@ -98,6 +99,7 @@ class Domain(models.Model):
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+    _dirtyName = False
     _dirtyRecords = False
 
     def __setattr__(self, attrname, val):
@@ -106,6 +108,12 @@ class Domain(models.Model):
             super(Domain, self).__setattr__(attrname, getattr(self, setter_func)(val))
         else:
             super(Domain, self).__setattr__(attrname, val)
+
+    def setter_name(self, val):
+        if val != self.name:
+            self._dirtyName = True
+
+        return val
 
     def setter_arecord(self, val):
         if val != self.arecord:
@@ -118,6 +126,10 @@ class Domain(models.Model):
             self._dirtyRecords = True
 
         return val
+
+    def clean(self):
+        if self._dirtyName:
+            raise ValidationError('You must not change the domain name')
 
     def pdns_resync(self):
         """
@@ -167,6 +179,7 @@ class Domain(models.Model):
         new_domain = self.pk is None
 
         self.updated = timezone.now()
+        self.clean()
         super(Domain, self).save(*args, **kwargs)
 
         self.pdns_sync(new_domain)
