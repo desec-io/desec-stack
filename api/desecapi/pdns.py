@@ -69,7 +69,7 @@ def _pdns_put(url):
     return r
 
 
-def _delete_or_replace_rrset(name, type, value, ttl=60):
+def _delete_or_replace_rrset(name, rr_type, value, ttl=60):
     """
     Return pdns API json to either replace or delete a record set, depending on whether value is empty or not.
     """
@@ -78,7 +78,7 @@ def _delete_or_replace_rrset(name, type, value, ttl=60):
             {
                 "records": [
                     {
-                        "type": type,
+                        "type": rr_type,
                         "name": name,
                         "disabled": False,
                         "content": value,
@@ -86,14 +86,14 @@ def _delete_or_replace_rrset(name, type, value, ttl=60):
                 ],
                 "ttl": ttl,
                 "changetype": "REPLACE",
-                "type": type,
+                "type": rr_type,
                 "name": name,
             }
     else:
         return \
             {
                 "changetype": "DELETE",
-                "type": type,
+                "type": rr_type,
                 "name": name
             }
 
@@ -160,7 +160,7 @@ def set_dyn_records(name, a, aaaa, acme_challenge=''):
     notify_zone(name)
 
 
-def set_rrset(zone, name, type, value):
+def set_rrset(zone, name, rr_type, value):
     """
     Commands pdns to set or delete a record set for the zone with the given name.
     If value is empty, the rrset will be deleted.
@@ -170,6 +170,6 @@ def set_rrset(zone, name, type, value):
 
     _pdns_patch('/zones/' + zone, {
         "rrsets": [
-            _delete_or_replace_rrset(name, type, value),
+            _delete_or_replace_rrset(name, rr_type, value),
         ]
     })
