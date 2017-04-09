@@ -99,6 +99,7 @@ class Domain(models.Model):
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+    acme_challenge = models.CharField(max_length=255, blank=True)
     _dirtyName = False
     _dirtyRecords = False
 
@@ -127,6 +128,12 @@ class Domain(models.Model):
 
         return val
 
+    def setter_acme_challenge(self, val):
+        if val != self.acme_challenge:
+            self._dirtyRecords = True
+
+        return val
+
     def clean(self):
         if self._dirtyName:
             raise ValidationError('You must not change the domain name')
@@ -142,7 +149,7 @@ class Domain(models.Model):
             pdns.create_zone(self.name)
 
         # update zone to latest information
-        pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
+        pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
 
     def pdns_sync(self, new_domain):
         """
@@ -156,11 +163,11 @@ class Domain(models.Model):
         # if this zone is new, create it and set dirty flag if necessary
         if new_domain:
             pdns.create_zone(self.name)
-            self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord)
+            self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord) or bool(self.acme_challenge)
 
         # make changes if necessary
         if self._dirtyRecords:
-            pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
+            pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
 
         self._dirtyRecords = False
 

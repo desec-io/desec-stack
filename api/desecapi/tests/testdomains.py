@@ -170,6 +170,16 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['aaaarecord'], 'fe80::a11:10ff:fee0:ff77')
 
+    def testCanUpdateAcmeChallenge(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+        response.data['acme_challenge'] = 'test_challenge'
+        response = self.client.put(url, response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['acme_challenge'], 'test_challenge')
+
     def testPostingCausesPdnsAPICall(self):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
@@ -189,13 +199,29 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
 
         url = reverse('domain-list')
-        data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef'}
+        data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef', 'acme_challenge': 'letsencrypt_ftw'}
         response = self.client.post(url, data)
 
         self.assertEqual(httpretty.last_request().method, 'PATCH')
         self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
         self.assertTrue('1.3.3.7' in httpretty.last_request().parsed_body)
         self.assertTrue('dead::beef' in httpretty.last_request().parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.last_request().parsed_body)
+
+    def testPostDomainCausesPdnsAPIPatch(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
+
+        url = reverse('domain-list')
+        data = {'name': name, 'acme_challenge': 'letsencrypt_ftw'}
+        self.client.post(url, data)
+
+        self.assertEqual(httpretty.last_request().method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.last_request().parsed_body)
 
     def testUpdateingCausesPdnsAPICall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
