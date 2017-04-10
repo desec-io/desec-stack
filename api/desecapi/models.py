@@ -1,9 +1,10 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from desecapi import pdns
 import datetime, time
 
@@ -98,6 +99,37 @@ class Domain(models.Model):
     arecord = models.CharField(max_length=255, blank=True)
     aaaarecord = models.CharField(max_length=1024, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+    _dirtyName = False
+    _dirtyRecords = False
+
+    def __setattr__(self, attrname, val):
+        setter_func = 'setter_' + attrname
+        if attrname in self.__dict__ and callable(getattr(self, setter_func, None)):
+            super(Domain, self).__setattr__(attrname, getattr(self, setter_func)(val))
+        else:
+            super(Domain, self).__setattr__(attrname, val)
+
+    def setter_name(self, val):
+        if val != self.name:
+            self._dirtyName = True
+
+        return val
+
+    def setter_arecord(self, val):
+        if val != self.arecord:
+            self._dirtyRecords = True
+
+        return val
+
+    def setter_aaaarecord(self, val):
+        if val != self.aaaarecord:
+            self._dirtyRecords = True
+
+        return val
+
+    def clean(self):
+        if self._dirtyName:
+            raise ValidationError('You must not change the domain name')
 
     def pdns_resync(self):
         """
@@ -112,7 +144,7 @@ class Domain(models.Model):
         # update zone to latest information
         pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
-    def pdns_sync(self):
+    def pdns_sync(self, new_domain):
         """
         Command pdns updates as indicated by the local changes.
         """
@@ -121,35 +153,36 @@ class Domain(models.Model):
             # suspend all updates
             return
 
-        new_domain = self.id is None
-        changes_required = False
-
-        # if this zone is new, create it
+        # if this zone is new, create it and set dirty flag if necessary
         if new_domain:
             pdns.create_zone(self.name)
-
-        # check if current A and AAAA record values require updating pdns
-        if new_domain:
-            changes_required = bool(self.arecord) or bool(self.aaaarecord)
-        else:
-            orig_domain = Domain.objects.get(id=self.id)
-            changes_required = self.arecord != orig_domain.arecord or self.aaaarecord != orig_domain.aaaarecord
+            self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord)
 
         # make changes if necessary
-        if changes_required:
+        if self._dirtyRecords:
             pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord)
 
+        self._dirtyRecords = False
+
+    @transaction.atomic
     def delete(self, *args, **kwargs):
+        super(Domain, self).delete(*args, **kwargs)
+
         pdns.delete_zone(self.name)
         if self.name.endswith('.dedyn.io'):
             pdns.set_rrset('dedyn.io', self.name, 'DS', '')
             pdns.set_rrset('dedyn.io', self.name, 'NS', '')
-        super(Domain, self).delete(*args, **kwargs)
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
+        # Record here if this is a new domain (self.pk is only None until we call super.save())
+        new_domain = self.pk is None
+
         self.updated = timezone.now()
-        self.pdns_sync()
+        self.clean()
         super(Domain, self).save(*args, **kwargs)
+
+        self.pdns_sync(new_domain)
 
     class Meta:
         ordering = ('created',)

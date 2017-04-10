@@ -25,12 +25,16 @@ def _pdns_delete(url):
     # We thus issue a second delete request on nsmaster to delete the zone there immediately.
     r1 = requests.delete(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
     if r1.status_code < 200 or r1.status_code >= 300:
-        raise Exception(r1.text)
+        # Deletion technically does not fail if the zone didn't exist in the first place
+        if r1.status_code == 422 and 'Could not find domain' in r1.text:
+            pass
+        else:
+            raise Exception(r1.text)
 
     # Delete from nsmaster as well
     r2 = requests.delete(settings.NSMASTER_PDNS_API + url, headers=headers_nsmaster)
     if r2.status_code < 200 or r2.status_code >= 300:
-        # Allow this to fail if nsmaster does not know the zone yet
+        # Deletion technically does not fail if the zone didn't exist in the first place
         if r2.status_code == 422 and 'Could not find domain' in r2.text:
             pass
         else:

@@ -76,8 +76,9 @@ class AuthenticatedDomainTests(APITestCase):
 
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
+        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanGetOwnedDomains(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -93,13 +94,23 @@ class AuthenticatedDomainTests(APITestCase):
     def testCanPutOwnedDomain(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
-        newname = utils.generateDomainname()
-        response.data['name'] = newname
+        response.data['arecord'] = '1.2.3.4'
         response = self.client.put(url, response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], newname)
+        self.assertEqual(response.data['arecord'], '1.2.3.4')
+
+    def testCantChangeDomainName(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+        newname = utils.generateDomainname()
+        response.data['name'] = newname
+        response = self.client.put(url, response.data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], self.ownedDomains[1].name)
 
     def testCantPutOtherDomains(self):
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
@@ -118,6 +129,18 @@ class AuthenticatedDomainTests(APITestCase):
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def testCantPostUnavailableDomain(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones',
+                               body='{"error": "Domain \'' + name + '.\' already exists"}', status=422)
+
+        url = reverse('domain-list')
+        data = {'name': name}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
@@ -193,6 +216,21 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
         self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
 
+    def testRollback(self):
+        name = utils.generateDomainname()
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones', body="some error", status=500)
+
+        url = reverse('domain-list')
+        data = {'name': name}
+        try:
+            response = self.client.post(url, data)
+        except:
+            pass
+
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+
 
 class AuthenticatedDynDomainTests(APITestCase):
     def setUp(self):
@@ -235,8 +273,9 @@ class AuthenticatedDynDomainTests(APITestCase):
 
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
+        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanPostDynDomains(self):
         url = reverse('domain-list')

@@ -18,6 +18,7 @@ from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentica
 import base64
 from desecapi import settings
 from rest_framework.exceptions import ValidationError
+import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
 from datetime import datetime, timedelta
@@ -53,7 +54,7 @@ class DomainList(generics.ListCreateAPIView):
 
         queryset = Domain.objects.filter(name=serializer.validated_data['name'])
         if queryset.exists():
-            ex = ValidationError(detail={"detail": "This domain name is already registered.", "code": "domain-taken"})
+            ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
@@ -62,7 +63,15 @@ class DomainList(generics.ListCreateAPIView):
             ex.status_code = status.HTTP_403_FORBIDDEN
             raise ex
 
-        obj = serializer.save(owner=self.request.user)
+        try:
+            obj = serializer.save(owner=self.request.user)
+        except Exception as e:
+            if str(e).endswith(' already exists"}'):
+                ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
+                ex.status_code = status.HTTP_409_CONFLICT
+                raise ex
+            else:
+                raise e
 
         def sendDynDnsEmail(domain):
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
@@ -88,8 +97,23 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
     permission_classes = (permissions.IsAuthenticated, IsOwner,)
 
+    def delete(self, request, *args, **kwargs):
+        try:
+            super(DomainDetail, self).delete(request, *args, **kwargs)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(DomainDetail, self).update(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail={"detail": str(e)})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
 
 
 class DomainDetailByName(DomainDetail):
