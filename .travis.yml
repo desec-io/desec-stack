@@ -4,8 +4,8 @@ env:
   matrix:
    - DOCKER_COMPOSE_VERSION: 1.9.0
   global:
+   - DESECSTACK_DOMAIN=your.hostname.example.com
    - DESECSTACK_API_ADMIN=john.doe@example.com
-   - DESECSTACK_API_ALLOWED_HOSTS=desec.your.hostname.example.com update.dedyn.your.hostname.example.com
    - DESECSTACK_API_SEPA_CREDITOR_ID=TESTCREDITORID
    - DESECSTACK_API_EMAIL_HOST=mail.your.hostname.example.com
    - DESECSTACK_API_EMAIL_HOST_USER=user

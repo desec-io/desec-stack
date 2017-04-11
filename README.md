@@ -23,6 +23,8 @@ Although most configuration is contained in this repository, some external depen
     To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
 3.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
+    - global
+      - `DESECSTACK_DOMAIN`: domain name under which the entire system will be running. The API will be reachable at https://desec.$DESECSTACK_DOMAIN/api/. For development setup, we recommend using `yourname.dedyn.io`
     - network
       - `DESECSTACK_IPV4_REAR_PREFIX16`: IPv4 net, size /16, for assignment of internal container IPv4 addresses. **NOTE:** If you change this in an existing setup, you 
         need to manually update MySQL grant tables and the `nsmaster` supermaster table to update IP addresses! Better don't do it.
@@ -33,7 +35,6 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_DBMASTER_CERTS`: `./path/to/certificates` for `dbmaster` container
     - API-related
       - `DESECSTACK_API_ADMIN`: white-space separated list of Django admin email addresses
-      - `DESECSTACK_API_ALLOWED_HOSTS`: white-space separated list of hostnames for which the API listens
       - `DESECSTACK_API_DEBUG`: Django debug setting. Must be True (default in `docker-compose.dev.yml`) or False (default otherwise)
       - `DESECSTACK_API_SEPA_CREDITOR_ID`: SEPA creditor ID for donations
       - `DESECSTACK_API_EMAIL_HOST`: when sending email, use this mail server
