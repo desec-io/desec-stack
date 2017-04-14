@@ -127,7 +127,7 @@ def zone_exists(name):
         raise Exception(reply.text)
 
 
-def set_dyn_records(name, a, aaaa):
+def set_dyn_records(name, a, aaaa, acme_challenge=''):
     """
     Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
     Only supports one A, one AAAA record.
@@ -139,6 +139,7 @@ def set_dyn_records(name, a, aaaa):
         "rrsets": [
             _delete_or_replace_rrset(name, 'a', a),
             _delete_or_replace_rrset(name, 'aaaa', aaaa),
+            _delete_or_replace_rrset('_acme-challenge.%s' % name, 'txt', '"%s"' % acme_challenge),
         ]
     })
 
