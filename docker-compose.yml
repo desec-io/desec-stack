@@ -10,6 +10,8 @@ services:
     volumes:
     - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
     - ./www/html:/usr/share/nginx/html:ro
+    environment:
+    - DESECSTACK_DOMAIN
     depends_on:
     - static
     - api
@@ -100,8 +102,8 @@ services:
     - dbapi
     - nslord
     environment:
+    - DESECSTACK_DOMAIN
     - DESECSTACK_API_ADMIN
-    - DESECSTACK_API_ALLOWED_HOSTS
     - DESECSTACK_API_SEPA_CREDITOR_ID
     - DESECSTACK_API_EMAIL_HOST
     - DESECSTACK_API_EMAIL_HOST_USER

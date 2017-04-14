@@ -25,7 +25,11 @@ DEBUG = False
 if os.environ.get('DESECSTACK_API_DEBUG', "").upper() == "TRUE":
     DEBUG = True
 
-ALLOWED_HOSTS = os.environ['DESECSTACK_API_ALLOWED_HOSTS'].split()
+ALLOWED_HOSTS = [
+    'desec.%s' % os.environ['DESECSTACK_DOMAIN'],
+    'update.dedyn.%s' % os.environ['DESECSTACK_DOMAIN'],
+    'update6.dedyn.%s' % os.environ['DESECSTACK_DOMAIN'],
+]
 
 
 # Application definition
