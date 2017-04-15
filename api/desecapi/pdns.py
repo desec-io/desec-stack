@@ -62,6 +62,13 @@ def _pdns_get(url):
     return r
 
 
+def _pdns_put(url):
+    r = requests.put(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
+    if r.status_code < 200 or r.status_code >= 500:
+        raise Exception(r.text)
+    return r
+
+
 def _delete_or_replace_rrset(name, type, value, ttl=60):
     """
     Return pdns API json to either replace or delete a record set, depending on whether value is empty or not.
@@ -127,6 +134,13 @@ def zone_exists(name):
         raise Exception(reply.text)
 
 
+def notify_zone(name):
+    """
+    Commands pdns to notify the zone to the pdns slaves.
+    """
+    return _pdns_put('/zones/%s/notify' % normalize_hostname(name))
+
+
 def set_dyn_records(name, a, aaaa, acme_challenge=''):
     """
     Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
@@ -142,6 +156,8 @@ def set_dyn_records(name, a, aaaa, acme_challenge=''):
             _delete_or_replace_rrset('_acme-challenge.%s' % name, 'txt', '"%s"' % acme_challenge),
         ]
     })
+
+    notify_zone(name)
 
 
 def set_rrset(zone, name, type, value):
