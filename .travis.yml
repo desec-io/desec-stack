@@ -47,7 +47,7 @@ before_install:
   - rm -f static
   - git clone https://github.com/desec-io/desec-www.git www
   - git clone https://github.com/desec-io/desec-static.git static
-  - mkdir static/dist
+  - mkdir static/ultima
   - docker-compose build --no-cache --pull
 
 script:
