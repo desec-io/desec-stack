@@ -7,6 +7,7 @@ from desecapi.models import Domain
 from django.core import mail
 import httpretty
 from django.conf import settings
+import json
 
 
 class UnauthenticatedDomainTests(APITestCase):
@@ -95,7 +96,7 @@ class AuthenticatedDomainTests(APITestCase):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
         response.data['arecord'] = '1.2.3.4'
-        response = self.client.put(url, response.data)
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -106,7 +107,9 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.get(url)
         newname = utils.generateDomainname()
         response.data['name'] = newname
-        response = self.client.put(url, response.data)
+        response.data['arecord'] = None
+        response.data['aaaarecord'] = None
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -114,7 +117,7 @@ class AuthenticatedDomainTests(APITestCase):
 
     def testCantPutOtherDomains(self):
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
-        response = self.client.put(url, {})
+        response = self.client.put(url, json.dumps({}), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanPostDomains(self):
@@ -154,7 +157,8 @@ class AuthenticatedDomainTests(APITestCase):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
         response.data['arecord'] = '10.13.3.7'
-        response = self.client.put(url, response.data)
+        response.data['aaaarecord'] = None
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -163,8 +167,9 @@ class AuthenticatedDomainTests(APITestCase):
     def testCanUpdateAAAARecord(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
+        response.data['arecord'] = None
         response.data['aaaarecord'] = 'fe80::a11:10ff:fee0:ff77'
-        response = self.client.put(url, response.data)
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -174,7 +179,7 @@ class AuthenticatedDomainTests(APITestCase):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
         response.data['acme_challenge'] = 'test_challenge'
-        response = self.client.put(url, response.data)
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -234,7 +239,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
 
         response.data['arecord'] = '10.13.3.7'
-        response = self.client.put(url, response.data)
+        self.client.put(url, json.dumps(response.data), content_type='application/json')
 
         self.assertTrue('10.13.3.7' in httpretty.httpretty.latest_requests[-2].parsed_body)
 
@@ -247,7 +252,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
 
         response.data['arecord'] = '10.13.3.10'
-        response = self.client.put(url, response.data)
+        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
 
         self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
         self.assertTrue('10.13.3.10' in httpretty.httpretty.latest_requests[-2].parsed_body)
@@ -298,9 +303,9 @@ class AuthenticatedDynDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(httpretty.last_request().method, 'PATCH')
         self.assertEqual(httpretty.last_request().headers['Host'], 'nslord:8081')
-        self.assertTrue('"NS"' in httpretty.last_request().parsed_body
-                        and '"' + self.ownedDomains[1].name + '."' in httpretty.last_request().parsed_body
-                        and '"DELETE"' in httpretty.last_request().parsed_body)
+        self.assertTrue('"NS"' in httpretty.last_request().parsed_body)
+        self.assertTrue('"' + self.ownedDomains[1].name + '."' in httpretty.last_request().parsed_body)
+        self.assertTrue('"DELETE"' in httpretty.last_request().parsed_body)
 
         httpretty.reset()
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
