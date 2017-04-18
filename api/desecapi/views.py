@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain, User
-from desecapi.serializers import DomainSerializer, DonationSerializer
+from desecapi.models import Domain, User, RRset
+from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer
 from rest_framework import generics
-from desecapi.permissions import IsOwner
+from desecapi.permissions import IsOwner, IsDomainOwner
 from rest_framework import permissions
 from django.http import Http404
 from rest_framework.views import APIView
@@ -17,7 +17,7 @@ from django.template import Context
 from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentication
 import base64
 from desecapi import settings
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import MethodNotAllowed, ValidationError
 import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
@@ -28,6 +28,8 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from desecapi.emails import send_account_lock_email
 import re
+from desecapi import pdns
+import json
 
 # TODO Generalize?
 patternDyn = re.compile(r'^[A-Za-z][A-Za-z0-9-]*\.dedyn\.io$')
@@ -118,6 +120,95 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class DomainDetailByName(DomainDetail):
     lookup_field = 'name'
+
+
+class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
+    lookup_field = 'subname'
+    serializer_class = RRsetSerializer
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+
+    def get_queryset(self):
+        name = self.kwargs['name']
+        subname = self.kwargs['subname']
+        type = self.kwargs['type']
+
+        return RRset.objects.filter(domain__name=name, subname=subname, type=type)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            return super().delete(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail={"detail": str(e)})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
+
+    def get(self, request, *args, **kwargs):
+        subname = self.kwargs['subname']
+        type = self.kwargs['type'].upper()
+
+        # TODO Do we need this functionality at all? We could just disregard the SOA record completely.
+        if type == 'SOA' and subname == '':
+            name = self.kwargs['name']
+
+            # This will throw an exception if the user does not own the domain
+            try:
+                domain = Domain.objects.get(name=name, owner=request.user.pk)
+            except Domain.DoesNotExist:
+                raise Http404
+
+            return Response(pdns.get_rrsets(domain.name, subname, type)[0])
+
+        return super().get(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        records = request.data.get('records')
+
+        if records == []:
+            return self.delete(request, *args, **kwargs)
+
+        try:
+            return super().update(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail={"detail": str(e)})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
+        # TODO add good exception for PUT/PATCH'ing the SOA record, if we decide to take of SOA at all
+
+
+class RRsetsDetail(generics.ListCreateAPIView):
+    serializer_class = RRsetSerializer
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+
+    def get_queryset(self):
+        name = self.kwargs['name']
+        subname = self.kwargs.get('subname')
+        type = self.kwargs.get('type')
+
+        # Replace by proper exception
+        assert(subname is None or type is None)
+
+        if subname is not None:
+            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
+        elif type is not None:
+            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, type=type)
+        else:
+            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk)
+
+    def create(self, request, *args, **kwargs):
+        if self.kwargs.get('subname') is not None or self.kwargs.get('type') is not None:
+            raise MethodNotAllowed(method=request.method)
+
+        try:
+            return super().create(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail={"detail": str(e)})
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
+        # TODO improve error handling
+        except Exception as e:
+            ex = ValidationError(detail={"detail": json.loads(str(e))['error']})
+            ex.status_code = status.HTTP_400_BAD_REQUEST
+            raise ex
 
 
 class Root(APIView):

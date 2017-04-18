@@ -9,6 +9,7 @@ from desecapi import pdns
 import datetime, time
 import django.core.exceptions
 import rest_framework.exceptions
+from django.core.validators import MinValueValidator
 
 
 class MyUserManager(BaseUserManager):
@@ -200,8 +201,10 @@ class Domain(models.Model):
 def get_default_value_created():
     return timezone.now()
 
+
 def get_default_value_due():
     return timezone.now() + datetime.timedelta(days=7)
+
 
 def get_default_value_mref():
     return "ONDON" + str((timezone.now() - timezone.datetime(1970,1,1,tzinfo=timezone.utc)).total_seconds())
@@ -227,3 +230,68 @@ class Donation(models.Model):
 
     class Meta:
         ordering = ('created',)
+
+
+class RRset(models.Model):
+    # TODO Do these two fields really make sense? Meaning is limited when deleting + recreating an RRset
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(null=True)
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='rrsets')
+    subname = models.CharField(max_length=178, blank=True)
+    type = models.CharField(max_length=10)
+    records = models.CharField(max_length=64000, blank=True)
+    ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    _dirty = False
+
+    class Meta:
+        unique_together = (("domain","subname","type"),)
+
+    def __setattr__(self, attrname, val):
+        setter_func = 'setter_' + attrname
+        if attrname in self.__dict__ and callable(getattr(self, setter_func, None)):
+            super().__setattr__(attrname, getattr(self, setter_func)(val))
+        else:
+            super().__setattr__(attrname, val)
+
+    def setter_records(self, val):
+        if val != self.records:
+            self._dirty = True
+
+        return val
+
+    def setter_ttl(self, val):
+        if val != self.ttl:
+            self._dirty = True
+
+        return val
+
+    def update_pdns(self):
+        from .serializers import RRsetSerializer
+        serializer = RRsetSerializer(self)
+
+        pdns.set_rrsets(self.domain.name, [serializer.data])
+        pdns.notify_zone(self.domain.name)
+
+
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        if self.type == 'SOA':
+            raise ValidationError('You cannot touch the SOA record')
+
+        # Reset records so that our pdns update later will cause deletion
+        self.records = '[]'
+        super().delete(*args, **kwargs)
+
+        self.update_pdns()
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        if self.type == 'SOA':
+            raise ValidationError('You cannot touch the SOA record')
+
+        new = self.pk is None
+        self.updated = timezone.now()
+        super().save(*args, **kwargs)
+
+        if self._dirty or new:
+            self.update_pdns()

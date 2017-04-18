@@ -1,9 +1,11 @@
 import requests
 import json
+from jq import jq
 from desecapi import settings
 
 
 headers_nslord = {
+    'Accept': 'application/json',
     'User-Agent': 'desecapi',
     'X-API-Key': settings.NSLORD_PDNS_API_TOKEN,
 }
@@ -18,6 +20,7 @@ def normalize_hostname(name):
     if '/' in name or '?' in name:
         raise Exception('Invalid hostname ' + name)
     return name if name.endswith('.') else name + '.'
+
 
 def _pdns_delete(url):
     # We first delete the zone from nslord, the main authoritative source of our DNS data.
@@ -42,11 +45,13 @@ def _pdns_delete(url):
 
     return (r1, r2)
 
+
 def _pdns_post(url, body):
     r = requests.post(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
         raise Exception(r.text)
     return r
+
 
 def _pdns_patch(url, body):
     r = requests.patch(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
@@ -119,6 +124,40 @@ def delete_zone(name):
     Commands pdns to delete a zone with the given name.
     """
     _pdns_delete('/zones/' + normalize_hostname(name))
+
+
+def get_zone(name):
+    """
+    Retrieves a JSON representation of the zone from pdns
+    """
+    r = _pdns_get('/zones/' + normalize_hostname(name))
+
+    return r.json()
+
+
+def get_rrsets(name, subname = None, type = None):
+    """
+    Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
+    """
+    fullname = '.'.join(filter(None, [subname, name])) + '.'
+
+    rrsets = get_zone(name)['rrsets']
+    rrsets = [rrset for rrset in rrsets \
+              if (subname == None or rrset['name'] == fullname) and (type == None or rrset['type'] == type) \
+        ]
+
+    # Make sure that if subname and type are given, we get one or none RRsets
+    assert subname == None or type == None or len(rrsets) <= 1, \
+            "pdns returned multiple RRsets of type %s for %s (zone: %s)" % (type, fullname, name)
+
+    return jq("[.[] | {name: .name, records: [.records[] | .content], ttl: .ttl, type: .type}]").transform(rrsets)
+
+
+def set_rrsets(name, rrsets):
+    name = normalize_hostname(name)
+
+    data = jq('{"rrsets": [ .[] | { "name": .name, "type": .type, "ttl": .ttl, "changetype": "REPLACE", "records": [ .records[] | { "content": ., "disabled": false } ] } ] }').transform(rrsets)
+    _pdns_patch('/zones/' + name, data)
 
 
 def zone_exists(name):

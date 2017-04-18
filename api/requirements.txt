@@ -5,8 +5,8 @@ argparse==1.2.1
 cffi==1.9.1
 coverage==3.7.1
 cryptography==1.5.3
-djangorestframework==3.5.3
-djoser==0.5.1
+djangorestframework==3.5.4
+djoser==0.5.2
 dnspython==1.15.0
 enum34==1.1.6
 httpretty==0.8.14
@@ -19,3 +19,5 @@ requests==2.7.0
 six==1.9.0
 uwsgi==2.0.14
 django-nocaptcha-recaptcha==0.0.19
+jq==0.1.6
+sqlparse==0.2.3
