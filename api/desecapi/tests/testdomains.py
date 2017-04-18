@@ -197,16 +197,17 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
 
         url = reverse('domain-list')
         data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef', 'acme_challenge': 'letsencrypt_ftw'}
         response = self.client.post(url, data)
 
-        self.assertEqual(httpretty.last_request().method, 'PATCH')
-        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
-        self.assertTrue('1.3.3.7' in httpretty.last_request().parsed_body)
-        self.assertTrue('dead::beef' in httpretty.last_request().parsed_body)
-        self.assertTrue('letsencrypt_ftw' in httpretty.last_request().parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('1.3.3.7' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('dead::beef' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-2].parsed_body)
 
     def testPostDomainCausesPdnsAPIPatch(self):
         name = utils.generateDomainname()
@@ -214,26 +215,43 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
 
         url = reverse('domain-list')
         data = {'name': name, 'acme_challenge': 'letsencrypt_ftw'}
         self.client.post(url, data)
 
-        self.assertEqual(httpretty.last_request().method, 'PATCH')
-        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
-        self.assertTrue('letsencrypt_ftw' in httpretty.last_request().parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-2].parsed_body)
 
-    def testUpdateingCausesPdnsAPICall(self):
+    def testUpdateingCausesPdnsAPIPatchCall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
 
         httpretty.enable()
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.')
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
 
         response.data['arecord'] = '10.13.3.7'
         response = self.client.put(url, response.data)
 
-        self.assertTrue('10.13.3.7' in httpretty.last_request().parsed_body)
+        self.assertTrue('10.13.3.7' in httpretty.httpretty.latest_requests[-2].parsed_body)
+
+    def testUpdateingCausesPdnsAPINotifyCall(self):
+        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        response = self.client.get(url)
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.')
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
+
+        response.data['arecord'] = '10.13.3.10'
+        response = self.client.put(url, response.data)
+
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
+        self.assertTrue('10.13.3.10' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.last_request().method, 'PUT')
 
     def testDomainDetailURL(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
