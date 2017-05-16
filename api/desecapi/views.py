@@ -200,15 +200,25 @@ class RRsetsDetail(generics.ListCreateAPIView):
 
         try:
             return super().create(request, *args, **kwargs)
+        except Domain.DoesNotExist:
+            raise Http404
         except django.core.exceptions.ValidationError as e:
             ex = ValidationError(detail={"detail": str(e)})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
         # TODO improve error handling
-        except Exception as e:
-            ex = ValidationError(detail={"detail": json.loads(str(e))['error']})
-            ex.status_code = status.HTTP_400_BAD_REQUEST
-            raise ex
+        # except Exception as e:
+        #     ex = ValidationError(detail={"detail": json.loads(str(e))['error']})
+        #     ex.status_code = status.HTTP_400_BAD_REQUEST
+        #     raise ex
+
+    def get(self, request, *args, **kwargs):
+        name = self.kwargs['name']
+
+        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
+            raise Http404
+
+        return super().get(request, *args, **kwargs)
 
 
 class Root(APIView):

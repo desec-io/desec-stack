@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from desecapi.models import Domain, Donation, User, RRset
 from djoser import serializers as djoserSerializers
+from django.core.exceptions import PermissionDenied
 import json
 
 
@@ -14,7 +15,7 @@ class JSONSerializer(serializers.Field):
 
 class RecordsSerializer(JSONSerializer):
     def to_internal_value(self, records):
-        if not all(isinstance(record, str) for record in records):
+        if isinstance(records, str) or not all(isinstance(record, str) for record in records):
             msg = 'Incorrect type. Expected a list of strings'
             raise serializers.ValidationError(msg)
 
@@ -36,13 +37,25 @@ class FromContext(object):
     def __call__(self):
         return self.value
 
+    @staticmethod
+    def get_domain(context):
+        try:
+            domain = Domain.objects.get(name=context['view'].kwargs['name'], owner=context['request'].user.pk)
+        except Domain.DoesNotExist:
+            if Domain.objects.get(name=context['view'].kwargs['name']):
+                raise PermissionDenied
+            else:
+                raise serializers.ValidationError("Domain not found")
+
+        return domain
+
 
 class RRsetSerializer(serializers.ModelSerializer):
     # Disallow moving RRset to different zone
     domain = serializers.SlugRelatedField(read_only=True, slug_field='name',
                                           default=FromContext(
-                                              lambda context: Domain.objects.get(name=context['view'].kwargs['name'], owner=context['request'].user.pk)
-                                          ))
+                                              lambda context: FromContext.get_domain(context)
+                                         ))
 
     # Disallow renaming RRset (RRset.update_pdns() does not cope with this)
     subname = serializers.CharField(allow_blank=True, read_only=True,

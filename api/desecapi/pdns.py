@@ -62,7 +62,7 @@ def _pdns_patch(url, body):
 
 def _pdns_get(url):
     r = requests.get(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 500:
+    if r.status_code < 200 or r.status_code >= 400:
         raise Exception(r.text)
     return r
 
