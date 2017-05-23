@@ -72,13 +72,13 @@ DATABASES = {
         'USER': 'desec',
         'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
         'HOST': 'dbapi',
-        'CHARSET': 'utf8mb4',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
         'TEST': {
             'CHARSET': 'utf8mb4',
         },
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        }
     },
 
 }
