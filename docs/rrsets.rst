@@ -1,0 +1,277 @@
+Retrieving and Manipulating DNS Information
+-------------------------------------------
+
+All DNS information is composed of so-called *Resource Record Sets*
+(*RRsets*).  An RRset is the set of all Resource Records of a given record
+type for a given name.  For example, the name ``example.com`` may have an
+RRset of type ``A``, denoting the set of IPv4 addresses associatd with this
+name.  In the traditional Bind zone file format, the RRset would be written
+as::
+
+    <name>  IN  A 127.0.0.1
+    <name>  IN  A 127.0.0.2
+    ...
+
+Each of these lines is a Resource Record, and together they form an RRset.
+
+The basic units accessible through the API are RRsets, each represented by a
+JSON object.  The object structure is detailed in the next section.
+
+The relevant endpoints all reside under ``/api/v1/domains/{domain}/rrsets/``,
+where ``{domain}`` is the name of a domain you own.  When operating on domains
+that don't exist or you don't own, the API responds with a ``404 Not Found``
+status code.  For a quick overview of the available endpoints, methods, and
+operations, see `Endpoint Reference`_.
+
+
+.. _`RRset object`:
+
+RRset Field Reference
+~~~~~~~~~~~~~~~~~~~~~
+
+A JSON object representing an RRset has the following structure::
+
+    {
+        "created": "2017-06-05T17:10:32.880571Z",
+        "domain": "example.com",
+        "name": "www.example.com.",
+        "records": [
+            "127.0.0.1",
+            "127.0.0.2"
+        ],
+        "subname": "www",
+        "ttl": 3600,
+        "type": "A",
+        "updated": "2017-06-05T17:10:32.880217Z"
+    }
+
+Field details:
+
+``created``
+    :Access mode: read-only
+    :Notice: this field is deprecated
+
+    Timestamp of RRset creation.
+
+    *Do not rely on this field; it may be removed in the future.*
+
+``domain``
+    :Access mode: read, write-once (upon RRset creation)
+
+    Name of the zone to which the RRset belongs.
+
+    Note that the zone name does not follow immediately from the RRset name.
+    For example, the ``com`` zone contains an RRset of type ``NS`` for the
+    name ``example.com.``, in order to set up the delegation to
+    ``example.com``'s DNS operator.  The DNS operator's nameserver again
+    has a similar ``NS`` RRset which, this time however, belongs to the
+    ``example.com`` zone.
+
+``name``
+    :Access mode: read-only
+
+    The full DNS name of the RRset.  If ``subname`` is empty, this is equal to
+    ``{domain}.``, otherwise it is equal to ``{subname}.{domain}.``.
+
+``records``
+    :Access mode: read, write
+
+    Array of record content strings.  The maximum number of array elements is
+    4091, and the maximum length of the array is 64,000 (after JSON encoding).
+    Note the `caveat on the priority field`_.
+
+``subname``
+    :Access mode: read, write-once (upon RRset creation)
+
+    Subdomain string which, together with ``domain``, defines the RRset name.
+    Typical examples are ``www`` or ``_443._tcp``.  The maximum length is 178.
+
+``ttl``
+    :Access mode: read, write
+
+    TTL (time-to-live) value, which dictates for how long resolvers may cache
+    this RRset.  Only positive integer values are allowed.  Additional
+    restrictions may apply.
+
+``type``
+    :Access mode: read, write-once (upon RRset creation)
+
+    RRset type (uppercase).  We support all `RRset types supported by
+    PowerDNS`_, with the exception of DNSSEC-related types (the backend
+    automagically takes care of setting those records properly).  You also
+    cannot access the ``SOA`` record, see `SOA caveat`_.
+
+.. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
+
+``updated``
+    :Access mode: read-only
+    :Notice: this field is deprecated
+
+    Timestamp of last update to this RRset.
+
+    *Do not rely on this field; it may be removed in the future.*
+
+
+Creating an RRset
+~~~~~~~~~~~~~~~~~
+
+To create a new RRset, simply issue a ``POST`` request to the
+``/api/v1/domains/{domain}/rrsets/`` endpoint, like this::
+
+    http POST \
+        https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        Authorization:"Token {token}" \
+        subname:='"www"' type:='"A"' records:='["127.0.0.1","127.0.0.2"]' ttl:=3600
+
+``type``, ``records``, and ``ttl`` are mandatory, whereas the ``subname``
+field is optional.
+
+Upon success, the response status code will be ``201 Created``, with the RRset
+contained in the response body.  If the ``records`` value was semantically
+invalid or an invalid ``type`` was provided, ``422 Unprocessable Entity`` is
+returned.  If the RRset could not be created for another reason (for example
+because another RRset with the same name and type exists already, or because
+not all required fields were provided), the API responds with ``400 Bad
+Request``.
+
+
+Retrieving all RRsets in a Zone
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``/api/v1/domains/{domain}/rrsets/`` endpoint reponds to ``GET`` requests
+with an array of `RRset object`_\ s. For example, you may issue the following
+command::
+
+    http GET \
+        https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        Authorization:"Token {token}"
+
+to retrieve the contents of a zone that you own.
+
+The response status code is ``200 OK``.  This is true also if there are no
+RRsets in the zone; in this case, the response body will be an empty JSON
+array.
+
+
+Retrieving RRsets of a Specific Type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To retrieve an array of all RRsets from your zone that have a specific type
+(e.g. all ``A`` records, regardless of ``subname``), issue a ``GET`` request
+with the (uppercase) RRset type appended to the ``rrsets/`` endpoint, like
+this::
+
+    http GET \
+        https://desec.io/api/v1/domains/{domain}/rrsets/{type}/ \
+        Authorization:"Token {token}"
+
+The response status code is ``200 OK``.  This is true also if there are no
+RRsets of the requested type; in this case, the response body will be an empty
+JSON array.
+
+
+Retrieving RRsets with a Specific Subname
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To retrieve an array of all RRsets from your zone that have a specific subname
+(e.g. all records in the ``www`` subdomain, regardless of their type), issue a
+``GET`` request with the ``subname`` information appended to the ``rrsets/``
+endpoint, like this::
+
+    http GET \
+        https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../ \
+        Authorization:"Token {token}"
+
+Note the three dots after ``{subname}``.  You can think of them as
+abbreviating the rest of the DNS name.  This approach also allows to retrieve
+all records associated with the zone apex (i.e. ``example.com`` where
+``subname`` is empty), by simply using the ``rrsets/.../``.
+
+The response status code is ``200 OK``.  This is true also if the requested
+subname does not have any RRsets associated with it; in this case, the
+response body will be an empty JSON array.
+
+
+Retrieving a Specific RRset
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To retrieve an RRsets with a specific name and type from your zone (e.g. the
+``A`` record for the ``www`` subdomain), issue a ``GET`` request with the
+``subname`` information and the type appended to the ``rrsets/`` endpoint,
+like this::
+
+    http GET \
+        https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \
+        Authorization:"Token {token}"
+
+This will only return one RRset (i.e., the response is not a JSON array).
+
+The response status code is ``200 OK`` if the requested RRset exists, and
+``404 Not Found`` otherwise.
+
+
+Modifying an RRset
+~~~~~~~~~~~~~~~~~~
+
+To modify an RRset, use the endpoint that you would also use to retrieve that
+specific RRset.  The API allows changing the values of ``records`` and
+``ttl``.  When using the ``PUT`` method, both fields need to be specified in
+the request body, along with the ``type`` field (which needs to be set to its
+previous value).  When using the ``PATCH`` method, only fields you would like
+to modify need to be provided.  Examples::
+
+    http PUT \
+        https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \
+        Authorization:"Token {token}" records:='["127.0.0.1"]' ttl:=3600
+
+    http PATCH \
+        https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \
+        Authorization:"Token {token}" ttl:=86400
+
+If the RRset was updated successfully, the API returns ``200 OK`` with the
+updated RRset in the reponse body.  If not all required fields were provided,
+the API responds with ``400 Bad Request``.  If the ``records`` value was
+semantically invalid, ``422 Unprocessable Entity`` is returned.  If the RRset
+does not exist, ``404 Not Found`` is returned.
+
+
+Deleting an RRset
+~~~~~~~~~~~~~~~~~
+
+To delete an RRset, you can send a ``DELETE`` request to the endpoint
+representing the RRset. Alternatively, you can modify it and provide an empty
+array for the ``records`` field (``[]``).
+
+Upon success or if the RRset did not exist in the first place, the response
+status code is ``204 No Content``.
+
+
+Limitations / Caveats
+~~~~~~~~~~~~~~~~~~~~~
+
+- All operations are performed on RRsets, not on the individual Resource
+  Records.
+
+.. _`SOA caveat`:
+
+- The ``SOA`` record cannot be read or written through this interface.  When
+  attempting to create, modify or otherwise access an ``SOA`` record, ``403
+  Forbidden`` is returned.
+
+  The rationale behind this is that the content of the ``SOA`` record is
+  entirely determined by the DNS operator, and users should not have to bother
+  with this kind of metadata.  Upon zone changes, the backend automatically
+  takes care of updating the ``SOA`` record accordingly.
+
+.. _`caveat on the priority field`:
+
+- The deSEC DNS API does not explicitly support priority fields (as used for
+  ``MX`` or ``SRV`` records and the like).
+
+  Instead, the priority is expected to be specified at the beginning of the
+  record content, separated from the rest of it by whitespace.
+
+- The TTL (time-to-live: time for which resolvers may cache DNS information)
+  is a property of an RRset (and not of a record).  Thus, all records in an
+  RRset share the record type and also the TTL.  (This is actually a
+  requirement of the DNS specification and not an API design choice.)
