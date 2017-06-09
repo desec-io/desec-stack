@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from desecapi.models import Domain, Donation, User, RRset
 from djoser import serializers as djoserSerializers
-from django.core.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
 import json
 
 
@@ -32,21 +32,18 @@ class FromContext(object):
         self.value_fn = value_fn
 
     def set_context(self, serializer_field):
-        self.value = self.value_fn(serializer_field.context)
+        try:
+            self.value = self.value_fn(serializer_field.context)
+        except KeyError:
+            raise ValidationError("This field is required.")
 
     def __call__(self):
         return self.value
 
     @staticmethod
     def get_domain(context):
-        try:
-            domain = Domain.objects.get(name=context['view'].kwargs['name'], owner=context['request'].user.pk)
-        except Domain.DoesNotExist:
-            if Domain.objects.get(name=context['view'].kwargs['name']):
-                raise PermissionDenied
-            else:
-                raise serializers.ValidationError("Domain not found")
-
+        domain = Domain.objects.get(name=context['view'].kwargs['name'],
+                                   owner=context['request'].user.pk)
         return domain
 
 

@@ -2,6 +2,7 @@ import requests
 import json
 from jq import jq
 from desecapi import settings
+from desecapi.exceptions import PdnsException
 
 
 headers_nslord = {
@@ -32,7 +33,7 @@ def _pdns_delete(url):
         if r1.status_code == 422 and 'Could not find domain' in r1.text:
             pass
         else:
-            raise Exception(r1.text)
+            raise PdnsException(r1)
 
     # Delete from nsmaster as well
     r2 = requests.delete(settings.NSMASTER_PDNS_API + url, headers=headers_nsmaster)
@@ -41,7 +42,7 @@ def _pdns_delete(url):
         if r2.status_code == 422 and 'Could not find domain' in r2.text:
             pass
         else:
-            raise Exception(r2.text)
+            raise PdnsException(r2)
 
     return (r1, r2)
 
@@ -49,28 +50,28 @@ def _pdns_delete(url):
 def _pdns_post(url, body):
     r = requests.post(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
 def _pdns_patch(url, body):
     r = requests.patch(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
 def _pdns_get(url):
     r = requests.get(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 400:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
 def _pdns_put(url):
     r = requests.put(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 500:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
@@ -146,10 +147,6 @@ def get_rrsets(name, subname = None, type = None):
               if (subname == None or rrset['name'] == fullname) and (type == None or rrset['type'] == type) \
         ]
 
-    # Make sure that if subname and type are given, we get one or none RRsets
-    assert subname == None or type == None or len(rrsets) <= 1, \
-            "pdns returned multiple RRsets of type %s for %s (zone: %s)" % (type, fullname, name)
-
     return jq("[.[] | {name: .name, records: [.records[] | .content], ttl: .ttl, type: .type}]").transform(rrsets)
 
 
@@ -164,13 +161,13 @@ def zone_exists(name):
     """
     Returns whether pdns knows a zone with the given name.
     """
-    reply = _pdns_get('/zones/' + normalize_hostname(name))
-    if reply.status_code == 200:
+    r = _pdns_get('/zones/' + normalize_hostname(name))
+    if r.status_code == 200:
         return True
-    elif reply.status_code == 422 and 'Could not find domain' in reply.text:
+    elif r.status_code == 422 and 'Could not find domain' in r.text:
         return False
     else:
-        raise Exception(reply.text)
+        raise PdnsException(r)
 
 
 def notify_zone(name):

@@ -97,7 +97,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets', args=(self.otherDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRset(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
@@ -121,7 +121,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRsetWithSubname(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
@@ -179,7 +179,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 32}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantPutForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
@@ -192,7 +192,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 30, 'type': 'A'}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantChangeEssentialProperties(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
@@ -255,11 +255,11 @@ class AuthenticatedRRsetTests(APITestCase):
         # Try PATCH with empty records
         data = {'records': []}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         # Try DELETE
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def testPostCausesPdnsAPICall(self):
         httpretty.enable()

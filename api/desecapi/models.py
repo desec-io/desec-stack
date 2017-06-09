@@ -1,14 +1,10 @@
 from django.conf import settings
 from django.db import models, transaction
-from django.contrib.auth.models import (
-    BaseUserManager, AbstractBaseUser
-)
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from desecapi import pdns
 import datetime, time
-import django.core.exceptions
-import rest_framework.exceptions
 from django.core.validators import MinValueValidator
 
 
@@ -272,12 +268,8 @@ class RRset(models.Model):
         pdns.set_rrsets(self.domain.name, [serializer.data])
         pdns.notify_zone(self.domain.name)
 
-
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        if self.type == 'SOA':
-            raise ValidationError('You cannot touch the SOA record')
-
         # Reset records so that our pdns update later will cause deletion
         self.records = '[]'
         super().delete(*args, **kwargs)
@@ -286,11 +278,9 @@ class RRset(models.Model):
 
     @transaction.atomic
     def save(self, *args, **kwargs):
-        if self.type == 'SOA':
-            raise ValidationError('You cannot touch the SOA record')
-
         new = self.pk is None
         self.updated = timezone.now()
+        self.clean_fields()
         super().save(*args, **kwargs)
 
         if self._dirty or new:
