@@ -93,6 +93,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
 
+    def testCantPostSOA(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['ns1.desec.io. peter.desec.io. 2584 10800 3600 604800 60'], 'ttl': 60, 'type': 'SOA'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def testCantPostForeignRRsets(self):
         url = reverse('rrsets', args=(self.otherDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
@@ -110,6 +116,15 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
         self.assertEqual(response.data['ttl'], 60)
+
+    def testCantGetSOA(self):
+        url = reverse('rrsets-type', args=(self.ownedDomains[1].name, 'SOA',))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'SOA',))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def testCantGetForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)

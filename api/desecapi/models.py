@@ -227,6 +227,11 @@ class Donation(models.Model):
     class Meta:
         ordering = ('created',)
 
+def validate_upper(value):
+    if value != value.upper():
+        raise ValidationError('Invalid value (not uppercase): %(value)s',
+                              code='invalid',
+                              params={'value': value})
 
 class RRset(models.Model):
     # TODO Do these two fields really make sense? Meaning is limited when deleting + recreating an RRset
@@ -234,7 +239,7 @@ class RRset(models.Model):
     updated = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='rrsets')
     subname = models.CharField(max_length=178, blank=True)
-    type = models.CharField(max_length=10)
+    type = models.CharField(max_length=10, validators=[validate_upper])
     records = models.CharField(max_length=64000, blank=True)
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     _dirty = False

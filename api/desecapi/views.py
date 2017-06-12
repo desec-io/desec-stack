@@ -140,7 +140,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         name = self.kwargs['name']
         subname = self.kwargs['subname']
-        type = self.kwargs['type'].upper()
+        type = self.kwargs['type']
 
         if type == 'SOA':
             raise PermissionDenied("You cannot tamper with the SOA record.")
@@ -163,7 +163,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class RRsetsDetail(generics.ListCreateAPIView):
+class RRsetsDetailSpecific(generics.ListAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
@@ -175,6 +175,9 @@ class RRsetsDetail(generics.ListCreateAPIView):
         if subname is not None and type is not None:
             raise ValueError("Invalid combination of arguments")
 
+        if type == 'SOA':
+            raise PermissionDenied("You cannot tamper with the SOA record.")
+
         if subname is not None:
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
         elif type is not None:
@@ -182,11 +185,22 @@ class RRsetsDetail(generics.ListCreateAPIView):
         else:
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk)
 
+    def get(self, request, *args, **kwargs):
+        name = self.kwargs['name']
+
+        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
+            raise Http404
+
+        return super().get(request, *args, **kwargs)
+
+
+class RRsetsDetail(RRsetsDetailSpecific, generics.ListCreateAPIView):
+
     def create(self, request, *args, **kwargs):
         if self.kwargs.get('subname') is not None or self.kwargs.get('type') is not None:
             raise MethodNotAllowed(method=request.method)
 
-        type = request.data.get('type', '').upper()
+        type = request.data.get('type', '')
         if type == 'SOA':
             raise PermissionDenied("You cannot tamper with the SOA record.")
 
@@ -198,14 +212,6 @@ class RRsetsDetail(generics.ListCreateAPIView):
             ex = ValidationError(detail=e.message_dict)
             ex.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
             raise ex
-
-    def get(self, request, *args, **kwargs):
-        name = self.kwargs['name']
-
-        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
-            raise Http404
-
-        return super().get(request, *args, **kwargs)
 
 
 class Root(APIView):
