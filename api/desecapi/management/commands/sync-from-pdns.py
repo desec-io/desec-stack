@@ -1,8 +1,8 @@
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from desecapi.models import Domain, RRset
 from desecapi import pdns
 from jq import jq
-import json, sys
+import json
 from django.db import transaction
 
 
@@ -17,10 +17,13 @@ class Command(BaseCommand):
 
         if options['domain-name']:
             domains = domains.filter(name__in=options['domain-name'])
+            domain_names = domains.values_list('name', flat=True)
+
+            for domain_name in options['domain-name']:
+                if domain_name not in domain_names:
+                    raise CommandError('{} is not a known domain'.format(domain_name))
 
         for domain in domains:
-            print(domain.name + ' ', end='', flush=True)
-
             try:
                 rrsets_pdns = pdns.get_rrsets(domain.name)
                 rrsets_pdns = jq('map(select( .type != "SOA" ))').transform(rrsets_pdns)
@@ -38,14 +41,17 @@ class Command(BaseCommand):
                             raise Exception('inconsistent rrset name')
                         subname = rrset_pdns['name'][:-(len(domain.name) + 2)]
 
-                    rrsets.append(RRset(domain=domain, subname=subname, records=records, ttl=ttl, type=type))
+                    rrset = RRset(domain=domain, subname=subname,
+                                  records=records, ttl=ttl, type=type)
+                    rrsets.append(rrset)
 
                 with transaction.atomic():
                     RRset.objects.filter(domain=domain).delete()
                     RRset.objects.bulk_create(rrsets)
 
-                print('ok')
-
             except Exception as e:
-                print(e)
+                msg = 'Error while processing {}: {}'.format(domain.name, e)
+                raise CommandError(msg)
 
+            else:
+                print(domain.name)

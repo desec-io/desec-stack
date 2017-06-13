@@ -2,12 +2,10 @@ from django.core.urlresolvers import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from .utils import utils
-from django.db import transaction
-from desecapi.models import Domain
-from django.core import mail
 import httpretty
 from django.conf import settings
 import json
+from django.core.management import call_command
 
 
 class UnauthenticatedDomainTests(APITestCase):
@@ -315,3 +313,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(result['rrsets'][0]['name'], self.ownedDomains[1].name + '.')
         self.assertEqual(result['rrsets'][0]['records'], [])
         self.assertEqual(httpretty.httpretty.latest_requests[-1].method, 'PUT')
+
+    def testImportRRsets(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Not checking anything here; errors will raise an exception
+        call_command('sync-from-pdns', self.ownedDomains[1].name)
