@@ -49,6 +49,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
 
     def testCantGetForeignRRsets(self):
         url = reverse('rrsets', args=(self.otherDomains[1].name,))
@@ -59,11 +60,31 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets-subname', args=(self.ownedDomains[1].name, ''))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
 
     def testCanGetOwnRRsetsFromSubname(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+
+        data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'records': ['2.2.3.4'], 'ttl': 120, 'type': 'A', 'subname': 'test'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'records': ['"test"'], 'ttl': 120, 'type': 'TXT', 'subname': 'test'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
         url = reverse('rrsets-subname', args=(self.ownedDomains[1].name, 'test'))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
 
     def testCantGetForeignRRsetsFromSubname(self):
         url = reverse('rrsets-subname', args=(self.otherDomains[1].name, 'test'))
@@ -71,9 +92,28 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRsetsFromType(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+
+        data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'records': ['2.2.3.4'], 'ttl': 120, 'type': 'A', 'subname': 'test'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'records': ['"test"'], 'ttl': 120, 'type': 'TXT', 'subname': 'test'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
         url = reverse('rrsets-type', args=(self.ownedDomains[1].name, 'A'))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
 
     def testCantGetForeignRRsetsFromType(self):
         url = reverse('rrsets-type', args=(self.otherDomains[1].name, 'A'))
@@ -85,6 +125,10 @@ class AuthenticatedRRsetTests(APITestCase):
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
         url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.get(url)
@@ -138,9 +182,22 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCanGetOwnRRsetWithSubname(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+
+        data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
         data = {'records': ['2.2.3.4'], 'ttl': 120, 'type': 'A', 'subname': 'test'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'records': ['"test"'], 'ttl': 120, 'type': 'TXT', 'subname': 'test'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
 
         url = reverse('rrset', args=(self.ownedDomains[1].name, 'test', 'A',))
         response = self.client.get(url)
