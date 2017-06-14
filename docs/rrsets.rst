@@ -84,7 +84,9 @@ Field details:
     :Access mode: read, write-once (upon RRset creation)
 
     Subdomain string which, together with ``domain``, defines the RRset name.
-    Typical examples are ``www`` or ``_443._tcp``.  The maximum length is 178.
+    Typical examples are ``www`` or ``_443._tcp``.  Wildcard name components
+    are denoted by ``*`` (see DNS specification for details).  The maximum
+    length is 178.
 
 ``ttl``
     :Access mode: read, write
@@ -99,7 +101,7 @@ Field details:
     RRset type (uppercase).  We support all `RRset types supported by
     PowerDNS`_, with the exception of DNSSEC-related types (the backend
     automagically takes care of setting those records properly).  You also
-    cannot access the ``SOA`` record, see `SOA caveat`_.
+    cannot access the ``SOA``, see `SOA caveat`_.
 
 .. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
 
@@ -246,32 +248,114 @@ Upon success or if the RRset did not exist in the first place, the response
 status code is ``204 No Content``.
 
 
-Limitations / Caveats
-~~~~~~~~~~~~~~~~~~~~~
+General Notes
+~~~~~~~~~~~~~
 
 - All operations are performed on RRsets, not on the individual Resource
   Records.
-
-.. _`SOA caveat`:
-
-- The ``SOA`` record cannot be read or written through this interface.  When
-  attempting to create, modify or otherwise access an ``SOA`` record, ``403
-  Forbidden`` is returned.
-
-  The rationale behind this is that the content of the ``SOA`` record is
-  entirely determined by the DNS operator, and users should not have to bother
-  with this kind of metadata.  Upon zone changes, the backend automatically
-  takes care of updating the ``SOA`` record accordingly.
-
-.. _`caveat on the priority field`:
-
-- The deSEC DNS API does not explicitly support priority fields (as used for
-  ``MX`` or ``SRV`` records and the like).
-
-  Instead, the priority is expected to be specified at the beginning of the
-  record content, separated from the rest of it by whitespace.
 
 - The TTL (time-to-live: time for which resolvers may cache DNS information)
   is a property of an RRset (and not of a record).  Thus, all records in an
   RRset share the record type and also the TTL.  (This is actually a
   requirement of the DNS specification and not an API design choice.)
+
+- We have not done extensive testing for reverse DNS, but hings should work in
+  principle.  If you encounter any problems, please let us know.
+
+
+Notes on Certain Record Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Generally, the API supports all `RRset types supported by PowerDNS`_, with a
+few exceptions for such record types that the backend manages automatically.
+Thus, these restrictions are not limitations from a practical point of view.
+Furthermore, special care needs to be taken with some types of records, as
+explained below.
+
+.. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
+
+
+Restricted Types
+````````````````
+**Note:**  Some record types are supported by the API, but not currently
+served by our nameservers (such as ``ALIAS`` or ``DNAME``).  If you wish to
+use such record types, shoot us an email.  In most cases, it should not be a
+problem to enable such functionality.
+
+``DNSKEY``, ``NSEC3PARAM``, ``RRSIG``
+    These record types are meant to provide DNSSEC-related information in
+    order to secure the data stored in your zones.  RRsets of this type are
+    generated and served automatically by our nameservers.  However, you can
+    neither read nor manipulate these RRsets through the API.  When attempting
+    such operations, ``403 Forbidden`` is returned.
+
+.. _`SOA caveat`:
+
+``SOA`` record
+    The ``SOA`` record cannot be read or written through this interface.  When
+    attempting to create, modify or otherwise access an ``SOA`` record, ``403
+    Forbidden`` is returned.
+
+    The rationale behind this is that the content of the ``SOA`` record is
+    entirely determined by the DNS operator, and users should not have to bother
+    with this kind of metadata.  Upon zone changes, the backend automatically
+    takes care of updating the ``SOA`` record accordingly.
+
+
+Caveats
+```````
+
+.. _`caveat on the priority field`:
+
+Record types with priority field
+    The deSEC DNS API does not explicitly support priority fields (as used for
+    ``MX`` or ``SRV`` records and the like).
+
+    Instead, the priority is expected to be specified at the beginning of the
+    record content, separated from the rest of it by whitespace.
+
+``CNAME`` record
+    - The record value must be terminated by a dot ``.`` (as in
+      ``example.com.``).
+
+    - If you create a ``CNAME`` record, its presence will cause other RRsets of
+      the same name to be hidden ("occluded") from the public (i.e. in
+      responses to DNS queries).  This is per RFC 1912.
+
+      However, as far as the API is concerned, you can still retrieve and
+      manipulate those additional RRsets.  In other words, ``CNAME``-induced
+      hiding of additional RRsets does not apply when looking at the zone
+      through the API.
+
+    - It is currently possible to create a ``CNAME`` RRset with several
+      records.  However, this is not legal, and the response to queries for
+      such RRsets is undefined.  In short, don't do it.
+
+    - Similarly, you are discouraged from creating a ``CNAME`` RRset for the
+      zone apex (main domain name, empty ``subname``).  Doing so will most
+      likely break your domain (for example, any ``NS`` records that are
+      present will disappear from DNS responses), and other undefined behavior
+      may occur.  In short, don't do it.  If you are interested in aliasing
+      the zone apex, consider using an ``ALIAS`` RRset.
+
+``MX`` record
+    The ``MX`` record value consists of the priority value and a mail server
+    name, which must be terminated by a dot ``.``.  Example: ``10
+    mail.a4a.de.``
+
+``NS`` record
+    The use of wildcard RRsets (with one component of ``subname`` being equal
+    to ``*``) of type ``NS`` is **discouraged**.  This is because the behavior
+    of wildcard ``NS`` records in conjunction with DNSSEC is undefined, per
+    RFC 4592, Sec. 4.2.
+
+``TXT`` record
+    The contents of the ``TXT`` record must be encloded in double quotes.
+    Thus, when ``POST``\ ing to the API, make sure to do proper escaping etc.
+    as required by the client you are using.  Here's an example of how to
+    create a ``TXT`` RRset with HTTPie::
+
+            http POST \
+            https://desec.io/api/v1/domains/{domain}/rrsets/ \
+            Authorization:"Token {token}" \
+            type:='"TXT"' records:='["\"test value1\"","\"value2\""]' ttl:=3600
