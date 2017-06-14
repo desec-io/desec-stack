@@ -129,6 +129,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'subname'
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+    restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -142,19 +143,12 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         subname = self.kwargs['subname']
         type = self.kwargs['type']
 
-        if type == 'SOA':
-            raise PermissionDenied("You cannot tamper with the SOA record.")
+        if type in self.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
 
         return RRset.objects.filter(
             domain__owner=self.request.user.pk,
             domain__name=name, subname=subname, type=type)
-
-    def get(self, request, *args, **kwargs):
-        # SOA record:  We could get it from pdns here, but the serial would
-        # differ from the one served publicly due to the pdns default-soa-edit
-        # setting we're using.  So let get_queryset() produce an exception.
-
-        return super().get(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         if request.data.get('records') == []:
@@ -175,8 +169,8 @@ class RRsetsDetailSpecific(generics.ListAPIView):
         if subname is not None and type is not None:
             raise ValueError("Invalid combination of arguments")
 
-        if type == 'SOA':
-            raise PermissionDenied("You cannot tamper with the SOA record.")
+        if type in RRsetDetail.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
 
         if subname is not None:
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
@@ -201,8 +195,8 @@ class RRsetsDetail(RRsetsDetailSpecific, generics.ListCreateAPIView):
             raise MethodNotAllowed(method=request.method)
 
         type = request.data.get('type', '')
-        if type == 'SOA':
-            raise PermissionDenied("You cannot tamper with the SOA record.")
+        if type in RRsetDetail.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
 
         try:
             return super().create(request, *args, **kwargs)
