@@ -212,6 +212,24 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['ttl'], 120)
         self.assertEqual(response.data['name'], 'test.' + self.ownedDomains[1].name + '.')
 
+    def testCanGetOwnRRsetWithWildcard(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+
+        data = {'records': ['"barfoo"'], 'ttl': 120, 'type': 'TXT', 'subname': '*.foobar'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        url = reverse('rrset', args=(self.ownedDomains[1].name, '*.foobar', 'TXT',))
+        response1 = self.client.get(url)
+        self.assertEqual(response1.status_code, status.HTTP_200_OK)
+        self.assertEqual(response1.data['records'][0], '"barfoo"')
+        self.assertEqual(response1.data['ttl'], 120)
+        self.assertEqual(response1.data['name'], '*.foobar.' + self.ownedDomains[1].name + '.')
+
+        url = reverse('rrsets-subname', args=(self.ownedDomains[1].name, '*.foobar',))
+        response2 = self.client.get(url)
+        self.assertEqual(response2.data[0], response1.data)
+
     def testCanPutOwnRRset(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
