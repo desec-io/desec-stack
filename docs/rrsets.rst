@@ -84,9 +84,18 @@ Field details:
     :Access mode: read, write-once (upon RRset creation)
 
     Subdomain string which, together with ``domain``, defines the RRset name.
-    Typical examples are ``www`` or ``_443._tcp``.  Wildcard name components
-    are denoted by ``*`` (see DNS specification for details).  The maximum
-    length is 178.
+    Typical examples are ``www`` or ``_443._tcp``.  In general, a subname
+    consists of alphanumeric characters as well as hyphens ``-``, underscores
+    ``_``, dots ``.``, and slashes ``/``.  Wildcard name components are
+    denoted by ``*``; this is allowed only once at the beginning of the name
+    (see RFC 4592 for details).  The maximum length is 178.  Further
+    restrictions may apply on a per-user basis.
+
+    If a ``subname`` contains slashes ``/`` and you are using it as part of an
+    URL (e.g. when `retrieving RRsets with a specific subname`_), it is
+    required to escape them by replacing them with ``=2F``, to resolve the
+    ambiguity that is otherwise created.  (This escape mechanism does not
+    apply inside JSON documents.)
 
 ``ttl``
     :Access mode: read, write

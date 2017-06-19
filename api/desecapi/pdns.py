@@ -1,6 +1,7 @@
 import requests
 import json
 from jq import jq
+from django.core.exceptions import SuspiciousOperation
 from desecapi import settings
 from desecapi.exceptions import PdnsException
 
@@ -19,8 +20,18 @@ headers_nsmaster = {
 
 def normalize_hostname(name):
     if '/' in name or '?' in name:
-        raise Exception('Invalid hostname ' + name)
-    return name if name.endswith('.') else name + '.'
+        raise SuspiciousOperation('Invalid hostname ' + name)
+
+    # Transform to be valid pdns API identifiers (:id in their docs).  The
+    # '/' case here is just a safety measure (this case should never occur due
+    # to the above check).
+    # See also pdns code, apiZoneNameToId() in ws-api.cc
+    name = name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
+
+    if not name.endswith('.'):
+        name += '.'
+
+    return name
 
 
 def _pdns_delete(url):

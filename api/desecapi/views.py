@@ -35,8 +35,8 @@ import json
 import re
 
 # TODO Generalize?
-patternDyn = re.compile(r'^[A-Za-z][A-Za-z0-9-]*\.dedyn\.io$')
-patternNonDyn = re.compile(r'^([A-Za-z][A-Za-z0-9-]*\.)+[A-Za-z]+$')
+patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
+patternNonDyn = re.compile(r'^([A-Za-z-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
 
 def get_client_ip(request):
@@ -52,7 +52,7 @@ class DomainList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         pattern = patternDyn if self.request.user.dyn else patternNonDyn
-        if pattern.match(serializer.validated_data['name']) is None or "--" in serializer.validated_data['name']:
+        if pattern.match(serializer.validated_data['name']) is None:
             ex = ValidationError(detail={"detail": "This domain name is not well-formed, by policy.", "code": "domain-illformed"})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
@@ -126,7 +126,7 @@ class DomainDetailByName(DomainDetail):
 
 
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
-    lookup_field = 'subname'
+    lookup_field = 'type'
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
     restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
@@ -140,9 +140,10 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         name = self.kwargs['name']
-        subname = self.kwargs['subname']
+        subname = self.kwargs['subname'].replace('=2F', '/')
         type = self.kwargs['type']
 
+        # This may be more cleanly implemented using object level permissions.
         if type in self.restricted_types:
             raise PermissionDenied("You cannot tamper with the %s RRset." % type)
 
@@ -169,10 +170,12 @@ class RRsetsDetailSpecific(generics.ListAPIView):
         if subname is not None and type is not None:
             raise ValueError("Invalid combination of arguments")
 
+        # This may be more cleanly implemented using object level permissions.
         if type in RRsetDetail.restricted_types:
             raise PermissionDenied("You cannot tamper with the %s RRset." % type)
 
         if subname is not None:
+            subname = subname.replace('=2F', '/')
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
         elif type is not None:
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, type=type)

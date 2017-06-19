@@ -77,7 +77,9 @@ Field details:
     :Access mode: read, write-once (upon domain creation)
 
     Domain name.  Restrictions on what is a valid domain name apply on a
-    per-user basis.  The maximum length is 191.
+    per-user basis.  In general, a domain name consists of alphanumeric
+    characters as well as hyphens ``-`` and underscores ``_`` (except at the
+    beginning of the name).  The maximum length is 191.
 
 ``owner``
     :Access mode: read-only

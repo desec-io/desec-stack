@@ -80,7 +80,7 @@ class RRsetSerializer(serializers.ModelSerializer):
 
 class DomainSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.email')
-    name = serializers.RegexField(regex=r'^[A-Za-z0-9\.\-]+$',trim_whitespace=False)
+    name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', trim_whitespace=False)
 
     class Meta:
         model = Domain
