@@ -58,16 +58,18 @@ class FromContext(object):
 
 class RRsetSerializer(serializers.ModelSerializer):
     # Disallow moving RRset to different zone
-    domain = serializers.SlugRelatedField(read_only=True, slug_field='name',
-                                          default=FromContext(
-                                              lambda context: FromContext.get_domain(context)
-                                         ))
+    domain = serializers.SlugRelatedField(
+        read_only=True, slug_field='name',
+        default=FromContext(
+            lambda context: FromContext.get_domain(context)
+        ))
 
     # Disallow renaming RRset (RRset.update_pdns() does not cope with this)
-    subname = serializers.CharField(allow_blank=True, read_only=True,
-                                 default=FromContext(
-                                     lambda context: context['request'].data.get('subname', '').lower()
-                                 ))
+    subname = serializers.CharField(
+        allow_blank=True, read_only=True,
+        default=FromContext(
+            lambda context: context['request'].data.get('subname', '').lower()
+        ))
 
     # Disallow changing RRset type (RRset.update_pdns() does not cope with this)
     type = serializers.CharField(
