@@ -141,15 +141,15 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         name = self.kwargs['name']
         subname = self.kwargs['subname'].replace('=2F', '/')
-        type = self.kwargs['type']
+        type_ = self.kwargs['type']
 
         # This may be more cleanly implemented using object level permissions.
-        if type in self.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
+        if type_ in self.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
 
         return RRset.objects.filter(
             domain__owner=self.request.user.pk,
-            domain__name=name, subname=subname, type=type)
+            domain__name=name, subname=subname, type=type_)
 
     def update(self, request, *args, **kwargs):
         if request.data.get('records') == []:
@@ -165,20 +165,20 @@ class RRsetsDetailSpecific(generics.ListAPIView):
     def get_queryset(self):
         name = self.kwargs['name']
         subname = self.kwargs.get('subname')
-        type = self.kwargs.get('type')
+        type_ = self.kwargs.get('type')
 
-        if subname is not None and type is not None:
+        if subname is not None and type_ is not None:
             raise ValueError("Invalid combination of arguments")
 
         # This may be more cleanly implemented using object level permissions.
-        if type in RRsetDetail.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
+        if type_ in RRsetDetail.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
 
         if subname is not None:
             subname = subname.replace('=2F', '/')
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
-        elif type is not None:
-            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, type=type)
+        elif type_ is not None:
+            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, type=type_)
         else:
             return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk)
 
@@ -197,9 +197,9 @@ class RRsetsDetail(RRsetsDetailSpecific, generics.ListCreateAPIView):
         if self.kwargs.get('subname') is not None or self.kwargs.get('type') is not None:
             raise MethodNotAllowed(method=request.method)
 
-        type = request.data.get('type', '')
-        if type in RRsetDetail.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type)
+        type_ = request.data.get('type', '')
+        if type_ in RRsetDetail.restricted_types:
+            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
 
         try:
             return super().create(request, *args, **kwargs)
@@ -235,10 +235,10 @@ class DnsQuery(APIView):
 
         domain = str(request.GET['domain'])
 
-        def getRecords(domain, type):
+        def getRecords(domain, type_):
             records = []
             try:
-                for ip in desecio.query(domain, type):
+                for ip in desecio.query(domain, type_):
                     records.append(str(ip))
             except resolver.NoAnswer:
                 return []

@@ -61,10 +61,11 @@ class RRsetSerializer(serializers.ModelSerializer):
                                  ))
 
     # Disallow changing RRset type (RRset.update_pdns() does not cope with this)
-    type = serializers.CharField(read_only=True,
-                                 default=FromContext(
-                                     lambda context: context['request'].data['type']
-                                 ))
+    type = serializers.CharField(
+        read_only=True,
+        default=FromContext(
+            lambda context: context['request'].data['type']
+        ))
 
     name = serializers.SerializerMethodField()
     records = RecordsSerializer()

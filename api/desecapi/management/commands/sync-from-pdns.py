@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 for rrset_pdns in rrsets_pdns:
                     records = json.dumps(rrset_pdns['records'])
                     ttl = rrset_pdns['ttl']
-                    type = rrset_pdns['type']
+                    rrtype = rrset_pdns['type']
 
                     if rrset_pdns['name'] == domain.name + '.':
                         subname = ''
@@ -42,7 +42,7 @@ class Command(BaseCommand):
                         subname = rrset_pdns['name'][:-(len(domain.name) + 2)]
 
                     rrset = RRset(domain=domain, subname=subname,
-                                  records=records, ttl=ttl, type=type)
+                                  records=records, ttl=ttl, rrtype=rrtype)
                     rrsets.append(rrset)
 
                 with transaction.atomic():

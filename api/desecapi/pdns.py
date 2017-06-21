@@ -147,7 +147,7 @@ def get_zone(name):
     return r.json()
 
 
-def get_rrsets(name, subname = None, type = None):
+def get_rrsets(name, subname = None, type_ = None):
     """
     Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
     """
@@ -155,7 +155,7 @@ def get_rrsets(name, subname = None, type = None):
 
     rrsets = get_zone(name)['rrsets']
     rrsets = [rrset for rrset in rrsets \
-              if (subname == None or rrset['name'] == fullname) and (type == None or rrset['type'] == type) \
+              if (subname == None or rrset['name'] == fullname) and (type_ == None or rrset['type'] == type_) \
         ]
 
     return jq("[.[] | {name: .name, records: [.records[] | .content], ttl: .ttl, type: .type}]").transform(rrsets)

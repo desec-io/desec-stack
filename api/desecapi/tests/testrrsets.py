@@ -31,6 +31,8 @@ class UnauthenticatedDomainTests(APITestCase):
 
 
 class AuthenticatedRRsetTests(APITestCase):
+    restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
+
     def setUp(self):
         httpretty.reset()
         httpretty.disable()
@@ -136,9 +138,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['records'][0], '1.2.3.4')
 
     def testCantPostRestrictedTypes(self):
-        restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
-
-        for type_ in restricted_types:
+        for type_ in self.restricted_types:
             url = reverse('rrsets', args=(self.ownedDomains[1].name,))
             data = {'records': ['ns1.desec.io. peter.desec.io. 2584 10800 3600 604800 60'], 'ttl': 60, 'type': type_}
             response = self.client.post(url, json.dumps(data), content_type='application/json')
@@ -163,14 +163,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['ttl'], 60)
 
     def testCantGetRestrictedTypes(self):
-        restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
-
-        for type_ in restricted_types:
-            url = reverse('rrsets-type', args=(self.ownedDomains[1].name, 'SOA',))
+        for type_ in self.restricted_types:
+            url = reverse('rrsets-type', args=(self.ownedDomains[1].name, type_,))
             response = self.client.get(url)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-            url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'SOA',))
+            url = reverse('rrset', args=(self.ownedDomains[1].name, '', type_,))
             response = self.client.get(url)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
