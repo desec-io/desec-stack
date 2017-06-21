@@ -4,6 +4,7 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from desecapi import pdns
+from desecapi.mixins import SetterMixin
 import datetime, time
 from django.core.validators import MinValueValidator
 
@@ -91,7 +92,7 @@ class User(AbstractBaseUser):
         self.save()
 
 
-class Domain(models.Model):
+class Domain(models.Model, SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=191, unique=True)
@@ -101,13 +102,6 @@ class Domain(models.Model):
     acme_challenge = models.CharField(max_length=255, blank=True)
     _dirtyName = False
     _dirtyRecords = False
-
-    def __setattr__(self, attrname, val):
-        setter_func = 'setter_' + attrname
-        if attrname in self.__dict__ and callable(getattr(self, setter_func, None)):
-            super(Domain, self).__setattr__(attrname, getattr(self, setter_func)(val))
-        else:
-            super(Domain, self).__setattr__(attrname, val)
 
     def setter_name(self, val):
         if val != self.name:
@@ -233,7 +227,7 @@ def validate_upper(value):
                               code='invalid',
                               params={'value': value})
 
-class RRset(models.Model):
+class RRset(models.Model, SetterMixin):
     # TODO Do these two fields really make sense? Meaning is limited when deleting + recreating an RRset
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
@@ -246,13 +240,6 @@ class RRset(models.Model):
 
     class Meta:
         unique_together = (("domain","subname","type"),)
-
-    def __setattr__(self, attrname, val):
-        setter_func = 'setter_' + attrname
-        if attrname in self.__dict__ and callable(getattr(self, setter_func, None)):
-            super().__setattr__(attrname, getattr(self, setter_func)(val))
-        else:
-            super().__setattr__(attrname, val)
 
     def setter_records(self, val):
         if val != self.records:
