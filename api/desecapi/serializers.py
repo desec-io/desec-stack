@@ -28,6 +28,15 @@ class RecordsSerializer(JSONSerializer):
 
 
 class FromContext(object):
+    """
+    Callable helper class, useful to extract a value from the view context.
+
+    A common use case is to use such a view context value as a default value
+    for populating otherwise read-only fields of a new model instance.
+
+    The class also comes with a specialized method that allows retrieving a
+    Domain instance based on a domain name string.
+    """
     def __init__(self, value_fn):
         self.value_fn = value_fn
 
