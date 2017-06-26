@@ -24,25 +24,27 @@ class Command(BaseCommand):
                     raise CommandError('{} is not a known domain'.format(domain_name))
 
         for domain in domains:
+            name = domain.name.lower()
+
             try:
-                rrsets_pdns = pdns.get_rrsets(domain.name)
+                rrsets_pdns = pdns.get_rrsets(name)
                 rrsets_pdns = jq('map(select( .type != "SOA" ))').transform(rrsets_pdns)
 
                 rrsets = []
                 for rrset_pdns in rrsets_pdns:
                     records = json.dumps(rrset_pdns['records'])
                     ttl = rrset_pdns['ttl']
-                    rrtype = rrset_pdns['type']
+                    type_ = rrset_pdns['type']
 
-                    if rrset_pdns['name'] == domain.name + '.':
+                    if rrset_pdns['name'] == name + '.':
                         subname = ''
                     else:
-                        if not rrset_pdns['name'].endswith('.' + domain.name + '.'):
+                        if not rrset_pdns['name'].endswith('.' + name + '.'):
                             raise Exception('inconsistent rrset name')
-                        subname = rrset_pdns['name'][:-(len(domain.name) + 2)]
+                        subname = rrset_pdns['name'][:-(len(name) + 2)]
 
                     rrset = RRset(domain=domain, subname=subname,
-                                  records=records, ttl=ttl, rrtype=rrtype)
+                                  records=records, ttl=ttl, type=type_)
                     rrsets.append(rrset)
 
                 with transaction.atomic():
