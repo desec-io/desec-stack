@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from desecapi import utils
 from desecapi.models import Domain, Donation, User, RRset
 from djoser import serializers as djoserSerializers
 from rest_framework.exceptions import ValidationError
@@ -82,7 +83,8 @@ class RRsetSerializer(serializers.ModelSerializer):
     records = RecordsSerializer()
 
     def get_name(self, obj):
-        return '.'.join(filter(None, [obj.subname, obj.domain.name])) + '.'
+        return utils.get_name(obj.subname, obj.domain.name)
+
 
     class Meta:
         model = RRset

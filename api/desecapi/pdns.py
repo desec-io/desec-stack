@@ -2,7 +2,7 @@ import requests
 import json
 from jq import jq
 from django.core.exceptions import SuspiciousOperation
-from desecapi import settings
+from desecapi import settings, utils
 from desecapi.exceptions import PdnsException
 
 
@@ -151,7 +151,7 @@ def get_rrsets(name, subname = None, type_ = None):
     """
     Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
     """
-    fullname = '.'.join(filter(None, [subname, name])) + '.'
+    fullname = utils.get_name(subname, name)
 
     rrsets = get_zone(name)['rrsets']
     rrsets = [rrset for rrset in rrsets \

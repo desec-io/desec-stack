@@ -3,8 +3,7 @@ from django.db import models, transaction
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from desecapi import pdns
-from desecapi.mixins import SetterMixin
+from desecapi import pdns, utils
 import datetime, time
 from django.core.validators import MinValueValidator
 
@@ -92,7 +91,7 @@ class User(AbstractBaseUser):
         self.save()
 
 
-class Domain(models.Model, SetterMixin):
+class Domain(models.Model, utils.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=191, unique=True)
@@ -227,7 +226,8 @@ def validate_upper(value):
                               code='invalid',
                               params={'value': value})
 
-class RRset(models.Model, SetterMixin):
+
+class RRset(models.Model, utils.SetterMixin):
     # TODO Do these two fields really make sense? Meaning is limited when deleting + recreating an RRset
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
@@ -237,6 +237,7 @@ class RRset(models.Model, SetterMixin):
     records = models.CharField(max_length=64000, blank=True)
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     _dirty = False
+
 
     class Meta:
         unique_together = (("domain","subname","type"),)
@@ -254,7 +255,7 @@ class RRset(models.Model, SetterMixin):
         return val
 
     def update_pdns(self):
-        from .serializers import RRsetSerializer
+        from desecapi.serializers import RRsetSerializer
         serializer = RRsetSerializer(self)
 
         pdns.set_rrsets(self.domain.name, [serializer.data])
