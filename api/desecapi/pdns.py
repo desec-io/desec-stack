@@ -1,7 +1,5 @@
 import requests
 import json
-from jq import jq
-from django.core.exceptions import SuspiciousOperation
 from desecapi import settings, utils
 from desecapi.exceptions import PdnsException
 
@@ -142,15 +140,25 @@ def get_rrsets(domain, subname = None, type_ = None):
     fullname = utils.get_name(subname, domain.name)
 
     rrsets = get_zone(domain)['rrsets']
-    rrsets = [rrset for rrset in rrsets \
-              if (subname == None or rrset['name'] == fullname) and (type_ == None or rrset['type'] == type_) \
-        ]
-
-    return jq("[.[] | {name: .name, records: [.records[] | .content], ttl: .ttl, type: .type}]").transform(rrsets)
+    rrsets = [
+        {'name': rrset['name'],
+         'records': [record['content'] for record in rrset['records']],
+         'ttl': rrset['ttl'], 'type': rrset['type']
+         } for rrset in rrsets
+        if (subname == None or rrset['name'] == fullname)
+           and (type_ == None or rrset['type'] == type_)
+    ]
+    return rrsets
 
 
 def set_rrsets(domain, rrsets):
-    data = jq('{"rrsets": [ .[] | { "name": .name, "type": .type, "ttl": .ttl, "changetype": "REPLACE", "records": [ .records[] | { "content": ., "disabled": false } ] } ] }').transform(rrsets)
+    data = {'rrsets':
+        [{'name': rrset['name'], 'type': rrset['type'], 'ttl': rrset['ttl'],
+          'changetype': 'REPLACE',
+          'records': [{'content': record, 'disabled': False}
+                      for record in rrset['records']]
+          } for rrset in rrsets]
+    }
     _pdns_patch('/zones/' + domain.pdns_id, data)
 
 

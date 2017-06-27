@@ -1,7 +1,6 @@
 from django.core.management import BaseCommand, CommandError
 from desecapi.models import Domain, RRset
 from desecapi import pdns
-from jq import jq
 import json
 from django.db import transaction
 
@@ -28,7 +27,8 @@ class Command(BaseCommand):
 
             try:
                 rrsets_pdns = pdns.get_rrsets(domain)
-                rrsets_pdns = jq('map(select( .type != "SOA" ))').transform(rrsets_pdns)
+                rrsets_pdns = [
+                    rrset for rrset in rrsets_pdns if rrset['type'] != 'SOA']
 
                 rrsets = []
                 for rrset_pdns in rrsets_pdns:
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                         subname = ''
                     else:
                         if not rrset_pdns['name'].endswith('.' + name + '.'):
-                            raise Exception('inconsistent rrset name')
+                            raise Exception('inconsistent RRset name')
                         subname = rrset_pdns['name'][:-(len(name) + 2)]
 
                     rrset = RRset(domain=domain, subname=subname,
