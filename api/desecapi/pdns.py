@@ -18,22 +18,6 @@ headers_nsmaster = {
 }
 
 
-def normalize_hostname(name):
-    if '/' in name or '?' in name:
-        raise SuspiciousOperation('Invalid hostname ' + name)
-
-    # Transform to be valid pdns API identifiers (:id in their docs).  The
-    # '/' case here is just a safety measure (this case should never occur due
-    # to the above check).
-    # See also pdns code, apiZoneNameToId() in ws-api.cc
-    name = name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
-
-    if not name.endswith('.'):
-        name += '.'
-
-    return name
-
-
 def _pdns_delete(url):
     # We first delete the zone from nslord, the main authoritative source of our DNS data.
     # However, we do not want to wait for the zone to expire on the slave ("nsmaster").
@@ -115,12 +99,16 @@ def _delete_or_replace_rrset(name, rr_type, value, ttl=60):
             }
 
 
-def create_zone(name, kind='NATIVE'):
+def create_zone(domain, kind='NATIVE'):
     """
     Commands pdns to create a zone with the given name.
     """
+    name = domain.name
+    if not name.endswith('.'):
+        name += '.'
+
     payload = {
-        "name": normalize_hostname(name),
+        "name": name,
         "kind": kind.upper(),
         "masters": [],
         "nameservers": [
@@ -131,29 +119,29 @@ def create_zone(name, kind='NATIVE'):
     _pdns_post('/zones', payload)
 
 
-def delete_zone(name):
+def delete_zone(domain):
     """
     Commands pdns to delete a zone with the given name.
     """
-    _pdns_delete('/zones/' + normalize_hostname(name))
+    _pdns_delete('/zones/' + domain.pdns_id)
 
 
-def get_zone(name):
+def get_zone(domain):
     """
     Retrieves a JSON representation of the zone from pdns
     """
-    r = _pdns_get('/zones/' + normalize_hostname(name))
+    r = _pdns_get('/zones/' + domain.pdns_id)
 
     return r.json()
 
 
-def get_rrsets(name, subname = None, type_ = None):
+def get_rrsets(domain, subname = None, type_ = None):
     """
     Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
     """
-    fullname = utils.get_name(subname, name)
+    fullname = utils.get_name(subname, domain.name)
 
-    rrsets = get_zone(name)['rrsets']
+    rrsets = get_zone(domain)['rrsets']
     rrsets = [rrset for rrset in rrsets \
               if (subname == None or rrset['name'] == fullname) and (type_ == None or rrset['type'] == type_) \
         ]
@@ -161,18 +149,16 @@ def get_rrsets(name, subname = None, type_ = None):
     return jq("[.[] | {name: .name, records: [.records[] | .content], ttl: .ttl, type: .type}]").transform(rrsets)
 
 
-def set_rrsets(name, rrsets):
-    name = normalize_hostname(name)
-
+def set_rrsets(domain, rrsets):
     data = jq('{"rrsets": [ .[] | { "name": .name, "type": .type, "ttl": .ttl, "changetype": "REPLACE", "records": [ .records[] | { "content": ., "disabled": false } ] } ] }').transform(rrsets)
-    _pdns_patch('/zones/' + name, data)
+    _pdns_patch('/zones/' + domain.pdns_id, data)
 
 
-def zone_exists(name):
+def zone_exists(domain):
     """
     Returns whether pdns knows a zone with the given name.
     """
-    r = _pdns_get('/zones/' + normalize_hostname(name))
+    r = _pdns_get('/zones/' + domain.pdns_id)
     if r.status_code == 200:
         return True
     elif r.status_code == 422 and 'Could not find domain' in r.text:
@@ -181,42 +167,39 @@ def zone_exists(name):
         raise PdnsException(r)
 
 
-def notify_zone(name):
+def notify_zone(domain):
     """
     Commands pdns to notify the zone to the pdns slaves.
     """
-    _pdns_put('/zones/%s/notify' % normalize_hostname(name))
+    _pdns_put('/zones/%s/notify' % domain.pdns_id)
 
 
-def set_dyn_records(name, a, aaaa, acme_challenge=''):
+def set_dyn_records(domain):
     """
     Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
     Only supports one A, one AAAA record.
     If a or aaaa is empty, pdns will be commanded to delete the record.
     """
-    name = normalize_hostname(name)
-
-    _pdns_patch('/zones/' + name, {
+    _pdns_patch('/zones/' + domain.pdns_id, {
         "rrsets": [
-            _delete_or_replace_rrset(name, 'a', a),
-            _delete_or_replace_rrset(name, 'aaaa', aaaa),
-            _delete_or_replace_rrset('_acme-challenge.%s' % name, 'txt', '"%s"' % acme_challenge),
+            _delete_or_replace_rrset(domain.name + '.', 'a', domain.arecord),
+            _delete_or_replace_rrset(domain.name + '.', 'aaaa', domain.aaaarecord),
+            _delete_or_replace_rrset('_acme-challenge.%s.' % domain.name, 'txt', '"%s"' % domain.acme_challenge),
         ]
     })
 
-    notify_zone(name)
+    notify_zone(domain)
 
 
-def set_rrset(zone, name, rr_type, value):
+def set_rrset_in_parent(domain, rr_type, value):
     """
     Commands pdns to set or delete a record set for the zone with the given name.
     If value is empty, the rrset will be deleted.
     """
-    zone = normalize_hostname(zone)
-    name = normalize_hostname(name)
+    parent_id = domain.pdns_id.split('.', 1)[1]
 
-    _pdns_patch('/zones/' + zone, {
+    _pdns_patch('/zones/' + parent_id, {
         "rrsets": [
-            _delete_or_replace_rrset(name, rr_type, value),
+            _delete_or_replace_rrset(domain.name + '.', rr_type, value),
         ]
     })

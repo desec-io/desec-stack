@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models, transaction
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
-from django.core.exceptions import ValidationError
+from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, utils
 import datetime, time
 from django.core.validators import MinValueValidator
@@ -130,6 +130,22 @@ class Domain(models.Model, utils.SetterMixin):
         if self._dirtyName:
             raise ValidationError('You must not change the domain name')
 
+    @property
+    def pdns_id(self):
+        if '/' in self.name or '?' in self.name:
+            raise SuspiciousOperation('Invalid hostname ' + self.name)
+
+        # Transform to be valid pdns API identifiers (:id in their docs).  The
+        # '/' case here is just a safety measure (this case should never occur due
+        # to the above check).
+        # See also pdns code, apiZoneNameToId() in ws-api.cc
+        name = self.name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
+
+        if not name.endswith('.'):
+            name += '.'
+
+        return name
+
     def pdns_resync(self):
         """
         Make sure that pdns gets the latest information about this domain/zone.
@@ -137,11 +153,11 @@ class Domain(models.Model, utils.SetterMixin):
         """
 
         # Create zone if needed
-        if not pdns.zone_exists(self.name):
-            pdns.create_zone(self.name)
+        if not pdns.zone_exists(self):
+            pdns.create_zone(self)
 
         # update zone to latest information
-        pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
+        pdns.set_dyn_records(self)
 
     def pdns_sync(self, new_domain):
         """
@@ -154,12 +170,12 @@ class Domain(models.Model, utils.SetterMixin):
 
         # if this zone is new, create it and set dirty flag if necessary
         if new_domain:
-            pdns.create_zone(self.name)
+            pdns.create_zone(self)
             self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord) or bool(self.acme_challenge)
 
         # make changes if necessary
         if self._dirtyRecords:
-            pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
+            pdns.set_dyn_records(self)
 
         self._dirtyRecords = False
 
@@ -167,10 +183,10 @@ class Domain(models.Model, utils.SetterMixin):
     def delete(self, *args, **kwargs):
         super(Domain, self).delete(*args, **kwargs)
 
-        pdns.delete_zone(self.name)
+        pdns.delete_zone(self)
         if self.name.endswith('.dedyn.io'):
-            pdns.set_rrset('dedyn.io', self.name, 'DS', '')
-            pdns.set_rrset('dedyn.io', self.name, 'NS', '')
+            pdns.set_rrset_in_parent(self, 'DS', '')
+            pdns.set_rrset_in_parent(self, 'NS', '')
 
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -258,8 +274,8 @@ class RRset(models.Model, utils.SetterMixin):
         from desecapi.serializers import RRsetSerializer
         serializer = RRsetSerializer(self)
 
-        pdns.set_rrsets(self.domain.name, [serializer.data])
-        pdns.notify_zone(self.domain.name)
+        pdns.set_rrsets(self.domain, [serializer.data])
+        pdns.notify_zone(self.domain)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):

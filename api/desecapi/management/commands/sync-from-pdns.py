@@ -27,7 +27,7 @@ class Command(BaseCommand):
             name = domain.name.lower()
 
             try:
-                rrsets_pdns = pdns.get_rrsets(name)
+                rrsets_pdns = pdns.get_rrsets(domain)
                 rrsets_pdns = jq('map(select( .type != "SOA" ))').transform(rrsets_pdns)
 
                 rrsets = []
