@@ -1,7 +1,3 @@
-def get_name(subname, domain_name):
-    return '.'.join(filter(None, [subname, domain_name])) + '.'
-
-
 class SetterMixin:
     def __setattr__(self, attrname, val):
         setter_func = 'setter_' + attrname

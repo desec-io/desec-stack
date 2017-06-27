@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from desecapi import utils
 from desecapi.models import Domain, Donation, User, RRset
 from djoser import serializers as djoserSerializers
 from rest_framework.exceptions import ValidationError
@@ -57,7 +56,17 @@ class FromContext(object):
         return domain
 
 
-class RRsetSerializer(serializers.ModelSerializer):
+class GenericRRsetSerializer(serializers.ModelSerializer):
+    records = RecordsSerializer()
+
+
+    class Meta:
+        model = RRset
+        fields = ('created', 'updated', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
+        read_only_fields = ('created', 'updated',)
+
+
+class RRsetSerializer(GenericRRsetSerializer):
     # Disallow moving RRset to different zone
     domain = serializers.SlugRelatedField(
         read_only=True, slug_field='name',
@@ -79,17 +88,9 @@ class RRsetSerializer(serializers.ModelSerializer):
             lambda context: context['request'].data['type']
         ))
 
-    name = serializers.SerializerMethodField()
-    records = RecordsSerializer()
 
-    def get_name(self, obj):
-        return utils.get_name(obj.subname, obj.domain.name)
-
-
-    class Meta:
-        model = RRset
-        fields = ('created', 'updated', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
-        read_only_fields = ('created', 'updated', 'domain', 'type',)
+    class Meta(GenericRRsetSerializer.Meta):
+        read_only_fields = GenericRRsetSerializer.Meta.read_only_fields + ('domain', 'type',)
 
 
 class DomainSerializer(serializers.ModelSerializer):

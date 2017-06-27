@@ -1,7 +1,6 @@
 from django.core.management import BaseCommand, CommandError
 from desecapi.models import Domain, RRset
 from desecapi import pdns
-import json
 from django.db import transaction
 
 
@@ -23,32 +22,11 @@ class Command(BaseCommand):
                     raise CommandError('{} is not a known domain'.format(domain_name))
 
         for domain in domains:
-            name = domain.name.lower()
-
             try:
-                rrsets_pdns = pdns.get_rrsets(domain)
-                rrsets_pdns = [
-                    rrset for rrset in rrsets_pdns if rrset['type'] != 'SOA']
-
-                rrsets = []
-                for rrset_pdns in rrsets_pdns:
-                    records = json.dumps(rrset_pdns['records'])
-                    ttl = rrset_pdns['ttl']
-                    type_ = rrset_pdns['type']
-
-                    if rrset_pdns['name'] == name + '.':
-                        subname = ''
-                    else:
-                        if not rrset_pdns['name'].endswith('.' + name + '.'):
-                            raise Exception('inconsistent RRset name')
-                        subname = rrset_pdns['name'][:-(len(name) + 2)]
-
-                    rrset = RRset(domain=domain, subname=subname,
-                                  records=records, ttl=ttl, type=type_)
-                    rrsets.append(rrset)
-
                 with transaction.atomic():
                     RRset.objects.filter(domain=domain).delete()
+                    rrsets = pdns.get_rrsets(domain)
+                    rrsets = [rrset for rrset in rrsets if rrset.type != 'SOA']
                     RRset.objects.bulk_create(rrsets)
 
             except Exception as e:

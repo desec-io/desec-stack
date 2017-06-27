@@ -1,6 +1,6 @@
 import requests
 import json
-from desecapi import settings, utils
+from desecapi import settings
 from desecapi.exceptions import PdnsException
 
 
@@ -133,25 +133,36 @@ def get_zone(domain):
     return r.json()
 
 
-def get_rrsets(domain, subname = None, type_ = None):
+def get_rrsets(domain):
     """
     Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
     """
-    fullname = utils.get_name(subname, domain.name)
+    from desecapi.models import RRset
+    from desecapi.serializers import GenericRRsetSerializer
 
-    rrsets = get_zone(domain)['rrsets']
-    rrsets = [
-        {'name': rrset['name'],
-         'records': [record['content'] for record in rrset['records']],
-         'ttl': rrset['ttl'], 'type': rrset['type']
-         } for rrset in rrsets
-        if (subname == None or rrset['name'] == fullname)
-           and (type_ == None or rrset['type'] == type_)
-    ]
+    rrsets = []
+    for rrset in get_zone(domain)['rrsets']:
+        data = {'domain': domain.pk,
+                'subname': rrset['name'][:-(len(domain.name) + 2)],
+                'type': rrset['type'],
+                'records': [record['content'] for record in rrset['records']],
+                'ttl': rrset['ttl']}
+
+        serializer = GenericRRsetSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        rrsets.append(RRset(**serializer.validated_data))
+
     return rrsets
 
 
+def set_rrset(rrset):
+    return set_rrsets(rrset.domain, [rrset])
+
+
 def set_rrsets(domain, rrsets):
+    from desecapi.serializers import GenericRRsetSerializer
+    rrsets = [GenericRRsetSerializer(rrset).data for rrset in rrsets]
+
     data = {'rrsets':
         [{'name': rrset['name'], 'type': rrset['type'], 'ttl': rrset['ttl'],
           'changetype': 'REPLACE',
