@@ -15,13 +15,11 @@ Domain Field Reference
 A JSON object representing a domain has the following structure::
 
     {
-        "aaaarecord": "2001:db8::deec:1",   # or null
-        "acme_challenge": "",
-        "arecord": "192.0.2.1",             # or null
-        "created": "2017-06-06T16:21:08.118893Z",
         "name": "example.com",
         "owner": "admin@example.com",
-        "updated": "2017-06-06T16:21:08.118561Z"
+        "arecord": "192.0.2.1",             # or null
+        "aaaarecord": "2001:db8::deec:1",   # or null
+        "acme_challenge": ""
     }
 
 Field details:
@@ -65,14 +63,6 @@ Field details:
 
     *Do not rely on this field; it may be removed in the future.*
 
-``created``
-    :Access mode: read-only
-    :Notice: this field is deprecated
-
-    Timestamp of domain creation.
-
-    *Do not rely on this field; it may be removed in the future.*
-
 ``name``
     :Access mode: read, write-once (upon domain creation)
 
@@ -85,14 +75,6 @@ Field details:
     :Access mode: read-only
 
     Email address of the user owning the domain.
-
-``update``
-    :Access mode: read-only
-    :Notice: this field is deprecated
-
-    Timestamp of domain modification.
-
-    *Do not rely on this field; it may be removed in the future.*
 
 
 Creating a Domain
@@ -107,7 +89,7 @@ endpoint, like this::
         name:='"example.com"'
 
 Only the ``name`` field is mandatory; ``arecord``, ``acme_challenge``, and
-``aaaarecord`` are optional.
+``aaaarecord`` are optional and deprecated.
 
 Upon success, the response status code will be ``201 Created``, with the
 domain object contained in the response body.  ``400 Bad Request`` is returned
@@ -157,8 +139,8 @@ returns the domain object in the reponse body.  Otherwise, the return status
 code is ``404 Not Found``.
 
 
-Modifying a Domain
-~~~~~~~~~~~~~~~~~~
+Modifying a Domain (deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To modify a domain, use the endpoint that you would also use to retrieve that
 specific domain.  The API allows changing the values of the ``arecord``,
@@ -183,11 +165,6 @@ and the updated domain object is returned in the response body.  In case of
 malformed request data such as syntactically invalid field contents for
 ``arecord`` or ``aaaarecord``, ``400 Bad Request`` is returned.  If the domain
 does not exist or you don't own it, the status code is ``404 Not Found``.
-
-Note: Do not use the ``PUT`` method.  It currently behaves identically to the
-``PATCH`` method, except that the ``name`` field needs to be provided as well.
-The current behavior is a limitation of the API, and it is expected to change
-in the future.
 
 
 Deleting a Domain

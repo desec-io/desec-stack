@@ -32,28 +32,18 @@ RRset Field Reference
 A JSON object representing an RRset has the following structure::
 
     {
-        "created": "2017-06-05T17:10:32.880571Z",
         "domain": "example.com",
+        "subname": "www",
         "name": "www.example.com.",
+        "type": "A",
         "records": [
             "127.0.0.1",
             "127.0.0.2"
         ],
-        "subname": "www",
-        "ttl": 3600,
-        "type": "A",
-        "updated": "2017-06-05T17:10:32.880217Z"
+        "ttl": 3600
     }
 
 Field details:
-
-``created``
-    :Access mode: read-only
-    :Notice: this field is deprecated
-
-    Timestamp of RRset creation.
-
-    *Do not rely on this field; it may be removed in the future.*
 
 ``domain``
     :Access mode: read, write-once (upon RRset creation)
@@ -101,8 +91,8 @@ Field details:
     :Access mode: read, write
 
     TTL (time-to-live) value, which dictates for how long resolvers may cache
-    this RRset.  Only positive integer values are allowed.  Additional
-    restrictions may apply.
+    this RRset, measured in seconds.  Only positive integer values are allowed.
+    Additional restrictions may apply.
 
 ``type``
     :Access mode: read, write-once (upon RRset creation)
@@ -113,14 +103,6 @@ Field details:
     cannot access the ``SOA``, see `SOA caveat`_.
 
 .. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
-
-``updated``
-    :Access mode: read-only
-    :Notice: this field is deprecated
-
-    Timestamp of last update to this RRset.
-
-    *Do not rely on this field; it may be removed in the future.*
 
 
 Creating an RRset
@@ -309,6 +291,9 @@ problem to enable such functionality.
     entirely determined by the DNS operator, and users should not have to bother
     with this kind of metadata.  Upon zone changes, the backend automatically
     takes care of updating the ``SOA`` record accordingly.
+
+    If you are interested in the value of the ``SOA`` record, you can retrieve
+    it using a standard DNS query.
 
 
 Caveats
