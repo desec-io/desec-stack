@@ -9,7 +9,7 @@ information about the deSEC API endpoints used for `Domain Management`_ and
 +------------------------------------------------+------------+---------------------------------------------+
 | Endpoint ``/api/v1/domains``...                | Methods    | Use case                                    |
 +================================================+============+=============================================+
-| ...\ ``/``                                     | ``GET``    | Retrieve all domains owned by you           |
+| ...\ ``/``                                     | ``GET``    | Retrieve all domains you own                |
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
@@ -19,13 +19,10 @@ information about the deSEC API endpoints used for `Domain Management`_ and
 |                                                +------------+---------------------------------------------+
 |                                                | ``DELETE`` | Delete a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/rrsets/``                     | ``GET``    | Retrieve all RRsets from zone               |
+| ...\ ``/{domain}/rrsets/``                     | ``GET``    | Retrieve all RRsets from ``domain``, filter |
+|                                                |            | by ``subname`` or ``type`` query parameter  |
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create an RRset                             |
-+------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/rrsets/{type}/``              | ``GET``    | Retrieve all RRsets of a specific type      |
-+------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/rrsets/{subname}.../``        | ``GET``    | Retrieve all RRsets with a specific subname |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/{domain}/rrsets/{subname}.../{type}/`` | ``GET``    | Retrieve a specific RRset                   |
 |                                                +------------+---------------------------------------------+

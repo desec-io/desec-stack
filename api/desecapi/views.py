@@ -158,40 +158,25 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class RRsetsDetailSpecific(generics.ListAPIView):
+class RRsetsDetail(generics.ListCreateAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
     def get_queryset(self):
-        name = self.kwargs['name']
-        subname = self.kwargs.get('subname')
-        type_ = self.kwargs.get('type')
+        rrsets = RRset.objects.filter(domain__owner=self.request.user.pk,
+                                      domain__name=self.kwargs['name'])
 
-        if subname is not None and type_ is not None:
-            raise ValueError("Invalid combination of arguments")
+        for filter_field in ('subname', 'type'):
+            value = self.request.query_params.get(filter_field)
 
-        # This may be more cleanly implemented using object level permissions.
-        if type_ in RRsetDetail.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
+            if value is not None:
+                # This may be more cleanly implemented using object level permissions.
+                if filter_field == 'type' and value in RRsetDetail.restricted_types:
+                    raise PermissionDenied("You cannot tamper with the %s RRset." % value)
 
-        if subname is not None:
-            subname = subname.replace('=2F', '/')
-            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, subname=subname)
-        elif type_ is not None:
-            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk, type=type_)
-        else:
-            return RRset.objects.filter(domain__name=name, domain__owner=self.request.user.pk)
+                rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
 
-    def get(self, request, *args, **kwargs):
-        name = self.kwargs['name']
-
-        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
-            raise Http404
-
-        return super().get(request, *args, **kwargs)
-
-
-class RRsetsDetail(RRsetsDetailSpecific, generics.ListCreateAPIView):
+        return rrsets
 
     def create(self, request, *args, **kwargs):
         if self.kwargs.get('subname') is not None or self.kwargs.get('type') is not None:
@@ -209,6 +194,14 @@ class RRsetsDetail(RRsetsDetailSpecific, generics.ListCreateAPIView):
             ex = ValidationError(detail=e.message_dict)
             ex.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
             raise ex
+
+    def get(self, request, *args, **kwargs):
+        name = self.kwargs['name']
+
+        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
+            raise Http404
+
+        return super().get(request, *args, **kwargs)
 
 
 class Root(APIView):

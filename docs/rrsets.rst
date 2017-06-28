@@ -81,11 +81,11 @@ Field details:
     (see RFC 4592 for details).  The maximum length is 178.  Further
     restrictions may apply on a per-user basis.
 
-    If a ``subname`` contains slashes ``/`` and you are using it as part of an
-    URL (e.g. when `retrieving RRsets with a specific subname`_), it is
-    required to escape them by replacing them with ``=2F``, to resolve the
-    ambiguity that is otherwise created.  (This escape mechanism does not
-    apply inside JSON documents.)
+    If a ``subname`` contains slashes ``/`` and you are using it in the URL
+    path (e.g. when `retrieving a specific RRset`_), it is required to escape
+    them by replacing them with ``=2F``, to resolve the ambiguity that
+    otherwise arises.  (This escape mechanism does not apply to query strings
+    or inside JSON documents.)
 
 ``ttl``
     :Access mode: read, write
@@ -146,49 +146,44 @@ RRsets in the zone; in this case, the response body will be an empty JSON
 array.
 
 
-Retrieving RRsets of a Specific Type
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Filtering by Record Type
+````````````````````````
 
 To retrieve an array of all RRsets from your zone that have a specific type
-(e.g. all ``A`` records, regardless of ``subname``), issue a ``GET`` request
-with the (uppercase) RRset type appended to the ``rrsets/`` endpoint, like
-this::
+(e.g. all ``A`` records, regardless of ``subname``), augment the previous
+``GET`` request with a ``type`` query parameter carrying the desired RRset type
+like::
 
     http GET \
-        https://desec.io/api/v1/domains/{domain}/rrsets/{type}/ \
+        https://desec.io/api/v1/domains/{domain}/rrsets/?type={type} \
         Authorization:"Token {token}"
 
-The response status code is ``200 OK``.  This is true also if there are no
-RRsets of the requested type; in this case, the response body will be an empty
-JSON array.
 
+Filtering by Subname
+````````````````````
 
-Retrieving RRsets with a Specific Subname
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To retrieve an array of all RRsets from your zone that have a specific subname
-(e.g. all records in the ``www`` subdomain, regardless of their type), issue a
-``GET`` request with the ``subname`` information appended to the ``rrsets/``
-endpoint, like this::
+To filter the RRsets array by subname (e.g. to retrieve all records in the
+``www`` subdomain, regardless of their type), use the ``subname`` query
+parameter, like this::
 
     http GET \
-        https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../ \
+        https://desec.io/api/v1/domains/{domain}/rrsets/?subname={subname} \
         Authorization:"Token {token}"
+
+This approach also allows to retrieve all records associated with the zone
+apex (i.e. ``example.com`` where ``subname`` is empty), by querying
+``rrsets/?subname=``.
 
 Note the three dots after ``{subname}``.  You can think of them as
 abbreviating the rest of the DNS name.  This approach also allows to retrieve
 all records associated with the zone apex (i.e. ``example.com`` where
 ``subname`` is empty), by simply using the ``rrsets/.../``.
 
-The response status code is ``200 OK``.  This is true also if the requested
-subname does not have any RRsets associated with it; in this case, the
-response body will be an empty JSON array.
-
 
 Retrieving a Specific RRset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To retrieve an RRsets with a specific name and type from your zone (e.g. the
+To retrieve an RRset with a specific name and type from your zone (e.g. the
 ``A`` record for the ``www`` subdomain), issue a ``GET`` request with the
 ``subname`` information and the type appended to the ``rrsets/`` endpoint,
 like this::
@@ -197,7 +192,9 @@ like this::
         https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \
         Authorization:"Token {token}"
 
-This will only return one RRset (i.e., the response is not a JSON array).
+Note the three dots after ``{subname}``; you can think of them as abbreviating
+the rest of the DNS name.  This will only return one RRset (i.e., the response
+is not a JSON array).
 
 The response status code is ``200 OK`` if the requested RRset exists, and
 ``404 Not Found`` otherwise.
@@ -349,7 +346,7 @@ Record types with priority field
     as required by the client you are using.  Here's an example of how to
     create a ``TXT`` RRset with HTTPie::
 
-            http POST \
+        http POST \
             https://desec.io/api/v1/domains/{domain}/rrsets/ \
             Authorization:"Token {token}" \
             type:='"TXT"' records:='["\"test value1\"","\"value2\""]' ttl:=3600
