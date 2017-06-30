@@ -155,7 +155,12 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         if request.data.get('records') == []:
             return self.delete(request, *args, **kwargs)
 
-        return super().update(request, *args, **kwargs)
+        try:
+            return super().update(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail=e.message_dict)
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
 
 
 class RRsetsDetail(generics.ListCreateAPIView):

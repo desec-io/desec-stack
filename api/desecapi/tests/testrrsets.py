@@ -289,19 +289,36 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        # Changing the type is expected to cause an error
         url = reverse('rrset', args=(self.ownedDomains[1].name, 'test1', 'A',))
-        data = {'records': ['3.2.3.4'], 'name': 'example.com', 'subname': 'test2', 'type': 'TXT'}
+        data = {'records': ['3.2.3.4'], 'ttl': 120, 'subname': 'test2'}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        # Changing the subname is expected to cause an error
+        data = {'records': ['3.2.3.4'], 'ttl': 120, 'type': 'TXT'}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+        # Check that nothing changed
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['records'][0], '1.2.3.4')
+        self.assertEqual(response.data['ttl'], 60)
+        self.assertEqual(response.data['name'], 'test1.' + self.ownedDomains[1].name + '.')
+        self.assertEqual(response.data['subname'], 'test1')
+        self.assertEqual(response.data['type'], 'A')
+
+        # This is expected to work, but the fields are ignored
+        data = {'records': ['3.2.3.4'], 'name': 'example.com.', 'domain': 'example.com'}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '3.2.3.4')
-        self.assertEqual(response.data['ttl'], 60)
         self.assertEqual(response.data['domain'], self.ownedDomains[1].name)
         self.assertEqual(response.data['name'], 'test1.' + self.ownedDomains[1].name + '.')
-        self.assertEqual(response.data['subname'], 'test1')
-        self.assertEqual(response.data['type'], 'A')
 
     def testCanDeleteOwnRRset(self):
         # Try PATCH with empty records

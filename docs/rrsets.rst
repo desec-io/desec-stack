@@ -46,7 +46,7 @@ A JSON object representing an RRset has the following structure::
 Field details:
 
 ``domain``
-    :Access mode: read, write-once (upon RRset creation)
+    :Access mode: read-only
 
     Name of the zone to which the RRset belongs.
 
@@ -205,10 +205,9 @@ Modifying an RRset
 
 To modify an RRset, use the endpoint that you would also use to retrieve that
 specific RRset.  The API allows changing the values of ``records`` and
-``ttl``.  When using the ``PUT`` method, both fields need to be specified in
-the request body, along with the ``type`` field (which needs to be set to its
-previous value).  When using the ``PATCH`` method, only fields you would like
-to modify need to be provided.  Examples::
+``ttl``.  When using the ``PATCH`` method, only fields you would like to modify
+need to be provided, where the ``PUT`` method requires specification of both
+fields.  Examples::
 
     http PUT \
         https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \

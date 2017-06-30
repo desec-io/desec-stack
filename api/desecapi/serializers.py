@@ -52,45 +52,38 @@ class FromContext(object):
     @staticmethod
     def get_domain(context):
         domain = Domain.objects.get(name=context['view'].kwargs['name'],
-                                   owner=context['request'].user.pk)
+                                    owner=context['request'].user.pk)
         return domain
 
 
 class GenericRRsetSerializer(serializers.ModelSerializer):
+    subname = serializers.CharField(allow_blank=True, required=False)
+    type = serializers.CharField(required=False)
     records = RecordsSerializer()
 
 
     class Meta:
         model = RRset
-        fields = ('created', 'updated', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
-        read_only_fields = ('created', 'updated',)
+        fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
 
 
 class RRsetSerializer(GenericRRsetSerializer):
-    # Disallow moving RRset to different zone
+    # The domain field is not a user input
     domain = serializers.SlugRelatedField(
         read_only=True, slug_field='name',
         default=FromContext(
             lambda context: FromContext.get_domain(context)
         ))
 
-    # Disallow renaming RRset (RRset.update_pdns() does not cope with this)
+    # This construction allows us to offer '' as a default for POST, while
+    # taking the present value as default on PUT
     subname = serializers.CharField(
-        allow_blank=True, read_only=True,
+        allow_blank=True,
         default=FromContext(
-            lambda context: context['request'].data.get('subname', '').lower()
+            lambda context: context['request'].data.get('subname', '')
+                                if context['request'].method == 'POST'
+                                else None
         ))
-
-    # Disallow changing RRset type (RRset.update_pdns() does not cope with this)
-    type = serializers.CharField(
-        read_only=True,
-        default=FromContext(
-            lambda context: context['request'].data['type']
-        ))
-
-
-    class Meta(GenericRRsetSerializer.Meta):
-        read_only_fields = GenericRRsetSerializer.Meta.read_only_fields + ('domain', 'type',)
 
 
 class DomainSerializer(serializers.ModelSerializer):

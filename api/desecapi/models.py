@@ -245,7 +245,6 @@ def validate_upper(value):
 
 
 class RRset(models.Model, mixins.SetterMixin):
-    # TODO Do these two fields really make sense? Meaning is limited when deleting + recreating an RRset
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='rrsets')
@@ -259,6 +258,32 @@ class RRset(models.Model, mixins.SetterMixin):
     class Meta:
         unique_together = (("domain","subname","type"),)
 
+    def __init__(self, *args, **kwargs):
+        self._dirties = set()
+        super().__init__(*args, **kwargs)
+
+    def setter_domain(self, val):
+        if val != self.domain:
+            self._dirties.add('domain')
+
+        return val
+
+    def setter_subname(self, val):
+        # On PUT, RRsetSerializer sends None, denoting the unchanged value
+        if val is None:
+            return self.subname
+
+        if val != self.subname:
+            self._dirties.add('subname')
+
+        return val
+
+    def setter_type(self, val):
+        if val != self.type:
+            self._dirties.add('type')
+
+        return val
+
     def setter_records(self, val):
         if val != self.records:
             self._dirty = True
@@ -270,6 +295,15 @@ class RRset(models.Model, mixins.SetterMixin):
             self._dirty = True
 
         return val
+
+    def clean(self):
+        errors = {}
+        for field in self._dirties:
+            errors[field] = ValidationError(
+                'You cannot change the `%s` field.' % field)
+
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def name(self):
@@ -291,7 +325,7 @@ class RRset(models.Model, mixins.SetterMixin):
     def save(self, *args, **kwargs):
         new = self.pk is None
         self.updated = timezone.now()
-        self.clean_fields()
+        self.full_clean()
         super().save(*args, **kwargs)
 
         if self._dirty or new:
