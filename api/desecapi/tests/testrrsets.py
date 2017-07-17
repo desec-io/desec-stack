@@ -51,7 +51,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data), 1) # don't forget NS RRset
 
     def testCantGetForeignRRsets(self):
         url = reverse('rrsets', args=(self.otherDomains[1].name,))
@@ -62,7 +62,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url + '?subname=')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        self.assertEqual(len(response.data), 1) # don't forget NS RRset
 
     def testCanGetOwnRRsetsFromSubname(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
@@ -81,7 +81,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
 
         response = self.client.get(url + '?subname=test')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -109,7 +109,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
 
         response = self.client.get(url + '?type=A')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -128,7 +128,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(response.data), 1 + 1) # don't forget NS RRset
 
         url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.get(url)
@@ -199,7 +199,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
 
         url = reverse('rrset', args=(self.ownedDomains[1].name, 'test', 'A',))
         response = self.client.get(url)

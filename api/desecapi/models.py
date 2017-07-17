@@ -179,6 +179,13 @@ class Domain(models.Model, mixins.SetterMixin):
 
         self._dirtyRecords = False
 
+    def sync_from_pdns(self):
+        with transaction.atomic():
+            RRset.objects.filter(domain=self).delete()
+            rrsets = pdns.get_rrsets(self)
+            rrsets = [rrset for rrset in rrsets if rrset.type != 'SOA']
+            RRset.objects.bulk_create(rrsets)
+
     @transaction.atomic
     def delete(self, *args, **kwargs):
         super(Domain, self).delete(*args, **kwargs)

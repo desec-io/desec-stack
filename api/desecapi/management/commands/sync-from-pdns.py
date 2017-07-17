@@ -1,7 +1,5 @@
 from django.core.management import BaseCommand, CommandError
 from desecapi.models import Domain, RRset
-from desecapi import pdns
-from django.db import transaction
 
 
 class Command(BaseCommand):
@@ -23,11 +21,7 @@ class Command(BaseCommand):
 
         for domain in domains:
             try:
-                with transaction.atomic():
-                    RRset.objects.filter(domain=domain).delete()
-                    rrsets = pdns.get_rrsets(domain)
-                    rrsets = [rrset for rrset in rrsets if rrset.type != 'SOA']
-                    RRset.objects.bulk_create(rrsets)
+                domain.sync_from_pdns()
 
             except Exception as e:
                 msg = 'Error while processing {}: {}'.format(domain.name, e)

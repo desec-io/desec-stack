@@ -116,6 +116,8 @@ def create_zone(domain, kind='NATIVE'):
     }
     _pdns_post('/zones', payload)
 
+    # Don't forget to import automatically generated RRsets (specifically, NS)
+    domain.sync_from_pdns()
 
 def delete_zone(domain):
     """

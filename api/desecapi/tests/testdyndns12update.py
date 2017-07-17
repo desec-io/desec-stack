@@ -33,9 +33,14 @@ class DynDNS12UpdateTest(APITestCase):
         httpretty.HTTPretty.allow_net_connect = False
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify')
 
     def tearDown(self):
+        httpretty.reset()
         httpretty.disable()
 
     def assertIP(self, ipv4=None, ipv6=None):
@@ -118,10 +123,15 @@ class DynDNS12UpdateTest(APITestCase):
         # To force identification by the provided username (which is the domain name)
         # we add a second domain for the current user.
 
+        name = 'second-' + self.domain
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
+
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
-        data = {'name': 'second-' + self.domain}
-        response = self.client.post(url, data)
+        response = self.client.post(url, {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
@@ -147,10 +157,15 @@ class DynDNS12UpdateTest(APITestCase):
         # Now make sure we get a conflict when the user has multiple domains. Thus,
         # we add a second domain for the current user.
 
+        name = 'second-' + self.domain
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
+
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
-        data = {'name': 'second-' + self.domain}
-        response = self.client.post(url, data)
+        response = self.client.post(url, {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         url = reverse('dyndns12update')
