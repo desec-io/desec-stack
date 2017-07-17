@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from desecapi.models import Domain, Donation, User, RRset
 from djoser import serializers as djoserSerializers
-from rest_framework.exceptions import ValidationError
 import json
 
 
@@ -27,35 +26,6 @@ class RecordsSerializer(JSONSerializer):
         return super().to_internal_value(records)
 
 
-class FromContext(object):
-    """
-    Callable helper class, useful to extract a value from the view context.
-
-    A common use case is to use such a view context value as a default value
-    for populating otherwise read-only fields of a new model instance.
-
-    The class also comes with a specialized method that allows retrieving a
-    Domain instance based on a domain name string.
-    """
-    def __init__(self, value_fn):
-        self.value_fn = value_fn
-
-    def set_context(self, serializer_field):
-        try:
-            self.value = self.value_fn(serializer_field.context)
-        except KeyError:
-            raise ValidationError("This field is required.")
-
-    def __call__(self):
-        return self.value
-
-    @staticmethod
-    def get_domain(context):
-        domain = Domain.objects.get(name=context['view'].kwargs['name'],
-                                    owner=context['request'].user.pk)
-        return domain
-
-
 class GenericRRsetSerializer(serializers.ModelSerializer):
     subname = serializers.CharField(allow_blank=True, required=False)
     type = serializers.CharField(required=False)
@@ -68,22 +38,8 @@ class GenericRRsetSerializer(serializers.ModelSerializer):
 
 
 class RRsetSerializer(GenericRRsetSerializer):
-    # The domain field is not a user input
-    domain = serializers.SlugRelatedField(
-        read_only=True, slug_field='name',
-        default=FromContext(
-            lambda context: FromContext.get_domain(context)
-        ))
-
-    # This construction allows us to offer '' as a default for POST, while
-    # taking the present value as default on PUT
-    subname = serializers.CharField(
-        allow_blank=True,
-        default=FromContext(
-            lambda context: context['request'].data.get('subname', '')
-                                if context['request'].method == 'POST'
-                                else None
-        ))
+    # The value of this field is set in RRsetList.perform_create()
+    domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
 
 class DomainSerializer(serializers.ModelSerializer):

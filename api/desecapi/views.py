@@ -25,13 +25,12 @@ from rest_framework.exceptions import (
 import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 from desecapi.forms import UnlockForm
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from desecapi.emails import send_account_lock_email
-import json
 import re
 
 # TODO Generalize?
@@ -163,7 +162,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
             raise ex
 
 
-class RRsetsDetail(generics.ListCreateAPIView):
+class RRsetList(generics.ListCreateAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
@@ -184,9 +183,6 @@ class RRsetsDetail(generics.ListCreateAPIView):
         return rrsets
 
     def create(self, request, *args, **kwargs):
-        if self.kwargs.get('subname') is not None or self.kwargs.get('type') is not None:
-            raise MethodNotAllowed(method=request.method)
-
         type_ = request.data.get('type', '')
         if type_ in RRsetDetail.restricted_types:
             raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
@@ -199,6 +195,24 @@ class RRsetsDetail(generics.ListCreateAPIView):
             ex = ValidationError(detail=e.message_dict)
             ex.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
             raise ex
+
+    def perform_create(self, serializer):
+        # Associate RRset with proper domain
+        domain = Domain.objects.get(name=self.kwargs['name'],
+                                    owner=self.request.user.pk)
+        kwargs = {'domain': domain}
+
+        # If this RRset is new and a subname has not been given, set it empty
+        #
+        # Notes:
+        # - We don't use default='' in the serializer so that during PUT, the
+        #   subname value is retained if omitted.)
+        # - Don't use kwargs['subname'] = self.request.data.get('subname', ''),
+        #   giving preference to what's in serializer.validated_data at this point
+        if self.request.method == 'POST' and self.request.data.get('subname') is None:
+            kwargs['subname'] = ''
+
+        serializer.save(**kwargs)
 
     def get(self, request, *args, **kwargs):
         name = self.kwargs['name']
