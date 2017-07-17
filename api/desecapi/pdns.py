@@ -170,7 +170,8 @@ def set_rrsets(domain, rrsets):
           'changetype': 'REPLACE',
           'records': [{'content': record, 'disabled': False}
                       for record in rrset['records']]
-          } for rrset in rrsets]
+          }
+         for rrset in rrsets]
     }
     _pdns_patch('/zones/' + domain.pdns_id, data)
 

@@ -142,7 +142,6 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         subname = self.kwargs['subname'].replace('=2F', '/')
         type_ = self.kwargs['type']
 
-        # This may be more cleanly implemented using object level permissions.
         if type_ in self.restricted_types:
             raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
 
@@ -174,7 +173,6 @@ class RRsetList(generics.ListCreateAPIView):
             value = self.request.query_params.get(filter_field)
 
             if value is not None:
-                # This may be more cleanly implemented using object level permissions.
                 if filter_field == 'type' and value in RRsetDetail.restricted_types:
                     raise PermissionDenied("You cannot tamper with the %s RRset." % value)
 

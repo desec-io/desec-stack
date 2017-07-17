@@ -246,7 +246,7 @@ General Notes
   RRset share the record type and also the TTL.  (This is actually a
   requirement of the DNS specification and not an API design choice.)
 
-- We have not done extensive testing for reverse DNS, but hings should work in
+- We have not done extensive testing for reverse DNS, but things should work in
   principle.  If you encounter any problems, please let us know.
 
 
@@ -302,7 +302,7 @@ Record types with priority field
     ``MX`` or ``SRV`` records and the like).
 
     Instead, the priority is expected to be specified at the beginning of the
-    record content, separated from the rest of it by whitespace.
+    record content, separated from the rest of it by a space.
 
 ``CNAME`` record
     - The record value must be terminated by a dot ``.`` (as in
@@ -340,7 +340,7 @@ Record types with priority field
     RFC 4592, Sec. 4.2.
 
 ``TXT`` record
-    The contents of the ``TXT`` record must be encloded in double quotes.
+    The contents of the ``TXT`` record must be enclosed in double quotes.
     Thus, when ``POST``\ ing to the API, make sure to do proper escaping etc.
     as required by the client you are using.  Here's an example of how to
     create a ``TXT`` RRset with HTTPie::
