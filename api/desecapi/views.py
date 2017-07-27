@@ -143,7 +143,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         type_ = self.kwargs['type']
 
         if type_ in self.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
+            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
 
         return RRset.objects.filter(
             domain__owner=self.request.user.pk,
@@ -174,7 +174,7 @@ class RRsetList(generics.ListCreateAPIView):
 
             if value is not None:
                 if filter_field == 'type' and value in RRsetDetail.restricted_types:
-                    raise PermissionDenied("You cannot tamper with the %s RRset." % value)
+                    raise PermissionDenied("You cannot tinker with the %s RRset." % value)
 
                 rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
 
@@ -183,7 +183,7 @@ class RRsetList(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         type_ = request.data.get('type', '')
         if type_ in RRsetDetail.restricted_types:
-            raise PermissionDenied("You cannot tamper with the %s RRset." % type_)
+            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
 
         try:
             return super().create(request, *args, **kwargs)
