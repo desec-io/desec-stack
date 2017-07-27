@@ -34,14 +34,16 @@ class UnauthenticatedDomainTests(APITestCase):
 
 class AuthenticatedDomainTests(APITestCase):
     def setUp(self):
-        httpretty.reset()
-        httpretty.disable()
         if not hasattr(self, 'owner'):
             self.owner = utils.createUser()
             self.ownedDomains = [utils.createDomain(self.owner), utils.createDomain(self.owner)]
             self.otherDomains = [utils.createDomain(), utils.createDomain()]
             self.token = utils.createToken(user=self.owner)
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+
+    def tearDown(self):
+        httpretty.reset()
+        httpretty.disable()
 
     def testExpectOnlyOwnedDomains(self):
         url = reverse('domain-list')
@@ -185,16 +187,23 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['acme_challenge'], 'test_challenge')
 
-    def testPostingCausesPdnsAPICall(self):
+    def testPostingCausesPdnsAPICalls(self):
+        name = utils.generateDomainname()
+
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
 
         url = reverse('domain-list')
-        data = {'name': utils.generateDomainname()}
-        response = self.client.post(url, data)
+        response = self.client.post(url, {'name': name})
 
-        self.assertTrue(data['name'] in httpretty.last_request().parsed_body)
-        self.assertTrue('ns1.desec.io' in httpretty.last_request().parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'POST')
+        self.assertTrue(name in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.last_request().method, 'GET')
 
     def testPostingWithRecordsCausesPdnsAPIPatch(self):
         name = utils.generateDomainname()
@@ -202,6 +211,10 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
 
         url = reverse('domain-list')
@@ -219,6 +232,10 @@ class AuthenticatedDomainTests(APITestCase):
 
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
 
@@ -283,14 +300,16 @@ class AuthenticatedDomainTests(APITestCase):
 
 class AuthenticatedDynDomainTests(APITestCase):
     def setUp(self):
-        httpretty.reset()
-        httpretty.disable()
         if not hasattr(self, 'owner'):
             self.owner = utils.createUser(dyn=True)
             self.ownedDomains = [utils.createDomain(self.owner, dyn=True), utils.createDomain(self.owner, dyn=True)]
             self.otherDomains = [utils.createDomain(), utils.createDomain()]
             self.token = utils.createToken(user=self.owner)
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+
+    def tearDown(self):
+        httpretty.reset()
+        httpretty.disable()
 
     def testCanDeleteOwnedDynDomain(self):
         httpretty.enable()
@@ -356,8 +375,14 @@ class AuthenticatedDynDomainTests(APITestCase):
 
         url = reverse('domain-list')
         for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
-            data = {'name': utils.generateDynDomainname()}
-            response = self.client.post(url, data)
+            name = utils.generateDynDomainname()
+
+            httpretty.register_uri(httpretty.GET,
+                                   settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                                   body='{"rrsets": []}',
+                                   content_type="application/json")
+
+            response = self.client.post(url, {'name': name})
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             self.assertEqual(len(mail.outbox), outboxlen+i+1)
 

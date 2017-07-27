@@ -1,0 +1,3 @@
+To generate the documentation, run
+
+	rst2html5.py -d --stylesheet-path=minimal.css,plain.css,theme.css index.rst > index.html

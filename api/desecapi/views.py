@@ -1,27 +1,31 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain, User
-from desecapi.serializers import DomainSerializer, DonationSerializer
+from desecapi.models import Domain, User, RRset
+from desecapi.serializers import (
+    DomainSerializer, RRsetSerializer, DonationSerializer)
 from rest_framework import generics
-from desecapi.permissions import IsOwner
+from desecapi.permissions import IsOwner, IsDomainOwner
 from rest_framework import permissions
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.authentication import TokenAuthentication, get_authorization_header
+from rest_framework.authentication import (
+    TokenAuthentication, get_authorization_header)
 from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 from django.template.loader import get_template
 from django.template import Context
-from desecapi.authentication import BasicTokenAuthentication, URLParamAuthentication
+from desecapi.authentication import (
+    BasicTokenAuthentication, URLParamAuthentication)
 import base64
 from desecapi import settings
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import (
+    APIException, MethodNotAllowed, PermissionDenied, ValidationError)
 import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
 from desecapi.forms import UnlockForm
 from django.shortcuts import render
@@ -30,8 +34,8 @@ from desecapi.emails import send_account_lock_email
 import re
 
 # TODO Generalize?
-patternDyn = re.compile(r'^[A-Za-z][A-Za-z0-9-]*\.dedyn\.io$')
-patternNonDyn = re.compile(r'^([A-Za-z][A-Za-z0-9-]*\.)+[A-Za-z]+$')
+patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
+patternNonDyn = re.compile(r'^([A-Za-z-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
 
 def get_client_ip(request):
@@ -47,7 +51,7 @@ class DomainList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         pattern = patternDyn if self.request.user.dyn else patternNonDyn
-        if pattern.match(serializer.validated_data['name']) is None or "--" in serializer.validated_data['name']:
+        if pattern.match(serializer.validated_data['name']) is None:
             ex = ValidationError(detail={"detail": "This domain name is not well-formed, by policy.", "code": "domain-illformed"})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
@@ -66,7 +70,7 @@ class DomainList(generics.ListCreateAPIView):
         try:
             obj = serializer.save(owner=self.request.user)
         except Exception as e:
-            if str(e).endswith(' already exists"}'):
+            if str(e).endswith(' already exists'):
                 ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
                 ex.status_code = status.HTTP_409_CONFLICT
                 raise ex
@@ -120,6 +124,103 @@ class DomainDetailByName(DomainDetail):
     lookup_field = 'name'
 
 
+class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
+    lookup_field = 'type'
+    serializer_class = RRsetSerializer
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+    restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            super().delete(request, *args, **kwargs)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_queryset(self):
+        name = self.kwargs['name']
+        subname = self.kwargs['subname'].replace('=2F', '/')
+        type_ = self.kwargs['type']
+
+        if type_ in self.restricted_types:
+            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
+
+        return RRset.objects.filter(
+            domain__owner=self.request.user.pk,
+            domain__name=name, subname=subname, type=type_)
+
+    def update(self, request, *args, **kwargs):
+        if request.data.get('records') == []:
+            return self.delete(request, *args, **kwargs)
+
+        try:
+            return super().update(request, *args, **kwargs)
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail=e.message_dict)
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
+
+
+class RRsetList(generics.ListCreateAPIView):
+    serializer_class = RRsetSerializer
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+
+    def get_queryset(self):
+        rrsets = RRset.objects.filter(domain__owner=self.request.user.pk,
+                                      domain__name=self.kwargs['name'])
+
+        for filter_field in ('subname', 'type'):
+            value = self.request.query_params.get(filter_field)
+
+            if value is not None:
+                if filter_field == 'type' and value in RRsetDetail.restricted_types:
+                    raise PermissionDenied("You cannot tinker with the %s RRset." % value)
+
+                rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
+
+        return rrsets
+
+    def create(self, request, *args, **kwargs):
+        type_ = request.data.get('type', '')
+        if type_ in RRsetDetail.restricted_types:
+            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
+
+        try:
+            return super().create(request, *args, **kwargs)
+        except Domain.DoesNotExist:
+            raise Http404
+        except django.core.exceptions.ValidationError as e:
+            ex = ValidationError(detail=e.message_dict)
+            ex.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+            raise ex
+
+    def perform_create(self, serializer):
+        # Associate RRset with proper domain
+        domain = Domain.objects.get(name=self.kwargs['name'],
+                                    owner=self.request.user.pk)
+        kwargs = {'domain': domain}
+
+        # If this RRset is new and a subname has not been given, set it empty
+        #
+        # Notes:
+        # - We don't use default='' in the serializer so that during PUT, the
+        #   subname value is retained if omitted.)
+        # - Don't use kwargs['subname'] = self.request.data.get('subname', ''),
+        #   giving preference to what's in serializer.validated_data at this point
+        if self.request.method == 'POST' and self.request.data.get('subname') is None:
+            kwargs['subname'] = ''
+
+        serializer.save(**kwargs)
+
+    def get(self, request, *args, **kwargs):
+        name = self.kwargs['name']
+
+        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
+            raise Http404
+
+        return super().get(request, *args, **kwargs)
+
+
 class Root(APIView):
     def get(self, request, format=None):
         if self.request.user and self.request.user.is_authenticated():
@@ -134,6 +235,7 @@ class Root(APIView):
                 'register': reverse('register', request=request, format=format),
             })
 
+
 class DnsQuery(APIView):
     def get(self, request, format=None):
         desecio = resolver.Resolver()
@@ -143,10 +245,10 @@ class DnsQuery(APIView):
 
         domain = str(request.GET['domain'])
 
-        def getRecords(domain, type):
+        def getRecords(domain, type_):
             records = []
             try:
-                for ip in desecio.query(domain, type):
+                for ip in desecio.query(domain, type_):
                     records.append(str(ip))
             except resolver.NoAnswer:
                 return []

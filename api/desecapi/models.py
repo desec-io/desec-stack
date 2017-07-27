@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.db import models, transaction
-from django.contrib.auth.models import (
-    BaseUserManager, AbstractBaseUser
-)
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
-from django.core.exceptions import ValidationError
-from desecapi import pdns
-import datetime, time
-import django.core.exceptions
-import rest_framework.exceptions
+from django.core.exceptions import SuspiciousOperation, ValidationError
+from desecapi import pdns, mixins
+import datetime
+from django.core.validators import MinValueValidator
 
 
 class MyUserManager(BaseUserManager):
@@ -94,7 +91,7 @@ class User(AbstractBaseUser):
         self.save()
 
 
-class Domain(models.Model):
+class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=191, unique=True)
@@ -104,13 +101,6 @@ class Domain(models.Model):
     acme_challenge = models.CharField(max_length=255, blank=True)
     _dirtyName = False
     _dirtyRecords = False
-
-    def __setattr__(self, attrname, val):
-        setter_func = 'setter_' + attrname
-        if attrname in self.__dict__ and callable(getattr(self, setter_func, None)):
-            super(Domain, self).__setattr__(attrname, getattr(self, setter_func)(val))
-        else:
-            super(Domain, self).__setattr__(attrname, val)
 
     def setter_name(self, val):
         if val != self.name:
@@ -140,6 +130,22 @@ class Domain(models.Model):
         if self._dirtyName:
             raise ValidationError('You must not change the domain name')
 
+    @property
+    def pdns_id(self):
+        if '/' in self.name or '?' in self.name:
+            raise SuspiciousOperation('Invalid hostname ' + self.name)
+
+        # Transform to be valid pdns API identifiers (:id in their docs).  The
+        # '/' case here is just a safety measure (this case should never occur due
+        # to the above check).
+        # See also pdns code, apiZoneNameToId() in ws-api.cc
+        name = self.name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
+
+        if not name.endswith('.'):
+            name += '.'
+
+        return name
+
     def pdns_resync(self):
         """
         Make sure that pdns gets the latest information about this domain/zone.
@@ -147,11 +153,11 @@ class Domain(models.Model):
         """
 
         # Create zone if needed
-        if not pdns.zone_exists(self.name):
-            pdns.create_zone(self.name)
+        if not pdns.zone_exists(self):
+            pdns.create_zone(self)
 
         # update zone to latest information
-        pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
+        pdns.set_dyn_records(self)
 
     def pdns_sync(self, new_domain):
         """
@@ -164,23 +170,30 @@ class Domain(models.Model):
 
         # if this zone is new, create it and set dirty flag if necessary
         if new_domain:
-            pdns.create_zone(self.name)
+            pdns.create_zone(self)
             self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord) or bool(self.acme_challenge)
 
         # make changes if necessary
         if self._dirtyRecords:
-            pdns.set_dyn_records(self.name, self.arecord, self.aaaarecord, self.acme_challenge)
+            pdns.set_dyn_records(self)
 
         self._dirtyRecords = False
+
+    def sync_from_pdns(self):
+        with transaction.atomic():
+            RRset.objects.filter(domain=self).delete()
+            rrsets = pdns.get_rrsets(self)
+            rrsets = [rrset for rrset in rrsets if rrset.type != 'SOA']
+            RRset.objects.bulk_create(rrsets)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
         super(Domain, self).delete(*args, **kwargs)
 
-        pdns.delete_zone(self.name)
+        pdns.delete_zone(self)
         if self.name.endswith('.dedyn.io'):
-            pdns.set_rrset('dedyn.io', self.name, 'DS', '')
-            pdns.set_rrset('dedyn.io', self.name, 'NS', '')
+            pdns.set_rrset_in_parent(self, 'DS', '')
+            pdns.set_rrset_in_parent(self, 'NS', '')
 
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -200,8 +213,10 @@ class Domain(models.Model):
 def get_default_value_created():
     return timezone.now()
 
+
 def get_default_value_due():
     return timezone.now() + datetime.timedelta(days=7)
+
 
 def get_default_value_mref():
     return "ONDON" + str((timezone.now() - timezone.datetime(1970,1,1,tzinfo=timezone.utc)).total_seconds())
@@ -227,3 +242,98 @@ class Donation(models.Model):
 
     class Meta:
         ordering = ('created',)
+
+
+def validate_upper(value):
+    if value != value.upper():
+        raise ValidationError('Invalid value (not uppercase): %(value)s',
+                              code='invalid',
+                              params={'value': value})
+
+
+class RRset(models.Model, mixins.SetterMixin):
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(null=True)
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='rrsets')
+    subname = models.CharField(max_length=178, blank=True)
+    type = models.CharField(max_length=10, validators=[validate_upper])
+    records = models.CharField(max_length=64000, blank=True)
+    ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    _dirty = False
+
+
+    class Meta:
+        unique_together = (("domain","subname","type"),)
+
+    def __init__(self, *args, **kwargs):
+        self._dirties = set()
+        super().__init__(*args, **kwargs)
+
+    def setter_domain(self, val):
+        if val != self.domain:
+            self._dirties.add('domain')
+
+        return val
+
+    def setter_subname(self, val):
+        # On PUT, RRsetSerializer sends None, denoting the unchanged value
+        if val is None:
+            return self.subname
+
+        if val != self.subname:
+            self._dirties.add('subname')
+
+        return val
+
+    def setter_type(self, val):
+        if val != self.type:
+            self._dirties.add('type')
+
+        return val
+
+    def setter_records(self, val):
+        if val != self.records:
+            self._dirty = True
+
+        return val
+
+    def setter_ttl(self, val):
+        if val != self.ttl:
+            self._dirty = True
+
+        return val
+
+    def clean(self):
+        errors = {}
+        for field in self._dirties:
+            errors[field] = ValidationError(
+                'You cannot change the `%s` field.' % field)
+
+        if errors:
+            raise ValidationError(errors)
+
+    @property
+    def name(self):
+        return '.'.join(filter(None, [self.subname, self.domain.name])) + '.'
+
+    def update_pdns(self):
+        pdns.set_rrset(self)
+        pdns.notify_zone(self.domain)
+
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        # Reset records so that our pdns update later will cause deletion
+        self.records = '[]'
+        super().delete(*args, **kwargs)
+
+        self.update_pdns()
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        new = self.pk is None
+        self.updated = timezone.now()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+        if self._dirty or new:
+            self.update_pdns()

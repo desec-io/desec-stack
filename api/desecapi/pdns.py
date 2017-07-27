@@ -1,9 +1,11 @@
 import requests
 import json
 from desecapi import settings
+from desecapi.exceptions import PdnsException
 
 
 headers_nslord = {
+    'Accept': 'application/json',
     'User-Agent': 'desecapi',
     'X-API-Key': settings.NSLORD_PDNS_API_TOKEN,
 }
@@ -13,11 +15,6 @@ headers_nsmaster = {
     'X-API-Key': settings.NSMASTER_PDNS_API_TOKEN,
 }
 
-
-def normalize_hostname(name):
-    if '/' in name or '?' in name:
-        raise Exception('Invalid hostname ' + name)
-    return name if name.endswith('.') else name + '.'
 
 def _pdns_delete(url):
     # We first delete the zone from nslord, the main authoritative source of our DNS data.
@@ -29,7 +26,7 @@ def _pdns_delete(url):
         if r1.status_code == 422 and 'Could not find domain' in r1.text:
             pass
         else:
-            raise Exception(r1.text)
+            raise PdnsException(r1)
 
     # Delete from nsmaster as well
     r2 = requests.delete(settings.NSMASTER_PDNS_API + url, headers=headers_nsmaster)
@@ -38,34 +35,36 @@ def _pdns_delete(url):
         if r2.status_code == 422 and 'Could not find domain' in r2.text:
             pass
         else:
-            raise Exception(r2.text)
+            raise PdnsException(r2)
 
     return (r1, r2)
+
 
 def _pdns_post(url, body):
     r = requests.post(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
+
 
 def _pdns_patch(url, body):
     r = requests.patch(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 300:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
 def _pdns_get(url):
     r = requests.get(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 500:
-        raise Exception(r.text)
+    if r.status_code < 200 or r.status_code >= 400:
+        raise PdnsException(r)
     return r
 
 
 def _pdns_put(url):
     r = requests.put(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
     if r.status_code < 200 or r.status_code >= 500:
-        raise Exception(r.text)
+        raise PdnsException(r)
     return r
 
 
@@ -98,12 +97,16 @@ def _delete_or_replace_rrset(name, rr_type, value, ttl=60):
             }
 
 
-def create_zone(name, kind='NATIVE'):
+def create_zone(domain, kind='NATIVE'):
     """
     Commands pdns to create a zone with the given name.
     """
+    name = domain.name
+    if not name.endswith('.'):
+        name += '.'
+
     payload = {
-        "name": normalize_hostname(name),
+        "name": name,
         "kind": kind.upper(),
         "masters": [],
         "nameservers": [
@@ -113,63 +116,112 @@ def create_zone(name, kind='NATIVE'):
     }
     _pdns_post('/zones', payload)
 
+    # Don't forget to import automatically generated RRsets (specifically, NS)
+    domain.sync_from_pdns()
 
-def delete_zone(name):
+def delete_zone(domain):
     """
     Commands pdns to delete a zone with the given name.
     """
-    _pdns_delete('/zones/' + normalize_hostname(name))
+    _pdns_delete('/zones/' + domain.pdns_id)
 
 
-def zone_exists(name):
+def get_zone(domain):
+    """
+    Retrieves a JSON representation of the zone from pdns
+    """
+    r = _pdns_get('/zones/' + domain.pdns_id)
+
+    return r.json()
+
+
+def get_rrsets(domain):
+    """
+    Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
+    """
+    from desecapi.models import RRset
+    from desecapi.serializers import GenericRRsetSerializer
+
+    rrsets = []
+    for rrset in get_zone(domain)['rrsets']:
+        data = {'domain': domain.pk,
+                'subname': rrset['name'][:-(len(domain.name) + 2)],
+                'type': rrset['type'],
+                'records': [record['content'] for record in rrset['records']],
+                'ttl': rrset['ttl']}
+
+        serializer = GenericRRsetSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        rrsets.append(RRset(**serializer.validated_data))
+
+    return rrsets
+
+
+def set_rrset(rrset):
+    return set_rrsets(rrset.domain, [rrset])
+
+
+def set_rrsets(domain, rrsets):
+    from desecapi.serializers import GenericRRsetSerializer
+    rrsets = [GenericRRsetSerializer(rrset).data for rrset in rrsets]
+
+    data = {'rrsets':
+        [{'name': rrset['name'], 'type': rrset['type'], 'ttl': rrset['ttl'],
+          'changetype': 'REPLACE',
+          'records': [{'content': record, 'disabled': False}
+                      for record in rrset['records']]
+          }
+         for rrset in rrsets]
+    }
+    _pdns_patch('/zones/' + domain.pdns_id, data)
+
+
+def zone_exists(domain):
     """
     Returns whether pdns knows a zone with the given name.
     """
-    reply = _pdns_get('/zones/' + normalize_hostname(name))
-    if reply.status_code == 200:
+    r = _pdns_get('/zones/' + domain.pdns_id)
+    if r.status_code == 200:
         return True
-    elif reply.status_code == 422 and 'Could not find domain' in reply.text:
+    elif r.status_code == 422 and 'Could not find domain' in r.text:
         return False
     else:
-        raise Exception(reply.text)
+        raise PdnsException(r)
 
 
-def notify_zone(name):
+def notify_zone(domain):
     """
     Commands pdns to notify the zone to the pdns slaves.
     """
-    _pdns_put('/zones/%s/notify' % normalize_hostname(name))
+    _pdns_put('/zones/%s/notify' % domain.pdns_id)
 
 
-def set_dyn_records(name, a, aaaa, acme_challenge=''):
+def set_dyn_records(domain):
     """
     Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
     Only supports one A, one AAAA record.
     If a or aaaa is empty, pdns will be commanded to delete the record.
     """
-    name = normalize_hostname(name)
-
-    _pdns_patch('/zones/' + name, {
+    _pdns_patch('/zones/' + domain.pdns_id, {
         "rrsets": [
-            _delete_or_replace_rrset(name, 'a', a),
-            _delete_or_replace_rrset(name, 'aaaa', aaaa),
-            _delete_or_replace_rrset('_acme-challenge.%s' % name, 'txt', '"%s"' % acme_challenge),
+            _delete_or_replace_rrset(domain.name + '.', 'a', domain.arecord),
+            _delete_or_replace_rrset(domain.name + '.', 'aaaa', domain.aaaarecord),
+            _delete_or_replace_rrset('_acme-challenge.%s.' % domain.name, 'txt', '"%s"' % domain.acme_challenge),
         ]
     })
 
-    notify_zone(name)
+    notify_zone(domain)
 
 
-def set_rrset(zone, name, rr_type, value):
+def set_rrset_in_parent(domain, rr_type, value):
     """
     Commands pdns to set or delete a record set for the zone with the given name.
     If value is empty, the rrset will be deleted.
     """
-    zone = normalize_hostname(zone)
-    name = normalize_hostname(name)
+    parent_id = domain.pdns_id.split('.', 1)[1]
 
-    _pdns_patch('/zones/' + zone, {
+    _pdns_patch('/zones/' + parent_id, {
         "rrsets": [
-            _delete_or_replace_rrset(name, rr_type, value),
+            _delete_or_replace_rrset(domain.name + '.', rr_type, value),
         ]
     })
