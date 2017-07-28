@@ -73,4 +73,5 @@ class UserRegistrationSerializer(djoserSerializers.UserRegistrationSerializer):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
             'password',
+            'dyn',
         )

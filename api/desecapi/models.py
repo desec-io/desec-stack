@@ -9,7 +9,7 @@ from django.core.validators import MinValueValidator
 
 
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None, registration_remote_ip=None, captcha_required=False):
+    def create_user(self, email, password=None, registration_remote_ip=None, captcha_required=False, dyn=False):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -21,6 +21,7 @@ class MyUserManager(BaseUserManager):
             email=self.normalize_email(email),
             registration_remote_ip=registration_remote_ip,
             captcha_required=captcha_required,
+            dyn=dyn,
         )
 
         user.set_password(password)
@@ -52,7 +53,7 @@ class User(AbstractBaseUser):
     captcha_required = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
-    dyn = models.BooleanField(default=True)
+    dyn = models.BooleanField(default=False)
 
     objects = MyUserManager()
 
