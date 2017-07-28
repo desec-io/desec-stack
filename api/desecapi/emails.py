@@ -9,7 +9,7 @@ def send_account_lock_email(request, user):
     from_tmpl = get_template('emails/from.txt')
     context = Context({
         'url': reverse('unlock/byEmail', args=[user.email], request=request),
-        'domainname': user.domains[0].name if user.domains.count() > 0 else 'deSEC dedyn.io'
+        'domainname': user.domains[0].name if user.domains.count() > 0 else 'deSEC DNS'
     })
     email = EmailMessage(subject_tmpl.render(context),
                          content_tmpl.render(context),

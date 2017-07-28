@@ -1,6 +1,6 @@
 Hello,
 
-Your activity on the deSEC dedyn.io dynamic DNS service looks
+Your activity on the deSEC DNS service (e.g. dedyn.io) looks
 suspiciously similar to the one of bots. As mass registrations
 by bots have been a problem for us in the past, we need to
 ask you to prove you are not a bot by solving a CAPTCHA. Sorry
