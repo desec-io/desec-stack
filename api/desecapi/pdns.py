@@ -210,6 +210,9 @@ def set_dyn_records(domain):
         ]
     })
 
+    # Don't forget to import the updated RRsets
+    domain.sync_from_pdns()
+
     notify_zone(domain)
 
 
