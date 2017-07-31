@@ -6,4 +6,7 @@ class PdnsException(APIException):
 
     def __init__(self, response):
         self.status_code = response.status_code
-        self.detail = json.loads(response.text)['error']
+        try:
+            self.detail = json.loads(response.text)['error']
+        except:
+            self.detail = response.text
