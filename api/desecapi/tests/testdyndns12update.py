@@ -37,6 +37,10 @@ class DynDNS12UpdateTest(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
                                body='{"rrsets": []}',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify')
 
     def tearDown(self):
@@ -128,6 +132,10 @@ class DynDNS12UpdateTest(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + '.',
                                body='{"rrsets": []}',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
@@ -161,6 +169,10 @@ class DynDNS12UpdateTest(APITestCase):
         httpretty.register_uri(httpretty.GET,
                                settings.NSLORD_PDNS_API + '/zones/' + name + '.',
                                body='{"rrsets": []}',
+                               content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
                                content_type="application/json")
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
@@ -197,28 +209,41 @@ class DynDNS12UpdateTest(APITestCase):
         domain.arecord = '10.1.1.1'
         domain.save()
 
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.POST,
+                               settings.NSLORD_PDNS_API + '/zones',
+                               body='{"error": "Domain \'%s.\' already exists"}' % self.domain,
+                               content_type="application/json", status=422)
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
-        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.', status=200)
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify', status=200)
 
         self.owner.unlock()
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
-        self.assertTrue(self.domain in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('10.1.1.1' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PATCH')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-3].path))
+        self.assertTrue(self.domain in httpretty.httpretty.latest_requests[-3].parsed_body)
+        self.assertTrue('10.1.1.1' in httpretty.httpretty.latest_requests[-3].parsed_body)
 
     def testSuspendedUpdatesDomainCreation(self):
         self.owner.captcha_required = True
         self.owner.save()
 
+        url = reverse('domain-list')
+        newdomain = utils.generateDynDomainname()
+
         httpretty.reset()
         httpretty.enable()
         httpretty.HTTPretty.allow_net_connect = False
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
-        url = reverse('domain-list')
-        newdomain = utils.generateDynDomainname()
-        data = {'name': newdomain, 'dyn': True, 'arecord': '10.2.2.2'}
+        data = {'name': newdomain, 'arecord': '10.2.2.2'}
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -228,18 +253,23 @@ class DynDNS12UpdateTest(APITestCase):
         domain.save()
 
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
-        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.', status=200)
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + newdomain + './notify', status=200)
+
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
-        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.', status=200)
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify', status=200)
 
         self.owner.unlock()
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue(
-                (settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-2].path) \
-                or (settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.').endswith(httpretty.httpretty.latest_requests[-2].path)
-            )
-        self.assertTrue('10.2.2.2' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PATCH')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.').endswith(httpretty.httpretty.latest_requests[-3].path))
+        self.assertTrue('10.2.2.2' in httpretty.httpretty.latest_requests[-3].parsed_body)

@@ -126,6 +126,16 @@ def delete_zone(domain):
     _pdns_delete('/zones/' + domain.pdns_id)
 
 
+def get_keys(domain):
+    """
+    Retrieves a JSON representation of the DNSSEC key information
+    """
+    r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
+
+    return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
+            for key in r.json() if key['active']]
+
+
 def get_zone(domain):
     """
     Retrieves a JSON representation of the zone from pdns

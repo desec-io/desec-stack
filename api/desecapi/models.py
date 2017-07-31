@@ -132,6 +132,10 @@ class Domain(models.Model, mixins.SetterMixin):
             raise ValidationError('You must not change the domain name')
 
     @property
+    def keys(self):
+        return pdns.get_keys(self)
+
+    @property
     def pdns_id(self):
         if '/' in self.name or '?' in self.name:
             raise SuspiciousOperation('Invalid hostname ' + self.name)

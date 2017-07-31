@@ -2,7 +2,6 @@ from django.core.urlresolvers import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from .utils import utils
-from django.db import transaction
 from desecapi.models import Domain
 from django.core import mail
 import httpretty
@@ -84,10 +83,17 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanGetOwnedDomains(self):
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
+
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)
+        self.assertTrue(isinstance(response.data['keys'], list))
 
     def testCantGetOtherDomains(self):
         url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
@@ -196,14 +202,19 @@ class AuthenticatedDomainTests(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + '.',
                                body='{"rrsets": []}',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         url = reverse('domain-list')
-        response = self.client.post(url, {'name': name})
+        self.client.post(url, {'name': name})
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'POST')
-        self.assertTrue(name in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertEqual(httpretty.last_request().method, 'GET')
+        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'POST')
+        self.assertTrue(name in httpretty.httpretty.latest_requests[-3].parsed_body)
+        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-3].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'GET')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + name + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
 
     def testPostingWithRecordsCausesPdnsAPIPatch(self):
         name = utils.generateDomainname()
@@ -216,16 +227,20 @@ class AuthenticatedDomainTests(APITestCase):
                                body='{"rrsets": []}',
                                content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         url = reverse('domain-list')
         data = {'name': name, 'arecord': '1.3.3.7', 'aaaarecord': 'dead::beef', 'acme_challenge': 'letsencrypt_ftw'}
-        response = self.client.post(url, data)
+        self.client.post(url, data)
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('1.3.3.7' in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('dead::beef' in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertTrue('1.3.3.7' in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertTrue('dead::beef' in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-4].parsed_body)
 
     def testPostDomainCausesPdnsAPIPatch(self):
         name = utils.generateDomainname()
@@ -238,14 +253,18 @@ class AuthenticatedDomainTests(APITestCase):
                                content_type="application/json")
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + name + '.')
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         url = reverse('domain-list')
         data = {'name': name, 'acme_challenge': 'letsencrypt_ftw'}
         self.client.post(url, data)
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'PATCH')
+        self.assertTrue(data['name'] in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertTrue('letsencrypt_ftw' in httpretty.httpretty.latest_requests[-4].parsed_body)
 
     def testUpdateingCausesPdnsAPIPatchCall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -253,12 +272,20 @@ class AuthenticatedDomainTests(APITestCase):
 
         httpretty.enable()
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         response.data['arecord'] = '10.13.3.7'
         self.client.put(url, json.dumps(response.data), content_type='application/json')
 
-        self.assertTrue('10.13.3.7' in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('10.13.3.7' in httpretty.httpretty.latest_requests[-4].parsed_body)
 
     def testUpdateingCausesPdnsAPINotifyCall(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -266,14 +293,22 @@ class AuthenticatedDomainTests(APITestCase):
 
         httpretty.enable()
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './notify')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + response.data['name'] + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         response.data['arecord'] = '10.13.3.10'
-        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
+        self.client.put(url, json.dumps(response.data), content_type='application/json')
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue('10.13.3.10' in httpretty.httpretty.latest_requests[-2].parsed_body)
-        self.assertEqual(httpretty.last_request().method, 'PUT')
+        self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'PATCH')
+        self.assertTrue('10.13.3.10' in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PUT')
 
     def testDomainDetailURL(self):
         url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
@@ -290,10 +325,7 @@ class AuthenticatedDomainTests(APITestCase):
 
         url = reverse('domain-list')
         data = {'name': name}
-        try:
-            response = self.client.post(url, data)
-        except:
-            pass
+        self.client.post(url, data)
 
         self.assertFalse(Domain.objects.filter(name=name).exists())
 
@@ -380,6 +412,10 @@ class AuthenticatedDynDomainTests(APITestCase):
             httpretty.register_uri(httpretty.GET,
                                    settings.NSLORD_PDNS_API + '/zones/' + name + '.',
                                    body='{"rrsets": []}',
+                                   content_type="application/json")
+            httpretty.register_uri(httpretty.GET,
+                                   settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                                   body='[]',
                                    content_type="application/json")
 
             response = self.client.post(url, {'name': name})

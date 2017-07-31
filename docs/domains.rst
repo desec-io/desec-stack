@@ -17,6 +17,20 @@ A JSON object representing a domain has the following structure::
     {
         "name": "example.com",
         "owner": "admin@example.com",
+        "keys": [
+            {
+                "dnskey": "257 3 13 WFRl60...",
+                "ds": [
+                    "6006 13 1 8581e9...",
+                    "6006 13 2 f34b75...",
+                    "6006 13 3 dfb325...",
+                    "6006 13 4 2fdcf8..."
+                ],
+                "flags": 257,
+                "keytype": "csk"
+            },
+            ...
+        ],
         "arecord": "192.0.2.1",             # or null
         "aaaarecord": "2001:db8::deec:1",   # or null
         "acme_challenge": ""
@@ -62,6 +76,24 @@ Field details:
     `Modifying an RRset`_ as well as inability to set multiple addresses).
 
     *Do not rely on this field; it may be removed in the future.*
+
+``keys``
+    :Access mode: read-only
+
+    Array with DNSSEC key information.  Each entry contains ``DNSKEY`` and
+    ``DS`` record contents (the latter being computed from the former), and
+    some extra information.  For delegation of DNSSEC-secured domains, the
+    domain registry needs to publish these ``DS`` records.
+
+    Notes:
+
+    - Newly created domains are assigned a key after a short while (usually
+      around one minute).  Until then, this field is empty.
+
+    - The contents of this field are generated from PowerDNS' ``cryptokeys``
+      endpoint, see https://doc.powerdns.com/md/httpapi/api_spec/#cryptokeys.
+      We look at each active ``cryptokey_resource`` (``active`` is true) and
+      then use the ``dnskey``, ``ds``, ``flags``, and ``keytype`` fields.
 
 ``name``
     :Access mode: read, write-once (upon domain creation)

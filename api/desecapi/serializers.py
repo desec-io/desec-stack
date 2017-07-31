@@ -48,7 +48,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('name', 'owner', 'arecord', 'aaaarecord', 'created', 'updated', 'acme_challenge')
+        fields = ('name', 'owner', 'arecord', 'aaaarecord', 'created', 'updated', 'acme_challenge', 'keys')
         read_only_fields = ('created', 'updated',)
 
 

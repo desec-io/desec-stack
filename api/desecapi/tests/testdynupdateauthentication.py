@@ -31,6 +31,10 @@ class DynUpdateAuthenticationTests(APITestCase):
 
             httpretty.enable()
             httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+            httpretty.register_uri(httpretty.GET,
+                                   settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
+                                   body='{"rrsets": []}',
+                                   content_type="application/json")
             httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
             httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify')
 
