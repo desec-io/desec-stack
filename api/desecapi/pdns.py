@@ -176,19 +176,6 @@ def set_rrsets(domain, rrsets):
     _pdns_patch('/zones/' + domain.pdns_id, data)
 
 
-def zone_exists(domain):
-    """
-    Returns whether pdns knows a zone with the given name.
-    """
-    r = _pdns_get('/zones/' + domain.pdns_id)
-    if r.status_code == 200:
-        return True
-    elif r.status_code == 422 and 'Could not find domain' in r.text:
-        return False
-    else:
-        raise PdnsException(r)
-
-
 def notify_zone(domain):
     """
     Commands pdns to notify the zone to the pdns slaves.

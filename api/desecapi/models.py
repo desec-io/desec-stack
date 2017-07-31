@@ -153,9 +153,12 @@ class Domain(models.Model, mixins.SetterMixin):
         Re-Syncing is relatively expensive and should not happen routinely.
         """
 
-        # Create zone if needed
-        if not pdns.zone_exists(self):
+        # Create zone if it does not exist yet
+        try:
             pdns.create_zone(self)
+        except pdns.PdnsException as e:
+            if e.status_code == 422 and e.detail.endswith(' already exists'):
+                pass
 
         # update zone to latest information
         pdns.set_dyn_records(self)
