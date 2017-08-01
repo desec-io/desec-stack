@@ -30,7 +30,7 @@ from django.utils import timezone
 from desecapi.forms import UnlockForm
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
-from desecapi.emails import send_account_lock_email
+from desecapi.emails import send_account_lock_email, send_token_email
 import re
 
 # TODO Generalize?
@@ -444,6 +444,9 @@ class RegistrationView(views.RegistrationView):
         user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
         if captcha:
             send_account_lock_email(self.request, user)
+        elif not user.dyn:
+            context = Context({'token': user.get_token()})
+            send_token_email(context, user)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
 
@@ -455,7 +458,11 @@ def unlock(request, email):
         # check whether it's valid:
         if form.is_valid():
             try:
-                User.objects.get(email=email).unlock()
+                user = User.objects.get(email=email)
+                user.unlock()
+                if not user.dyn:
+                    context = Context({'token': user.get_token()})
+                    send_token_email(context, user)
             except User.DoesNotExist:
                 pass # fail silently, otherwise people can find out if email addresses are registered with us
 

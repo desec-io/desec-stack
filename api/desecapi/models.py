@@ -6,6 +6,7 @@ from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, mixins
 import datetime
 from django.core.validators import MinValueValidator
+from rest_framework.authtoken.models import Token
 
 
 class MyUserManager(BaseUserManager):
@@ -65,6 +66,10 @@ class User(AbstractBaseUser):
 
     def get_short_name(self):
         return self.email
+
+    def get_token(self):
+        token, created = Token.objects.get_or_create(user=self)
+        return token.key
 
     def __str__(self):
         return self.email

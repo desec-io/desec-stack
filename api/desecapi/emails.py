@@ -16,3 +16,13 @@ def send_account_lock_email(request, user):
                          from_tmpl.render(context),
                          [user.email])
     email.send()
+
+def send_token_email(context, user):
+    content_tmpl = get_template('emails/user-token/content.txt')
+    subject_tmpl = get_template('emails/user-token/subject.txt')
+    from_tmpl = get_template('emails/from.txt')
+    email = EmailMessage(subject_tmpl.render(context),
+                         content_tmpl.render(context),
+                         from_tmpl.render(context),
+                         [user.email])
+    email.send()

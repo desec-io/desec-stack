@@ -25,7 +25,8 @@ class RegistrationTest(APITestCase):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
+        data = {'email': utils.generateUsername(),
+                'password': utils.generateRandomString(size=12), 'dyn': True}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -36,7 +37,8 @@ class RegistrationTest(APITestCase):
         self.assertEqual(len(mail.outbox), outboxlen)
 
         url = reverse('register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
+        data = {'email': utils.generateUsername(),
+                'password': utils.generateRandomString(size=12), 'dyn': True}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -47,7 +49,8 @@ class RegistrationTest(APITestCase):
         self.assertEqual(len(mail.outbox), outboxlen + 1)
 
         url = reverse('register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
+        data = {'email': utils.generateUsername(),
+                'password': utils.generateRandomString(size=12), 'dyn': True}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -103,7 +106,8 @@ class RegistrationTest(APITestCase):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
+        data = {'email': utils.generateUsername(),
+                'password': utils.generateRandomString(size=12), 'dyn': True}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -116,7 +120,11 @@ class RegistrationTest(APITestCase):
 
         url = reverse('register')
         for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
-            data = {'email': utils.generateRandomString() + '@test-same-email.desec.io', 'password': utils.generateRandomString(size=12)}
+            data = {
+                'email': utils.generateRandomString() + '@test-same-email.desec.io',
+                'password': utils.generateRandomString(size=12),
+                'dyn': True,
+            }
             response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
@@ -126,8 +134,11 @@ class RegistrationTest(APITestCase):
         self.assertEqual(len(mail.outbox), outboxlen)
 
         url = reverse('register')
-        data = {'email': utils.generateRandomString() + '@test-same-email.desec.io',
-                'password': utils.generateRandomString(size=12)}
+        data = {
+            'email': utils.generateRandomString() + '@test-same-email.desec.io',
+            'password': utils.generateRandomString(size=12),
+            'dyn': True,
+        }
         response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -141,7 +152,11 @@ class RegistrationTest(APITestCase):
 
         url = reverse('register')
         for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
-            data = {'email': utils.generateRandomString() + '@test-same-email-1.desec.io', 'password': utils.generateRandomString(size=12)}
+            data = {
+                'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
+                'password': utils.generateRandomString(size=12),
+                'dyn': True,
+            }
             response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
@@ -156,8 +171,11 @@ class RegistrationTest(APITestCase):
         self.assertEqual(len(mail.outbox), outboxlen)
 
         url = reverse('register')
-        data = {'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
-                'password': utils.generateRandomString(size=12)}
+        data = {
+            'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
+            'password': utils.generateRandomString(size=12),
+            'dyn': True,
+        }
         response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
@@ -165,3 +183,20 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.captcha_required, False)
 
         self.assertEqual(len(mail.outbox), outboxlen)
+
+    def test_token_email(self):
+        outboxlen = len(mail.outbox)
+
+        url = reverse('register')
+        data = {
+            'email': utils.generateRandomString() + '@test-same-email.desec.io',
+            'password': utils.generateRandomString(size=12),
+            'dyn': False,
+        }
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(len(mail.outbox), outboxlen + 1)
+
+        user = models.User.objects.get(email=data['email'])
+        self.assertTrue(user.get_token() in mail.outbox[-1].body)
