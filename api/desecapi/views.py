@@ -32,6 +32,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from desecapi.emails import send_account_lock_email, send_token_email
 import re
+import ipaddress, os
 
 # TODO Generalize?
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
@@ -93,7 +94,7 @@ class DomainList(generics.ListCreateAPIView):
                                  [self.request.user.email])
             email.send()
 
-        if self.request.user.dyn:
+        if obj.name.endswith('.dedyn.io'):
             sendDynDnsEmail(obj)
 
 
@@ -428,17 +429,19 @@ class RegistrationView(views.RegistrationView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, remote_ip):
-        captcha = \
-            (
-                User.objects.filter(
-                    created__gte=timezone.now()-timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS),
-                    registration_remote_ip=remote_ip
-                ).count() >= settings.ABUSE_BY_REMOTE_IP_LIMIT
-                or
-                User.objects.filter(
-                    created__gte=timezone.now() - timedelta(hours=settings.ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS),
-                    email__endswith=serializer.validated_data['email'].split('@')[-1]
-                ).count() >= settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT
+        captcha = (
+                ipaddress.ip_address(remote_ip) not in ipaddress.IPv6Network(os.environ['DESECSTACK_IPV6_SUBNET'])
+                and (
+                    User.objects.filter(
+                        created__gte=timezone.now()-timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS),
+                        registration_remote_ip=remote_ip
+                    ).count() >= settings.ABUSE_BY_REMOTE_IP_LIMIT
+                    or
+                    User.objects.filter(
+                        created__gte=timezone.now() - timedelta(hours=settings.ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS),
+                        email__endswith=serializer.validated_data['email'].split('@')[-1]
+                    ).count() >= settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT
+                )
             )
 
         user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)

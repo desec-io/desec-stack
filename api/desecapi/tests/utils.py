@@ -7,6 +7,10 @@ from desecapi.models import Domain, User
 
 class utils(object):
     @classmethod
+    def generateRandomIPv4Address(cls):
+        return ".".join(map(str, (random.randint(0, 255) for _ in range(4))))
+
+    @classmethod
     def generateRandomString(cls, size=6, chars=string.ascii_lowercase + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
 

@@ -125,7 +125,7 @@ class RegistrationTest(APITestCase):
                 'password': utils.generateRandomString(size=12),
                 'dyn': True,
             }
-            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
             self.assertEqual(user.email, data['email'])
@@ -139,7 +139,7 @@ class RegistrationTest(APITestCase):
             'password': utils.generateRandomString(size=12),
             'dyn': True,
         }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
@@ -157,7 +157,7 @@ class RegistrationTest(APITestCase):
                 'password': utils.generateRandomString(size=12),
                 'dyn': True,
             }
-            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
             self.assertEqual(user.email, data['email'])
@@ -176,7 +176,7 @@ class RegistrationTest(APITestCase):
             'password': utils.generateRandomString(size=12),
             'dyn': True,
         }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
@@ -193,7 +193,7 @@ class RegistrationTest(APITestCase):
             'password': utils.generateRandomString(size=12),
             'dyn': False,
         }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomString())
+        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertEqual(len(mail.outbox), outboxlen + 1)
