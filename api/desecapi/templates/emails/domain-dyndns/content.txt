@@ -4,6 +4,12 @@ And welcome to the deSEC dynDNS service! I'm Nils, CTO of deSEC.
 If you have any questions or concerns, please do not hestitate
 to contact me.
 
+Note: If you find that your domain does not work, it may be
+because a captcha needs to be solved first. In this case, please
+double-check your mailbox for a separate email with captcha
+instructions. Don't forget your spam folder, especially when
+using a gmail address!
+
 To get started using your new dynDNS domain {{ domain }},
 please configure your device (or any other dynDNS client) to use
 the following credentials:
@@ -14,12 +20,15 @@ the following credentials:
 
 Alternatively, you can update your dynDNS IP record by visiting 
 this page:
-https://update.dedyn.io/update?username={{ username }}&password={{ password }}
-If your router does not support dynDNS, you might want to 
+
+  https://update.dedyn.io/update?username={{ username }}&password={{ password }}
+
+If your router does not support dynDNS, you might want to
 bookmark this URL.
 
 You can use our website to see if everything works as expected:
-https://desec.io/#!/en/tools/dyndns-check?domain={{ domain }}
+
+  https://desec.io/#!/en/tools/dyndns-check?domain={{ domain }}
 
 We know there is always room for improvement, so please shoot me
 an email if we can do anything better.
