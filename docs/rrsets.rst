@@ -127,6 +127,13 @@ because another RRset with the same name and type exists already, or because
 not all required fields were provided), the API responds with ``400 Bad
 Request``.
 
+Note that the values of ``type`` and ``subname`` as well as the ``records``
+items are strings, and as such the JSON specification requires them to be
+enclosed in double quotes (with the quotes being part of the field value);
+your shell or programming language may require another layer of quotes!  By
+contrast, ``ttl`` is an integer field, so the JSON value does not contain
+quotes.
+
 
 Retrieving all RRsets in a Zone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,11 +181,6 @@ This approach also allows to retrieve all records associated with the zone
 apex (i.e. ``example.com`` where ``subname`` is empty), by querying
 ``rrsets/?subname=``.
 
-Note the three dots after ``{subname}``.  You can think of them as
-abbreviating the rest of the DNS name.  This approach also allows to retrieve
-all records associated with the zone apex (i.e. ``example.com`` where
-``subname`` is empty), by simply using the ``rrsets/.../``.
-
 
 Retrieving a Specific RRset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,12 +194,14 @@ like this::
         https://desec.io/api/v1/domains/{domain}/rrsets/{subname}.../{type}/ \
         Authorization:"Token {token}"
 
-Note the three dots after ``{subname}``; you can think of them as abbreviating
-the rest of the DNS name.  This will only return one RRset (i.e., the response
-is not a JSON array).
+This will return only one RRset (i.e., the response is not a JSON array).  The
+response status code is ``200 OK`` if the requested RRset exists, and ``404
+Not Found`` otherwise.
 
-The response status code is ``200 OK`` if the requested RRset exists, and
-``404 Not Found`` otherwise.
+Note the three dots after ``{subname}``.  You can think of them as abbreviating
+the rest of the DNS name.  To retrieve all records associated with the zone
+apex (i.e. ``example.com`` where ``subname`` is empty), simply use
+``rrsets/.../``.
 
 
 Modifying an RRset

@@ -11,11 +11,8 @@ deSEC DNS API Documentation
 Getting Help
 ------------
 
-There are several ways of getting help:
-
-- Check out the documentation and usage examples at https://desec.io/
-- This documentation
-- Shoot us an email at support@desec.io
+If you need help beyond this documentation, please do not hesitate and
+shoot us an email at support@desec.io.
 
 About this document
 -------------------
