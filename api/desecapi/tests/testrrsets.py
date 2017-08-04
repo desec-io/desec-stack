@@ -209,21 +209,22 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['name'], 'test.' + self.ownedDomains[1].name + '.')
 
     def testCanGetOwnRRsetWithWildcard(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        for subname in ('*', '*.foobar'):
+            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
 
-        data = {'records': ['"barfoo"'], 'ttl': 120, 'type': 'TXT', 'subname': '*.foobar'}
-        response = self.client.post(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            data = {'records': ['"barfoo"'], 'ttl': 120, 'type': 'TXT', 'subname': subname}
+            response = self.client.post(url, json.dumps(data), content_type='application/json')
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        response1 = self.client.get(url + '?subname=*.foobar')
-        self.assertEqual(response1.status_code, status.HTTP_200_OK)
-        self.assertEqual(response1.data[0]['records'][0], '"barfoo"')
-        self.assertEqual(response1.data[0]['ttl'], 120)
-        self.assertEqual(response1.data[0]['name'], '*.foobar.' + self.ownedDomains[1].name + '.')
+            response1 = self.client.get(url + '?subname=' + subname)
+            self.assertEqual(response1.status_code, status.HTTP_200_OK)
+            self.assertEqual(response1.data[0]['records'][0], '"barfoo"')
+            self.assertEqual(response1.data[0]['ttl'], 120)
+            self.assertEqual(response1.data[0]['name'], subname + '.' + self.ownedDomains[1].name + '.')
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '*.foobar', 'TXT',))
-        response2 = self.client.get(url)
-        self.assertEqual(response2.data, response1.data[0])
+            url = reverse('rrset', args=(self.ownedDomains[1].name, subname, 'TXT',))
+            response2 = self.client.get(url)
+            self.assertEqual(response2.data, response1.data[0])
 
     def testCanPutOwnRRset(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
