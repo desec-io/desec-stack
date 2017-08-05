@@ -135,15 +135,24 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 0)
 
-    def testCantPostSameDomainTwice(self):
+    def testCantPostDomainAlreadyTakenInAPI(self):
         url = reverse('domain-list')
+
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-    def testCantPostUnavailableDomain(self):
+        data = {'name': 'www.' + self.ownedDomains[0].name}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data = {'name': 'www.' + self.otherDomains[0].name}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def testCantPostDomainAlreadyTakenInPdns(self):
         name = utils.generateDomainname()
 
         httpretty.enable()

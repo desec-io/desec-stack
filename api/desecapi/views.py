@@ -6,7 +6,7 @@ from desecapi.serializers import (
 from rest_framework import generics
 from desecapi.permissions import IsOwner, IsDomainOwner
 from rest_framework import permissions
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -29,7 +29,7 @@ from datetime import timedelta
 from django.utils import timezone
 from desecapi.forms import UnlockForm
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.db.models import Q
 from desecapi.emails import send_account_lock_email, send_token_email
 import re
 import ipaddress, os
@@ -57,7 +57,17 @@ class DomainList(generics.ListCreateAPIView):
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
-        queryset = Domain.objects.filter(name=serializer.validated_data['name'])
+        # Generate a list containing this and all higher-level domain names
+        list = [serializer.validated_data['name']]
+        index = 0
+        try:
+                while True:
+                        index = list[0].index('.', index) + 1
+                        list.append(list[0][index:])
+        except ValueError:
+                pass
+
+        queryset = Domain.objects.filter(Q(name=list[0]) | (Q(name__in=list[1:]) & ~Q(owner=self.request.user)))
         if queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
             ex.status_code = status.HTTP_409_CONFLICT
