@@ -164,6 +164,14 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+    def testCantPostDomainsViolatingPolicy(self):
+        url = reverse('domain-list')
+
+        data = {'name': '*.' + utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("does not match the required pattern." in response.data['name'][0])
+
     def testCanPostComplicatedDomains(self):
         url = reverse('domain-list')
         data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
@@ -402,10 +410,12 @@ class AuthenticatedDynDomainTests(APITestCase):
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'domain-illformed')
 
         data = {'name': 'very.long.domain.' + utils.generateDynDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'domain-illformed')
 
 
     def testLimitDynDomains(self):
