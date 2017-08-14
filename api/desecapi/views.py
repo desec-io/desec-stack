@@ -36,7 +36,7 @@ import ipaddress, os
 
 # TODO Generalize?
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
-patternNonDyn = re.compile(r'^([A-Za-z-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
+patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
 
 def get_client_ip(request):

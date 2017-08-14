@@ -135,6 +135,22 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 0)
 
+    def testCanPostReverseDomains(self):
+        name = '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa'
+
+        httpretty.enable()
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones', status=201)
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
+
+        url = reverse('domain-list')
+        data = {'name': name}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 0)
+
     def testCantPostDomainAlreadyTakenInAPI(self):
         url = reverse('domain-list')
 

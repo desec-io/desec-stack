@@ -135,6 +135,11 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
 
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['desec.io.'], 'ttl': 900, 'type': 'PTR'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
             url = reverse('rrsets', args=(self.ownedDomains[1].name,))
