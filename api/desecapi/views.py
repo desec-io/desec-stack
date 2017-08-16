@@ -354,7 +354,7 @@ class DynDNS12Update(APIView):
             return client_ip
 
         # give up
-        return ''
+        return None
 
     def findIPv4(self, request):
         return self.findIP(request, ['myip', 'myipv4', 'ip'])
