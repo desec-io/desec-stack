@@ -133,7 +133,7 @@ def get_keys(domain):
     try:
         r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
         keys = [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
-                for key in r.json() if key['active']]
+                for key in r.json() if key['active'] and key['type'] in ['csk', 'ksk']]
     except:
         keys = []
 
