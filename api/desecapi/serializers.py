@@ -48,8 +48,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('name', 'owner', 'arecord', 'aaaarecord', 'created', 'updated', 'acme_challenge', 'keys')
-        read_only_fields = ('created', 'updated',)
+        fields = ('name', 'owner', 'arecord', 'aaaarecord', 'acme_challenge', 'keys')
 
 
 class DonationSerializer(serializers.ModelSerializer):
