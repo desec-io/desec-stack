@@ -196,7 +196,7 @@ class Domain(models.Model, mixins.SetterMixin):
         with transaction.atomic():
             RRset.objects.filter(domain=self).delete()
             rrsets = pdns.get_rrsets(self)
-            rrsets = [rrset for rrset in rrsets if rrset.type != 'SOA']
+            rrsets = [rrset for rrset in rrsets if rrset.type not in RRset.RESTRICTED_TYPES]
             RRset.objects.bulk_create(rrsets)
 
     @transaction.atomic
@@ -272,7 +272,9 @@ class RRset(models.Model, mixins.SetterMixin):
     type = models.CharField(max_length=10, validators=[validate_upper])
     records = models.CharField(max_length=64000, blank=True)
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+
     _dirty = False
+    RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
 
 
     class Meta:

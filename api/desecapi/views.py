@@ -133,7 +133,6 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'type'
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
-    restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -147,7 +146,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         subname = self.kwargs['subname'].replace('=2F', '/')
         type_ = self.kwargs['type']
 
-        if type_ in self.restricted_types:
+        if type_ in RRset.RESTRICTED_TYPES:
             raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
 
         return RRset.objects.filter(
@@ -178,7 +177,7 @@ class RRsetList(generics.ListCreateAPIView):
             value = self.request.query_params.get(filter_field)
 
             if value is not None:
-                if filter_field == 'type' and value in RRsetDetail.restricted_types:
+                if filter_field == 'type' and value in RRset.RESTRICTED_TYPES:
                     raise PermissionDenied("You cannot tinker with the %s RRset." % value)
 
                 rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
@@ -187,7 +186,7 @@ class RRsetList(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         type_ = request.data.get('type', '')
-        if type_ in RRsetDetail.restricted_types:
+        if type_ in RRset.RESTRICTED_TYPES:
             raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
 
         try:
