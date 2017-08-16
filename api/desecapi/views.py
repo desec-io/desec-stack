@@ -15,7 +15,6 @@ from rest_framework.authentication import (
 from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 from django.template.loader import get_template
-from django.template import Context
 from desecapi.authentication import (
     BasicTokenAuthentication, URLParamAuthentication)
 import base64
@@ -86,12 +85,12 @@ class DomainList(generics.ListCreateAPIView):
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
             from_tmpl = get_template('emails/from.txt')
-            context = Context({
+            context = {
                 'domain': domain.name,
                 'url': 'https://update.dedyn.io/',
                 'username': domain.name,
                 'password': self.request.auth.key
-            })
+            }
             email = EmailMessage(subject_tmpl.render(context),
                                  content_tmpl.render(context),
                                  from_tmpl.render(context),
@@ -381,11 +380,11 @@ class DonationList(generics.CreateAPIView):
         obj = serializer.save()
 
         def sendDonationEmails(donation):
-            context = Context({
+            context = {
                 'donation': donation,
                 'creditoridentifier': settings.SEPA['CREDITOR_ID'],
                 'complete_iban': iban
-            })
+            }
 
             # internal desec notification
             content_tmpl = get_template('emails/donation/desec-content.txt')
@@ -451,7 +450,7 @@ class RegistrationView(views.RegistrationView):
         if captcha:
             send_account_lock_email(self.request, user)
         elif not user.dyn:
-            context = Context({'token': user.get_token()})
+            context = {'token': user.get_token()}
             send_token_email(context, user)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
@@ -467,7 +466,7 @@ def unlock(request, email):
                 user = User.objects.get(email=email)
                 user.unlock()
                 if not user.dyn:
-                    context = Context({'token': user.get_token()})
+                    context = {'token': user.get_token()}
                     send_token_email(context, user)
             except User.DoesNotExist:
                 pass # fail silently, otherwise people can find out if email addresses are registered with us
