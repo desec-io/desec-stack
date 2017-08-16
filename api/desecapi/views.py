@@ -407,7 +407,6 @@ class DonationList(generics.CreateAPIView):
             if donation.email:
                 content_tmpl = get_template('emails/donation/donor-content.txt')
                 subject_tmpl = get_template('emails/donation/donor-subject.txt')
-                test = content_tmpl.render(context)
                 email = EmailMessage(subject_tmpl.render(context),
                                      content_tmpl.render(context),
                                      from_tmpl.render(context),
