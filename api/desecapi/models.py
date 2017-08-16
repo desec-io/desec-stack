@@ -166,8 +166,8 @@ class Domain(models.Model, mixins.SetterMixin):
         try:
             pdns.create_zone(self)
         except pdns.PdnsException as e:
-            if e.status_code == 422 and e.detail.endswith(' already exists'):
-                pass
+            if not (e.status_code == 422 and e.detail.endswith(' already exists')):
+                raise e
 
         # update zone to latest information
         pdns.set_dyn_records(self)
