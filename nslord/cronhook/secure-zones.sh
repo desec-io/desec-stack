@@ -9,10 +9,13 @@ for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(S
 	set -ex
 
 	PARENT=${ZONE#*.}
-	SALT=`head -c300 /dev/urandom | sha512sum | cut -b 1-16`
+	SALT=`head -c32 /dev/urandom | sha256sum | cut -b 1-16`
 
-	# Set up DNSSEC and switch zone type to MASTER
-	pdnsutil secure-zone $ZONE && pdnsutil set-nsec3 $ZONE "1 0 300 $SALT" && pdnsutil set-kind $ZONE MASTER && pdnsutil increase-serial $ZONE
+	# Set up DNSSEC, switch zone type to MASTER, and increase serial for notify
+	pdnsutil secure-zone -- "$ZONE" \
+	    && pdnsutil set-nsec3 -- "$ZONE" "1 0 300 $SALT" \
+	    && pdnsutil set-kind -- "$ZONE" MASTER \
+	    && pdnsutil increase-serial -- "$ZONE"
 
 	# Take care of delegations
 	if [ "$PARENT" == "dedyn.io" ]; then
