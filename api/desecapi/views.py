@@ -58,16 +58,10 @@ class DomainList(generics.ListCreateAPIView):
             raise ex
 
         # Generate a list containing this and all higher-level domain names
-        list = [serializer.validated_data['name']]
-        index = 0
-        try:
-                while True:
-                        index = list[0].index('.', index) + 1
-                        list.append(list[0][index:])
-        except ValueError:
-                pass
+        domain_parts = serializer.validated_data['name'].split('.')
+        domain_list = [ '.'.join(domain_parts[i:]) for i in range(len(domain_parts)) ]
 
-        queryset = Domain.objects.filter(Q(name=list[0]) | (Q(name__in=list[1:]) & ~Q(owner=self.request.user)))
+        queryset = Domain.objects.filter(Q(name=domain_list[0]) | (Q(name__in=domain_list[1:]) & ~Q(owner=self.request.user)))
         if queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
             ex.status_code = status.HTTP_409_CONFLICT
