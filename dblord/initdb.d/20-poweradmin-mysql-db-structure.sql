@@ -1,2 +1,0 @@
--- This file is required to exist and will be overriden by 00-init.sh.
--- If it is created only by 00-init.sh, the entrypoint script will miss it.
