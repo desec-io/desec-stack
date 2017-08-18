@@ -42,15 +42,3 @@ services:
      - "5321:53/udp"
     logging:
       driver: "json-file"
-
-  # this container is dev-only
-  devadmin:
-    build: devadmin
-    environment:
-    - DESECSTACK_DBLORD_PASSWORD_poweradmin
-    - DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin
-    ports:
-     - "127.0.0.1:81:80"
-    networks:
-    - rearwww
-    - rearlord

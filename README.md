@@ -8,7 +8,6 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains. Currently used for dynDNS purposes only.
 - `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively. The `dbmaster` database is exposed at 3306 for TLS-secured replication.
-- `devadmin`: Web server with phpmyadmin and poweradmin for dev purposes.
 
 
 Requirements
@@ -58,9 +57,6 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the slaves)
       - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
-    - devadmin-related
-      - `DESECSTACK_DEVADMIN_PASSWORD_poweradmin`: poweradmin password (if you're planning to use the dev environment)
-      - `DESECSTACK_DEVADMIN_SESSIONKEY_poweradmin`: poweradmin session key
 
 Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink.
 
