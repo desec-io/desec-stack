@@ -1,0 +1,41 @@
+version: '2.1'
+
+# mostly extending from main .yml
+services:
+  api:
+    environment:
+    - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+
+  nslord:
+    networks:
+      front:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.129 # make nslord available for test-e2e
+
+  static:
+    build: test/e2e/mock-static # build a mock static to save time executing tests
+
+  test-e2e:
+    build: test/e2e
+    restart: "no"
+    environment:
+    - DESECSTACK_DOMAIN
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_IPV6_SUBNET
+    - DESECSTACK_IPV6_ADDRESS
+    mac_address: 06:42:ac:10:00:7f
+    depends_on:
+    - www
+    - nslord
+    networks:
+      front:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.127
+    extra_hosts:
+    - "checkipv4.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "checkipv6.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "checkip.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "desec.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "update6.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "update.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "www.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
+    - "www.desec.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"

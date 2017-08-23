@@ -7,8 +7,5 @@ echo "waiting for dependencies ..."
 # start cron
 /root/cronhook/start-cron.sh &
 
-# migrate database
-python manage.py migrate || exit 1
-
-echo Finished migrations, starting API server ...
-uwsgi --ini uwsgi.ini
+echo Starting API tests ...
+python3 manage.py test -v 3 --noinput

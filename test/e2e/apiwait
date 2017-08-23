@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+if [ -f ./.env ] ; then
+    source ../../.env
+fi
+
+TIME=0
+LIMIT=${1:-3}  # getting limit or default to 3 [sic]
+URL=https://www/api/v1/
+
+until curl --insecure --fail -H "Host: desec.$DESECSTACK_DOMAIN" $URL > /dev/null 2> /dev/null
+do
+    sleep 1
+    ((TIME+=1))
+
+    if [ $TIME -gt $LIMIT ]; then
+        curl --insecure -H "Host: desec.$DESECSTACK_DOMAIN" $URL
+        echo "waited $LIMIT seconds for api (desec.$DESECSTACK_DOMAIN) at $URL, giving up" > /dev/stderr
+        exit 1
+    fi
+done
+
+echo "api (desec.$DESECSTACK_DOMAIN) came up at $URL after $TIME seconds:"
