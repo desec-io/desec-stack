@@ -140,6 +140,12 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def testCantPostEmptyRRset(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': [], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
             url = reverse('rrsets', args=(self.ownedDomains[1].name,))

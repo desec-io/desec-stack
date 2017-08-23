@@ -4,7 +4,7 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, mixins
-import datetime
+import datetime, json
 from django.core.validators import MinValueValidator
 from rest_framework.authtoken.models import Token
 
@@ -323,6 +323,10 @@ class RRset(models.Model, mixins.SetterMixin):
         for field in self._dirties:
             errors[field] = ValidationError(
                 'You cannot change the `%s` field.' % field)
+
+        if not json.loads(self.records):
+            errors['records'] = ValidationError(
+                'You cannot create an RRset without records.')
 
         if errors:
             raise ValidationError(errors)
