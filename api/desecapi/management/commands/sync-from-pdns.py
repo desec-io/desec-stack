@@ -20,12 +20,15 @@ class Command(BaseCommand):
                     raise CommandError('{} is not a known domain'.format(domain_name))
 
         for domain in domains:
+            self.stdout.write('%s ...' % domain.name, ending='')
             try:
                 domain.sync_from_pdns()
-
+                self.stdout.write(' synced')
             except Exception as e:
-                msg = 'Error while processing {}: {}'.format(domain.name, e)
-                raise CommandError(msg)
-
-            else:
-                print(domain.name)
+                if str(e).startswith('Could not find domain ') \
+                        and domain.owner.captcha_required:
+                    self.stdout.write(' skipped')
+                else:
+                    self.stdout.write(' failed')
+                    msg = 'Error while processing {}: {}'.format(domain.name, e)
+                    raise CommandError(msg)
