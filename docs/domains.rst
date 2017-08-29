@@ -30,52 +30,10 @@ A JSON object representing a domain has the following structure::
                 "keytype": "csk"
             },
             ...
-        ],
-        "arecord": "192.0.2.1",             # or null
-        "aaaarecord": "2001:db8::deec:1",   # or null
-        "acme_challenge": ""
+        ]
     }
 
 Field details:
-
-``aaaarecord``
-    :Access mode: read, write
-    :Notice: this field is deprecated
-
-    String with an IPv6 address that will be written to the ``AAAA`` RRset of
-    the zone apex, or ``null``.  If ``null``, the RRset is removed.
-
-    This was originally introduced to set an IPv6 address for deSEC's dynamic
-    DNS service dedyn.io.  However, it has some drawbacks (redundancy with
-    `Modifying an RRset`_ as well as inability to set multiple addresses).
-
-    *Do not rely on this field; it may be removed in the future.*
-
-``acme_challenge``
-    :Access mode: read, write
-    :Notice: this field is deprecated
-
-    String to be written to the ``TXT`` RRset of ``_acme-challenge.{name}``.
-    To set an empty challenge, use ``""``.  The maximum length is 255.
-
-    This was originally introduced to set an ACME challenge to allow obtaining
-    certificates from Let's Encrypt using deSEC's dynamic DNS service
-    dedyn.io.  However, it is redundant with `Modifying an RRset`_.
-
-    *Do not rely on this field; it may be removed in the future.*
-
-``arecord``
-    :Access mode: read, write
-    :Notice: this field is deprecated
-
-    String with an IPv4 address that will be written to the ``A`` RRset of the
-    zone apex, or ``null``.  If ``null``, the RRset is removed.
-
-    This was originally introduced to set an IPv4 address for deSEC's dynamic
-    DNS service dedyn.io.  However, it has some drawbacks (redundancy with
-    `Modifying an RRset`_ as well as inability to set multiple addresses).
-
-    *Do not rely on this field; it may be removed in the future.*
 
 ``keys``
     :Access mode: read-only
@@ -120,13 +78,11 @@ endpoint, like this::
         Authorization:"Token {token}" \
         name:='"example.com"'
 
-Only the ``name`` field is mandatory; ``arecord``, ``acme_challenge``, and
-``aaaarecord`` are optional and deprecated.
+Only the ``name`` field is mandatory.
 
 Upon success, the response status code will be ``201 Created``, with the
 domain object contained in the response body.  ``400 Bad Request`` is returned
-if the request contained malformed data such as syntactically invalid field
-contents for ``arecord`` or ``aaaarecord``.  If the object could not be
+if the request contained malformed data.  If the object could not be
 created although the request was wellformed, the API responds with ``403
 Forbidden`` if the maximum number of domains for this user has been reached,
 and with ``409 Conflict`` otherwise.  This can happen, for example, if there
@@ -169,34 +125,6 @@ This will return only one domain (i.e., the response is not a JSON array).
 If you own a domain with that name, the API responds with ``200 OK`` and
 returns the domain object in the reponse body.  Otherwise, the return status
 code is ``404 Not Found``.
-
-
-Modifying a Domain (deprecated)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To modify a domain, use the endpoint that you would also use to retrieve that
-specific domain.  The API allows changing the values of the ``arecord``,
-``acme_challenge``, and ``aaaarecord`` fields using the ``PATCH`` method.
-Only the field(s) provided in the request will be modified, with everything
-else untouched.  Examples::
-
-    # Set AAAA record
-    http PATCH \
-        https://desec.io/api/v1/domains/{name}/ \
-        Authorization:"Token {token}" \
-        aaaarecord:='"2001:db8::deec:1"'
-
-    # Remove A record and set empty ACME challenge
-    http PATCH \
-        https://desec.io/api/v1/domains/{name}/ \
-        Authorization:"Token {token}" \
-        acme_challenge:='""' arecord:='null'
-
-If the domain was updated successfully, the response status code is ``200 OK``
-and the updated domain object is returned in the response body.  In case of
-malformed request data such as syntactically invalid field contents for
-``arecord`` or ``aaaarecord``, ``400 Bad Request`` is returned.  If the domain
-does not exist or you don't own it, the status code is ``404 Not Found``.
 
 
 Deleting a Domain

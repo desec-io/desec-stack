@@ -15,8 +15,7 @@ from rest_framework.authentication import (
 from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 from django.template.loader import get_template
-from desecapi.authentication import (
-    BasicTokenAuthentication, URLParamAuthentication)
+import desecapi.authentication as auth
 import base64
 from desecapi import settings
 from rest_framework.exceptions import (
@@ -33,7 +32,6 @@ from desecapi.emails import send_account_lock_email, send_token_email
 import re
 import ipaddress, os
 
-# TODO Generalize?
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
@@ -57,10 +55,15 @@ class DomainList(generics.ListCreateAPIView):
             raise ex
 
         # Generate a list containing this and all higher-level domain names
-        domain_parts = serializer.validated_data['name'].split('.')
-        domain_list = [ '.'.join(domain_parts[i:]) for i in range(len(domain_parts)) ]
+        domain_name = serializer.validated_data['name']
+        domain_parts = domain_name.split('.')
+        domain_list = {'.'.join(domain_parts[i:]) for i in range(1, len(domain_parts))}
 
-        queryset = Domain.objects.filter(Q(name=domain_list[0]) | (Q(name__in=domain_list[1:]) & ~Q(owner=self.request.user)))
+        # Remove public suffixes and then use this list to control registration
+        public_suffixes = {'dedyn.io'}
+        domain_list = domain_list - public_suffixes
+
+        queryset = Domain.objects.filter(Q(name=domain_name) | (Q(name__in=domain_list) & ~Q(owner=self.request.user)))
         if queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
             ex.status_code = status.HTTP_409_CONFLICT
@@ -165,6 +168,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class RRsetList(generics.ListCreateAPIView):
+    authentication_classes = (TokenAuthentication, auth.IPAuthentication,)
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
@@ -280,7 +284,7 @@ class DnsQuery(APIView):
 
 
 class DynDNS12Update(APIView):
-    authentication_classes = (TokenAuthentication, BasicTokenAuthentication, URLParamAuthentication,)
+    authentication_classes = (TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [StaticHTMLRenderer]
 
     def findDomain(self, request):
@@ -362,9 +366,16 @@ class DynDNS12Update(APIView):
         if domain is None:
             raise Http404
 
-        domain.arecord = self.findIPv4(request)
-        domain.aaaarecord = self.findIPv6(request)
-        domain.save()
+        rrsets = []
+        datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
+
+        for type_, ip in datas.items():
+            records_data = [{'content': ip}] if ip is not None else []
+            rrset = RRset(domain=domain, subname='', ttl=60, type=type_,
+                          records_data=records_data)
+            rrsets.append(rrset)
+
+        domain.set_rrsets(rrsets)
 
         return Response('good')
 

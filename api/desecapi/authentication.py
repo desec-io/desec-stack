@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
-import base64
-
+import base64, os
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import BaseAuthentication, get_authorization_header, authenticate
@@ -20,13 +19,11 @@ class BasicTokenAuthentication(BaseAuthentication):
     For username "username" and password "token".
     """
 
+    # A custom token model may be used, but must have the following properties.
+    #
+    # * key -- The string identifying the token
+    # * user -- The user to which the token belongs
     model = Token
-    """
-    A custom token model may be used, but must have the following properties.
-
-    * key -- The string identifying the token
-    * user -- The user to which the token belongs
-    """
 
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
@@ -69,7 +66,6 @@ class URLParamAuthentication(BaseAuthentication):
     """
     Authentication against username/password as provided in URL parameters.
     """
-
     model = Token
 
     def authenticate(self, request):
@@ -88,7 +84,6 @@ class URLParamAuthentication(BaseAuthentication):
         return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
 
     def authenticate_credentials(self, userid, key):
-
         try:
             token = self.model.objects.get(key=key)
         except self.model.DoesNotExist:
@@ -98,3 +93,21 @@ class URLParamAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed('User inactive or deleted')
 
         return token.user, token
+
+
+class IPAuthentication(BaseAuthentication):
+    """
+    Authentication against remote IP address for dedyn.io management by nslord
+    """
+    def authenticate(self, request):
+        nslord = '%s.1.11' % os.environ['DESECSTACK_IPV4_REAR_PREFIX16']
+
+        # Make sure this is dual-stack safe
+        if request.META.get('REMOTE_ADDR') in [nslord, '::ffff:%s' % nslord]:
+            try:
+                domain = Domain.objects.get(name='dedyn.io')
+                return (domain.owner, None)
+            except Domain.DoesNotExist:
+                return None
+
+        return None

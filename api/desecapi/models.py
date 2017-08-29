@@ -7,6 +7,7 @@ from desecapi import pdns, mixins
 import datetime
 from django.core.validators import MinValueValidator
 from rest_framework.authtoken.models import Token
+from collections import Counter
 
 
 class MyUserManager(BaseUserManager):
@@ -93,42 +94,21 @@ class User(AbstractBaseUser):
     def unlock(self):
         self.captcha_required = False
         for domain in self.domains.all():
-            domain.pdns_resync()
+            domain.sync_to_pdns()
         self.save()
 
 
 class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(null=True)
     name = models.CharField(max_length=191, unique=True)
-    arecord = models.GenericIPAddressField(protocol='IPv4', blank=False, null=True)
-    aaaarecord = models.GenericIPAddressField(protocol='IPv6', blank=False, null=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
-    acme_challenge = models.CharField(max_length=255, blank=True)
     _dirtyName = False
-    _dirtyRecords = False
+    _ns_records_data = [{'content': 'ns1.desec.io.'},
+                        {'content': 'ns2.desec.io.'}]
 
     def setter_name(self, val):
         if val != self.name:
             self._dirtyName = True
-
-        return val
-
-    def setter_arecord(self, val):
-        if val != self.arecord:
-            self._dirtyRecords = True
-
-        return val
-
-    def setter_aaaarecord(self, val):
-        if val != self.aaaarecord:
-            self._dirtyRecords = True
-
-        return val
-
-    def setter_acme_challenge(self, val):
-        if val != self.acme_challenge:
-            self._dirtyRecords = True
 
         return val
 
@@ -156,69 +136,138 @@ class Domain(models.Model, mixins.SetterMixin):
 
         return name
 
-    def pdns_resync(self):
+    # When this is made a property, looping over Domain.rrsets breaks
+    def get_rrsets(self):
+        return RRset.objects.filter(domain=self)
+
+    def _create_pdns_zone(self):
+        """
+        Create zone on pdns.  This will also import any RRsets that may have
+        been created already.
+        """
+        pdns.create_zone(self, settings.DEFAULT_NS)
+
+        # Import RRsets that may have been created (e.g. during captcha lock).
+        # Don't perform if we do not know of any RRsets (it would delete all
+        # existing records from pdns).
+        rrsets = self.get_rrsets()
+        if rrsets:
+            pdns.set_rrsets(self, rrsets)
+
+        # Make our RRsets consistent with pdns (specifically, NS may exist)
+        self.sync_from_pdns()
+
+    def sync_to_pdns(self):
         """
         Make sure that pdns gets the latest information about this domain/zone.
         Re-Syncing is relatively expensive and should not happen routinely.
         """
-
-        # Create zone if it does not exist yet
+        # Try to create zone, in case it does not exist yet
         try:
-            pdns.create_zone(self)
+            self._create_pdns_zone()
         except pdns.PdnsException as e:
-            if not (e.status_code == 422 and e.detail.endswith(' already exists')):
+            if (e.status_code == 422 and e.detail.endswith(' already exists')):
+                # Zone exists, purge it by deleting all RRsets and sync
+                pdns.set_rrsets(self, [], notify=False)
+                pdns.set_rrsets(self, self.get_rrsets())
+            else:
                 raise e
-
-        # update zone to latest information
-        pdns.set_dyn_records(self)
-
-    def pdns_sync(self, new_domain):
-        """
-        Command pdns updates as indicated by the local changes.
-        """
-
-        if self.owner.captcha_required:
-            # suspend all updates
-            return
-
-        # if this zone is new, create it and set dirty flag if necessary
-        if new_domain:
-            pdns.create_zone(self)
-            self._dirtyRecords = bool(self.arecord) or bool(self.aaaarecord) or bool(self.acme_challenge)
-
-        # make changes if necessary
-        if self._dirtyRecords:
-            pdns.set_dyn_records(self)
-
-        self._dirtyRecords = False
 
     @transaction.atomic
     def sync_from_pdns(self):
         RRset.objects.filter(domain=self).delete()
-        for rrset in pdns.get_rrsets(self):
-            if rrset['type'] not in RRset.RESTRICTED_TYPES:
-                RRset(**rrset).save(pdns=False)
-
-    def delete(self, *args, **kwargs):
-        super(Domain, self).delete(*args, **kwargs)
-
-        pdns.delete_zone(self)
-        if self.name.endswith('.dedyn.io'):
-            pdns.set_rrset_in_parent(self, 'DS', '')
-            pdns.set_rrset_in_parent(self, 'NS', '')
+        rrset_datas = [rrset_data for rrset_data in pdns.get_rrset_datas(self)
+                       if rrset_data['type'] not in RRset.RESTRICTED_TYPES]
+        # Can't do bulk create because we need records creation in RRset.save()
+        for rrset_data in rrset_datas:
+            RRset(**rrset_data).save(sync=False)
 
     @transaction.atomic
+    def set_rrsets(self, rrsets):
+        """
+        Writes the provided RRsets to the database, overriding any existing
+        RRsets of the same subname and type.  If the user account is not locked
+        for captcha, also inform pdns about the new RRsets.
+        """
+        for rrset in rrsets:
+            if rrset.domain != self:
+                raise ValueError(
+                    'Cannot set RRset for domain %s on domain %s.' % (
+                    rrset.domain.name, self.name))
+            if rrset.type in RRset.RESTRICTED_TYPES:
+                raise ValueError(
+                    'You cannot tinker with the %s RRset.' % rrset.type)
+
+        pdns_rrsets = []
+        for rrset in rrsets:
+            # Look up old RRset to see if it needs updating.  If exists and
+            # outdated, delete it so that we can bulk-create it later.
+            try:
+                old_rrset = self.rrset_set.get(subname=rrset.subname,
+                                               type=rrset.type)
+                old_rrset.ttl = rrset.ttl
+                old_rrset.records_data = rrset.records_data
+                rrset = old_rrset
+            except RRset.DoesNotExist:
+                pass
+
+            # At this point, rrset is an RRset to be created or possibly to be
+            # updated.  RRset.save() will decide what to write to the database.
+            if rrset.pk is None or 'records' in rrset.get_dirties():
+                pdns_rrsets.append(rrset)
+
+            rrset.save(sync=False)
+
+        if not self.owner.captcha_required:
+            pdns.set_rrsets(self, pdns_rrsets)
+
+    @transaction.atomic
+    def delete(self, *args, **kwargs):
+        # Delete delegation for dynDNS domains (direct child of dedyn.io)
+        subname, parent_pdns_id = self.pdns_id.split('.', 1)
+        if parent_pdns_id == 'dedyn.io.':
+            parent = Domain.objects.filter(name='dedyn.io').first()
+
+            if parent:
+                rrsets = RRset.objects.filter(domain=parent, subname=subname,
+                                              type__in=['NS', 'DS']).all()
+                for rrset in rrsets:
+                    rrset.records_data = []
+
+                parent.set_rrsets(rrsets)
+
+        # Delete domain
+        super().delete(*args, **kwargs)
+        pdns.delete_zone(self)
+
     def save(self, *args, **kwargs):
-        # Record here if this is a new domain (self.pk is only None until we call super.save())
-        new_domain = self.pk is None
+        with transaction.atomic():
+            new = self.pk is None
+            self.clean()
+            super().save(*args, **kwargs)
 
-        self.updated = timezone.now()
-        self.clean()
-        super(Domain, self).save(*args, **kwargs)
+            if new and not self.owner.captcha_required:
+                self._create_pdns_zone()
 
-        self.pdns_sync(new_domain)
+        if not new:
+            return
+
+        # If the domain is a direct subdomain of dedyn.io, set NS records in
+        # parent. Don't notify slaves (we first have to enable DNSSEC).
+        subname, parent_pdns_id = self.pdns_id.split('.', 1)
+        if parent_pdns_id == 'dedyn.io.':
+            parent = Domain.objects.filter(name='dedyn.io').first()
+            if parent:
+                records_data = [('content', x) for x in settings.DEFAULT_NS]
+                rrset = RRset(domain=parent, subname=subname, type='NS',
+                              ttl=60, records_data=records_data)
+                rrset.save(notify=False)
 
     def __str__(self):
+        """
+        Return domain name.  Needed for serialization via StringRelatedField.
+        (Must be unique.)
+        """
         return self.name
 
     class Meta:
@@ -238,7 +287,6 @@ def get_default_value_mref():
 
 
 class Donation(models.Model):
-
     created = models.DateTimeField(default=get_default_value_created)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
@@ -248,7 +296,6 @@ class Donation(models.Model):
     due = models.DateTimeField(default=get_default_value_due)
     mref = models.CharField(max_length=32,default=get_default_value_mref)
     email = models.EmailField(max_length=255, blank=True)
-
 
     def save(self, *args, **kwargs):
         self.iban = self.iban[:6] + "xxx" # do NOT save account details
@@ -281,8 +328,8 @@ class RRset(models.Model, mixins.SetterMixin):
     class Meta:
         unique_together = (("domain","subname","type"),)
 
-    def __init__(self, *args, **kwargs):
-        self.records_data = kwargs.pop('records_data', [])
+    def __init__(self, *args, records_data=None, **kwargs):
+        self.records_data = records_data
         self._dirties = set()
         super().__init__(*args, **kwargs)
 
@@ -310,54 +357,74 @@ class RRset(models.Model, mixins.SetterMixin):
 
     def setter_ttl(self, val):
         if val != self.ttl:
-            self._dirty = True
+            self._dirties.add('ttl')
 
         return val
 
     def clean(self):
         errors = {}
-        for field in self._dirties:
+        for field in (self._dirties & {'domain', 'subname', 'type'}):
             errors[field] = ValidationError(
                 'You cannot change the `%s` field.' % field)
 
         if errors:
             raise ValidationError(errors)
 
+    def get_dirties(self):
+        if self.records_data is not None and 'records' not in self._dirties \
+            and (self.pk is None
+                or Counter([x['content'] for x in self.records_data])
+                    != Counter(self.records.values_list('content', flat=True))
+                ):
+            self._dirties.add('records')
+
+        return self._dirties
+
     @property
     def name(self):
         return '.'.join(filter(None, [self.subname, self.domain.name])) + '.'
 
-    def update_pdns(self):
-        pdns.set_rrset(self)
-        pdns.notify_zone(self.domain)
-
     @transaction.atomic
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
-        self.update_pdns()
+        pdns.set_rrset(self)
+        self.records_data = None
+        self._dirties = {}
 
     @transaction.atomic
-    def save(self, pdns=True, *args, **kwargs):
+    def save(self, sync=True, notify=True, *args, **kwargs):
         new = self.pk is None
-        self.updated = timezone.now()
-        self.full_clean()
-        super().save(*args, **kwargs)
 
-        records = self.records.all()
-        if self.records_data and self.records_data != [{'content': x.content}
-                                                       for x in records]:
-            self._dirty = True
-            records.delete()
-            while self.records_data:
-                self.records.create(**self.records_data.pop())
+        # Empty records data means deletion
+        if self.records_data == []:
+            if not new:
+                self.delete()
+            return
 
-        if pdns and (self._dirty or new):
-            self.update_pdns()
+        # The only thing that can change is the TTL
+        if new or 'ttl' in self.get_dirties():
+            self.updated = timezone.now()
+            self.full_clean()
+            super().save(*args, **kwargs)
 
-        self._dirty = False
+        # Create RRset contents
+        if 'records' in self.get_dirties():
+            self.records.all().delete()
+            records = [RR(rrset=self, **data) for data in self.records_data]
+            self.records.bulk_create(records)
+            self.records_data = None
+
+        # Sync to pdns if new or anything is dirty
+        if sync and not self.domain.owner.captcha_required \
+                and (new or self.get_dirties()):
+            pdns.set_rrset(self, notify=notify)
+
+        self._dirties = {}
 
 
 class RR(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
     rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
+    # max_length is determined based on the calculation in
     # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
     content = models.CharField(max_length=4092)

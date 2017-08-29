@@ -26,6 +26,7 @@ if os.environ.get('DESECSTACK_API_DEBUG', "").upper() == "TRUE":
     DEBUG = True
 
 ALLOWED_HOSTS = [
+    'api',
     'desec.%s' % os.environ['DESECSTACK_DOMAIN'],
     'update.dedyn.%s' % os.environ['DESECSTACK_DOMAIN'],
     'update6.dedyn.%s' % os.environ['DESECSTACK_DOMAIN'],
@@ -147,6 +148,9 @@ ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK
 
 # use our own user model
 AUTH_USER_MODEL = 'desecapi.User'
+
+# default NS records
+DEFAULT_NS = ['ns1.desec.io.', 'ns2.desec.io.']
 
 # PowerDNS API access
 NSLORD_PDNS_API = 'http://nslord:8081/api/v1/servers/localhost'

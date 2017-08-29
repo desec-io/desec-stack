@@ -68,56 +68,18 @@ def _pdns_put(url):
     return r
 
 
-def _delete_or_replace_rrset(name, rr_type, value, ttl=60):
+def create_zone(domain, nameservers, kind='NATIVE'):
     """
-    Return pdns API json to either replace or delete a record set, depending on whether value is empty or not.
-    """
-    if value:
-        return \
-            {
-                "records": [
-                    {
-                        "type": rr_type,
-                        "name": name,
-                        "disabled": False,
-                        "content": value,
-                    }
-                ],
-                "ttl": ttl,
-                "changetype": "REPLACE",
-                "type": rr_type,
-                "name": name,
-            }
-    else:
-        return \
-            {
-                "changetype": "DELETE",
-                "type": rr_type,
-                "name": name
-            }
-
-
-def create_zone(domain, kind='NATIVE'):
-    """
-    Commands pdns to create a zone with the given name.
+    Commands pdns to create a zone with the given name and nameservers.
     """
     name = domain.name
     if not name.endswith('.'):
         name += '.'
 
-    payload = {
-        "name": name,
-        "kind": kind.upper(),
-        "masters": [],
-        "nameservers": [
-            "ns1.desec.io.",
-            "ns2.desec.io."
-        ]
-    }
+    payload = {'name': name, 'kind': kind.upper(), 'masters': [],
+               'nameservers': nameservers}
     _pdns_post('/zones', payload)
 
-    # Don't forget to import automatically generated RRsets (specifically, NS)
-    domain.sync_from_pdns()
 
 def delete_zone(domain):
     """
@@ -128,12 +90,13 @@ def delete_zone(domain):
 
 def get_keys(domain):
     """
-    Retrieves a JSON representation of the DNSSEC key information
+    Retrieves a dict representation of the DNSSEC key information
     """
     try:
         r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
         keys = [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
-                for key in r.json() if key['active'] and key['keytype'] in ['csk', 'ksk']]
+                for key in r.json()
+                if key['active'] and key['keytype'] in ['csk', 'ksk']]
     except:
         keys = []
 
@@ -142,16 +105,16 @@ def get_keys(domain):
 
 def get_zone(domain):
     """
-    Retrieves a JSON representation of the zone from pdns
+    Retrieves a dict representation of the zone from pdns
     """
     r = _pdns_get('/zones/' + domain.pdns_id)
 
     return r.json()
 
 
-def get_rrsets(domain):
+def get_rrset_datas(domain):
     """
-    Retrieves a JSON representation of the RRsets in a given zone, optionally restricting to a name and RRset type 
+    Retrieves a dict representation of the RRsets in a given zone
     """
     return [{'domain': domain,
              'subname': rrset['name'][:-(len(domain.name) + 2)],
@@ -162,11 +125,11 @@ def get_rrsets(domain):
             for rrset in get_zone(domain)['rrsets']]
 
 
-def set_rrset(rrset):
-    return set_rrsets(rrset.domain, [rrset])
+def set_rrset(rrset, notify=True):
+    return set_rrsets(rrset.domain, [rrset], notify=notify)
 
 
-def set_rrsets(domain, rrsets):
+def set_rrsets(domain, rrsets, notify=True):
     data = {'rrsets':
         [{'name': rrset.name, 'type': rrset.type, 'ttl': rrset.ttl,
           'changetype': 'REPLACE',
@@ -177,43 +140,12 @@ def set_rrsets(domain, rrsets):
     }
     _pdns_patch('/zones/' + domain.pdns_id, data)
 
+    if notify:
+        notify_zone(domain)
+
 
 def notify_zone(domain):
     """
     Commands pdns to notify the zone to the pdns slaves.
     """
     _pdns_put('/zones/%s/notify' % domain.pdns_id)
-
-
-def set_dyn_records(domain):
-    """
-    Commands pdns to set the A and AAAA record for the zone with the given name to the given record values.
-    Only supports one A, one AAAA record.
-    If a or aaaa is empty, pdns will be commanded to delete the record.
-    """
-    _pdns_patch('/zones/' + domain.pdns_id, {
-        "rrsets": [
-            _delete_or_replace_rrset(domain.name + '.', 'a', domain.arecord),
-            _delete_or_replace_rrset(domain.name + '.', 'aaaa', domain.aaaarecord),
-            _delete_or_replace_rrset('_acme-challenge.%s.' % domain.name, 'txt', '"%s"' % domain.acme_challenge),
-        ]
-    })
-
-    # Don't forget to import the updated RRsets
-    domain.sync_from_pdns()
-
-    notify_zone(domain)
-
-
-def set_rrset_in_parent(domain, rr_type, value):
-    """
-    Commands pdns to set or delete a record set for the zone with the given name.
-    If value is empty, the rrset will be deleted.
-    """
-    parent_id = domain.pdns_id.split('.', 1)[1]
-
-    _pdns_patch('/zones/' + parent_id, {
-        "rrsets": [
-            _delete_or_replace_rrset(domain.name + '.', rr_type, value),
-        ]
-    })

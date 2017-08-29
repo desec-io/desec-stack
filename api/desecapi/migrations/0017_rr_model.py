@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
             name='RR',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created', models.DateTimeField(auto_now_add=True)),
                 ('content', models.CharField(max_length=4092)),
             ],
         ),
