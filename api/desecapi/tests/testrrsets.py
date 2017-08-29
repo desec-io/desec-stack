@@ -144,14 +144,14 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': [], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
             url = reverse('rrsets', args=(self.ownedDomains[1].name,))
             data = {'records': ['ns1.desec.io. peter.desec.io. 2584 10800 3600 604800 60'], 'ttl': 60, 'type': type_}
             response = self.client.post(url, json.dumps(data), content_type='application/json')
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCantPostForeignRRsets(self):
         url = reverse('rrsets', args=(self.otherDomains[1].name,))
@@ -400,7 +400,7 @@ class AuthenticatedRRsetTests(APITestCase):
         # Create record, should cause a pdns PATCH request and a notify
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
-        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.client.post(url, json.dumps(data), content_type='application/json')
 
         # Delete record, should cause a pdns PATCH request and a notify
         url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))

@@ -278,14 +278,15 @@ problem to enable such functionality.
     order to secure the data stored in your zones.  RRsets of this type are
     generated and served automatically by our nameservers.  However, you can
     neither read nor manipulate these RRsets through the API.  When attempting
-    such operations, ``403 Forbidden`` is returned.
+    such operations, ``403 Forbidden`` or ``400 Bad Request`` is returned,
+    respectively.
 
 .. _`SOA caveat`:
 
 ``SOA`` record
     The ``SOA`` record cannot be read or written through this interface.  When
-    attempting to create, modify or otherwise access an ``SOA`` record, ``403
-    Forbidden`` is returned.
+    attempting to create, modify or otherwise access an ``SOA`` record, ``400
+    Bad Request`` or ``403 Forbidden`` is returned, respectively.
 
     The rationale behind this is that the content of the ``SOA`` record is
     entirely determined by the DNS operator, and users should not have to bother
