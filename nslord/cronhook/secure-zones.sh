@@ -13,19 +13,21 @@ for ZONE in `echo "SELECT name FROM domains WHERE type = 'NATIVE' && id NOT IN(S
 
 	# Set up DNSSEC, switch zone type to MASTER, and increase serial for notify
 	pdnsutil secure-zone -- "$ZONE" \
-	    && pdnsutil set-nsec3 -- "$ZONE" "1 0 300 $SALT" \
-	    && pdnsutil set-kind -- "$ZONE" MASTER \
-	    && pdnsutil increase-serial -- "$ZONE"
+		&& pdnsutil set-nsec3 -- "$ZONE" "1 0 300 $SALT" \
+		&& pdnsutil set-kind -- "$ZONE" MASTER \
+		&& pdnsutil increase-serial -- "$ZONE"
 
 	# Take care of delegations
 	if [ "$PARENT" == "dedyn.io" ]; then
+		SUBNAME=${ZONE%%.*}
+
 		set +x # don't write commands with sensitive information to the screen
 
-		echo "Setting DS/NS records for $ZONE and put them in parent zone"
-		DATA='{"rrsets": [ {"name": "'"$ZONE".'", "type": "DS", "ttl": 60, "changetype": "REPLACE", "records": '
-		DATA+=`curl -sS -X GET -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$ZONE/cryptokeys \
-			| jq -c '[.[] | select(.active == true) | {content: .ds[]?, disabled: false}]'`
-		DATA+=' }, {"name": "'"$ZONE".'", "type": "NS", "ttl": 60, "changetype": "REPLACE", "records": [ {"content": "ns1.desec.io.", "disabled": false}, {"content": "ns2.desec.io.", "disabled": false} ] } ] }'
-		curl -sS -X PATCH --data "$DATA" -H "X-API-Key: $APITOKEN" http://nslord:8081/api/v1/servers/localhost/zones/$PARENT
+		echo "Getting DS records for $ZONE and put them in parent zone"
+		DATA='{"subname": "'"$SUBNAME"'", "type": "DS", "ttl": 60, "records": '
+		DATA+=`curl -sS -X GET -H "X-API-Key: $APITOKEN" "http://nslord:8081/api/v1/servers/localhost/zones/$ZONE/cryptokeys" \
+			| jq -c '[.[] | select(.active == true) | .ds[]?]'`
+		DATA+=' }'
+		curl -sS -X POST --data "$DATA" -H "Content-Type: application/json" http://api:8080/api/v1/domains/$PARENT/rrsets/
 	fi
 done

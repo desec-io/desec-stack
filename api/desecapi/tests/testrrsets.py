@@ -386,11 +386,12 @@ class AuthenticatedRRsetTests(APITestCase):
 
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
-        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.client.post(url, json.dumps(data), content_type='application/json')
 
         result = json.loads(httpretty.httpretty.latest_requests[-2].parsed_body)
         self.assertEqual(result['rrsets'][0]['name'], self.ownedDomains[1].name + '.')
         self.assertEqual(result['rrsets'][0]['records'][0]['content'], '1.2.3.4')
+        self.assertEqual(httpretty.last_request().method, 'PUT')
 
     def testDeleteCausesPdnsAPICall(self):
         httpretty.enable()

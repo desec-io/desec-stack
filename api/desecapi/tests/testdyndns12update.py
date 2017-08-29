@@ -47,16 +47,24 @@ class DynDNS12UpdateTest(APITestCase):
         httpretty.reset()
         httpretty.disable()
 
-    def assertIP(self, ipv4=None, ipv6=None):
+    def assertIP(self, ipv4=None, ipv6=None, name=None):
         old_credentials = self.client._credentials['HTTP_AUTHORIZATION']
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.password)
-        url = reverse('domain-detail/byName', args=(self.username,))
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        name = name or self.username
+
         if ipv4 is not None:
-            self.assertEqual(response.data['arecord'], ipv4)
+            url = reverse('rrset', args=(name, '', 'A',))
+            response = self.client.get(url)
+            self.assertEqual(response.data['records'][0], ipv4)
+
         if ipv6 is not None:
-            self.assertEqual(response.data['aaaarecord'], ipv6)
+            url = reverse('rrset', args=(name, '', 'AAAA',))
+            response = self.client.get(url)
+            self.assertEqual(response.data['records'][0], ipv6)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['ttl'], 60)
+
         self.client.credentials(HTTP_AUTHORIZATION=old_credentials)
 
     def testDynDNS1UpdateDDClientSuccess(self):
@@ -201,13 +209,15 @@ class DynDNS12UpdateTest(APITestCase):
         self.owner.captcha_required = True
         self.owner.save()
 
-        httpretty.reset()
-        httpretty.enable()
-        httpretty.HTTPretty.allow_net_connect = False
-
-        domain = self.owner.domains.all()[0]
-        domain.arecord = '10.1.1.1'
-        domain.save()
+        url = reverse('dyndns12update')
+        response = self.client.get(url,
+                                   {
+                                       'system': 'dyndns',
+                                       'hostname': self.domain,
+                                       'myip': '10.1.1.1'
+                                   })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIP(ipv4='10.1.1.1')
 
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.POST,
@@ -223,10 +233,10 @@ class DynDNS12UpdateTest(APITestCase):
 
         self.owner.unlock()
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PATCH')
-        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-3].path))
-        self.assertTrue(self.domain in httpretty.httpretty.latest_requests[-3].parsed_body)
-        self.assertTrue('10.1.1.1' in httpretty.httpretty.latest_requests[-3].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
+        self.assertTrue(self.domain in httpretty.httpretty.latest_requests[-2].parsed_body)
+        self.assertTrue('10.1.1.1' in httpretty.httpretty.latest_requests[-2].parsed_body)
 
     def testSuspendedUpdatesDomainCreation(self):
         self.owner.captcha_required = True
@@ -235,36 +245,34 @@ class DynDNS12UpdateTest(APITestCase):
         url = reverse('domain-list')
         newdomain = utils.generateDynDomainname()
 
-        httpretty.reset()
-        httpretty.enable()
-        httpretty.HTTPretty.allow_net_connect = False
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-
-        data = {'name': newdomain, 'arecord': '10.2.2.2'}
+        data = {'name': newdomain}
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        domain = self.owner.domains.all()[0]
-        domain.arecord = '10.1.1.1'
-        domain.save()
+        url = reverse('dyndns12update')
+        response = self.client.get(url,
+                                   {
+                                       'system': 'dyndns',
+                                       'hostname': newdomain,
+                                       'myip': '10.2.2.2'
+                                   })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIP(name=newdomain, ipv4='10.2.2.2')
 
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
 
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
         httpretty.register_uri(httpretty.GET,
                                settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.',
-                               body='{"rrsets": []}',
+                               body='{"rrsets": [{"comments": [], "name": "%s.", "records": [ { "content": "ns1.desec.io.", "disabled": false }, { "content": "ns2.desec.io.", "disabled": false } ], "ttl": 60, "type": "NS"}]}' % self.domain,
                                content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + newdomain + './notify', status=200)
 
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
         httpretty.register_uri(httpretty.GET,
                                settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
-                               body='{"rrsets": []}',
+                               body='{"rrsets": [{"comments": [], "name": "%s.", "records": [ { "content": "ns1.desec.io.", "disabled": false }, { "content": "ns2.desec.io.", "disabled": false } ], "ttl": 60, "type": "NS"}]}' % self.domain,
                                content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify', status=200)
 

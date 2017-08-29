@@ -41,7 +41,7 @@ class RRsetSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_records(self, obj):
-        return [x for x in obj.records.values_list('content', flat=True)]
+        return list(obj.records.values_list('content', flat=True))
 
     def validate_type(self, value):
         if value in RRset.RESTRICTED_TYPES:
@@ -56,7 +56,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('name', 'owner', 'arecord', 'aaaarecord', 'acme_challenge', 'keys')
+        fields = ('name', 'owner', 'keys')
 
 
 class DonationSerializer(serializers.ModelSerializer):
