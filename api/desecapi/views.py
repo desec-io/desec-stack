@@ -107,7 +107,7 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            super(DomainDetail, self).delete(request, *args, **kwargs)
+            super().delete(request, *args, **kwargs)
         except Http404:
             pass
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -117,7 +117,7 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         try:
-            return super(DomainDetail, self).update(request, *args, **kwargs)
+            return super().update(request, *args, **kwargs)
         except django.core.exceptions.ValidationError as e:
             ex = ValidationError(detail={"detail": str(e)})
             ex.status_code = status.HTTP_409_CONFLICT
@@ -184,10 +184,6 @@ class RRsetList(generics.ListCreateAPIView):
         return rrsets
 
     def create(self, request, *args, **kwargs):
-        type_ = request.data.get('type', '')
-        if type_ in RRset.RESTRICTED_TYPES:
-            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
-
         try:
             return super().create(request, *args, **kwargs)
         except Domain.DoesNotExist:

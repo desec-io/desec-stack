@@ -192,14 +192,13 @@ class Domain(models.Model, mixins.SetterMixin):
 
         self._dirtyRecords = False
 
-    def sync_from_pdns(self):
-        with transaction.atomic():
-            RRset.objects.filter(domain=self).delete()
-            rrsets = pdns.get_rrsets(self)
-            rrsets = [rrset for rrset in rrsets if rrset.type not in RRset.RESTRICTED_TYPES]
-            RRset.objects.bulk_create(rrsets)
-
     @transaction.atomic
+    def sync_from_pdns(self):
+        RRset.objects.filter(domain=self).delete()
+        for rrset in pdns.get_rrsets(self):
+            if rrset['type'] not in RRset.RESTRICTED_TYPES:
+                RRset(**rrset).save(pdns=False)
+
     def delete(self, *args, **kwargs):
         super(Domain, self).delete(*args, **kwargs)
 
@@ -218,6 +217,9 @@ class Domain(models.Model, mixins.SetterMixin):
         super(Domain, self).save(*args, **kwargs)
 
         self.pdns_sync(new_domain)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         ordering = ('created',)
@@ -250,7 +252,7 @@ class Donation(models.Model):
 
     def save(self, *args, **kwargs):
         self.iban = self.iban[:6] + "xxx" # do NOT save account details
-        super(Donation, self).save(*args, **kwargs) # Call the "real" save() method.
+        super().save(*args, **kwargs) # Call the "real" save() method.
 
 
     class Meta:
@@ -267,10 +269,9 @@ def validate_upper(value):
 class RRset(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='rrsets')
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     subname = models.CharField(max_length=178, blank=True)
     type = models.CharField(max_length=10, validators=[validate_upper])
-    records = models.CharField(max_length=64000, blank=True)
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     _dirty = False
@@ -281,6 +282,7 @@ class RRset(models.Model, mixins.SetterMixin):
         unique_together = (("domain","subname","type"),)
 
     def __init__(self, *args, **kwargs):
+        self.records_data = kwargs.pop('records_data', [])
         self._dirties = set()
         super().__init__(*args, **kwargs)
 
@@ -303,12 +305,6 @@ class RRset(models.Model, mixins.SetterMixin):
     def setter_type(self, val):
         if val != self.type:
             self._dirties.add('type')
-
-        return val
-
-    def setter_records(self, val):
-        if val != self.records:
-            self._dirty = True
 
         return val
 
@@ -337,18 +333,31 @@ class RRset(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        # Reset records so that our pdns update later will cause deletion
-        self.records = '[]'
         super().delete(*args, **kwargs)
-
         self.update_pdns()
 
     @transaction.atomic
-    def save(self, *args, **kwargs):
+    def save(self, pdns=True, *args, **kwargs):
         new = self.pk is None
         self.updated = timezone.now()
         self.full_clean()
         super().save(*args, **kwargs)
 
-        if self._dirty or new:
+        records = self.records.all()
+        if self.records_data and self.records_data != [{'content': x.content}
+                                                       for x in records]:
+            self._dirty = True
+            records.delete()
+            while self.records_data:
+                self.records.create(**self.records_data.pop())
+
+        if pdns and (self._dirty or new):
             self.update_pdns()
+
+        self._dirty = False
+
+
+class RR(models.Model):
+    rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
+    # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
+    content = models.CharField(max_length=4092)
