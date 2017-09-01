@@ -87,8 +87,6 @@ This stack is IPv6-capable. Caveats:
   - It is not necessary to start the Docker daemon with `--ipv6` or `--fixed-cidr-v6`. However, it is recommended to run `dockerd` with `--userland-proxy=false` to avoid 
     exposing ports on the host IPv6 address through `docker-proxy`.
 
-  - Due to various issues with Docker and docker-compose, IP addresses are current hardcoded (see [`docker-compose.yml`](docker-compose.yml) and the `TODO` flags therein).
-
   - Topology: Assuming 2a01:4f8:a0:12eb::/64 is the host network, and we reserve 2a01:4f8:a0:12eb:deec::/80 for the deSEC stack. Docker has more or less established that 
     IPv6  addresses be composed of the /80 prefix and the container MAC address. We choose the private 06:42:ac MAC prefix, defining a /104 subnet. For the remaining 24 
     bits of the MAC and IPv6 address, the convention seems to be to use the last 24 bits from the internally assigned IPv4 address. However, the first 8 of these are 
