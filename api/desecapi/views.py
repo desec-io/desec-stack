@@ -230,7 +230,7 @@ class Root(APIView):
             return Response({
                 'domains': reverse('domain-list'),
                 'user': reverse('user'),
-                'logout:': reverse('logout'),
+                'logout': reverse('logout'),
             })
         else:
             return Response({
