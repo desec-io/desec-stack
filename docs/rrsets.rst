@@ -134,6 +134,30 @@ your shell or programming language may require another layer of quotes!  By
 contrast, ``ttl`` is an integer field, so the JSON value does not contain
 quotes.
 
+Creating a TLSA RRset
+`````````````````````
+
+A common use case is the creation of a ``TLSA`` RRset which carries information
+about the TLS certificate used by the server that the domain points to.  For
+example, to create a ``TLSA`` RRset for ``www.example.com``, you can run::
+
+    http POST \
+        https://desec.io/api/v1/domains/example.com/rrsets/ \
+        Authorization:"Token {token}" \
+        subname:='"_443._tcp.www"' type:='"TLSA"' ttl:=3600 \
+        records:='["3 1 1 11501875615d4.....dd122bbf9190"]'
+
+**Note:** The ``subname`` is prefixed with ``_{port}._{transport_protocol}``.
+For a HTTPS server, this will usually be ``_443._tcp`` (for an otherwise empty
+``subname``), or ``_443._tcp.www`` for the common ``www`` domain prefix.  For
+other use cases, the values have to be adapted accordingly (e.g. ``_993._tcp``
+for an IMAPS server).
+
+To generate the ``TLSA`` from your certificate, you can use a tool like
+https://www.huque.com/bin/gen_tlsa.  We are planning to provide a tool that is
+connected directly to our API in the future.  For full detail on how ``TLSA``
+records work, please refer to RFC 6698.
+
 
 Retrieving all RRsets in a Zone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
