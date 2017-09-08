@@ -41,9 +41,9 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl_certificate /etc/ssl/private/update.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/update.dedyn.key;
-	
+	ssl_certificate ${CERT_PATH}update.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}update.dedyn.${DESECSTACK_DOMAIN}.key;
+
 	include global.conf;
 	
 	location ~* \.(ico|png)$ { return 401; }
@@ -70,9 +70,9 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl_certificate /etc/ssl/private/update6.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/update6.dedyn.key;
-	
+	ssl_certificate ${CERT_PATH}update6.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}update6.dedyn.${DESECSTACK_DOMAIN}.key;
+
 	include global.conf;
 	
 	location ~* \.(ico|png)$ { return 401; }
