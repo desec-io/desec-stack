@@ -1,0 +1,94 @@
+######
+# Handle update requests without SSL
+######
+server {
+	listen 80;
+	listen [::]:80;
+	server_name update.dedyn.$DESECSTACK_DOMAIN
+	            update6.dedyn.$DESECSTACK_DOMAIN;
+	
+	access_log /var/log/nginx/access.log main;
+	error_log /var/log/nginx/error.log;
+	
+	include global.conf;
+	
+	location ~* \.(ico|png)$ { return 401; }
+	
+	location /nic/checkip.html {
+		add_header Content-Type text/plain;
+		return 200 $remote_addr;
+	}
+
+	location / {
+		# max .5r/s to the API per IP. Allow burst as some people update multiple domains via cron.
+		limit_req zone=perip-api burst=10 nodelay;
+
+		include uwsgi_params;
+		rewrite ^(.*)$ /api/v1/dyndns/update?$1 break;
+		uwsgi_param HTTP_HOST $host;
+		uwsgi_pass desecapi;
+	}
+}
+
+######
+# Handle update requests with SSL
+######
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name update.dedyn.$DESECSTACK_DOMAIN;
+	
+	access_log /var/log/nginx/access.log main;
+	error_log /var/log/nginx/error.log;
+	
+	ssl_certificate /etc/ssl/private/update.dedyn.cer;
+	ssl_certificate_key /etc/ssl/private/update.dedyn.key;
+	
+	include global.conf;
+	
+	location ~* \.(ico|png)$ { return 401; }
+	
+	location /nic/checkip.html {
+		add_header Content-Type text/plain;
+		return 200 $remote_addr;
+	}
+
+	location / {
+		# max .5r/s to the API per IP. Allow burst as some people update multiple domains via cron.
+		limit_req zone=perip-api burst=10 nodelay;
+
+		include uwsgi_params;
+		rewrite ^(.*)$ /api/v1/dyndns/update?$1 break;
+		uwsgi_param HTTP_HOST $host;
+		uwsgi_pass desecapi;
+	}
+}
+server {
+	listen [::]:443 ssl http2;
+	server_name update6.dedyn.$DESECSTACK_DOMAIN;
+	
+	access_log /var/log/nginx/access.log main;
+	error_log /var/log/nginx/error.log;
+	
+	ssl_certificate /etc/ssl/private/update6.dedyn.cer;
+	ssl_certificate_key /etc/ssl/private/update6.dedyn.key;
+	
+	include global.conf;
+	
+	location ~* \.(ico|png)$ { return 401; }
+	
+	location /nic/checkip.html {
+		add_header Content-Type text/plain;
+		return 200 $remote_addr;
+	}
+
+	location / {
+		# max .5r/s to the API per IP. Allow burst as some people update multiple domains via cron.
+		limit_req zone=perip-api burst=10 nodelay;
+
+		include uwsgi_params;
+		rewrite ^(.*)$ /api/v1/dyndns/update?$1 break;
+		uwsgi_param HTTP_HOST $host;
+		uwsgi_pass desecapi;
+	}
+}
