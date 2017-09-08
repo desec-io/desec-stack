@@ -1,0 +1,45 @@
+######
+# Redirect to desec.
+######
+server {
+	listen 80;
+	listen [::]:80;
+	server_name www.dedyn.$DESECSTACK_DOMAIN
+	            dedyn.$DESECSTACK_DOMAIN;
+
+	include global.conf;
+
+	location / {
+		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
+	}
+}
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name dedyn.$DESECSTACK_DOMAIN;
+
+	ssl_certificate /etc/ssl/private/dedyn.cer;
+	ssl_certificate_key /etc/ssl/private/dedyn.key;
+
+	include global.conf;
+
+	location / {
+		add_header Strict-Transport-Security "max-age=31536000" always;
+		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
+	}
+}
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name www.dedyn.$DESECSTACK_DOMAIN;
+
+	ssl_certificate /etc/ssl/private/www.dedyn.cer;
+	ssl_certificate_key /etc/ssl/private/www.dedyn.key;
+
+	include global.conf;
+
+	location / {
+		add_header Strict-Transport-Security "max-age=31536000" always;
+		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
+	}
+}
