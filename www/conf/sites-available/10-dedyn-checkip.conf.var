@@ -18,9 +18,9 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl_certificate /etc/ssl/private/checkipv4.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/checkipv4.dedyn.key;
-	
+	ssl_certificate ${CERT_PATH}checkipv4.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}checkipv4.dedyn.${DESECSTACK_DOMAIN}.key;
+
 	include global.conf;
 	
 	location / {
@@ -50,9 +50,9 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl_certificate /etc/ssl/private/checkipv6.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/checkipv6.dedyn.key;
-	
+	ssl_certificate ${CERT_PATH}checkipv6.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}checkipv6.dedyn.${DESECSTACK_DOMAIN}.key;
+
 	include global.conf;
 	
 	location / {
@@ -84,9 +84,9 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl_certificate /etc/ssl/private/checkip.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/checkip.dedyn.key;
-	
+	ssl_certificate ${CERT_PATH}checkip.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}checkip.dedyn.${DESECSTACK_DOMAIN}.key;
+
 	include global.conf;
 	
 	location / {

@@ -12,6 +12,7 @@ services:
     - ./www/html:/usr/share/nginx/html:ro
     environment:
     - DESECSTACK_DOMAIN
+    - DESECSTACK_WWW_CERTS
     depends_on:
     - static
     - api

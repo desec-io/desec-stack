@@ -42,9 +42,7 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   # Get web content
-  - rm -f www
   - rm -f static
-  - git clone https://github.com/desec-io/desec-www.git www
   - git clone https://github.com/desec-io/desec-static.git static
   - mkdir static/ultima
   - docker-compose build --no-cache --pull

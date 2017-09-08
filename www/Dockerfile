@@ -1,7 +1,7 @@
 FROM nginx:1.11-alpine
 
-# Add bash for our entrypoint script
-RUN apk add --no-cache bash
+# Add dependencies for our scripts
+RUN apk add --no-cache bash openssl
 
 # nginx configuration and entrypoint
 COPY conf /etc/nginx

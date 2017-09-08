@@ -18,8 +18,8 @@ server {
 	listen [::]:443 ssl http2;
 	server_name dedyn.$DESECSTACK_DOMAIN;
 
-	ssl_certificate /etc/ssl/private/dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/dedyn.key;
+	ssl_certificate ${CERT_PATH}dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
 
@@ -33,8 +33,8 @@ server {
 	listen [::]:443 ssl http2;
 	server_name www.dedyn.$DESECSTACK_DOMAIN;
 
-	ssl_certificate /etc/ssl/private/www.dedyn.cer;
-	ssl_certificate_key /etc/ssl/private/www.dedyn.key;
+	ssl_certificate ${CERT_PATH}www.dedyn.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}www.dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
 

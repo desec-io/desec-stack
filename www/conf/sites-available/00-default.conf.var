@@ -13,8 +13,8 @@ server {
 	listen [::]:443 ipv6only=on ssl http2 default_server;
 	server_name _;
 
-	ssl_certificate /etc/ssl/private/MAIN.cer;
-	ssl_certificate_key /etc/ssl/private/MAIN.key;
+	ssl_certificate ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.cer;
+	ssl_certificate_key ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.key;
 
 	return 444; # see https://httpstatuses.com/444
 }
