@@ -132,6 +132,10 @@ class AuthenticatedDomainTests(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + '.',
                                body='{"rrsets": []}',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
 
         url = reverse('domain-list')
         data = {'name': name}
