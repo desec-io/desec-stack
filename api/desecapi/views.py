@@ -232,11 +232,11 @@ class Root(APIView):
             return Response({
                 'domains': reverse('domain-list'),
                 'user': reverse('user'),
-                'logout': reverse('logout'),
+                'logout': reverse('token-destroy'),  # TODO change interface to token-destroy, too?
             })
         else:
             return Response({
-                'login': reverse('login', request=request, format=format),
+                'login': reverse('token-create', request=request, format=format),  # TODO change interface to token-create, too?
                 'register': reverse('register', request=request, format=format),
             })
 
