@@ -3,7 +3,6 @@ version: '2.1'
 # mostly extending from main .yml
 services:
   api:
-    command: "./entrypoint-tests.sh"
     logging:
       driver: "json-file"
     restart: "no"
