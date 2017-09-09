@@ -258,7 +258,7 @@ class Domain(models.Model, mixins.SetterMixin):
         if parent_pdns_id == 'dedyn.io.':
             parent = Domain.objects.filter(name='dedyn.io').first()
             if parent:
-                records_data = [('content', x) for x in settings.DEFAULT_NS]
+                records_data = [{'content': x} for x in settings.DEFAULT_NS]
                 rrset = RRset(domain=parent, subname=subname, type='NS',
                               ttl=60, records_data=records_data)
                 rrset.save(notify=False)

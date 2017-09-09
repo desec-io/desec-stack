@@ -94,13 +94,13 @@ def get_keys(domain):
     """
     try:
         r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
-        keys = [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
+        return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
                 for key in r.json()
                 if key['active'] and key['keytype'] in ['csk', 'ksk']]
-    except:
-        keys = []
-
-    return keys
+    except PdnsException as e:
+        if e.status_code == 404:
+            return []
+        raise e
 
 
 def get_zone(domain):

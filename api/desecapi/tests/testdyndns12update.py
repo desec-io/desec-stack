@@ -247,6 +247,10 @@ class DynDNS12UpdateTest(APITestCase):
 
         data = {'name': newdomain}
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
