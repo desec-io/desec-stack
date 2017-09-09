@@ -60,7 +60,6 @@ describe("www/nginx", function () {
                 // if the correct address is returned. Hence, we will stick to some
                 // simple tests.
                 expect(response).to.have.body(REGEX_IPV6_ADDRESS);
-                expect(response).to.not.have.body(process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127');
                 return chakram.wait();
             });
 
@@ -137,8 +136,7 @@ describe("www/nginx", function () {
             // topologically not in the same place as the end user), it's hard
             // if the correct address is returned. Hence, we will stick to some
             // simple tests.
-            expect(response).to.have.body(/(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))/);
-            expect(response).to.not.have.body(process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127');
+            expect(response).to.have.body(REGEX_IPV6_ADDRESS);
             return chakram.wait();
         });
 
