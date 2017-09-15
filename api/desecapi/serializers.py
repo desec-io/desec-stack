@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from desecapi.models import Domain, Donation, User, RR, RRset
 from djoser import serializers as djoserSerializers
+from django.db import transaction
 
 
 class RRSerializer(serializers.ModelSerializer):
@@ -20,25 +21,30 @@ class RRsetSerializer(serializers.ModelSerializer):
         model = RRset
         fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
 
-    def _inject_records_data(self, validated_data):
+    def _set_records(self, instance):
         records_data = [{'content': x}
                         for x in self.context['request'].data['records']]
-        rrs = RRSerializer(data=records_data, many=True, allow_empty=False)
-        if not rrs.is_valid():
-            errors = rrs.errors
+        rr_serializer = RRSerializer(data=records_data, many=True,
+                                     allow_empty=False)
+        if not rr_serializer.is_valid():
+            errors = rr_serializer.errors
             if 'non_field_errors' in errors:
                 errors['records'] = errors.pop('non_field_errors')
             raise serializers.ValidationError(errors)
+        instance.set_rrs([x['content'] for x in rr_serializer.validated_data])
 
-        return {'records_data': rrs.validated_data, **validated_data}
-
+    @transaction.atomic
     def create(self, validated_data):
-        validated_data = self._inject_records_data(validated_data)
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        self._set_records(instance)
+        return instance
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        validated_data = self._inject_records_data(validated_data)
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
+        instance.records.all().delete()
+        self._set_records(instance)
+        return instance
 
     def get_records(self, obj):
         return list(obj.records.values_list('content', flat=True))

@@ -366,16 +366,12 @@ class DynDNS12Update(APIView):
         if domain is None:
             raise Http404
 
-        rrsets = []
         datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
 
         for type_, ip in datas.items():
-            records_data = [{'content': ip}] if ip is not None else []
-            rrset = RRset(domain=domain, subname='', ttl=60, type=type_,
-                          records_data=records_data)
-            rrsets.append(rrset)
-
-        domain.set_rrsets(rrsets)
+            rrset, _ = domain.rrset_set.update_or_create(subname='', type=type_,
+                                                         defaults={'ttl': 60})
+            rrset.set_rrs([ip] if ip is not None else [])
 
         return Response('good')
 

@@ -119,8 +119,7 @@ def get_rrset_datas(domain):
     return [{'domain': domain,
              'subname': rrset['name'][:-(len(domain.name) + 2)],
              'type': rrset['type'],
-             'records_data': [{'content': record['content']}
-                              for record in rrset['records']],
+             'records': [record['content'] for record in rrset['records']],
              'ttl': rrset['ttl']}
             for rrset in get_zone(domain)['rrsets']]
 
