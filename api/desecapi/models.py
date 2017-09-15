@@ -169,12 +169,17 @@ class Domain(models.Model, mixins.SetterMixin):
     @transaction.atomic
     def sync_from_pdns(self):
         self.rrset_set.all().delete()
+        rrsets = []
+        rrs = []
         for rrset_data in pdns.get_rrset_datas(self):
             if rrset_data['type'] in RRset.RESTRICTED_TYPES:
                 continue
             records = rrset_data.pop('records')
-            rrset = self.rrset_set.create(**rrset_data)
-            rrset.set_rrs(records, sync=False)
+            rrset = RRset(**rrset_data)
+            rrsets.append(rrset)
+            rrs.extend([RR(rrset=rrset, content=record) for record in records])
+        RRset.objects.bulk_create(rrsets)
+        RR.objects.bulk_create(rrs)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
