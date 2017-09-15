@@ -173,8 +173,8 @@ class RRsetList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
     def get_queryset(self):
-        rrsets = RRset.objects.filter(domain__owner=self.request.user.pk,
-                                      domain__name=self.kwargs['name'])
+        name = self.kwargs['name']
+        rrsets = self.request.user.domains.get(name=name).rrset_set
 
         for filter_field in ('subname', 'type'):
             value = self.request.query_params.get(filter_field)
@@ -199,8 +199,7 @@ class RRsetList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         # Associate RRset with proper domain
-        domain = Domain.objects.get(name=self.kwargs['name'],
-                                    owner=self.request.user.pk)
+        domain = self.request.user.domains.get(name=self.kwargs['name'])
         kwargs = {'domain': domain}
 
         # If this RRset is new and a subname has not been given, set it empty
@@ -288,7 +287,6 @@ class DynDNS12Update(APIView):
     renderer_classes = [StaticHTMLRenderer]
 
     def findDomain(self, request):
-
         def findDomainname(request):
             # 1. hostname parameter
             if 'hostname' in request.query_params and request.query_params['hostname'] != 'YES':
@@ -322,16 +320,12 @@ class DynDNS12Update(APIView):
 
             return None
 
-        domainname = findDomainname(request)
-        domain = None
+        name = findDomainname(request)
 
-        # load and check permissions
         try:
-            domain = Domain.objects.filter(owner=self.request.user.pk, name=domainname).all()[0]
-        except:
-            pass
-
-        return domain
+            return self.request.user.domains.get(name=name)
+        except Domain.DoesNotExist:
+            return None
 
     def findIP(self, request, params, version=4):
         if version == 4:
