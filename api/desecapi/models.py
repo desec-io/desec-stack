@@ -4,7 +4,7 @@ from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.utils import timezone
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, mixins
-import datetime
+import datetime, uuid
 from django.core.validators import MinValueValidator
 from rest_framework.authtoken.models import Token
 from collections import Counter
@@ -314,6 +314,7 @@ def validate_upper(value):
 
 
 class RRset(models.Model, mixins.SetterMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
