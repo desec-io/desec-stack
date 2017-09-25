@@ -182,6 +182,22 @@ class Domain(models.Model, mixins.SetterMixin):
         RR.objects.bulk_create(rrs)
 
     @transaction.atomic
+    def write_rrsets(self, rrsets):
+        q = models.Q()
+        for rrset, rrs in rrsets.items():
+            for rr in rrs:
+                if rr.rrset is not rrset:
+                    raise ValueError('RR has wrong parent RRset')
+            q |= models.Q(subname=rrset.subname) & models.Q(type=rrset.type)
+        RRset.objects.filter(domain=self).filter(q).delete()
+
+        RRset.objects.bulk_create([rrset for (rrset, rrs) in rrsets.items() if rrs])
+        RR.objects.bulk_create([rr for rrs in rrsets.values() for rr in rrs])
+
+        if not self.owner.captcha_required:
+            pdns.set_rrsets(self, rrsets)
+
+    @transaction.atomic
     def delete(self, *args, **kwargs):
         # Delete delegation for dynDNS domains (direct child of dedyn.io)
         subname, parent_pdns_id = self.pdns_id.split('.', 1)

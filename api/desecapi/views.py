@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain, User, RRset
+from desecapi.models import Domain, User, RRset, RR
 from desecapi.serializers import (
     DomainSerializer, RRsetSerializer, DonationSerializer)
 from rest_framework import generics
@@ -362,10 +362,11 @@ class DynDNS12Update(APIView):
 
         datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
 
+        rrsets = {}
         for type_, ip in datas.items():
-            rrset, _ = domain.rrset_set.update_or_create(subname='', type=type_,
-                                                         defaults={'ttl': 60})
-            rrset.set_rrs([ip] if ip is not None else [])
+            rrset = RRset(domain=domain, subname='', type=type_, ttl=60)
+            rrsets[rrset] = [RR(rrset=rrset, content=ip)] if ip is not None else []
+        domain.write_rrsets(rrsets)
 
         return Response('good')
 
