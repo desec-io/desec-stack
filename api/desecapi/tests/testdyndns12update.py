@@ -124,7 +124,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1', ipv6='::1338')
 
-    def testFritzBoxIPv6(self):
+    def testFritzBox(self):
         #/
         url = reverse('dyndns12update')
         response = self.client.get(url)
@@ -207,7 +207,7 @@ class DynDNS12UpdateTest(APITestCase):
         response = self.client.get(url, REMOTE_ADDR='10.5.5.7')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-    def testManualIPv6(self):
+    def testManual(self):
         #/update?username=foobar.dedyn.io&password=secret
         self.client.credentials(HTTP_AUTHORIZATION='')
         url = reverse('dyndns12update')
