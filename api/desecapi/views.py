@@ -337,8 +337,11 @@ class DynDNS12Update(APIView):
 
         # Check URL parameters
         for p in params:
-            if p in request.query_params and lookfor in request.query_params[p]:
-                return request.query_params[p]
+            if p in request.query_params:
+                if not len(request.query_params[p]):
+                    return None
+                if lookfor in request.query_params[p]:
+                    return request.query_params[p]
 
         # Check remote IP address
         client_ip = get_client_ip(request)
