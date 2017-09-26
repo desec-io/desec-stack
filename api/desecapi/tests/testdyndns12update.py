@@ -52,18 +52,19 @@ class DynDNS12UpdateTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.password)
         name = name or self.username
 
-        if ipv4 is not None:
-            url = reverse('rrset', args=(name, '', 'A',))
+        def verify_response(type_, ip):
+            url = reverse('rrset', args=(name, '', type_,))
             response = self.client.get(url)
-            self.assertEqual(response.data['records'][0], ipv4)
 
-        if ipv6 is not None:
-            url = reverse('rrset', args=(name, '', 'AAAA',))
-            response = self.client.get(url)
-            self.assertEqual(response.data['records'][0], ipv6)
+            if ip is not None:
+                self.assertEqual(response.data['records'][0], ip)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.data['ttl'], 60)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['ttl'], 60)
+        verify_response('A', ipv4)
+        verify_response('AAAA', ipv6)
 
         self.client.credentials(HTTP_AUTHORIZATION=old_credentials)
 
@@ -95,7 +96,7 @@ class DynDNS12UpdateTest(APITestCase):
                                    })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
-        self.assertIP(ipv6='::1337')
+        self.assertIP(ipv4='127.0.0.1', ipv6='::1337')
 
     def testDynDNS2UpdateDDClientIPv4Success(self):
         #/nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
@@ -121,7 +122,7 @@ class DynDNS12UpdateTest(APITestCase):
                                    })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
-        self.assertIP(ipv6='::1338')
+        self.assertIP(ipv4='127.0.0.1', ipv6='::1338')
 
     def testFritzBoxIPv6(self):
         #/
@@ -130,6 +131,20 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
+
+    def testUnsetIP(self):
+        url = reverse('dyndns12update')
+
+        def testVariant(params, **kwargs):
+            response = self.client.get(url, params)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data, 'good')
+            self.assertIP(**kwargs)
+
+        testVariant({'ipv6': '::1337'}, ipv4='127.0.0.1', ipv6='::1337')
+        testVariant({'ipv6': '::1337', 'myip': ''}, ipv4=None, ipv6='::1337')
+        testVariant({'ipv6': '', 'ip': '1.2.3.4'}, ipv4='1.2.3.4', ipv6=None)
+        testVariant({'ipv6': '', 'myipv4': ''}, ipv4=None, ipv6=None)
 
     def testIdentificationByUsernameDomainname(self):
         # To force identification by the provided username (which is the domain name)
