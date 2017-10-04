@@ -1,4 +1,4 @@
-FROM nginx:1.11-alpine
+FROM nginx:1.12-alpine
 
 # Add dependencies for our scripts
 RUN apk add --no-cache bash openssl
