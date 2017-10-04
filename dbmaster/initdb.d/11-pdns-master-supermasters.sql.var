@@ -1,3 +1,3 @@
 USE pdns;
 
-INSERT INTO supermasters SET ip="${DESECSTACK_IPV4_REAR_PREFIX16}.1.11", nameserver="ns1.desec.io";
+INSERT INTO supermasters SET ip="${DESECSTACK_IPV4_REAR_PREFIX16}.1.11", nameserver="ns1.desec.io", account="";
