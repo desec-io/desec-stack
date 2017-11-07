@@ -15,7 +15,6 @@ env:
    - DESECSTACK_DBAPI_PASSWORD_desec=9Fn33T5yGueeee
    - DESECSTACK_DB_PASSWORD_pdnslord=9Fn33T5yGulkjlskdf
    - DESECSTACK_DB_PASSWORD_pdnsmaster=9Fn33T5yGukjwelt
-   - DESECSTACK_DB_PASSWORD_poweradmin=9Fn33T5yGuiewhjtwie
    - DESECSTACK_DB_PASSWORD_ns1replication=9Fn33T5yGuejeje
    - DESECSTACK_DB_SUBJECT_ns1replication=9Fn33T5yGufacv
    - DESECSTACK_DB_PASSWORD_ns2replication=9Fn33T5yGulkjhetrlkjew
