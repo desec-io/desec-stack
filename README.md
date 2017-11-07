@@ -44,7 +44,6 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
-      - `DESECSTACK_DBLORD_PASSWORD_poweradmin`: mysql password for poweradmin (can write to nslord database! use for development only.)
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord
       - `DESECSTACK_NSLORD_CARBONSERVER`: pdns `carbon-server` setting on nslord (optional)
       - `DESECSTACK_NSLORD_CARBONOURNAME`: pdns `carbon-ourname` setting on nslord (optional)
