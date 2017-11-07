@@ -80,9 +80,9 @@ class UserSerializer(djoserSerializers.UserSerializer):
         )
 
 
-class UserRegistrationSerializer(djoserSerializers.UserRegistrationSerializer):
+class UserCreateSerializer(djoserSerializers.UserCreateSerializer):
 
-    class Meta(djoserSerializers.UserRegistrationSerializer.Meta):
+    class Meta(djoserSerializers.UserCreateSerializer.Meta):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
             'password',

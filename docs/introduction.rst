@@ -25,9 +25,9 @@ User management is handled via Django's djoser library.  For usage, please
 check the `djoser endpoint documentation`_.
 
 .. _djoser endpoint documentation:
-    https://djoser.readthedocs.io/en/latest/endpoints.html
+    https://djoser.readthedocs.io/en/latest/getting_started.html#available-endpoints
 
 Most operations require authentication of the domain owner using a token that
-is returned by djoser's ``login/`` endpoint.  To authenticate, this token is
-transmitted via the HTTP ``Authorization`` header, as shown in the examples in
-this document.
+is returned by djoser's ``token/create/`` endpoint.  To authenticate, this
+token is transmitted via the HTTP ``Authorization`` header, as shown in the
+examples in this document.

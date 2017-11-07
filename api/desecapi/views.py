@@ -418,9 +418,9 @@ class DonationList(generics.CreateAPIView):
         sendDonationEmails(obj)
 
 
-class RegistrationView(views.RegistrationView):
+class UserCreateView(views.UserCreateView):
     """
-    Extends the djoser RegistrationView to record the remote IP address of any registration.
+    Extends the djoser UserCreateView to record the remote IP address of any registration.
     """
 
     def create(self, request, *args, **kwargs):
@@ -447,7 +447,7 @@ class RegistrationView(views.RegistrationView):
             )
 
         user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
-        if captcha:
+        if user.captcha_required:
             send_account_lock_email(self.request, user)
         elif not user.dyn:
             context = {'token': user.get_token()}
