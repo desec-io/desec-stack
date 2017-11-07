@@ -1,5 +1,4 @@
 from django.conf.urls import include, url
-from django.contrib import admin
 from desecapi.views import *
 from rest_framework.urlpatterns import format_suffix_patterns
 from desecapi import views
@@ -22,7 +21,8 @@ apiurls = [
 apiurls = format_suffix_patterns(apiurls)
 
 urlpatterns = [
-   url(r'^api/v1/auth/register/$', RegistrationView.as_view(), name='register'),
-   url(r'^api/v1/auth/', include('djoser.urls.authtoken')),
-   url(r'^api/v1/', include(apiurls)),
+    url(r'^api/v1/auth/users/create/$', UserCreateView.as_view(), name='register'),
+    url(r'^api/v1/auth/', include('djoser.urls')),
+    url(r'^api/v1/auth/', include('djoser.urls.authtoken')),
+    url(r'^api/v1/', include(apiurls)),
 ]

@@ -118,7 +118,7 @@ DJOSER = {
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
         'user': 'desecapi.serializers.UserSerializer',
-        'user_registration': 'desecapi.serializers.UserRegistrationSerializer',
+        'user_create': 'desecapi.serializers.UserCreateSerializer',
     },
 }
 
