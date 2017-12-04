@@ -209,9 +209,34 @@ class Domain(models.Model, mixins.SetterMixin):
         # Lock RRsets
         RRset.objects.filter(q_update | q_delete, domain=self).select_for_update()
 
-        # Clear or delete RRsets
+        # Figure out which RRsets are unchanged and can be excluded
+        exclude_from_update = []
         qs_update = RRset.objects.filter(q_update, domain=self)
-        RR.objects.filter(rrset__in=qs_update).delete()
+        for rrset_old in qs_update.prefetch_related('records').all():
+            rrset_new = rrsets_index[(rrset_old.subname, rrset_old.type)]
+            if rrset_old.ttl != rrset_new.ttl:
+                continue
+            rrs_new = {rr.content for rr in rrsets[rrset_new]}
+            rrs_old = {rr.content for rr in rrset_old.records.all()}
+            if rrs_new != rrs_old:
+                continue
+            # Old and new contents do not differ, so we can skip this RRset
+            del rrsets[rrset_new]
+            exclude_from_update.append(rrset_old)
+
+        # Do not process new RRsets that are empty (and did not exist before)
+        # This is to avoid unnecessary pdns requests like (A: ...; AAAA: None)
+        qs_delete = RRset.objects.filter(q_delete, domain=self)
+        qs_delete_values = qs_delete.values_list('subname', 'type')
+        # We modify the rrsets dictionary and thus loop over a copy of it
+        for rrset, rrs in list(rrsets.items()):
+            if rrs or (rrset.subname, rrset.type) in qs_delete_values:
+                continue
+            # RRset up for deletion does not exist
+            del rrsets[rrset]
+
+        # Clear or delete RRsets
+        RR.objects.filter(rrset__in=qs_update).exclude(rrset__in=exclude_from_update).delete()
         RRset.objects.filter(q_delete, domain=self).delete()
 
         # Prepare and save new RRset contents
