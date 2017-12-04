@@ -183,18 +183,54 @@ class Domain(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def write_rrsets(self, rrsets):
-        q = models.Q()
-        for rrset, rrs in rrsets.items():
-            for rr in rrs:
-                if rr.rrset is not rrset:
-                    raise ValueError('RR has wrong parent RRset')
-            q |= models.Q(subname=rrset.subname) & models.Q(type=rrset.type)
-        RRset.objects.filter(domain=self).filter(q).delete()
+        # Always-false Q object: https://stackoverflow.com/a/35894246/6867099
+        rrsets_index = {}
+        q_update = models.Q(pk__isnull=True)
+        q_delete = models.Q(pk__isnull=True)
 
-        RRset.objects.bulk_create([rrset for (rrset, rrs) in rrsets.items() if rrs])
+        # Determine which RRsets need to be updated or deleted
+        for rrset, rrs in rrsets.items():
+            if rrset.domain is not self:
+                raise ValueError('RRset has wrong domain')
+            if (rrset.subname, rrset.type) in rrsets_index:
+                raise ValueError('RRset repeated with same subname and type')
+            if not all(rr.rrset is rrset for rr in rrs):
+                raise ValueError('RR has wrong parent RRset')
+
+            # Book-keeping
+            rrsets_index[(rrset.subname, rrset.type)] = rrset
+
+            q = models.Q(subname=rrset.subname) & models.Q(type=rrset.type)
+            if rrs:
+                q_update |= q
+            else:
+                q_delete |= q
+
+        # Lock RRsets
+        RRset.objects.filter(q_update | q_delete, domain=self).select_for_update()
+
+        # Clear or delete RRsets
+        qs_update = RRset.objects.filter(q_update, domain=self)
+        RR.objects.filter(rrset__in=qs_update).delete()
+        RRset.objects.filter(q_delete, domain=self).delete()
+
+        # Prepare and save new RRset contents
+        # We modify the rrsets dictionary and thus loop over a copy of it
+        for rrset, rrs in list(rrsets.items()):
+            if not rrs:
+                continue
+            # (Create and) get correct RRset and update dictionary accordingly
+            del rrsets[rrset]
+            (rrset, _) = RRset.objects.get_or_create(domain=self,
+                                                     subname=rrset.subname,
+                                                     type=rrset.type,
+                                                     ttl=rrset.ttl)
+            rrsets[rrset] = [RR(rrset=rrset, content=rr.content) for rr in rrs]
+
         RR.objects.bulk_create([rr for rrs in rrsets.values() for rr in rrs])
 
-        if not self.owner.captcha_required:
+        # Send changed RRsets to pdns
+        if rrsets and not self.owner.captcha_required:
             pdns.set_rrsets(self, rrsets)
 
     @transaction.atomic
