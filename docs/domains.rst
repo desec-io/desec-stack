@@ -41,7 +41,9 @@ Field details:
     Array with DNSSEC key information.  Each entry contains ``DNSKEY`` and
     ``DS`` record contents (the latter being computed from the former), and
     some extra information.  For delegation of DNSSEC-secured domains, the
-    domain registry needs to publish these ``DS`` records.
+    parent domain needs to publish these ``DS`` records.  (This usually
+    involves telling your registrar/registry about those records, and they
+    will publish them for you.)
 
     Notes:
 
