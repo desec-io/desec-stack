@@ -7,15 +7,15 @@ CREATE TABLE domains (
   last_check            INT DEFAULT NULL,
   type                  VARCHAR(6) NOT NULL,
   notified_serial       INT DEFAULT NULL,
-  account               VARCHAR(40) DEFAULT NULL,
+  account               VARCHAR(40) CHARACTER SET 'utf8' DEFAULT NULL,
   PRIMARY KEY (id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE UNIQUE INDEX name_index ON domains(name);
 
 
 CREATE TABLE records (
-  id                    INT AUTO_INCREMENT,
+  id                    BIGINT AUTO_INCREMENT,
   domain_id             INT DEFAULT NULL,
   name                  VARCHAR(255) DEFAULT NULL,
   type                  VARCHAR(10) DEFAULT NULL,
@@ -27,19 +27,19 @@ CREATE TABLE records (
   ordername             VARCHAR(255) BINARY DEFAULT NULL,
   auth                  TINYINT(1) DEFAULT 1,
   PRIMARY KEY (id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE INDEX nametype_index ON records(name,type);
 CREATE INDEX domain_id ON records(domain_id);
-CREATE INDEX recordorder ON records (domain_id, ordername);
+CREATE INDEX ordername ON records (ordername);
 
 
 CREATE TABLE supermasters (
   ip                    VARCHAR(64) NOT NULL,
   nameserver            VARCHAR(255) NOT NULL,
-  account               VARCHAR(40) NOT NULL,
+  account               VARCHAR(40) CHARACTER SET 'utf8' NOT NULL,
   PRIMARY KEY (ip, nameserver)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 
 CREATE TABLE comments (
@@ -48,12 +48,11 @@ CREATE TABLE comments (
   name                  VARCHAR(255) NOT NULL,
   type                  VARCHAR(10) NOT NULL,
   modified_at           INT NOT NULL,
-  account               VARCHAR(40) NOT NULL,
-  comment               VARCHAR(64000) NOT NULL,
+  account               VARCHAR(40) CHARACTER SET 'utf8' DEFAULT NULL,
+  comment               TEXT CHARACTER SET 'utf8' NOT NULL,
   PRIMARY KEY (id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
-CREATE INDEX comments_domain_id_idx ON comments (domain_id);
 CREATE INDEX comments_name_type_idx ON comments (name, type);
 CREATE INDEX comments_order_idx ON comments (domain_id, modified_at);
 
@@ -64,7 +63,7 @@ CREATE TABLE domainmetadata (
   kind                  VARCHAR(32),
   content               TEXT,
   PRIMARY KEY (id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE INDEX domainmetadata_idx ON domainmetadata (domain_id, kind);
 
@@ -76,7 +75,7 @@ CREATE TABLE cryptokeys (
   active                BOOL,
   content               TEXT,
   PRIMARY KEY(id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE INDEX domainidindex ON cryptokeys(domain_id);
 
@@ -87,7 +86,6 @@ CREATE TABLE tsigkeys (
   algorithm             VARCHAR(50),
   secret                VARCHAR(255),
   PRIMARY KEY (id)
-) Engine=InnoDB DEFAULT CHARSET=latin1;
+) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
-
