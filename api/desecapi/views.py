@@ -364,12 +364,9 @@ class DynDNS12Update(APIView):
             raise Http404
 
         datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
-
-        rrsets = {}
-        for type_, ip in datas.items():
-            rrset = RRset(domain=domain, subname='', type=type_, ttl=60)
-            rrsets[rrset] = [RR(rrset=rrset, content=ip)] if ip is not None else []
-        domain.write_rrsets(rrsets)
+        domain.write_rrsets([{'subname': '', 'type': type_, 'ttl': 60,
+                              'contents': [ip] if ip is not None else []}
+                             for type_, ip in datas.items()])
 
         return Response('good')
 
