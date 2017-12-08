@@ -379,6 +379,26 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
+    def testCantDeleteOwnRRsetWhileAccountIsLocked(self):
+        self.owner.captcha_required = True
+        self.owner.save()
+
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+
+        # Try PATCH with empty records
+        data = {'records': []}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Try DELETE
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def testPostCausesPdnsAPICall(self):
         httpretty.enable()
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
