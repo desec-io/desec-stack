@@ -137,6 +137,9 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
     def delete(self, request, *args, **kwargs):
+        if request.user.captcha_required:
+            detail = "You cannot delete RRset while your account is locked."
+            raise PermissionDenied(detail)
         try:
             super().delete(request, *args, **kwargs)
         except Http404:

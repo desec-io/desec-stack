@@ -433,6 +433,7 @@ class RRset(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
+        assert not self.domain.owner.captcha_required
         super().delete(*args, **kwargs)
         pdns.set_rrset(self)
         self._dirties = {}
