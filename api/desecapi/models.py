@@ -181,8 +181,17 @@ class Domain(models.Model, mixins.SetterMixin):
         RRset.objects.bulk_create(rrsets)
         RR.objects.bulk_create(rrs)
 
+    def write_rrsets(self, datas):
+        rrsets = {}
+        for data in datas:
+            rrset = RRset(domain=self, subname=data['subname'],
+                          type=data['type'], ttl=data['ttl'])
+            rrsets[rrset] = [RR(rrset=rrset, content=content)
+                             for content in data['contents']]
+        self._write_rrsets(rrsets)
+
     @transaction.atomic
-    def write_rrsets(self, rrsets):
+    def _write_rrsets(self, rrsets):
         # Always-false Q object: https://stackoverflow.com/a/35894246/6867099
         rrsets_index = {}
         q_update = models.Q(pk__isnull=True)
@@ -271,6 +280,7 @@ class Domain(models.Model, mixins.SetterMixin):
                 rrsets = parent.rrset_set.filter(subname=subname,
                                                  type__in=['NS', 'DS']).all()
                 # Need to go RRset by RRset to trigger pdns sync
+                # TODO can optimize using write_rrsets()
                 for rrset in rrsets:
                     rrset.delete()
 
