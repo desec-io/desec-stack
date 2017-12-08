@@ -98,7 +98,7 @@ def get_keys(domain):
                 for key in r.json()
                 if key['active'] and key['keytype'] in ['csk', 'ksk']]
     except PdnsException as e:
-        if e.status_code == 404:
+        if e.status_code in [400, 404]:
             return []
         raise e
 
