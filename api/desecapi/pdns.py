@@ -1,5 +1,6 @@
 import requests
 import json
+import random
 from desecapi import settings
 from desecapi.exceptions import PdnsException
 
@@ -68,7 +69,7 @@ def _pdns_put(url):
     return r
 
 
-def create_zone(domain, nameservers, kind='NATIVE'):
+def create_zone(domain, nameservers):
     """
     Commands pdns to create a zone with the given name and nameservers.
     """
@@ -76,8 +77,9 @@ def create_zone(domain, nameservers, kind='NATIVE'):
     if not name.endswith('.'):
         name += '.'
 
-    payload = {'name': name, 'kind': kind.upper(), 'masters': [],
-               'nameservers': nameservers}
+    salt = '%016x' % random.randrange(16**16)
+    payload = {'name': name, 'kind': 'MASTER', 'dnssec': True,
+               'nsec3param': '1 0 300 %s' % salt, 'nameservers': nameservers}
     _pdns_post('/zones', payload)
 
 
