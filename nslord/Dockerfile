@@ -21,20 +21,11 @@ RUN set -ex \
 	&& apt-get install -y pdns-server pdns-backend-mysql \
 	# credentials management via envsubst
 	&& apt-get -y install gettext-base \
-	# Post-create cron hook
-	&& apt-get -y install cron curl jq mariadb-client \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN rm -rf /etc/powerdns/
 COPY conf/ /etc/powerdns/
-
-# Post-create cron hook
-COPY cronhook/ /root/cronhook/
-
-RUN crontab /root/cronhook/crontab
-RUN chmod +x /root/cronhook/start-cron.sh
-# / Post-create cron hook
 
 COPY ./entrypoint.sh /root/
 

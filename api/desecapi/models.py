@@ -93,7 +93,7 @@ class User(AbstractBaseUser):
     def unlock(self):
         self.captcha_required = False
         for domain in self.domains.all():
-            domain.sync_to_pdns()
+            domain.deploy(force=True)
         self.save()
 
 
@@ -133,38 +133,51 @@ class Domain(models.Model, mixins.SetterMixin):
 
         return name
 
-    def _create_pdns_zone(self):
-        """
-        Create zone on pdns.  This will also import any RRsets that may have
-        been created already.
-        """
-        pdns.create_zone(self, settings.DEFAULT_NS)
-
-        # Import RRsets that may have been created (e.g. during captcha lock).
-        # Don't perform if we do not know of any RRsets (it would delete all
-        # existing records from pdns).
-        rrsets = self.rrset_set.all()
-        if rrsets:
-            pdns.set_rrsets(self, rrsets)
-
-        # Make our RRsets consistent with pdns (specifically, NS may exist)
-        self.sync_from_pdns()
-
-    def sync_to_pdns(self):
+    def deploy(self, force=False):
         """
         Make sure that pdns gets the latest information about this domain/zone.
-        Re-Syncing is relatively expensive and should not happen routinely.
+        Re-syncing is relatively expensive and should not happen routinely.
         """
+
         # Try to create zone, in case it does not exist yet
         try:
-            self._create_pdns_zone()
+            pdns.create_zone(self, settings.DEFAULT_NS)
+            new = True
         except pdns.PdnsException as e:
-            if (e.status_code == 422 and e.detail.endswith(' already exists')):
-                # Zone exists, purge it by deleting all RRsets and sync
-                pdns.set_rrsets(self, [], notify=False)
-                pdns.set_rrsets(self, self.rrset_set.all())
+            if force and (e.status_code == 422 \
+                    and e.detail.endswith(' already exists')):
+                new = False
             else:
                 raise e
+
+        if new:
+            # Import RRsets that may have been created (e.g. during captcha lock).
+            # Don't perform if we do not know of any RRsets (it would delete all
+            # existing records from pdns).
+            rrsets = self.rrset_set.all()
+            if rrsets:
+                pdns.set_rrsets(self, rrsets)
+
+            # Make our RRsets consistent with pdns (specifically, NS may exist)
+            self.sync_from_pdns()
+
+            subname, parent_pdns_id = self.pdns_id.split('.', 1)
+            if parent_pdns_id == 'dedyn.io.':
+                try:
+                    parent = Domain.objects.get(name='dedyn.io')
+                except Domain.DoesNotExist:
+                    pass
+                else:
+                    parent.write_rrsets([
+                        {'subname': subname, 'type': 'NS', 'ttl': 3600,
+                         'contents': settings.DEFAULT_NS},
+                        {'subname': subname, 'type': 'DS', 'ttl': 60,
+                         'contents': [ds for k in self.keys for ds in k['ds']]}
+                    ])
+        else:
+            # Zone exists, purge it by deleting all RRsets and sync
+            pdns.set_rrsets(self, [], notify=False)
+            pdns.set_rrsets(self, self.rrset_set.all())
 
     @transaction.atomic
     def sync_from_pdns(self):
@@ -288,31 +301,14 @@ class Domain(models.Model, mixins.SetterMixin):
         super().delete(*args, **kwargs)
         pdns.delete_zone(self)
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
-        with transaction.atomic():
-            new = self.pk is None
-            self.clean()
-            super().save(*args, **kwargs)
+        new = self.pk is None
+        self.clean()
+        super().save(*args, **kwargs)
 
-            if new and not self.owner.captcha_required:
-                self._create_pdns_zone()
-
-        if not new:
-            return
-
-        # If the domain is a direct subdomain of dedyn.io, set NS records in
-        # parent. Don't notify slaves (we first have to enable DNSSEC).
-        subname, parent_pdns_id = self.pdns_id.split('.', 1)
-        if parent_pdns_id == 'dedyn.io.':
-            try:
-                parent = Domain.objects.get(name='dedyn.io')
-            except Domain.DoesNotExist:
-                return
-
-            with transaction.atomic():
-                rrset = parent.rrset_set.create(subname=subname, type='NS',
-                                                ttl=60)
-                rrset.set_rrs(settings.DEFAULT_NS, notify=False)
+        if new and not self.owner.captcha_required:
+            self.deploy()
 
     def __str__(self):
         """

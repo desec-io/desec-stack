@@ -1,5 +1,0 @@
-[client]
-host=dblord
-database=pdns
-user=pdns
-password=${DESECSTACK_DBLORD_PASSWORD_pdns}
