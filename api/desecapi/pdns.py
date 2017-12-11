@@ -82,6 +82,8 @@ def create_zone(domain, nameservers):
                'nsec3param': '1 0 300 %s' % salt, 'nameservers': nameservers}
     _pdns_post('/zones', payload)
 
+    notify_zone(domain)
+
 
 def delete_zone(domain):
     """
