@@ -136,6 +136,7 @@ class AuthenticatedDomainTests(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
                                body='[]',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         url = reverse('domain-list')
         data = {'name': name}
@@ -199,13 +200,15 @@ class AuthenticatedDomainTests(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
                                body='[]',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         url = reverse('domain-list')
         self.client.post(url, {'name': name})
 
-        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'POST')
-        self.assertTrue(name in httpretty.httpretty.latest_requests[-3].parsed_body)
-        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-3].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'POST')
+        self.assertTrue(name in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-4].parsed_body)
+        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PUT')
         self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'GET')
         self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + name + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
 
@@ -320,6 +323,9 @@ class AuthenticatedDynDomainTests(APITestCase):
                                    settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
                                    body='[]',
                                    content_type="application/json")
+            httpretty.register_uri(httpretty.PUT,
+                                   settings.NSLORD_PDNS_API + '/zones/' + name + './notify',
+                                   status=200)
 
             response = self.client.post(url, {'name': name})
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)

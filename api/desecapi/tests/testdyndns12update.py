@@ -159,6 +159,7 @@ class DynDNS12UpdateTest(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
                                body='[]',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
@@ -197,6 +198,7 @@ class DynDNS12UpdateTest(APITestCase):
                                settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
                                body='[]',
                                content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('domain-list')
