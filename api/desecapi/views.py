@@ -138,7 +138,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         if request.user.captcha_required:
-            detail = "You cannot delete RRset while your account is locked."
+            detail = "You cannot delete RRsets while your account is locked."
             raise PermissionDenied(detail)
         try:
             super().delete(request, *args, **kwargs)
