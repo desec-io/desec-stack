@@ -152,8 +152,6 @@ class Domain(models.Model, mixins.SetterMixin):
 
         if new:
             # Import RRsets that may have been created (e.g. during captcha lock).
-            # Don't perform if we do not know of any RRsets (it would delete all
-            # existing records from pdns).
             rrsets = self.rrset_set.all()
             if rrsets:
                 pdns.set_rrsets(self, rrsets)
@@ -175,8 +173,12 @@ class Domain(models.Model, mixins.SetterMixin):
                          'contents': [ds for k in self.keys for ds in k['ds']]}
                     ])
         else:
-            # Zone exists, purge it by deleting all RRsets and sync
-            pdns.set_rrsets(self, [], notify=False)
+            # Zone exists. For the case that pdns knows records that we do not
+            # (e.g. if a locked account has deleted an RRset), it is necessary
+            # to purge all records here. However, there is currently no way to
+            # do this through the pdns API (not to mention doing it atomically
+            # with setting the new RRsets). So for now, we have disabled RRset
+            # deletion for locked accounts.
             pdns.set_rrsets(self, self.rrset_set.all())
 
     @transaction.atomic
