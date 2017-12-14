@@ -63,4 +63,19 @@ chakram.setRequestHeader = function (header, value) {
     chakram.setRequestSettings(s);
 };
 
+chakram.resolve = function (name, type) {
+    var deferred = Q.defer();
+
+    resolver.resolve(name, type, function (error, records) {
+        if (error && error.code === dns.NODATA) {
+            deferred.resolve([]);
+        } else if (error) {
+            deferred.reject(error);
+        }
+        deferred.resolve(records);
+    });
+
+    return deferred.promise;
+};
+
 exports.chakram = chakram;
