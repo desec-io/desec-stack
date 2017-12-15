@@ -120,12 +120,13 @@ To create a new RRset, simply issue a ``POST`` request to the
 field is optional.
 
 Upon success, the response status code will be ``201 Created``, with the RRset
-contained in the response body.  If the ``records`` value was semantically
-invalid or an invalid ``type`` was provided, ``422 Unprocessable Entity`` is
-returned.  If the RRset could not be created for another reason (for example
-because another RRset with the same name and type exists already, or because
-not all required fields were provided), the API responds with ``400 Bad
-Request``.
+contained in the response body.  If another RRset with the same name and type
+exists already, the API responds with ``409 Conflict``.  If there is a
+syntactical error (e.g. not all required fields were provided or the type was
+not specified in uppercase), the API responds with ``400 Bad Request``.  If
+field values were semantically invalid (e.g. when you provide an unknown record
+type, or an `A` value that is not an IPv4 address), ``422 Unprocessable
+Entity`` is returned.
 
 Note that the values of ``type`` and ``subname`` as well as the ``records``
 items are strings, and as such the JSON specification requires them to be
@@ -246,9 +247,11 @@ fields.  Examples::
         Authorization:"Token {token}" ttl:=86400
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
-updated RRset in the reponse body.  If not all required fields were provided,
-the API responds with ``400 Bad Request``.  If the ``records`` value was
-semantically invalid, ``422 Unprocessable Entity`` is returned.  If the RRset
+updated RRset in the reponse body.  If there is a syntactical error (e.g. not
+all required fields were provided or the type was not specified in uppercase),
+the API responds with ``400 Bad Request``.  If field values were semantically
+invalid (e.g. when you provide an unknown record type, or an `A` value that is
+not an IPv4 address), ``422 Unprocessable Entity`` is returned.  If the RRset
 does not exist, ``404 Not Found`` is returned.
 
 

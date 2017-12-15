@@ -197,7 +197,10 @@ class RRsetList(generics.ListCreateAPIView):
             raise Http404
         except django.core.exceptions.ValidationError as e:
             ex = ValidationError(detail=e.message_dict)
-            ex.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+            all = e.message_dict.get('__all__')
+            if all is not None \
+                    and any(msg.endswith(' already exists.') for msg in all):
+                ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
     def perform_create(self, serializer):

@@ -159,6 +159,36 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def testCantPostTwiceRRsets(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['3.2.2.1'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+    def testCantPostFaultyRRsets(self):
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+
+        # New record without a value is a syntactical error --> 400
+        data = {'records': [], 'ttl': 60, 'type': 'TXT'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Lower-case type is a syntactical error --> 400
+        data = {'records': ['123456'], 'ttl': 60, 'type': 'txt'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Unknown type is a semantical error --> 422
+        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['123456'], 'ttl': 60, 'type': 'AA'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     def testCanGetOwnRRset(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
