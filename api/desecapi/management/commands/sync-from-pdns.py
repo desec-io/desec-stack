@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 self.stdout.write(' synced')
             except Exception as e:
                 if str(e).startswith('Could not find domain ') \
-                        and domain.owner.captcha_required:
+                        and domain.owner.locked:
                     self.stdout.write(' skipped')
                 else:
                     self.stdout.write(' failed')

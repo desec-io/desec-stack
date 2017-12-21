@@ -10,7 +10,7 @@ from rest_framework.authtoken.models import Token
 
 
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None, registration_remote_ip=None, captcha_required=False, dyn=False):
+    def create_user(self, email, password=None, registration_remote_ip=None, lock=False, dyn=False):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -21,7 +21,7 @@ class MyUserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
             registration_remote_ip=registration_remote_ip,
-            captcha_required=captcha_required,
+            locked=timezone.now() if lock else None,
             dyn=dyn,
         )
 
@@ -51,7 +51,7 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     registration_remote_ip = models.CharField(max_length=1024, blank=True)
-    captcha_required = models.BooleanField(default=False)
+    locked = models.DateTimeField(null=True,blank=True)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
     dyn = models.BooleanField(default=False)
@@ -91,7 +91,7 @@ class User(AbstractBaseUser):
         return self.is_admin
 
     def unlock(self):
-        self.captcha_required = False
+        self.locked = None
         for domain in self.domains.all():
             domain.deploy(force=True)
         self.save()
@@ -151,7 +151,7 @@ class Domain(models.Model, mixins.SetterMixin):
                 raise e
 
         if new:
-            # Import RRsets that may have been created (e.g. during captcha lock).
+            # Import RRsets that may have been created (e.g. during lock).
             rrsets = self.rrset_set.all()
             if rrsets:
                 pdns.set_rrsets(self, rrsets)
@@ -279,7 +279,7 @@ class Domain(models.Model, mixins.SetterMixin):
         RR.objects.bulk_create([rr for rrs in rrsets.values() for rr in rrs])
 
         # Send changed RRsets to pdns
-        if rrsets and not self.owner.captcha_required:
+        if rrsets and not self.owner.locked:
             pdns.set_rrsets(self, rrsets)
 
     @transaction.atomic
@@ -309,7 +309,7 @@ class Domain(models.Model, mixins.SetterMixin):
         self.clean()
         super().save(*args, **kwargs)
 
-        if new and not self.owner.captcha_required:
+        if new and not self.owner.locked:
             self.deploy()
 
     def __str__(self):
@@ -430,12 +430,12 @@ class RRset(models.Model, mixins.SetterMixin):
     def set_rrs(self, contents, sync=True, notify=True):
         self.records.all().delete()
         self.records.set([RR(content=x) for x in contents], bulk=False)
-        if sync and not self.domain.owner.captcha_required:
+        if sync and not self.domain.owner.locked:
             pdns.set_rrset(self, notify=notify)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        assert not self.domain.owner.captcha_required
+        assert not self.domain.owner.locked
         super().delete(*args, **kwargs)
         pdns.set_rrset(self)
         self._dirties = {}
