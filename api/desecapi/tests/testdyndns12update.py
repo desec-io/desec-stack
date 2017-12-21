@@ -6,6 +6,7 @@ import base64
 import httpretty
 from django.conf import settings
 from django.utils import timezone
+from desecapi.exceptions import PdnsException
 
 
 class DynDNS12UpdateTest(APITestCase):
@@ -256,9 +257,11 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertTrue('10.1.1.1' in httpretty.httpretty.latest_requests[-2].parsed_body)
 
     def testSuspendedUpdatesDomainCreation(self):
+        # Lock user
         self.owner.locked = timezone.now()
         self.owner.save()
 
+        # While in locked state, create a domain and set some records
         url = reverse('domain-list')
         newdomain = utils.generateDynDomainname()
 
@@ -281,7 +284,21 @@ class DynDNS12UpdateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIP(name=newdomain, ipv4='10.2.2.2')
 
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        # See what happens upon unlock if pdns knows this domain already
+        httpretty.register_uri(httpretty.POST,
+                               settings.NSLORD_PDNS_API + '/zones',
+                               body='{"error": "Domain \'' + newdomain + '.\' already exists"}',
+                               status=422)
+
+        with self.assertRaises(PdnsException) as cm:
+            self.owner.unlock()
+
+        self.assertEqual(str(cm.exception),
+                         "Domain '" + newdomain + ".' already exists")
+
+        # See what happens upon unlock if this domain is new to pdns
+        httpretty.register_uri(httpretty.POST,
+                               settings.NSLORD_PDNS_API + '/zones')
 
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
         httpretty.register_uri(httpretty.GET,
@@ -299,6 +316,8 @@ class DynDNS12UpdateTest(APITestCase):
 
         self.owner.unlock()
 
+        self.assertEqual(httpretty.httpretty.latest_requests[-5].method, 'POST')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones').endswith(httpretty.httpretty.latest_requests[-5].path))
         self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PATCH')
         self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.').endswith(httpretty.httpretty.latest_requests[-3].path))
         self.assertTrue('10.2.2.2' in httpretty.httpretty.latest_requests[-3].parsed_body)
