@@ -21,7 +21,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
 
-    def test_multiple_registration_captcha_required_same_ip_short_time(self):
+    def test_multiple_registration_locked_same_ip_short_time(self):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
@@ -32,7 +32,7 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen)
 
@@ -44,7 +44,7 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertEqual(user.captcha_required, True)
+        self.assertIsNotNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen + 1)
 
@@ -56,11 +56,11 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertEqual(user.captcha_required, True)
+        self.assertIsNotNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen + 2)
 
-    def test_multiple_registration_no_captcha_required_different_ip(self):
+    def test_multiple_registration_not_locked_different_ip(self):
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.8")
@@ -68,7 +68,7 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.8")
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
@@ -77,9 +77,9 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.9")
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
-    def test_multiple_registration_no_captcha_required_same_ip_long_time(self):
+    def test_multiple_registration_not_locked_same_ip_long_time(self):
         url = reverse('register')
         data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
         response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
@@ -87,7 +87,7 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.10")
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
         #fake registration time
         user.created = timezone.now() - timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
@@ -100,7 +100,7 @@ class RegistrationTest(APITestCase):
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
         self.assertEqual(user.registration_remote_ip, "1.3.3.10")
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
     def test_send_captcha_email_manually(self):
         outboxlen = len(mail.outbox)
@@ -115,7 +115,7 @@ class RegistrationTest(APITestCase):
 
         self.assertEqual(len(mail.outbox), outboxlen+1)
 
-    def test_multiple_registration_captcha_required_same_email_host(self):
+    def test_multiple_registration_locked_same_email_host(self):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
@@ -129,7 +129,7 @@ class RegistrationTest(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
             self.assertEqual(user.email, data['email'])
-            self.assertEqual(user.captcha_required, False)
+            self.assertIsNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen)
 
@@ -143,11 +143,11 @@ class RegistrationTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.captcha_required, True)
+        self.assertIsNotNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen + 1)
 
-    def test_multiple_registration_no_captcha_required_same_email_host_long_time(self):
+    def test_multiple_registration_not_locked_same_email_host_long_time(self):
         outboxlen = len(mail.outbox)
 
         url = reverse('register')
@@ -161,7 +161,7 @@ class RegistrationTest(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             user = models.User.objects.get(email=data['email'])
             self.assertEqual(user.email, data['email'])
-            self.assertEqual(user.captcha_required, False)
+            self.assertIsNone(user.locked)
 
             #fake registration time
             user = models.User.objects.get(email=data['email'])
@@ -180,7 +180,7 @@ class RegistrationTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = models.User.objects.get(email=data['email'])
         self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.captcha_required, False)
+        self.assertIsNone(user.locked)
 
         self.assertEqual(len(mail.outbox), outboxlen)
 

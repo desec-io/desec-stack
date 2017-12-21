@@ -137,7 +137,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
     def delete(self, request, *args, **kwargs):
-        if request.user.captcha_required:
+        if request.user.locked:
             detail = "You cannot delete RRsets while your account is locked."
             raise PermissionDenied(detail)
         try:
@@ -434,7 +434,7 @@ class UserCreateView(views.UserCreateView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, remote_ip):
-        captcha = (
+        lock = (
                 ipaddress.ip_address(remote_ip) not in ipaddress.IPv6Network(os.environ['DESECSTACK_IPV6_SUBNET'])
                 and (
                     User.objects.filter(
@@ -449,8 +449,8 @@ class UserCreateView(views.UserCreateView):
                 )
             )
 
-        user = serializer.save(registration_remote_ip=remote_ip, captcha_required=captcha)
-        if user.captcha_required:
+        user = serializer.save(registration_remote_ip=remote_ip, lock=lock)
+        if user.locked:
             send_account_lock_email(self.request, user)
         elif not user.dyn:
             context = {'token': user.get_token()}

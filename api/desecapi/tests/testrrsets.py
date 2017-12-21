@@ -6,6 +6,7 @@ import httpretty
 from django.conf import settings
 import json
 from django.core.management import call_command
+from django.utils import timezone
 
 
 class UnauthenticatedDomainTests(APITestCase):
@@ -410,7 +411,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def testCantDeleteOwnRRsetWhileAccountIsLocked(self):
-        self.owner.captcha_required = True
+        self.owner.locked = timezone.now()
         self.owner.save()
 
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
