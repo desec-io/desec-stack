@@ -91,9 +91,10 @@ class User(AbstractBaseUser):
         return self.is_admin
 
     def unlock(self):
-        self.locked = None
+        # self.locked is used by domain.sync_to_pdns(), so call that first
         for domain in self.domains.all():
-            domain.deploy(force=True)
+            domain.sync_to_pdns()
+        self.locked = None
         self.save()
 
 
@@ -133,24 +134,29 @@ class Domain(models.Model, mixins.SetterMixin):
 
         return name
 
-    def deploy(self, force=False):
+    def sync_to_pdns(self):
         """
         Make sure that pdns gets the latest information about this domain/zone.
         Re-syncing is relatively expensive and should not happen routinely.
+
+        This method should only be called for new domains or on user unlocking.
+        For unlocked users, it assumes that the domain is a new one.
         """
 
-        # Try to create zone, in case it does not exist yet
-        try:
-            pdns.create_zone(self, settings.DEFAULT_NS)
-            new = True
-        except pdns.PdnsException as e:
-            if force and (e.status_code == 422 \
-                    and e.detail.endswith(' already exists')):
-                new = False
-            else:
-                raise e
+        # Determine if this domain is expected to be new on pdns. This is the
+        # case if the user is not locked (by assumption) or if the domain was
+        # created after the user was locked. (If the user had this domain
+        # before locking, it is not new on pdns.)
+        new = self.owner.locked is None or self.owner.locked < self.created
 
         if new:
+            # Create zone
+            # Throws exception if pdns already knows this zone for some reason
+            # which means that it is not ours and we should not mess with it.
+            # We escalate the exception to let the next level deal with the
+            # response.
+            pdns.create_zone(self, settings.DEFAULT_NS)
+
             # Import RRsets that may have been created (e.g. during lock).
             rrsets = self.rrset_set.all()
             if rrsets:
@@ -159,6 +165,7 @@ class Domain(models.Model, mixins.SetterMixin):
             # Make our RRsets consistent with pdns (specifically, NS may exist)
             self.sync_from_pdns()
 
+            # For dedyn.io domains, propagate NS and DS delegation RRsets
             subname, parent_pdns_id = self.pdns_id.split('.', 1)
             if parent_pdns_id == 'dedyn.io.':
                 try:
@@ -179,7 +186,9 @@ class Domain(models.Model, mixins.SetterMixin):
             # do this through the pdns API (not to mention doing it atomically
             # with setting the new RRsets). So for now, we have disabled RRset
             # deletion for locked accounts.
-            pdns.set_rrsets(self, self.rrset_set.all())
+            rrsets = self.rrset_set.all()
+            if rrsets:
+                pdns.set_rrsets(self, rrsets)
 
     @transaction.atomic
     def sync_from_pdns(self):
@@ -310,7 +319,7 @@ class Domain(models.Model, mixins.SetterMixin):
         super().save(*args, **kwargs)
 
         if new and not self.owner.locked:
-            self.deploy()
+            self.sync_to_pdns()
 
     def __str__(self):
         """
@@ -435,6 +444,8 @@ class RRset(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
+        # For locked users, we can't easily sync deleted RRsets to pdns later,
+        # so let's forbid it for now.
         assert not self.domain.owner.locked
         super().delete(*args, **kwargs)
         pdns.set_rrset(self)
