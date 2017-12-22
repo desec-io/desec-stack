@@ -16,7 +16,7 @@ RUN echo 'deb [arch=amd64] http://repo.powerdns.com/debian stretch-auth-41 main'
       >> /etc/apt/preferences.d/pdns
 
 RUN set -ex \
-	&& apt-key adv --keyserver hkp://keys.gnupg.net --recv 0x1B0C6205FD380FBB \
+	&& apt-key adv --keyserver keyserver.ubuntu.com --recv 0x1B0C6205FD380FBB \
 	&& apt-get update \
 	&& apt-get install -y pdns-server pdns-backend-mysql \
 	# credentials management via envsubst
