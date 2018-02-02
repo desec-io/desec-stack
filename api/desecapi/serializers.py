@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from desecapi.models import Domain, Donation, User, RR, RRset
 from djoser import serializers as djoserSerializers
 from django.db import transaction
@@ -22,8 +23,15 @@ class RRsetSerializer(serializers.ModelSerializer):
         fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
 
     def _set_records(self, instance):
-        records_data = [{'content': x}
-                        for x in self.context['request'].data['records']]
+        # Although serializer fields have required=True by default, that
+        # setting does not work for the SerializerMethodField "records".
+        # Thus, let's wrap our read access to include the validation check.
+        records = self.context['request'].data.get('records')
+        if records is None:
+            raise ValidationError({'records': 'This field is required.'},
+                                  code='required')
+
+        records_data = [{'content': x} for x in records]
         rr_serializer = RRSerializer(data=records_data, many=True,
                                      allow_empty=False)
         if not rr_serializer.is_valid():
@@ -42,8 +50,10 @@ class RRsetSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
-        instance.records.all().delete()
-        self._set_records(instance)
+        # Update records only if required (PUT) or provided (PATCH)
+        if not self.partial or 'records' in self.context['request'].data:
+            instance.records.all().delete()
+            self._set_records(instance)
         return instance
 
     def get_records(self, obj):

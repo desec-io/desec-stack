@@ -147,6 +147,10 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+        data = {'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
             url = reverse('rrsets', args=(self.ownedDomains[1].name,))
@@ -275,7 +279,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
-        data = {'records': ['2.2.3.4'], 'ttl': 30, 'type': 'A'}
+        data = {'records': ['2.2.3.4'], 'ttl': 30}
         response = self.client.put(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -284,12 +288,23 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['records'][0], '2.2.3.4')
         self.assertEqual(response.data['ttl'], 30)
 
+        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        data = {'records': ['3.2.3.4']}
+        response = self.client.put(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        data = {'ttl': 37}
+        response = self.client.put(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def testCanPatchOwnRRset(self):
         url = reverse('rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        # Change records and TTL
         url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 32}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
@@ -300,20 +315,28 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['records'][0], '3.2.3.4')
         self.assertEqual(response.data['ttl'], 32)
 
-    def testCantPatchOForeignRRset(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrsets', args=(self.otherDomains[0].name,))
-        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
-        response = self.client.post(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
-        data = {'records': ['3.2.3.4'], 'ttl': 32}
+        # Change records alone
+        data = {'records': ['5.2.3.4']}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['records'][0], '5.2.3.4')
+        self.assertEqual(response.data['ttl'], 32)
 
-    def testCantPutForeignRRset(self):
+        # Change TTL alone
+        data = {'ttl': 37}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['records'][0], '5.2.3.4')
+        self.assertEqual(response.data['ttl'], 37)
+
+        # Change nothing
+        data = {}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['records'][0], '5.2.3.4')
+        self.assertEqual(response.data['ttl'], 37)
+
+    def testCantChangeForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
         url = reverse('rrsets', args=(self.otherDomains[0].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
@@ -323,7 +346,11 @@ class AuthenticatedRRsetTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 30, 'type': 'A'}
+
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        response = self.client.put(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantChangeEssentialProperties(self):
@@ -332,15 +359,19 @@ class AuthenticatedRRsetTests(APITestCase):
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # Changing the type is expected to cause an error
+        # Changing the subname is expected to cause an error
         url = reverse('rrset', args=(self.ownedDomains[1].name, 'test1', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 120, 'subname': 'test2'}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        response = self.client.put(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-        # Changing the subname is expected to cause an error
+        # Changing the type is expected to cause an error
         data = {'records': ['3.2.3.4'], 'ttl': 120, 'type': 'TXT'}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        response = self.client.put(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
         # Check that nothing changed
