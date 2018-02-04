@@ -5,6 +5,7 @@ from .utils import utils
 import base64
 import httpretty
 from django.conf import settings
+import json
 from django.utils import timezone
 from desecapi.exceptions import PdnsException
 
@@ -32,6 +33,10 @@ class DynDNS12UpdateTest(APITestCase):
 
         httpretty.enable()
         httpretty.HTTPretty.allow_net_connect = False
+        self.httpretty_reset_uris()
+
+    def httpretty_reset_uris(self):
+        httpretty.reset()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
         httpretty.register_uri(httpretty.GET,
@@ -219,6 +224,28 @@ class DynDNS12UpdateTest(APITestCase):
                                        'username': self.username,
                                        'password': self.token,
                                    })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='127.0.0.1')
+
+    def testDeviantTTL(self):
+        # The dynamic update will try to set the TTL to 60. Here, we create
+        # a record with a different TTL beforehand and then make sure that
+        # updates still work properly.
+        url = reverse('rrsets', args=(self.domain,))
+        data = {'records': ['127.0.0.1'], 'ttl': 3600, 'type': 'A'}
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, json.dumps(data),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.httpretty_reset_uris()
+
+        url = reverse('dyndns12update')
+        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
+        response = self.client.get(url)
+        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')

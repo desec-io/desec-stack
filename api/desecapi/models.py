@@ -216,80 +216,87 @@ class Domain(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def _write_rrsets(self, rrsets):
+        # Base queryset for all RRset of the current domain
+        rrset_qs = RRset.objects.filter(domain=self)
+
+        # Set to check RRset uniqueness
+        rrsets_seen = set()
+
+        # To-do list for non-empty RRsets, indexed by (subname, type)
+        rrsets_meaty_todo = {}
+
+        # Dictionary of RR lists to send to pdns, indexed by their RRset
+        rrsets_to_write = {}
+
         # Always-false Q object: https://stackoverflow.com/a/35894246/6867099
-        rrsets_index = {}
-        q_update = models.Q(pk__isnull=True)
-        q_delete = models.Q(pk__isnull=True)
+        q_meaty = models.Q(pk__isnull=True)
+        q_empty = models.Q(pk__isnull=True)
 
         # Determine which RRsets need to be updated or deleted
         for rrset, rrs in rrsets.items():
             if rrset.domain is not self:
                 raise ValueError('RRset has wrong domain')
-            if (rrset.subname, rrset.type) in rrsets_index:
+            if (rrset.subname, rrset.type) in rrsets_seen:
                 raise ValueError('RRset repeated with same subname and type')
             if not all(rr.rrset is rrset for rr in rrs):
                 raise ValueError('RR has wrong parent RRset')
 
-            # Book-keeping
-            rrsets_index[(rrset.subname, rrset.type)] = rrset
+            rrsets_seen.add((rrset.subname, rrset.type))
 
-            q = models.Q(subname=rrset.subname) & models.Q(type=rrset.type)
+            q = models.Q(subname=rrset.subname, type=rrset.type)
             if rrs:
-                q_update |= q
+                rrsets_meaty_todo[(rrset.subname, rrset.type)] = rrset
+                q_meaty |= q
             else:
-                q_delete |= q
+                rrsets_to_write[rrset] = []
+                q_empty |= q
 
-        # Lock RRsets
-        RRset.objects.filter(q_update | q_delete, domain=self).select_for_update()
+        # Construct querysets representing RRsets that do (not) have RR
+        # contents and lock them
+        qs_meaty = rrset_qs.filter(q_meaty).select_for_update()
+        qs_empty = rrset_qs.filter(q_empty).select_for_update()
 
-        # Figure out which RRsets are unchanged and can be excluded
-        exclude_from_update = []
-        qs_update = RRset.objects.filter(q_update, domain=self)
-        for rrset_old in qs_update.prefetch_related('records').all():
-            rrset_new = rrsets_index[(rrset_old.subname, rrset_old.type)]
-            if rrset_old.ttl != rrset_new.ttl:
-                continue
-            rrs_new = {rr.content for rr in rrsets[rrset_new]}
-            rrs_old = {rr.content for rr in rrset_old.records.all()}
-            if rrs_new != rrs_old:
-                continue
-            # Old and new contents do not differ, so we can skip this RRset
-            del rrsets[rrset_new]
-            exclude_from_update.append(rrset_old)
+        # For existing RRsets, execute TTL updates and/or mark for RR update
+        rrsets_same_rrs = []
+        for rrset in qs_meaty.all():
+            rrset_temp = rrsets_meaty_todo.pop((rrset.subname, rrset.type))
+            rrs_temp = {rr.content for rr in rrsets[rrset_temp]}
+            rrs = {rr.content for rr in rrset.records.all()}
 
-        # Do not process new RRsets that are empty (and did not exist before)
-        # This is to avoid unnecessary pdns requests like (A: ...; AAAA: None)
-        qs_delete = RRset.objects.filter(q_delete, domain=self)
-        qs_delete_values = qs_delete.values_list('subname', 'type')
-        # We modify the rrsets dictionary and thus loop over a copy of it
-        for rrset, rrs in list(rrsets.items()):
-            if rrs or (rrset.subname, rrset.type) in qs_delete_values:
-                continue
-            # RRset up for deletion does not exist
-            del rrsets[rrset]
+            changed_ttl = (rrset_temp.ttl != rrset.ttl)
+            changed_rrs = (rrs_temp != rrs)
 
-        # Clear or delete RRsets
-        RR.objects.filter(rrset__in=qs_update).exclude(rrset__in=exclude_from_update).delete()
-        RRset.objects.filter(q_delete, domain=self).delete()
+            if changed_ttl:
+                rrset.ttl = rrset_temp.ttl
+                rrset.save()
+            if changed_ttl or changed_rrs:
+                rrsets_to_write[rrset] = [RR(rrset=rrset, content=rr_content)
+                                          for rr_content in rrs_temp]
+            if not changed_rrs:
+                rrsets_same_rrs.append(rrset)
 
-        # Prepare and save new RRset contents
-        # We modify the rrsets dictionary and thus loop over a copy of it
-        for rrset, rrs in list(rrsets.items()):
-            if not rrs:
-                continue
-            # (Create and) get correct RRset and update dictionary accordingly
-            del rrsets[rrset]
-            (rrset, _) = RRset.objects.get_or_create(domain=self,
-                                                     subname=rrset.subname,
-                                                     type=rrset.type,
-                                                     ttl=rrset.ttl)
-            rrsets[rrset] = [RR(rrset=rrset, content=rr.content) for rr in rrs]
+        # At this point, rrsets_meaty_todo contains to new, non-empty RRsets
+        # only. Let's save them. This does not save the associated RRs yet.
+        for key, rrset in list(rrsets_meaty_todo.items()):
+            rrset.save()
+            rrsets_to_write[rrset] = rrsets[rrset]
 
-        RR.objects.bulk_create([rr for rrs in rrsets.values() for rr in rrs])
+        # Repeat lock to make sure new RRsets are also locked
+        rrset_qs.filter(q_meaty).select_for_update()
 
-        # Send changed RRsets to pdns
-        if rrsets and not self.owner.locked:
-            pdns.set_rrsets(self, rrsets)
+        # Delete empty RRsets
+        qs_empty.delete()
+
+        # Update contents of modified RRsets
+        RR.objects.filter(rrset__in=qs_meaty).exclude(rrset__in=rrsets_same_rrs).delete()
+        RR.objects.bulk_create([rr
+                                for (rrset, rrs) in rrsets_to_write.items()
+                                for rr in rrs
+                                if rrset not in rrsets_same_rrs])
+
+        # Send RRsets to pdns
+        if rrsets_to_write and not self.owner.locked:
+            pdns.set_rrsets(self, rrsets_to_write)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
@@ -456,6 +463,8 @@ class RRset(models.Model, mixins.SetterMixin):
         if self.created is None or 'ttl' in self.get_dirties():
             self.updated = timezone.now()
             self.full_clean()
+            # Tell Django to not attempt an update, although the pk is not None
+            kwargs['force_insert'] = (self.created is None)
             super().save(*args, **kwargs)
             self._dirties = {}
 
