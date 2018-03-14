@@ -79,7 +79,7 @@ def create_zone(domain, nameservers):
 
     salt = '%016x' % random.randrange(16**16)
     payload = {'name': name, 'kind': 'MASTER', 'dnssec': True,
-               'nsec3param': '1 0 300 %s' % salt, 'nameservers': nameservers}
+               'nsec3param': '1 0 127 %s' % salt, 'nameservers': nameservers}
     _pdns_post('/zones', payload)
 
     notify_zone(domain)
