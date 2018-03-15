@@ -143,6 +143,7 @@ EMAIL_HOST = os.environ['DESECSTACK_API_EMAIL_HOST']
 EMAIL_HOST_USER = os.environ['DESECSTACK_API_EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['DESECSTACK_API_EMAIL_HOST_PASSWORD']
 EMAIL_PORT = os.environ['DESECSTACK_API_EMAIL_PORT']
+EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'deSEC <support@desec.io>'
 ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK_API_ADMIN'].split()]
 
