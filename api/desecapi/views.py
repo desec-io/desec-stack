@@ -387,6 +387,7 @@ class DonationList(generics.CreateAPIView):
             context = {
                 'donation': donation,
                 'creditoridentifier': settings.SEPA['CREDITOR_ID'],
+                'creditorname': settings.SEPA['CREDITOR_NAME'],
                 'complete_iban': iban
             }
 

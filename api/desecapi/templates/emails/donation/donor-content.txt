@@ -9,7 +9,7 @@ We will debit {{ donation.amount }} € from your account within the next
 two weeks. Your mandate reference number is {{ donation.mref }}; our
 creditor identifier is {{ creditoridentifier }}.
 
-Please note that the payment is handled by "enit", which may be the name 
+Please note that the payment is handled by "{{ creditorname }}", which may be the name
 appearing on your bank statement.
 
 Again, thank you so much.
