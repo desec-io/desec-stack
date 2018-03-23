@@ -162,6 +162,7 @@ NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 # SEPA direct debit settings
 SEPA = {
     'CREDITOR_ID': os.environ['DESECSTACK_API_SEPA_CREDITOR_ID'],
+    'CREDITOR_NAME': os.environ['DESECSTACK_API_SEPA_CREDITOR_NAME'],
 }
 
 # recaptcha

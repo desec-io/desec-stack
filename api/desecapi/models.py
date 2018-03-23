@@ -366,7 +366,6 @@ class Donation(models.Model):
         self.iban = self.iban[:6] + "xxx" # do NOT save account details
         super().save(*args, **kwargs) # Call the "real" save() method.
 
-
     class Meta:
         ordering = ('created',)
 
