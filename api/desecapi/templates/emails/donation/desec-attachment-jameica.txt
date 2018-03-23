@@ -18,7 +18,7 @@
     <empfaenger_name type="java.lang.String">{{ donation.name | clean }}</empfaenger_name>
 
     {# IBAN of the account that will be charged [sic!] #}
-    <empfaenger_konto type="java.lang.String">{{ complete_iban | clean }}</empfaenger_konto>
+    <empfaenger_konto type="java.lang.String">{{ complete_iban | clean | remove_whitespaces }}</empfaenger_konto>
 
     {# 0 means this transaction was not yet executed #}
     <ausgefuehrt type="java.lang.Integer">0</ausgefuehrt>
@@ -39,7 +39,7 @@
     <sequencetype type="java.lang.String">OOFF</sequencetype>
 
     {# BIC of the account that will be charged #}
-    <empfaenger_bic type="java.lang.String">{{ donation.bic | clean }}</empfaenger_bic>
+    <empfaenger_bic type="java.lang.String">{{ donation.bic | clean | remove_whitespaces }}</empfaenger_bic>
 
     {# Jameica account id (this likely needs to be changed after import) #}
     <konto_id type="java.lang.Integer">1</konto_id>

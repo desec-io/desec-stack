@@ -11,4 +11,10 @@ def clean(value):
     cleaned = re.sub(r'[^A-Za-z0-9 ]','',normalized)
     return cleaned
 
+def remove_whitespaces(value):
+    """removes whitespace from the string"""
+    cleaned = re.sub(r'[\s]','',value)
+    return cleaned
+
 register.filter('clean', clean)
+register.filter('remove_whitespaces', remove_whitespaces)
