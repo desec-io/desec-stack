@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <objects>
   <object type="de.willuhn.jameica.hbci.server.SepaLastschriftImpl" id="2">
-    {# Ende-zu-Ende ID #}
+    {# end to end id ID #}
     <endtoendid type="java.lang.String"></endtoendid>
 
-    {# Unterschriftsdatum der Referenz #}
+    {# reference signature date #}
     <sigdate type="java.sql.Date">{{ donation.created | date:"d.m.Y H:i:s" }}</sigdate>
 
-    {# mandatsreferenz #}
+    {# mandate reference #}
     <mandateid type="java.lang.String">{{ donation.mref }}</mandateid>
 
-    {# Gläubiger-ID #}
+    {# creditor id #}
     <creditorid type="java.lang.String">DE84ZZZ00001034223</creditorid>
 
     {% load sepa_extras %}
-    {# Name des Kontos, das belastet wird [sic!] #}
+    {# name of the account that will be charged [sic!] #}
     <empfaenger_name type="java.lang.String">{{ donation.name | clean }}</empfaenger_name>
 
-    {# IBAN des Kontos, das belastet wird [sic!] #}
+    {# IBAN of the account that will be charged [sic!] #}
     <empfaenger_konto type="java.lang.String">{{ complete_iban | clean }}</empfaenger_konto>
 
-    {# Noch nicht ausgeführt #}
+    {# 0 means this transaction was not yet executed #}
     <ausgefuehrt type="java.lang.Integer">0</ausgefuehrt>
 
-    {# Basis-Lastschrift #}
+    {# direct debit type #}
     <sepatype type="java.lang.String">CORE</sepatype>
 
-    {# Betrag #}
+    {# amount #}
     <betrag type="java.lang.Double">{{ donation.amount }}</betrag>
 
-    {# Einzugstermin #}
+    {# due date #}
     <targetdate type="java.sql.Date">{{ donation.due | date:"d.m.Y H:i:s" }}</targetdate>
         
-    {# deSEC Spende #}
+    {# deSEC donation #}
     <zweck type="java.lang.String">deSEC Spende/Donation authorized at {{ donation.created | date:"Y-m-d H:i:s" }} UTC</zweck>
 
-    {# Einmal-Lastschrift #}
+    {# direct debit type: one-off #}
     <sequencetype type="java.lang.String">OOFF</sequencetype>
 
-    {# Empfänger BIC #}
+    {# BIC of the account that will be charged #}
     <empfaenger_bic type="java.lang.String">{{ donation.bic | clean }}</empfaenger_bic>
 
-    {# Jameica-Konto ID #}
+    {# Jameica account id (this likely needs to be changed after import) #}
     <konto_id type="java.lang.Integer">1</konto_id>
   </object>
 </objects>
