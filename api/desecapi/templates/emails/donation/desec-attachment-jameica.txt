@@ -11,7 +11,7 @@
     <mandateid type="java.lang.String">{{ donation.mref }}</mandateid>
 
     {# creditor id #}
-    <creditorid type="java.lang.String">DE84ZZZ00001034223</creditorid>
+    <creditorid type="java.lang.String">{{ creditoridentifier }}</creditorid>
 
     {% load sepa_extras %}
     {# name of the account that will be charged [sic!] #}
