@@ -5,6 +5,7 @@ from djoser import serializers as djoserSerializers
 from django.db import models, transaction
 import django.core.exceptions
 from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
+import re
 
 
 class RRSerializer(serializers.ModelSerializer):
@@ -186,6 +187,12 @@ class DonationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Donation
         fields = ('name', 'iban', 'bic', 'amount', 'message', 'email')
+
+    def validate_bic(self, value):
+        return re.sub(r'[\s]', '', value)
+
+    def validate_iban(self, value):
+        return re.sub(r'[\s]', '', value)
 
 
 class UserSerializer(djoserSerializers.UserSerializer):
