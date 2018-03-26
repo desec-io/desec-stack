@@ -37,6 +37,7 @@ describe("API", function () {
             return expect(response).to.have.status(201);
         });
 
+        it("locks new users that look suspicious");
     });
 
     describe("user login", function () {
