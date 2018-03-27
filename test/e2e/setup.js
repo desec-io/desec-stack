@@ -1,3 +1,6 @@
+var assert = require('assert');
+var schemas = require("./schemas.js");
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 var chakram = require('/usr/local/lib/node_modules/chakram/lib/chakram.js');
@@ -182,10 +185,36 @@ chakram.addMethod("ttl", function (respObj, expected) {
 exports.chakram = chakram;
 
 /**
+ * A test that checks record contents by querying the API endpoint
+ */
+function itPropagatesToTheApi(rrsets) {
+    return it("propagates to the API", function () {
+        promises = rrsets.map(function (rrset) {
+            return chakram
+                .get('/domains/' + rrset.domain + '/rrsets/' + rrset.subname + '.../' + rrset.type + '/')
+                .then(function (response) {
+                    if(rrset.records.length) {
+                        chakram.expect(response).to.have.status(200);
+                        chakram.expect(response).to.have.schema(schemas.rrset);
+                        chakram.expect(response.body.records).to.have.members(rrset.records);
+                        if (typeof rrset.ttl !== "undefined") {
+                            chakram.expect(response).to.have.json('ttl', rrset.ttl);
+                        }
+                    } else {
+                        assert(typeof rrset.ttl == "undefined");
+                        chakram.expect(response).to.have.status(404);
+                    }
+                });
+        });
+        return chakram.waitFor(promises);
+    });
+}
+
+/**
  * A test that checks DNS record contents
  */
 function itShowsUpInPdnsAs(subname, domain, type, records, ttl) {
-    var queryName = (subname ? subname + '.' : '') + domain;
+    var queryName = (typeof subname == 'undefined' ? '' : subname + '.') + domain;
     return it('shows up correctly in pdns for ' + subname + '|' + domain + '|' + type, function () {
         chakram.expect(chakram.resolveStr(queryName, type)).to.have.lengthOf(records.length);
         chakram.expect(chakram.resolveStr(queryName, type)).to.have.members(records);
@@ -197,4 +226,5 @@ function itShowsUpInPdnsAs(subname, domain, type, records, ttl) {
     });
 }
 
+exports.itPropagatesToTheApi = itPropagatesToTheApi;
 exports.itShowsUpInPdnsAs = itShowsUpInPdnsAs;
