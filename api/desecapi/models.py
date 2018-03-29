@@ -173,12 +173,13 @@ class Domain(models.Model, mixins.SetterMixin):
                 except Domain.DoesNotExist:
                     pass
                 else:
-                    parent.write_rrsets([
+                    rrsets = RRset.plain_to_RRsets([
                         {'subname': subname, 'type': 'NS', 'ttl': 3600,
                          'contents': settings.DEFAULT_NS},
                         {'subname': subname, 'type': 'DS', 'ttl': 60,
                          'contents': [ds for k in self.keys for ds in k['ds']]}
-                    ])
+                    ], domain=parent)
+                    parent.write_rrsets(rrsets)
         else:
             # Zone exists. For the case that pdns knows records that we do not
             # (e.g. if a locked account has deleted an RRset), it is necessary
@@ -205,17 +206,8 @@ class Domain(models.Model, mixins.SetterMixin):
         RRset.objects.bulk_create(rrsets)
         RR.objects.bulk_create(rrs)
 
-    def write_rrsets(self, datas):
-        rrsets = {}
-        for data in datas:
-            rrset = RRset(domain=self, subname=data['subname'],
-                          type=data['type'], ttl=data['ttl'])
-            rrsets[rrset] = [RR(rrset=rrset, content=content)
-                             for content in data['contents']]
-        self._write_rrsets(rrsets)
-
     @transaction.atomic
-    def _write_rrsets(self, rrsets):
+    def write_rrsets(self, rrsets):
         # Base queryset for all RRset of the current domain
         rrset_qs = RRset.objects.filter(domain=self)
 
@@ -310,10 +302,7 @@ class Domain(models.Model, mixins.SetterMixin):
             else:
                 rrsets = parent.rrset_set.filter(subname=subname,
                                                  type__in=['NS', 'DS']).all()
-                # Need to go RRset by RRset to trigger pdns sync
-                # TODO can optimize using write_rrsets()
-                for rrset in rrsets:
-                    rrset.delete()
+                parent.write_rrsets({rrset: [] for rrset in rrsets})
 
         # Delete domain
         super().delete(*args, **kwargs)
@@ -466,6 +455,16 @@ class RRset(models.Model, mixins.SetterMixin):
             kwargs['force_insert'] = (self.created is None)
             super().save(*args, **kwargs)
             self._dirties = {}
+
+    @staticmethod
+    def plain_to_RRsets(datas, *, domain):
+        rrsets = {}
+        for data in datas:
+            rrset = RRset(domain=domain, subname=data['subname'],
+                          type=data['type'], ttl=data['ttl'])
+            rrsets[rrset] = [RR(rrset=rrset, content=content)
+                             for content in data['contents']]
+        return rrsets
 
 
 class RR(models.Model):
