@@ -6,6 +6,7 @@ from django.db import models, transaction
 import django.core.exceptions
 from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 import re
+from rest_framework.fields import empty
 
 
 class RRSerializer(serializers.ModelSerializer):
@@ -38,6 +39,15 @@ class RRsetBulkListSerializer(BulkListSerializer):
         return self.child._save([None] * len(validated_data), validated_data)
 
 
+class RRsetTypeField(serializers.CharField):
+    def validate_empty_values(self, data):
+        # The type field is always required, regardless of PATCH or not
+        if data is empty:
+            self.fail('required')
+
+        return super().validate_empty_values(data)
+
+
 class SlugRRField(serializers.SlugRelatedField):
     def __init__(self, *args, **kwargs):
         kwargs['slug_field'] = 'content'
@@ -51,6 +61,7 @@ class SlugRRField(serializers.SlugRelatedField):
 class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
     domain = serializers.StringRelatedField()
     subname = serializers.CharField(allow_blank=True, required=False)
+    type = RRsetTypeField()
     records = SlugRRField(many=True)
 
 
