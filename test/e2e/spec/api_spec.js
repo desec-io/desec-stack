@@ -246,6 +246,7 @@ describe("API", function () {
                                 {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
                                 {'subname': 'd.1', 'ttl': 50, 'type': 'SOA', 'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
                                 {'subname': 'd.1', 'ttl': 50, 'type': 'OPT', 'records': ['9999']},
+                                {'subname': 'd.1', 'ttl': 50, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
                             ]
                         );
                         expect(response).to.have.status(400);
@@ -257,6 +258,7 @@ describe("API", function () {
                             { records: [ 'This field is required.' ] },
                             { type: [ 'You cannot tinker with the SOA RRset.' ] },
                             { type: [ 'You cannot tinker with the OPT RRset.' ] },
+                            { type: [ 'Generic type format is not supported.' ] },
                         ]);
 
                         return chakram.wait();

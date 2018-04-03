@@ -176,6 +176,9 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
         if value in RRset.RESTRICTED_TYPES:
             raise serializers.ValidationError(
                 "You cannot tinker with the %s RRset." % value)
+        if value.startswith('TYPE'):
+            raise serializers.ValidationError(
+                "Generic type format is not supported.")
         return value
 
     def to_representation(self, instance):
