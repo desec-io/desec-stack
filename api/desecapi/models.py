@@ -406,7 +406,7 @@ class RRset(models.Model, mixins.SetterMixin):
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     _dirty = False
-    RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
+    RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT')
 
 
     class Meta:
