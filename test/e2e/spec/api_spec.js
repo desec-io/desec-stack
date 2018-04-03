@@ -244,6 +244,8 @@ describe("API", function () {
                                 {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
                                 {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
                                 {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                                {'subname': 'd.1', 'ttl': 50, 'type': 'SOA', 'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
+                                {'subname': 'd.1', 'ttl': 50, 'type': 'OPT', 'records': ['9999']},
                             ]
                         );
                         expect(response).to.have.status(400);
@@ -253,6 +255,8 @@ describe("API", function () {
                             {},
                             { ttl: [ 'This field is required.' ] },
                             { records: [ 'This field is required.' ] },
+                            { type: [ 'You cannot tinker with the SOA RRset.' ] },
+                            { type: [ 'You cannot tinker with the OPT RRset.' ] },
                         ]);
 
                         return chakram.wait();
