@@ -25,3 +25,7 @@ gmysql-dbname=pdns
 gmysql-user=pdns
 gmysql-password=${DESECSTACK_DBLORD_PASSWORD_pdns}
 gmysql-dnssec=yes
+
+cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
+negquery-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
+query-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}

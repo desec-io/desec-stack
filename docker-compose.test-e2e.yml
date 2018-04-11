@@ -10,6 +10,8 @@ services:
     networks:
       front:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.129 # make nslord available for test-e2e
+    environment:
+    - DESECSTACK_NSLORD_CACHE_TTL=0
 
   static:
     build: test/e2e/mock-static # build a mock static to save time executing tests
