@@ -3,11 +3,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var chakram = require('/usr/local/lib/node_modules/chakram/lib/chakram.js');
 var Q = require('q');
 
-// FIXME contacting nslord for DNS responses. This can changed to nsmaster as soon as changes to the DNS are applied
-// immediately, i.e. before pdns HTTP responses return to the API.
-const dns = require('dns');
-const resolver = new dns.Resolver();
-resolver.setServers([process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.129']);
+var packet = require('dns-packet');
+var dgram = require('dgram');
+var socket = dgram.createSocket('udp4');
 
 chakram.addMethod("body", function (respObj, expected) {
     var body = respObj.body;
@@ -63,19 +61,121 @@ chakram.setRequestHeader = function (header, value) {
     chakram.setRequestSettings(s);
 };
 
+/*
+ * DNS Resolver Testing
+ */
+
+// This structure will hold outstanding requests that
+// we're are currently awaiting a response for.
+// Note that there is no timeout mechanism; requests
+// that (for any reason) do not receive responses will
+// rot here indefinitely.
+// Format: request id -> promise
+var inflight = {};
+var nextId = 1;
+
+// Receive messages on our ud4 socket
+socket.on('message', function (message) {
+  try {
+      // decode reply, find promise, remove from inflight and resolve
+      var response = packet.decode(message);
+      var promise = inflight[response.id];
+      delete inflight[response.id];
+      if (response.rcode !== 'NOERROR') {
+          promise.reject(response);
+      } else {
+          promise.resolve(response);
+      }
+  } catch (e) {
+      // ignore faulty packets
+  }
+});
+
+/**
+ * Returns a promise that will eventually be resolved into an object representing nslord's answer for the RR set of
+ * given name and type. For information about the object structure, check https://github.com/mafintosh/dns-packet.
+ * In case of error, the promise is rejected and the dns-packet is given without further processing.
+ * @param name full qualified domain name (no trailing dot)
+ * @param type rrset type
+ * @returns {promise|*|jQuery.promise|Promise}
+ */
 chakram.resolve = function (name, type) {
     var deferred = Q.defer();
 
-    resolver.resolve(name, type, function (error, records) {
-        if (error && error.code === dns.NODATA) {
-            deferred.resolve([]);
-        } else if (error) {
-            deferred.reject(error);
-        }
-        deferred.resolve(records);
+    var buf = packet.encode({
+        type: 'query',
+        id: nextId,
+        flags: packet.RECURSION_DESIRED | packet.AUTHORITATIVE_ANSWER,
+        questions: [{
+            type: type,
+            class: 'IN',
+            name: name
+        }]
     });
+
+    // FIXME contacting nslord for DNS responses. This can changed to nsmaster as soon as changes to the DNS are applied
+    // immediately, i.e. before pdns HTTP responses return to the API.
+    socket.send(buf, 0, buf.length, 53, process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.129');
+    inflight[nextId] = deferred;
+    nextId = (nextId + 1) % 65536;  // We don't care if id's are predictable in our test setting
 
     return deferred.promise;
 };
+
+/**
+ * Returns a promise that will eventually be resolved into an array of strings, representing nslord's answer for the
+ * RR set of given name and type. Note that not all record type are supported. Unsupported record types will be given
+ * in javascripts default representation, which is most likely an unusable mess.
+ * In case of error, the promise is rejected and the dns-packet is given without further processing. For further
+ * information on the structure of this object, check https://github.com/mafintosh/dns-packet.
+ * @param name full qualified domain name (no trailing dot)
+ * @param type rrset type
+ * @returns {promise|*|jQuery.promise|Promise}
+ */
+chakram.resolveStr = function (name, type) {
+    var deferred = Q.defer();
+
+    function convert (data, type) {
+        switch (type) {
+            case 'A': return data;
+            case 'AAAA': return data;
+            case 'MX': return data.preference + ' ' + data.exchange + '.';
+            // extend as needed
+            default: return data.toString();  // uh-oh, messy & ugly
+        }
+    }
+
+    chakram.resolve(name, type)
+        .then(function (respObj) {
+            var repr = [];
+
+            // convert to str
+            for (var a of respObj.answers) {
+                repr.push(convert(a.data, type));
+            }
+
+            deferred.resolve(repr);
+        })
+        .catch(function (error) {
+            deferred.reject(error);
+        });
+
+    return deferred.promise;
+};
+
+/**
+ * A chainable property that does nothing. Can be used to increase readability of expectations.
+ */
+chakram.addProperty("dns", function(){});
+
+/**
+ * A shorthand for checking the TTL of an RR set.
+ */
+chakram.addMethod("ttl", function (respObj, expected) {
+    this.assert(respObj.rcode === 'NOERROR', 'expected response to have rcode NOERROR');
+    this.assert(respObj.answers.length > 0, 'expected response to have answers');
+    this.assert(respObj.answers[0].ttl === expected,
+        'DNS response TTL ' + respObj.answers[0].ttl + ' didnt match expected value of ' + expected);
+});
 
 exports.chakram = chakram;
