@@ -180,3 +180,21 @@ chakram.addMethod("ttl", function (respObj, expected) {
 });
 
 exports.chakram = chakram;
+
+/**
+ * A test that checks DNS record contents
+ */
+function itShowsUpInPdnsAs(subname, domain, type, records, ttl) {
+    var queryName = (subname ? subname + '.' : '') + domain;
+    return it('shows up correctly in pdns for ' + subname + '|' + domain + '|' + type, function () {
+        chakram.expect(chakram.resolveStr(queryName, type)).to.have.lengthOf(records.length);
+        chakram.expect(chakram.resolveStr(queryName, type)).to.have.members(records);
+        chakram.expect(chakram.resolveStr(queryName, type)).to.have.members(records.reverse());
+        if (typeof ttl !== "undefined") {
+            chakram.expect(chakram.resolve(queryName, type)).to.have.dns.ttl(ttl);
+        }
+        return chakram.wait();
+    });
+}
+
+exports.itShowsUpInPdnsAs = itShowsUpInPdnsAs;

@@ -1,5 +1,6 @@
 var chakram = require("./../setup.js").chakram;
 var expect = chakram.expect;
+var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
 
 describe("dyndns service", function () {
 
@@ -199,12 +200,9 @@ describe("dyndns service", function () {
                         return expect(response).to.have.json('records', [process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127']);
                     });
 
-                    it('propagate to pdns', function () {
-                        expect(chakram.resolve(domain, 'A')).to.have.members([process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127']);
-                        expect(chakram.resolve(domain, 'AAAA')).to.be.empty;
-                        return chakram.wait();
-                    });
+                    itShowsUpInPdnsAs('', domain, 'A', [process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127'], 60);
 
+                    itShowsUpInPdnsAs('', domain, 'AAAA', []);
                 });
 
                 describe("v4 updates by query parameter", function () {
@@ -221,11 +219,9 @@ describe("dyndns service", function () {
                         return expect(response).to.have.json('records', ['1.2.3.4']);
                     });
 
-                    it('propagate to pdns', function () {
-                        expect(chakram.resolve(domain, 'A')).to.have.members(['1.2.3.4']);
-                        expect(chakram.resolve(domain, 'AAAA')).to.be.empty;
-                        return chakram.wait();
-                    });
+                    itShowsUpInPdnsAs('', domain, 'A', ['1.2.3.4'], 60);
+
+                    itShowsUpInPdnsAs('', domain, 'AAAA', []);
 
                     describe("removes v4 address with empty query param", function () {
 
@@ -246,12 +242,9 @@ describe("dyndns service", function () {
                             return expect(response).to.have.json('records', ['bade::affe']);
                         });
 
-                        it('propagate to pdns', function () {
-                            expect(chakram.resolve(domain, 'A')).to.be.empty;
-                            expect(chakram.resolve(domain, 'AAAA')).to.have.members(['bade::affe']);
-                            return chakram.wait();
-                        });
+                        itShowsUpInPdnsAs('', domain, 'A', []);
 
+                        itShowsUpInPdnsAs('', domain, 'AAAA', ['bade::affe'], 60);
                     });
 
                 });
@@ -270,11 +263,9 @@ describe("dyndns service", function () {
                         return expect(response).to.have.json('records', ['dead::beef']);
                     });
 
-                    it('propagate to pdns', function () {
-                        expect(chakram.resolve(domain, 'AAAA')).to.have.members(['dead::beef']);
-                        expect(chakram.resolve(domain, 'A')).to.have.members([process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127']);  // taken from the v4 connection
-                        return chakram.wait();
-                    });
+                    itShowsUpInPdnsAs('', domain, 'AAAA', ['dead::beef'], 60);
+
+                    itShowsUpInPdnsAs('', domain, 'A', [process.env.DESECSTACK_IPV4_REAR_PREFIX16 + '.0.127'], 60); // taken from the v4 connection
 
                     describe("removes v6 address with empty query param", function () {
 
@@ -295,12 +286,9 @@ describe("dyndns service", function () {
                             return expect(response).to.have.status(404);
                         });
 
-                        it('propagate to pdns', function () {
-                            expect(chakram.resolve(domain, 'A')).to.have.members(['1.3.3.7']);
-                            expect(chakram.resolve(domain, 'AAAA')).to.be.empty;
-                            return chakram.wait();
-                        });
+                        itShowsUpInPdnsAs('', domain, 'A', ['1.3.3.7'], 60);
 
+                        itShowsUpInPdnsAs('', domain, 'AAAA', []);
                     });
 
                 });
@@ -322,12 +310,9 @@ describe("dyndns service", function () {
                         return chakram.wait();
                     });
 
-                    it('propagate to pdns', function () {
-                        expect(chakram.resolve(domain, 'AAAA')).to.have.members(['::1']);
-                        expect(chakram.resolve(domain, 'A')).to.have.members(['192.168.1.1']);
-                        return chakram.wait();
-                    });
+                    itShowsUpInPdnsAs('', domain, 'A', ['192.168.1.1'], 60);
 
+                    itShowsUpInPdnsAs('', domain, 'AAAA', ['::1'], 60);
                 });
 
             });
