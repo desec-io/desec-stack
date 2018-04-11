@@ -6,6 +6,7 @@ var Q = require('q');
 var packet = require('dns-packet');
 var dgram = require('dgram');
 var socket = dgram.createSocket('udp4');
+after("tear down udp4 socket", function () { socket.close(); });
 
 chakram.addMethod("body", function (respObj, expected) {
     var body = respObj.body;
@@ -74,14 +75,14 @@ chakram.setRequestHeader = function (header, value) {
 var inflight = {};
 var nextId = 1;
 
-// Receive messages on our ud4 socket
+// Receive messages on our udp4 socket
 socket.on('message', function (message) {
   try {
       // decode reply, find promise, remove from inflight and resolve
       var response = packet.decode(message);
       var promise = inflight[response.id];
       delete inflight[response.id];
-      if (response.rcode !== 'NOERROR') {
+      if (response.rcode !== 'NOERROR' && response.rcode !== 'NXDOMAIN') {
           promise.reject(response);
       } else {
           promise.resolve(response);
@@ -105,7 +106,6 @@ chakram.resolve = function (name, type) {
     var buf = packet.encode({
         type: 'query',
         id: nextId,
-        flags: packet.RECURSION_DESIRED | packet.AUTHORITATIVE_ANSWER,
         questions: [{
             type: type,
             class: 'IN',
@@ -140,6 +140,7 @@ chakram.resolveStr = function (name, type) {
             case 'A': return data;
             case 'AAAA': return data;
             case 'MX': return data.preference + ' ' + data.exchange + '.';
+            case 'TXT': return '"' + data + '"';
             // extend as needed
             default: return data.toString();  // uh-oh, messy & ugly
         }
@@ -174,8 +175,8 @@ chakram.addProperty("dns", function(){});
 chakram.addMethod("ttl", function (respObj, expected) {
     this.assert(respObj.rcode === 'NOERROR', 'expected response to have rcode NOERROR');
     this.assert(respObj.answers.length > 0, 'expected response to have answers');
-    this.assert(respObj.answers[0].ttl === expected,
-        'DNS response TTL ' + respObj.answers[0].ttl + ' didnt match expected value of ' + expected);
+    this.assert(respObj.answers.every(function(elem) { return elem.ttl === expected; }),
+        'TTL of at least one answer in the DNS packet didn\'t match expected value of ' + expected);
 });
 
 exports.chakram = chakram;
