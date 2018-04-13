@@ -8,3 +8,4 @@ requests==2.18.*
 uwsgi==2.0.*
 django-nocaptcha-recaptcha==0.0.19  # updated manually
 sqlparse==0.2.*
+djangorestframework-bulk==0.2.*
