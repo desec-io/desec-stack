@@ -31,6 +31,7 @@ from django.db.models import Q
 from desecapi.emails import send_account_lock_email, send_token_email
 import re
 import ipaddress, os
+from rest_framework_bulk import ListBulkCreateUpdateAPIView
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
@@ -162,6 +163,9 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         if request.data.get('records') == []:
             return self.delete(request, *args, **kwargs)
 
+        for k in ('type', 'subname'):
+            request.data[k] = request.data.pop(k, self.kwargs[k])
+
         try:
             return super().update(request, *args, **kwargs)
         except django.core.exceptions.ValidationError as e:
@@ -170,7 +174,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
             raise ex
 
 
-class RRsetList(generics.ListCreateAPIView):
+class RRsetList(ListBulkCreateUpdateAPIView):
     authentication_classes = (TokenAuthentication, auth.IPAuthentication,)
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
@@ -195,30 +199,27 @@ class RRsetList(generics.ListCreateAPIView):
             return super().create(request, *args, **kwargs)
         except Domain.DoesNotExist:
             raise Http404
-        except django.core.exceptions.ValidationError as e:
-            ex = ValidationError(detail=e.message_dict)
-            all = e.message_dict.get('__all__')
-            if all is not None \
-                    and any(msg.endswith(' already exists.') for msg in all):
-                ex.status_code = status.HTTP_409_CONFLICT
-            raise ex
+        except ValidationError as e:
+            if isinstance(e.detail, dict):
+                detail = e.detail.get('__all__')
+                if isinstance(detail, list) \
+                        and any(m.endswith(' already exists.') for m in detail):
+                    e.status_code = status.HTTP_409_CONFLICT
+            raise e
 
     def perform_create(self, serializer):
+        # For new RRsets without a subname, set it empty. We don't use
+        # default='' in the serializer field definition so that during PUT, the
+        # subname value is retained if omitted.
+        if isinstance(self.request.data, list):
+            serializer._validated_data = [{**{'subname': ''}, **data}
+                                         for data in serializer.validated_data]
+        else:
+            serializer._validated_data = {**{'subname': ''}, **serializer.validated_data}
+
         # Associate RRset with proper domain
         domain = self.request.user.domains.get(name=self.kwargs['name'])
-        kwargs = {'domain': domain}
-
-        # If this RRset is new and a subname has not been given, set it empty
-        #
-        # Notes:
-        # - We don't use default='' in the serializer so that during PUT, the
-        #   subname value is retained if omitted.)
-        # - Don't use kwargs['subname'] = self.request.data.get('subname', ''),
-        #   giving preference to what's in serializer.validated_data at this point
-        if self.request.method == 'POST' and self.request.data.get('subname') is None:
-            kwargs['subname'] = ''
-
-        serializer.save(**kwargs)
+        serializer.save(domain=domain)
 
     def get(self, request, *args, **kwargs):
         name = self.kwargs['name']

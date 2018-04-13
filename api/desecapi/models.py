@@ -461,13 +461,6 @@ class RRset(models.Model, mixins.SetterMixin):
         return '.'.join(filter(None, [self.subname, self.domain.name])) + '.'
 
     @transaction.atomic
-    def set_rrs(self, contents, sync=True, notify=True):
-        self.records.all().delete()
-        self.records.set([RR(content=x) for x in contents], bulk=False)
-        if sync and not self.domain.owner.locked:
-            pdns.set_rrset(self, notify=notify)
-
-    @transaction.atomic
     def delete(self, *args, **kwargs):
         # For locked users, we can't easily sync deleted RRsets to pdns later,
         # so let's forbid it for now.
