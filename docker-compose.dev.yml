@@ -3,6 +3,13 @@ version: '2.1'
 # mostly extending from main .yml
 services:
   www:
+    environment:
+    - DESECSTACK_API_DEV=1
+    - DESECSTACK_API_PROD=0
+    depends_on:
+    - webapp
+    networks:
+    - rearwebapp
     logging:
       driver: "json-file"
 
@@ -42,3 +49,22 @@ services:
      - "5321:53/udp"
     logging:
       driver: "json-file"
+
+  webapp:
+    build: webapp
+    volumes:
+    - ./webapp/:/usr/src/app/
+    environment:
+    - HOST=0.0.0.0
+    - PORT=443
+    networks:
+    - rearwebapp
+
+networks:
+  rearwebapp:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.100.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.100.1

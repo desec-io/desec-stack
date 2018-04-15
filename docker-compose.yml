@@ -13,6 +13,8 @@ services:
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_WWW_CERTS
+    - DESECSTACK_API_DEV=0
+    - DESECSTACK_API_PROD=1
     depends_on:
     - static
     - api
