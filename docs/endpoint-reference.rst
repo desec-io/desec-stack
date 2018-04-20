@@ -22,7 +22,11 @@ information about the deSEC API endpoints used for `Domain Management`_ and
 | ...\ ``/{domain}/rrsets/``                     | ``GET``    | Retrieve all RRsets from ``domain``, filter |
 |                                                |            | by ``subname`` or ``type`` query parameter  |
 |                                                +------------+---------------------------------------------+
-|                                                | ``POST``   | Create an RRset                             |
+|                                                | ``POST``   | Create one or more RRsets                   |
+|                                                +------------+---------------------------------------------+
+|                                                | ``PATCH``  | Create, modify or delete one or more RRsets |
+|                                                +------------+---------------------------------------------+
+|                                                | ``PUT``    | Create, modify or delete one or more RRsets |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/{domain}/rrsets/{subname}.../{type}/`` | ``GET``    | Retrieve a specific RRset                   |
 |                                                +------------+---------------------------------------------+

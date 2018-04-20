@@ -159,6 +159,24 @@ https://www.huque.com/bin/gen_tlsa.  We are planning to provide a tool that is
 connected directly to our API in the future.  For full detail on how ``TLSA``
 records work, please refer to RFC 6698.
 
+Bulk Creation of RRsets
+```````````````````````
+
+It is often desirable to create several RRsets at once.  This is achieved by
+sending an array of RRset objects to the ``rrsets/`` endpoint (instead of just
+one), like this::
+
+    curl -X POST https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe"]},' \
+            '...]'
+
+This is especially useful for bootstrapping a new domain.
+
+For details about input validation and return status codes, please refer to
+`Bulk Operations`_.
+
 
 Retrieving all RRsets in a Zone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -254,6 +272,25 @@ invalid (e.g. when you provide an unknown record type, or an `A` value that is
 not an IPv4 address), ``422 Unprocessable Entity`` is returned.  If the RRset
 does not exist, ``404 Not Found`` is returned.
 
+Bulk Modification of RRsets
+```````````````````````````
+
+It is sometimes desirable to modify several RRsets at once.  This is achieved
+by sending an array of RRset objects to the ``rrsets/`` endpoint (instead of
+just one), like this::
+
+    curl -X PUT https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe"]},' \
+            '...]'
+
+``subname`` and ``type`` must be specified for each given RRset.  For ``ttl``
+and ``records``, the usual rules apply.
+
+For details about input validation and return status codes, please refer to
+`Bulk Operations`_.
+
 
 Deleting an RRset
 ~~~~~~~~~~~~~~~~~
@@ -265,9 +302,102 @@ array for the ``records`` field (``[]``).
 Upon success or if the RRset did not exist in the first place, the response
 status code is ``204 No Content``.
 
+Bulk Deletion of RRsets
+```````````````````````
 
-General Notes
-~~~~~~~~~~~~~
+It is sometimes desirable to delete RRsets as using a bulk request.  This is
+achieved by sending the RRset with an empty records list ``[]`` to the
+``rrsets/`` endpoint, using the ``PATCH`` or ``PUT`` method::
+
+    curl -X PATCH https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", records: []},' \
+            '...]'
+
+For details about input validation and return status codes, please refer to
+`Bulk Operations`_.
+
+
+Bulk Operations
+~~~~~~~~~~~~~~~
+
+The ``rrsets/`` endpoint supports bulk operations via the ``POST``, ``PATCH``,
+and ``PUT`` request methods. You can simply send an array of RRset objects
+(instead of just one), like this::
+
+    curl -X PATCH https://desec.io/api/v1/domains/{domain}/rrsets/ \
+        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
+        -d '[{"subname": "www", "type": "A",    "ttl": 3600, records: ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe", "c0ff::ee"]},' \
+            '{"subname": "backup", "type": "MX", records: []},' \
+            '...]'
+
+Atomicity
+`````````
+Bulk operations are performed atomically, i.e. either all given RRsets are
+accepted and published in (or deleted from) the DNS, or none of them are.
+
+This allows you to smoothly apply large DNS changes to your domain *without*
+running into the undesirable situation of an error showing up half-way through
+the process when some changes already have been applied.
+
+Field requirements
+``````````````````
+In all cases, the ``subname`` field is optional.  If missing, the empty subname
+is assumed.
+
+For the ``POST`` and ``PUT`` methods, all other fields are required for each
+given RRset.  With ``POST``, only new RRsets are acceptable (i.e. the domain
+must not yet have an RRset with the same subname and type), while ``PUT``
+allows both creating new RRsets and modifying existing ones.
+
+For the ``PATCH`` method, only ``type`` is required; if you want to modify only
+``ttl`` or ``records``, you can skip the other field.  To create a new RRset
+using ``PATCH``, all fields but ``subname`` must be specified.
+
+To delete an RRset during a bulk operation, use ``PATCH`` or ``PUT`` and set
+records to ``[]``.
+
+Input validation
+````````````````
+For efficiency and other reasons, there are three stages of input validation:
+
+1. Basic syntactical and semantical checks for missing JSON fields, negative
+   TTL and such.
+
+2. Uniqueness validation.  This is both to avoid the creation of multiple
+   RRsets with the same subname and type, and to uncover bulk requests
+   containing multiple parts that refer to the same subname and type.
+
+3. Lastly, we check whether the given type is a supported DNS record type, and
+   whether the given record contents are consistent with the type.
+
+Errors are collected at each stage; if at least one error occured, the request
+is aborted at the end of the stage, and the error(s) are returned.  Only if no
+error occurred, will the request be allowed to proceed to the next stage.
+
+In stages 1 and 2, errors are presented as a list of errors, with each list
+item referring to one part of the bulk request, in the same order.  Parts that
+did not cause errors have an empty error object ``{}``, and parts with errors
+contain more details describing the error.  Unfortunately, in step 3, the API
+currently does not associate the error message with the RRset that caused it.
+
+The successive treatment of stages 1 and 2 means that one bulk part with a
+stage-2 error may appear valid (``{}``) as long as another RRset has a stage-1
+error.  Only after the stage-1 error is resolved, the request will reach stage
+2, at which point an error may occur for the bulk part that previously seemed
+valid.
+
+Errors in stages 1 and 2 cause status code ``400`` (regardless of the exact
+reason(s) which may vary across bulk parts), and errors from stage 3 cause
+status code ``422``.
+
+
+Notes
+~~~~~
+
+Consider the following general remarks that apply to our API as a whole:
 
 - All operations are performed on RRsets, not on the individual Resource
   Records.
@@ -281,9 +411,6 @@ General Notes
   principle.  If you encounter any problems, please let us know.
 
 
-Notes on Certain Record Types
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 Generally, the API supports all `RRset types supported by PowerDNS`_, with a
 few exceptions for such record types that the backend manages automatically.
 Thus, these restrictions are not limitations from a practical point of view.
@@ -295,6 +422,7 @@ explained below.
 
 Restricted Types
 ````````````````
+
 **Note:**  Some record types are supported by the API, but not currently
 served by our nameservers (such as ``ALIAS`` or ``DNAME``).  If you wish to
 use such record types, shoot us an email.  In most cases, it should not be a
@@ -330,11 +458,14 @@ Caveats
 .. _`caveat on the priority field`:
 
 Record types with priority field
-    The deSEC DNS API does not explicitly support priority fields (as used for
-    ``MX`` or ``SRV`` records and the like).
+    The deSEC DNS API does not explicitly support structured records fields
+    (such as the priority field used for ``MX``, ``SRV`` and the like).
 
-    Instead, the priority is expected to be specified at the beginning of the
-    record content, separated from the rest of it by a space.
+    Instead, those fields are expected to be concatenated in the conventional
+    order used for zone files, with spaces in between them. For ``MX`` RRsets,
+    that means that the priority is located at the beginning of the record
+    content, separated from the rest of it by a space (e.g.
+    ``10 mx.example.com.``).
 
 ``CNAME`` record
     - The record value must be terminated by a dot ``.`` (as in
