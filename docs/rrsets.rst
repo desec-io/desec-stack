@@ -497,10 +497,13 @@ Record types with priority field
     mail.a4a.de.``
 
 ``NS`` record
-    The use of wildcard RRsets (with one component of ``subname`` being equal
-    to ``*``) of type ``NS`` is **discouraged**.  This is because the behavior
-    of wildcard ``NS`` records in conjunction with DNSSEC is undefined, per
-    RFC 4592, Sec. 4.2.
+    - The record value must be terminated by a dot ``.`` (as in
+      ``ns1.desec.io.``).
+
+    - The use of wildcard RRsets (with one component of ``subname`` being equal
+      to ``*``) of type ``NS`` is **discouraged**.  This is because the
+      behavior of wildcard ``NS`` records in conjunction with DNSSEC is
+      undefined, per RFC 4592, Sec. 4.2.
 
 ``TXT`` record
     The contents of the ``TXT`` record must be enclosed in double quotes.
