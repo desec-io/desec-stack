@@ -472,12 +472,14 @@ def unlock(request, email):
         if form.is_valid():
             try:
                 user = User.objects.get(email=email)
-                user.unlock()
-                if not user.dyn:
-                    context = {'token': user.get_token()}
-                    send_token_email(context, user)
+                if user.locked:
+                    user.unlock()
+                    if not user.dyn:
+                        context = {'token': user.get_token()}
+                        send_token_email(context, user)
             except User.DoesNotExist:
-                pass # fail silently, otherwise people can find out if email addresses are registered with us
+                # fail silently, so people can't probe registered addresses
+                pass
 
             return HttpResponseRedirect(reverse('unlock/done'))
 
