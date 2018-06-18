@@ -175,8 +175,8 @@ one), like this::
 
     curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
         -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe"]},' \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},' \
             '...]'
 
 This is especially useful for bootstrapping a new domain.
@@ -288,8 +288,8 @@ just one), like this::
 
     curl -X PUT https://desec.io/api/v1/domains/:name/rrsets/ \
         -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe"]},' \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},' \
             '...]'
 
 ``subname`` and ``type`` must be specified for each given RRset.  For ``ttl``
@@ -318,8 +318,8 @@ achieved by sending the RRset with an empty records list ``[]`` to the
 
     curl -X PATCH https://desec.io/api/v1/domains/:name/rrsets/ \
         -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, records: ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", records: []},' \
+        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "records": []},' \
             '...]'
 
 For details about input validation and return status codes, please refer to
@@ -335,9 +335,9 @@ and ``PUT`` request methods. You can simply send an array of RRset objects
 
     curl -X PATCH https://desec.io/api/v1/domains/:name/rrsets/ \
         -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A",    "ttl": 3600, records: ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, records: ["c0::fefe", "c0ff::ee"]},' \
-            '{"subname": "backup", "type": "MX", records: []},' \
+        -d '[{"subname": "www", "type": "A",    "ttl": 3600, "records": ["1.2.3.4"]},' \
+            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe", "c0ff::ee"]},' \
+            '{"subname": "backup", "type": "MX", "records": []},' \
             '...]'
 
 Atomicity
