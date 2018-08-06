@@ -6,11 +6,11 @@ TODO
 <template>
   <v-app id="inspire">
     <v-content>
-      <v-container v-if="!loggedIn()" fluid fill-height>
+      <v-container v-if="!authenticated" fluid fill-height>
         <v-layout column align-center justify-center>
           <v-flex xs12 sm8 md4>
             <img src="./assets/logo.png">
-            <p>not logged in</p>
+            <p>not authenticated</p>
           </v-flex>
           <v-flex xs12 sm8 md4>
             <router-view/>
@@ -25,7 +25,7 @@ TODO
               <img src="./assets/logo.png">
             </v-flex>
             <v-flex text-xs-right>
-              logged in
+              authenticated
             </v-flex>
           </v-layout>
         </v-flex>
@@ -43,7 +43,7 @@ TODO
 export default {
   name: 'App',
   data: () => ({
-    // loggedIn: true
+    authenticated: false
   }),
   methods: {
     loggedIn () {

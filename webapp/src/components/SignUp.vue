@@ -4,7 +4,7 @@
       <v-toolbar-title>Sign up for a new account</v-toolbar-title>
     </v-toolbar>
     <v-card-text>
-      <v-form v-model="valid">
+      <v-form v-model="isvalid">
         <v-text-field
           v-model="email"
           :rules="emailRules"
@@ -20,18 +20,22 @@
           hint="At least 8 characters"
           min="8"
           counter
+          required
         ></v-text-field>
-        <v-checkbox v-model="ack">
-          <span slot="label">Yes, I agree to the <a href="/">Terms of Service</a> and <a href="/">Privacy Policy</a></span>
+        <v-checkbox v-model="ack" required>
+          <span slot="label">Yes, I agree to the <a href="/">Terms of Service</a> and <a
+            href="/">Privacy Policy</a></span>
         </v-checkbox>
       </v-form>
     </v-card-text>
     <v-progress-linear :indeterminate="true"></v-progress-linear> <!-- if sending -->
     <v-card-actions>
-      <v-btn color="primary" id="login-button">Sign up</v-btn>
+      <v-btn color="primary" id="login-button" :disabled="!isvalid" v-on:click="signup">Sign up</v-btn>
     </v-card-actions>
     <v-card-actions>
-      <p style="text-align: center; width: 100%">Already registered? <a>Sign in here</a></p>
+      <p style="text-align: center; width: 100%">Already registered?
+        <router-link to="/LogIn">Sign in here</router-link>
+      </p>
     </v-card-actions>
   </v-card>
 </template>
@@ -48,8 +52,16 @@ export default {
     ],
     hide_password: true,
     password: '',
-    valid: false
-  })
+    passwordRules: [
+      v => !!v || 'Password is required'
+    ],
+    isvalid: false
+  }),
+  methods: {
+    signup: function (event) {
+      alert('signup')
+    }
+  }
 }
 </script>
 
