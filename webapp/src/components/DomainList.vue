@@ -80,17 +80,26 @@ TODO
       <h1>dev stuff</h1>
       <div><v-btn color="secondary" @click="domains = []"><v-icon left>mdi_delete</v-icon> Clear all domains</v-btn></div>
       <p>{{ selected }}</p>
+      <v-alert :value="errors && errors.length" type="error">
+        <li v-for="error of errors" :key="error">
+          <b>{{ error.message }}</b>
+          {{ error }}
+        </li>
+      </v-alert>
     </div>
   </v-card>
 </template>
 
 <script>
+import {HTTP} from '../http-common'
+
 export default {
   name: 'DomainList',
   data: () => ({
     pagination: {
       sortBy: 'name'
     },
+    errors: [],
     selected: [],
     search: '',
     headers: [
@@ -98,9 +107,16 @@ export default {
       { text: 'Updated', value: 'updated', align: 'left' }
     ],
     domains: [
-      { name: 'desec.io', updated: '2018-06-19T14:37:00.000Z' }
     ]
   }),
+  async mounted () {
+    try {
+      const response = await HTTP.get('domains')
+      this.domains = response.data
+    } catch (e) {
+      this.errors.push(e)
+    }
+  },
   methods: {
     toggleAll () {
       if (this.selected.length) this.selected = []
