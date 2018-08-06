@@ -16,21 +16,21 @@
             {{ errors[0] }}
           </div>
         </v-alert>
-          <v-text-field
-            v-model="email"
-            :rules="email_rules"
-            label="E-mail"
-            required
-          ></v-text-field>
-          <v-text-field
-            v-model="password"
-            :append-icon="hide_password ? 'visibility' : 'visibility_off'"
-            @click:append="() => (hide_password = !hide_password)"
-            :type="hide_password ? 'password' : 'text'"
-            label="Enter your password"
-            counter
-            required
-          ></v-text-field>
+        <v-text-field
+          v-model="email"
+          :rules="email_rules"
+          label="E-mail"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-model="password"
+          :append-icon="hide_password ? 'visibility' : 'visibility_off'"
+          @click:append="() => (hide_password = !hide_password)"
+          :type="hide_password ? 'password' : 'text'"
+          label="Enter your password"
+          counter
+          required
+        ></v-text-field>
       </v-card-text>
       <v-card-actions>
         <v-btn type="submit" color="primary" :disabled="!valid" id="login-button">Log in</v-btn>
@@ -41,6 +41,7 @@
 
 <script>
 import {HTTP} from '../http-common'
+import router from '../router'
 
 export default {
   name: 'LogIn',
@@ -64,7 +65,8 @@ export default {
         this.working = true
         const response = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
         this.authorized = true
-        // use response.data.auth_token to set authorization header in HTTP
+        HTTP.defaults.headers.common['Authorization'] = 'Token ' + response.data.auth_token
+        router.replace('/domains')
       } catch (e) {
         console.log(e)
         this.errors = e.response.data.non_field_errors
