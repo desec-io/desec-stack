@@ -14,7 +14,7 @@
         <v-text-field
           v-model="password"
           :append-icon="hide_password ? 'visibility' : 'visibility_off'"
-          :append-icon-cb="() => (hide_password = !hide_password)"
+          @click:append="() => (hide_password = !hide_password)"
           :type="hide_password ? 'password' : 'text'"
           label="Enter your password"
           hint="At least 8 characters"

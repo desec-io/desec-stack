@@ -16,7 +16,34 @@ TODO
         single-line
         hide-details
       ></v-text-field>
-      <v-btn color="primary" @click="createNewDomain()">Create new domain</v-btn>
+      <v-dialog v-model="dialog" persistent max-width="500px">
+        <v-btn slot="activator" color="primary" dark>Create new domain</v-btn>
+        <v-card>
+          <v-form @submit="createNewDomain()">
+            <v-card-title>
+              <span class="headline">Create a New Domain</span>
+            </v-card-title>
+            <v-card-text>
+              <v-container grid-list-md>
+                <v-layout wrap>
+                  <v-flex xs12>
+                    <p>You have {{ 5 - domains.length }} of 5 domains left in your plan. <a>Upgrade now!</a></p>
+                  </v-flex>
+                  <v-flex xs12>
+                    <v-text-field v-model="dialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
+                  </v-flex>
+                </v-layout>
+              </v-container>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="blue darken-1" flat @click.native="dialog = false">Cancel</v-btn>
+              <v-btn color="blue darken-1" dark type="submit">Create</v-btn>
+              <v-spacer></v-spacer>
+            </v-card-actions>
+          </v-form>
+        </v-card>
+      </v-dialog>
     </v-card-title>
 
     <v-data-table
@@ -72,7 +99,7 @@ TODO
         <div class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
-          <v-btn color="primary" @click="createNewDomain()">Create new domain</v-btn>
+          <v-btn color="primary" dark @click.stop="dialog = true">Create new domain</v-btn>
         </div>
       </template>
     </v-data-table>
@@ -96,6 +123,8 @@ import {HTTP} from '../http-common'
 export default {
   name: 'DomainList',
   data: () => ({
+    dialog: false,
+    dialogDomainName: '',
     pagination: {
       sortBy: 'name'
     },
@@ -111,7 +140,7 @@ export default {
   }),
   async mounted () {
     try {
-      const response = await HTTP.get('domains')
+      const response = await HTTP.get('domains/')
       this.domains = response.data
     } catch (e) {
       this.errors.push(e)
@@ -134,11 +163,19 @@ export default {
       search = search.toString().toLowerCase()
       return items.filter(row => filter(row['name'], search))
     },
-    createNewDomain () {
-      this.domains.push({
-        name: Math.random().toString(36).substring(7) + '.invalid',
-        updated: new Date().toISOString()
-      })
+    async createNewDomain () {
+      try {
+        console.log(this.dialogDomainName)
+        const response = await HTTP.post('domains/', {
+          'name': this.dialogDomainName
+        })
+        this.domains.push(response.data)
+        this.dialog = false
+        this.dialogDomainName = ''
+      } catch (e) {
+        console.log(e)
+        this.errors.push(e)
+      }
     }
   }
 }
