@@ -19,29 +19,59 @@ TODO
       <v-dialog v-model="dialog" persistent max-width="500px">
         <v-btn slot="activator" color="primary" dark>Create new domain</v-btn>
         <v-card>
-          <v-form @submit="createNewDomain()">
+          <v-form @submit.prevent="createNewDomain">
             <v-card-title>
-              <span class="headline">Create a New Domain</span>
+              <span class="title">Create a New Domain</span>
+              <v-spacer></v-spacer>
+              <v-icon @click="dialog = false">close</v-icon>
             </v-card-title>
+            <v-divider></v-divider>
             <v-card-text>
-              <v-container grid-list-md>
-                <v-layout wrap>
-                  <v-flex xs12>
-                    <p>You have {{ 5 - domains.length }} of 5 domains left in your plan. <a>Upgrade now!</a></p>
-                  </v-flex>
-                  <v-flex xs12>
-                    <v-text-field v-model="dialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
-                  </v-flex>
-                </v-layout>
-              </v-container>
+              <p>You have {{ 5 - domains.length }} of 5 domains left in your plan. <a>Upgrade now!</a></p>
+              <v-text-field v-model="dialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
             </v-card-text>
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn color="blue darken-1" flat @click.native="dialog = false">Cancel</v-btn>
-              <v-btn color="blue darken-1" dark type="submit">Create</v-btn>
+              <v-btn color="primary" outline @click.native="dialog = false">Cancel</v-btn>
+              <v-btn color="primary" depressed type="submit">Create</v-btn>
               <v-spacer></v-spacer>
             </v-card-actions>
           </v-form>
+        </v-card>
+      </v-dialog>
+      <v-dialog v-model="domainDetailsDialog" max-width="700px">
+        <v-btn slot="activator" color="primary" dark>DS</v-btn>
+        <v-card>
+          <v-card-title>
+            <div class="title">Domain details</div>
+            <v-spacer></v-spacer>
+            <v-icon @click="domainDetailsDialog = false">close</v-icon>
+          </v-card-title>
+          <v-alert :value="true" type="success">Your domain <b>{{ 'example.com' }}</b> has been successfully created!</v-alert>
+          <v-divider></v-divider>
+          <v-card-text>
+            <p>Please forward the following information to your domain registrar:</p>
+            <!--
+            TODO
+            - on click, copy text to clipboard
+            -->
+            <div class="caption font-weight-medium">NS records</div>
+<pre class="mb-3 pa-3">
+ns1.desec.io
+ns2.desec.io
+</pre>
+            <div class="caption font-weight-medium">DS records</div>
+<pre class="mb-3 pa-3">
+6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520
+6454 8 1 24396E17E36D031F71C354B06A979A67A01F503E
+</pre>
+            <p>Once your domain registrar processes this information, your deSEC DNS setup will be ready to use.</p>
+          </v-card-text>
+          <v-card-actions class="pa-3">
+            <v-spacer></v-spacer>
+            <v-btn xs12 color="primary" outline @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
+            <v-btn xs12 color="primary" dark depressed @click.native="domainDetailsDialog = false">Close and edit</v-btn>
+          </v-card-actions>
         </v-card>
       </v-dialog>
     </v-card-title>
@@ -105,7 +135,7 @@ TODO
     </v-data-table>
     <div>
       <h1>dev stuff</h1>
-      <div><v-btn color="secondary" @click="domains = []"><v-icon left>mdi_delete</v-icon> Clear all domains</v-btn></div>
+      <div><v-btn color="secondary" @click="domains = []"><v-icon>delete</v-icon> Clear all domains</v-btn></div>
       <p>{{ selected }}</p>
       <v-alert :value="errors && errors.length" type="error">
         <li v-for="error of errors" :key="error">
@@ -125,6 +155,7 @@ export default {
   data: () => ({
     dialog: false,
     dialogDomainName: '',
+    domainDetailsDialog: false,
     pagination: {
       sortBy: 'name'
     },
@@ -165,7 +196,6 @@ export default {
     },
     async createNewDomain () {
       try {
-        console.log(this.dialogDomainName)
         const response = await HTTP.post('domains/', {
           'name': this.dialogDomainName
         })
@@ -183,4 +213,14 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+  .caption {
+    text-transform: uppercase;
+  }
+  pre {
+    background: lightgray;
+    overflow: auto;
+  }
+  button {
+    min-width: 230px;
+  }
 </style>
