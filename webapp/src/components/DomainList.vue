@@ -16,7 +16,7 @@ TODO
         single-line
         hide-details
       ></v-text-field>
-      <v-dialog v-model="dialog" persistent max-width="500px">
+      <v-dialog v-model="dialog" max-width="500px" @keydown.esc="dialog = false">
         <v-btn slot="activator" color="primary" dark>Create new domain</v-btn>
         <v-card>
           <v-form @submit.prevent="createNewDomain">
@@ -39,7 +39,7 @@ TODO
           </v-form>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="domainDetailsDialog" max-width="700px">
+      <v-dialog v-model="domainDetailsDialog" max-width="700px" @keydown.esc="domainDetailsDialog = false">
         <v-btn slot="activator" color="primary" dark>DS</v-btn>
         <v-card>
           <v-card-title>
