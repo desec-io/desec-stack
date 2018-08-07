@@ -1,6 +1,6 @@
 <template>
   <v-card flat>
-    <v-form v-model="valid" @submit="login()">
+    <v-form v-model="valid" v-on:submit.prevent="login">
       <v-toolbar flat>
         <v-toolbar-title>Log in</v-toolbar-title>
       </v-toolbar>
@@ -33,7 +33,15 @@
         ></v-text-field>
       </v-card-text>
       <v-card-actions>
-        <v-btn type="submit" color="primary" :disabled="!valid" id="login-button">Log in</v-btn>
+        <v-btn
+          type="submit"
+          color="primary"
+          :disabled="!valid || working"
+          id="login-button"
+          :loading="working"
+        >
+          Log in
+        </v-btn>
       </v-card-actions>
     </v-form>
   </v-card>
@@ -60,18 +68,24 @@ export default {
   }),
   methods: {
     async login () {
+      this.errors = []
+      this.working = true
       try {
-        this.errors = []
-        this.working = true
         const response = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
-        this.authorized = true
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + response.data.auth_token
-        router.replace('/domains')
+        if ('go' in this.$route.query && this.$route.query.go) {
+          router.replace(this.$route.query.go)
+        } else {
+          router.replace({name: 'DomainList'})
+        }
       } catch (e) {
-        console.log(e)
-        this.errors = e.response.data.non_field_errors
+        this.working = false
+        try {
+          this.errors = e.response.data.non_field_errors
+        } catch (ex) {
+          this.errors = [e, ex]
+        }
       }
-      this.working = false
     }
   }
 }

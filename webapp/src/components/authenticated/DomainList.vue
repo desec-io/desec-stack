@@ -148,7 +148,7 @@ ns2.desec.io
 </template>
 
 <script>
-import {HTTP} from '../http-common'
+import {HTTP} from '../../http-common'
 
 export default {
   name: 'DomainList',
