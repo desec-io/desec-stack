@@ -153,7 +153,7 @@ import {HTTP} from '../../http-common'
 export default {
   name: 'DomainList',
   data: () => ({
-    dialog: false,
+    reset_dialog: false,
     dialogDomainName: '',
     domainDetailsDialog: false,
     pagination: {

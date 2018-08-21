@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import SignUp from '@/components/SignUp'
 import LogIn from '@/components/LogIn'
+import Reset from '@/components/Reset'
 import Authenticated from '@/components/authenticated/Authenticated'
 import DomainList from '@/components/authenticated/DomainList'
 
@@ -20,6 +21,11 @@ export default new Router({
       path: '/',
       name: 'LogIn',
       component: LogIn
+    },
+    {
+      path: '/reset/:uid/:token',
+      name: 'Reset',
+      component: Reset
     },
     {
       path: '/auth',
