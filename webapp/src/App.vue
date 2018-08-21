@@ -6,14 +6,9 @@ TODO
 <template>
   <v-app id="inspire">
     <v-content>
-      <v-container fluid fill-height>
-        <v-layout column align-center justify-center>
-          <v-flex xs12 sm8 md4>
-            <img src="./assets/logo.png">
-          </v-flex>
-          <v-flex xs12 sm8 md4>
-            <router-view/>
-          </v-flex>
+      <v-container fill-height>
+        <v-layout align-center justify-center>
+          <router-view/>
         </v-layout>
       </v-container>
     </v-content>
