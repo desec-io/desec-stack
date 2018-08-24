@@ -43,7 +43,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken',
     'djoser',
     'desecapi',
 )
@@ -104,7 +103,7 @@ STATIC_URL = '/api/static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
+        'desecapi.authentication.TokenAuthentication',
     ),
 }
 
@@ -120,6 +119,7 @@ DJOSER = {
         'user': 'desecapi.serializers.UserSerializer',
         'user_create': 'desecapi.serializers.UserCreateSerializer',
     },
+    'TOKEN_MODEL': 'desecapi.models.Token',
 }
 
 TEMPLATES = [

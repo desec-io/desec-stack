@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain, User, RRset, RR
+from desecapi.models import Domain, User, RRset, RR, Token
 from desecapi.serializers import (
-    DomainSerializer, RRsetSerializer, DonationSerializer)
+    DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer)
 from rest_framework import generics
 from desecapi.permissions import IsOwner, IsDomainOwner
 from rest_framework import permissions
@@ -10,8 +10,7 @@ from django.http import Http404, HttpResponseRedirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.authentication import (
-    TokenAuthentication, get_authorization_header)
+from rest_framework.authentication import get_authorization_header
 from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 from django.template.loader import get_template
@@ -32,6 +31,12 @@ from desecapi.emails import send_account_lock_email, send_token_email
 import re
 import ipaddress, os
 from rest_framework_bulk import ListBulkCreateUpdateAPIView
+from django.contrib.auth import user_logged_in, user_logged_out
+import djoser.views
+from djoser.serializers import TokenSerializer as DjoserTokenSerializer
+from rest_framework.viewsets import GenericViewSet
+from rest_framework import mixins
+
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
@@ -39,6 +44,53 @@ patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
 def get_client_ip(request):
     return request.META.get('REMOTE_ADDR')
+
+
+class TokenCreateView(djoser.views.TokenCreateView):
+
+    def _action(self, serializer):
+        user = serializer.user
+        token = Token(user=user, name="login")
+        token.save()
+        user_logged_in.send(sender=user.__class__, request=self.request, user=user)
+        token_serializer_class = DjoserTokenSerializer
+        return Response(
+            data=token_serializer_class(token).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class TokenDestroyView(djoser.views.TokenDestroyView):
+
+    def post(self, request):
+        _, token = auth.TokenAuthentication().authenticate(request)
+        token.delete()
+        user_logged_out.send(
+            sender=request.user.__class__, request=request, user=request.user
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TokenViewSet(mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.ListModelMixin,
+                   GenericViewSet):
+    serializer_class = TokenSerializer
+    permission_classes = (permissions.IsAuthenticated, )
+    lookup_field = 'user_specific_id'
+
+    def get_queryset(self):
+        return self.request.user.auth_tokens.all()
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            super().destroy(self, request, *args, **kwargs)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class DomainList(generics.ListCreateAPIView):
@@ -175,7 +227,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class RRsetList(ListBulkCreateUpdateAPIView):
-    authentication_classes = (TokenAuthentication, auth.IPAuthentication,)
+    authentication_classes = (auth.TokenAuthentication, auth.IPAuthentication,)
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
@@ -290,7 +342,7 @@ class DnsQuery(APIView):
 
 
 class DynDNS12Update(APIView):
-    authentication_classes = (TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
+    authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [StaticHTMLRenderer]
 
     def findDomain(self, request):

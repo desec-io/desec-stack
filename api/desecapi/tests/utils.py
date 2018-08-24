@@ -1,8 +1,7 @@
 import random
 import string
 
-from rest_framework.authtoken.models import Token
-from desecapi.models import Domain, User
+from desecapi.models import Domain, User, Token
 
 
 class utils(object):

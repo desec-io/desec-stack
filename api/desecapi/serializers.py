@@ -1,12 +1,23 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from desecapi.models import Domain, Donation, User, RR, RRset
+from desecapi.models import Domain, Donation, User, RR, RRset, Token
 from djoser import serializers as djoserSerializers
 from django.db import models, transaction
 import django.core.exceptions
 from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 import re
 from rest_framework.fields import empty
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    value = serializers.ReadOnlyField(source='key')
+    # note this overrides the original "id" field, which is the db primary key
+    id = serializers.ReadOnlyField(source='user_specific_id')
+
+    class Meta:
+        model = Token
+        fields = ('id', 'created', 'name', 'value',)
+        read_only_fields = ('created', 'value', 'id')
 
 
 class RRSerializer(serializers.ModelSerializer):

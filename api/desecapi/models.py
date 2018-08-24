@@ -6,8 +6,9 @@ from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, mixins
 import datetime, uuid
 from django.core.validators import MinValueValidator
-from rest_framework.authtoken.models import Token
 from collections import OrderedDict
+import rest_framework.authtoken.models
+from time import time
 
 
 class MyUserManager(BaseUserManager):
@@ -41,6 +42,26 @@ class MyUserManager(BaseUserManager):
         user.is_admin = True
         user.save(using=self._db)
         return user
+
+
+class Token(rest_framework.authtoken.models.Token):
+    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
+    # relation to user is a ForeignKey, so each user can have more than one token
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='auth_tokens',
+        on_delete=models.CASCADE, verbose_name="User"
+    )
+    name = models.CharField("Name", max_length=64, default="")
+    user_specific_id = models.BigIntegerField("User-Specific ID")
+
+    def save(self, *args, **kwargs):
+        if not self.user_specific_id:
+            self.user_specific_id = int(time() * 100000)
+        super().save(*args, **kwargs) # Call the "real" save() method.
+
+    class Meta:
+        abstract = False
+        unique_together = (('user', 'user_specific_id'),)
 
 
 class User(AbstractBaseUser):
