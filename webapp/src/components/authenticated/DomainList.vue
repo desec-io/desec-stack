@@ -30,23 +30,20 @@ TODO
               <v-text-field v-model="dialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
             </v-card-text>
             <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="primary" outline @click.native="dialog = false">Cancel</v-btn>
-              <v-btn color="primary" depressed type="submit">Create</v-btn>
-              <v-spacer></v-spacer>
+              <v-btn color="primary" class="grow" outline @click.native="dialog = false">Cancel</v-btn>
+              <v-btn color="primary" class="grow" depressed type="submit">Create</v-btn>
             </v-card-actions>
           </v-form>
         </v-card>
       </v-dialog>
       <v-dialog v-model="domainDetailsDialog" max-width="700px" @keydown.esc="domainDetailsDialog = false">
-        <v-btn slot="activator" color="primary" depressed>DS</v-btn>
         <v-card>
           <v-card-title>
-            <div class="title">Domain details</div>
+            <div class="title">Domain details for <b>{{ domainDetailsDialogDomainName }}</b></div>
             <v-spacer></v-spacer>
             <v-icon @click.stop="domainDetailsDialog = false">close</v-icon>
           </v-card-title>
-          <v-alert :value="true" type="success">Your domain <b>{{ 'example.com' }}</b> has been successfully created!</v-alert>
+          <v-alert :value="domainDetailsDialogDomainIsNew" type="success">Your domain <b>{{ domainDetailsDialogDomainName }}</b> has been successfully created!</v-alert>
           <v-divider></v-divider>
           <v-card-text>
             <p>Please forward the following information to your domain registrar:</p>
@@ -61,14 +58,13 @@ ns2.desec.io
 </pre>
             <div class="caption font-weight-medium">DS records</div>
 <pre class="mb-3 pa-3">
-6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520
-6454 8 1 24396E17E36D031F71C354B06A979A67A01F503E
+{{ domainDetailsDialogDS.join('\n') }}
 </pre>
             <p>Once your domain registrar processes this information, your deSEC DNS setup will be ready to use.</p>
           </v-card-text>
           <v-card-actions class="pa-3">
             <v-spacer></v-spacer>
-            <v-btn color="primary" outline @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
+            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
             <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">Close and edit</v-btn>
           </v-card-actions>
         </v-card>
@@ -115,12 +111,16 @@ ns2.desec.io
         <tr :active="props.selected" @click="props.selected = !props.selected">
           <td>{{ props.item.name }}</td>
           <td>{{ props.item.updated }}</td>
-          <td class="text-xs-right">
-            <v-checkbox
-              :input-value="props.selected"
-              primary
-              hide-details
-            ></v-checkbox>
+          <td>
+            <v-layout align-center justify-end>
+              <v-btn @click.stop="showDomainDetailsDialog(props.item.name)" flat icon><v-icon>info</v-icon></v-btn>
+              <v-checkbox
+                :input-value="props.selected"
+                primary
+                hide-details
+                class="shrink"
+              ></v-checkbox>
+            </v-layout>
           </td>
         </tr>
       </template>
@@ -152,9 +152,12 @@ import {HTTP} from '../../http-common'
 export default {
   name: 'DomainList',
   data: () => ({
-    reset_dialog: false,
+    dialog: false,
     dialogDomainName: '',
     domainDetailsDialog: false,
+    domainDetailsDialogDomainName: '',
+    domainDetailsDialogDS: [],
+    domainDetailsDialogDomainIsNew: false,
     pagination: {
       sortBy: 'name'
     },
@@ -177,6 +180,14 @@ export default {
     }
   },
   methods: {
+    showDomainDetailsDialog (name, showAlert = false) {
+      this.domainDetailsDialogDomainName = name
+      this.domainDetailsDialogDomainIsNew = showAlert
+      let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)
+      dsList = dsList.concat.apply([], dsList)
+      this.domainDetailsDialogDS = dsList
+      this.domainDetailsDialog = true
+    },
     toggleAll () {
       if (this.selected.length) this.selected = []
       else this.selected = this.domains.slice()
@@ -195,12 +206,14 @@ export default {
     },
     async createNewDomain () {
       try {
+        let name = this.dialogDomainName
         const response = await HTTP.post('domains/', {
-          'name': this.dialogDomainName
+          'name': name
         })
         this.domains.push(response.data)
-        this.dialog = false
         this.dialogDomainName = ''
+        this.dialog = false
+        this.showDomainDetailsDialog(name, true)
       } catch (e) {
         console.log(e)
         this.errors.push(e)
@@ -218,9 +231,6 @@ export default {
   pre {
     background: lightgray;
     overflow: auto;
-  }
-  button {
-    min-width: 230px;
   }
   .v-input--checkbox {
     display: inline-flex;
