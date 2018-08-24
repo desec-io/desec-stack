@@ -45,3 +45,18 @@ exports.rrsets = {
     type: "array",
     items: exports.rrset
 };
+
+exports.token = {
+    properties: {
+        value: { type: "string" },
+        name: { type: "string" },
+        created: { type: "string" },
+        id: { type: "integer" },
+    },
+    required: ["value", "name", "created", "id"]
+};
+
+exports.tokens = {
+    type: "array",
+    items: exports.token
+};

@@ -5,6 +5,7 @@ var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
 var schemas = require("./../schemas.js");
 
 describe("API", function () {
+    this.timeout(3000);
 
     before(function () {
         chakram.setRequestDefaults({
@@ -66,6 +67,81 @@ describe("API", function () {
                 expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
                 token = loginResponse.body.auth_token;
             });
+        });
+
+        describe("token management (djoser)", function () {
+
+            var token1, token2;
+
+            function createTwoTokens() {
+                return chakram.waitFor([
+                    chakram.post('/auth/token/create/', {
+                        "email": email,
+                        "password": password,
+                    }).then(function (loginResponse) {
+                        expect(loginResponse).to.have.status(201);
+                        expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                        token1 = loginResponse.body.auth_token;
+                        expect(token1).to.not.equal(token2);
+                    }),
+                    chakram.post('/auth/token/create/', {
+                        "email": email,
+                        "password": password,
+                    }).then(function (loginResponse) {
+                        expect(loginResponse).to.have.status(201);
+                        expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                        token2 = loginResponse.body.auth_token;
+                        expect(token2).to.not.equal(token1);
+                    })
+                ]);
+            }
+
+            function deleteToken(token) {
+                var response = chakram.post('/auth/token/destroy/', null, {
+                    headers: {'Authorization': 'Token ' + token}
+                });
+
+                return expect(response).to.have.status(204);
+            }
+
+            it("can create additional tokens", createTwoTokens);
+
+            describe("additional tokens", function () {
+
+                before(createTwoTokens);
+
+                it("can be used for login (1)", function () {
+                    return expect(chakram.get('/domains/', {
+                        headers: {'Authorization': 'Token ' + token1 }
+                    })).to.have.status(200);
+                });
+
+                it("can be used for login (2)", function () {
+                    return expect(chakram.get('/domains/', {
+                        headers: {'Authorization': 'Token ' + token2 }
+                    })).to.have.status(200);
+                });
+
+                describe("and one deleted", function () {
+
+                    before(function () {
+                        var response = chakram.post('/auth/token/destroy/', undefined,
+                            { headers: {'Authorization': 'Token ' + token1 } }
+                        );
+
+                        return expect(response).to.have.status(204);
+                    });
+
+                    it("leaves the other untouched", function () {
+                        return expect(chakram.get('/domains/', {
+                            headers: {'Authorization': 'Token ' + token2 }
+                        })).to.have.status(200);
+                    });
+
+                });
+
+            });
+
         });
 
     });
@@ -880,6 +956,64 @@ describe("API", function () {
                 });
 
             });
+
+            describe("tokens/ endpoint", function () {
+
+                var tokenId;
+                var tokenValue;
+
+                function createTokenWithName () {
+                    var tokenname = "e2e-token-" + require("uuid").v4();
+                    return chakram.post('/tokens/', { name: tokenname }).then(function (response) {
+                        expect(response).to.have.status(201);
+                        expect(response).to.have.json('name', tokenname);
+                        tokenId = response.body['id'];
+                    });
+                }
+
+                function createToken () {
+                    return chakram.post('/tokens/').then(function (response) {
+                        expect(response).to.have.status(201);
+                        tokenId = response.body['id'];
+                        tokenValue = response.body['value'];
+                    });
+                }
+
+                it("can create tokens", createToken);
+
+                it("can create tokens with name", createTokenWithName)
+
+                describe("with tokens", function () {
+                    before(createToken)
+
+                    it("a list of tokens can be retrieved", function () {
+                        var response = chakram.get('/tokens/');
+                        return expect(response).to.have.schema(schemas.tokens);
+                    });
+
+                    describe("can delete token", function () {
+
+                        before( function () {
+                            var response = chakram.delete('/tokens/' + tokenId + '/');
+                            return expect(response).to.have.status(204);
+                        });
+
+                        it("deactivates the token", function () {
+                            return expect(chakram.get('/tokens/', {
+                                headers: {'Authorization': 'Token ' + tokenValue }
+                            })).to.have.status(401);
+                        });
+
+                    });
+
+                    it("deleting nonexistent tokens yields 204", function () {
+                        var response = chakram.delete('/tokens/wedonthavethisid/');
+                        return expect(response).to.have.status(204);
+                    });
+
+                });
+
+            })
 
         });
 

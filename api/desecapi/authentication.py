@@ -1,9 +1,13 @@
 from __future__ import unicode_literals
 import base64, os
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
-from rest_framework.authtoken.models import Token
 from rest_framework.authentication import BaseAuthentication, get_authorization_header, authenticate
-from desecapi.models import Domain
+from desecapi.models import Domain, Token
+from rest_framework.authentication import TokenAuthentication as RestFrameworkTokenAuthentication
+
+
+class TokenAuthentication(RestFrameworkTokenAuthentication):
+    model = Token
 
 
 class BasicTokenAuthentication(BaseAuthentication):
@@ -96,6 +100,7 @@ class URLParamAuthentication(BaseAuthentication):
 
 
 class IPAuthentication(BaseAuthentication):
+
     """
     Authentication against remote IP address for dedyn.io management by nslord
     """
