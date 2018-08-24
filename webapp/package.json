@@ -17,6 +17,7 @@
     "axios": "~0.18.0",
     "material-design-icons-iconfont": "~3.0.3",
     "vue": "^2.5.17",
+    "vue-clipboard2": "~0.2.1",
     "vue-router": "^3.0.1",
     "vuetify": "~1.1.13"
   },

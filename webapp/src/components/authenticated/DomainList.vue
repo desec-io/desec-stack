@@ -47,17 +47,31 @@ TODO
           <v-divider></v-divider>
           <v-card-text>
             <p>Please forward the following information to your domain registrar:</p>
-            <!--
-            TODO
-            - on click, copy text to clipboard
-            -->
             <div class="caption font-weight-medium">NS records</div>
 <pre class="mb-3 pa-3">
 ns1.desec.io
 ns2.desec.io
 </pre>
-            <div class="caption font-weight-medium">DS records</div>
-<pre class="mb-3 pa-3">
+            <v-layout flex align-end>
+              <div class="caption font-weight-medium">DS records</div>
+              <v-spacer></v-spacer>
+              <div v-if="!domainDetailsDialogDScopied">
+                <v-icon
+                  small
+                  @click=""
+                  v-clipboard:copy="domainDetailsDialogDS.join('\n')"
+                  v-clipboard:success="() => (domainDetailsDialogDScopied = true)"
+                  v-clipboard:error="() => (domainDetailsDialogDScopied = false)"
+                >content_copy</v-icon>
+              </div>
+              <div v-else>copied! <v-icon small>check</v-icon></div>
+            </v-layout>
+<pre
+  class="mb-3 pa-3"
+  v-clipboard:copy="domainDetailsDialogDS.join('\n')"
+  v-clipboard:success="() => (domainDetailsDialogDScopied = true)"
+  v-clipboard:error="() => (domainDetailsDialogDScopied = false)"
+>
 {{ domainDetailsDialogDS.join('\n') }}
 </pre>
             <p>Once your domain registrar processes this information, your deSEC DNS setup will be ready to use.</p>
@@ -65,7 +79,7 @@ ns2.desec.io
           <v-card-actions class="pa-3">
             <v-spacer></v-spacer>
             <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
-            <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">Close and edit</v-btn>
+            <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">{{ domainDetailsDialogDomainIsNew ? 'Close and edit' : 'Close' }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -113,7 +127,7 @@ ns2.desec.io
           <td>{{ props.item.updated }}</td>
           <td>
             <v-layout align-center justify-end>
-              <v-btn @click.stop="showDomainDetailsDialog(props.item.name)" flat icon><v-icon>info</v-icon></v-btn>
+              <v-btn @click.stop="showDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
               <v-checkbox
                 :input-value="props.selected"
                 primary
@@ -157,6 +171,7 @@ export default {
     domainDetailsDialog: false,
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
+    domainDetailsDialogDScopied: false,
     domainDetailsDialogDomainIsNew: false,
     pagination: {
       sortBy: 'name'
@@ -181,6 +196,7 @@ export default {
   },
   methods: {
     showDomainDetailsDialog (name, showAlert = false) {
+      this.domainDetailsDialogDScopied = false
       this.domainDetailsDialogDomainName = name
       this.domainDetailsDialogDomainIsNew = showAlert
       let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)

@@ -8,8 +8,10 @@ import router from './router'
 
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css' // Ensure you are using css-loader
+import VueClipboard from 'vue-clipboard2'
 
 Vue.use(Vuetify)
+Vue.use(VueClipboard)
 
 Vue.config.productionTip = false
 
