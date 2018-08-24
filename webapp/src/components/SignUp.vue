@@ -113,7 +113,7 @@ export default {
     errors: []
   }),
   methods: {
-    async login () {
+    async signup () {
       this.working = true
       this.errors = []
       try {
