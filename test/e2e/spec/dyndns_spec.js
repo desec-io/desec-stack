@@ -1,6 +1,7 @@
 var chakram = require("./../setup.js").chakram;
 var expect = chakram.expect;
 var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
+var schemas = require("./../schemas.js");
 
 describe("dyndns service", function () {
 
@@ -31,7 +32,7 @@ describe("dyndns service", function () {
                     "email": email,
                     "password": password,
                 }).then(function (loginResponse) {
-                    expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                    expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
                     token = loginResponse.body.auth_token;
                     chakram.setRequestHeader('Authorization', 'Token ' + token);
                 });

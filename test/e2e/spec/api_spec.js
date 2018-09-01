@@ -64,7 +64,7 @@ describe("API", function () {
                 "email": email,
                 "password": password,
             }).then(function (loginResponse) {
-                expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
                 token = loginResponse.body.auth_token;
             });
         });
@@ -80,7 +80,7 @@ describe("API", function () {
                         "password": password,
                     }).then(function (loginResponse) {
                         expect(loginResponse).to.have.status(201);
-                        expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
                         token1 = loginResponse.body.auth_token;
                         expect(token1).to.not.equal(token2);
                     }),
@@ -89,7 +89,7 @@ describe("API", function () {
                         "password": password,
                     }).then(function (loginResponse) {
                         expect(loginResponse).to.have.status(201);
-                        expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
                         token2 = loginResponse.body.auth_token;
                         expect(token2).to.not.equal(token1);
                     })
@@ -180,7 +180,7 @@ describe("API", function () {
                     "email": email,
                     "password": password,
                 }).then(function (loginResponse) {
-                    expect(loginResponse.body.auth_token).to.match(/^[a-z0-9]{40}$/);
+                    expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
                     token = loginResponse.body.auth_token;
                     chakram.setRequestHeader('Authorization', 'Token ' + token);
                 });

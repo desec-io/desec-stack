@@ -9,6 +9,8 @@ from django.core.validators import MinValueValidator
 from collections import OrderedDict
 import rest_framework.authtoken.models
 from time import time
+from os import urandom
+from base64 import b64encode
 
 
 class MyUserManager(BaseUserManager):
@@ -58,6 +60,9 @@ class Token(rest_framework.authtoken.models.Token):
         if not self.user_specific_id:
             self.user_specific_id = int(time() * 100000)
         super().save(*args, **kwargs) # Call the "real" save() method.
+
+    def generate_key(self):
+        return b64encode(urandom(21)).decode('utf-8')
 
     class Meta:
         abstract = False
