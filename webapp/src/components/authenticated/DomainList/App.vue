@@ -1,8 +1,3 @@
-<!--
-TODO
-- When selecting, then searching, selected items can disappear while still being selected. User actions then performed must not be confusing.
--->
-
 <template>
   <v-card>
     <v-card-title>
@@ -15,22 +10,22 @@ TODO
         single-line
         hide-details
       ></v-text-field>
-      <v-dialog v-model="dialog" max-width="500px" @keydown.esc="dialog = false">
+      <v-dialog v-model="newDomainDialog" max-width="500px" @keydown.esc="newDomainDialog = false">
         <v-btn slot="activator" color="primary" depressed>Create new domain</v-btn>
         <v-card>
           <v-form @submit.prevent="createNewDomain">
             <v-card-title>
               <span class="title">Create a New Domain</span>
               <v-spacer></v-spacer>
-              <v-icon @click.stop="dialog = false">close</v-icon>
+              <v-icon @click.stop="newDomainDialog = false">close</v-icon>
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text>
               <p>You have {{ 5 - domains.length }} of 5 domains left in your plan. <a>Upgrade now!</a></p>
-              <v-text-field v-model="dialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
+              <v-text-field v-model="newDomainDialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
             </v-card-text>
             <v-card-actions>
-              <v-btn color="primary" class="grow" outline @click.native="dialog = false">Cancel</v-btn>
+              <v-btn color="primary" class="grow" outline @click.native="newDomainDialog = false">Cancel</v-btn>
               <v-btn color="primary" class="grow" depressed type="submit">Create</v-btn>
             </v-card-actions>
           </v-form>
@@ -43,8 +38,8 @@ TODO
             <v-spacer></v-spacer>
             <v-icon @click.stop="domainDetailsDialog = false">close</v-icon>
           </v-card-title>
-          <v-alert :value="domainDetailsDialogDomainIsNew" type="success">Your domain <b>{{ domainDetailsDialogDomainName }}</b> has been successfully created!</v-alert>
           <v-divider></v-divider>
+          <v-alert :value="domainDetailsDialogDomainIsNew" type="success">Your domain <b>{{ domainDetailsDialogDomainName }}</b> has been successfully created!</v-alert>
           <v-card-text>
             <p>Please forward the following information to your domain registrar:</p>
             <div class="caption font-weight-medium">NS records</div>
@@ -58,7 +53,7 @@ ns2.desec.io
               <div v-if="!domainDetailsDialogDScopied">
                 <v-icon
                   small
-                  @click=""
+                  @click="true"
                   v-clipboard:copy="domainDetailsDialogDS.join('\n')"
                   v-clipboard:success="() => (domainDetailsDialogDScopied = true)"
                   v-clipboard:error="() => (domainDetailsDialogDScopied = false)"
@@ -78,7 +73,7 @@ ns2.desec.io
           </v-card-text>
           <v-card-actions class="pa-3">
             <v-spacer></v-spacer>
-            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
+            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="domainDetailsDialog = false; newDomainDialog = true">Create another domain</v-btn>
             <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">{{ domainDetailsDialogDomainIsNew ? 'Close and edit' : 'Close' }}</v-btn>
           </v-card-actions>
         </v-card>
@@ -86,7 +81,6 @@ ns2.desec.io
     </v-card-title>
 
     <v-data-table
-      v-model="selected"
       :custom-filter="customFilter"
       :headers="headers"
       :items="domains"
@@ -96,7 +90,6 @@ ns2.desec.io
       :search="search"
       item-key="name"
       :rows-per-page-items="[10,20,{'text':'All', 'value':-1}]"
-      select-all
       class="elevation-1"
     >
       <template slot="headers" slot-scope="props">
@@ -111,29 +104,30 @@ ns2.desec.io
             {{ header.text }}
           </th>
           <th class="text-xs-right">
-            <v-checkbox
+            <!--v-checkbox
               :input-value="props.all"
               :indeterminate="props.indeterminate"
               primary
               hide-details
               @click.native="toggleAll"
-            ></v-checkbox>
+            ></v-checkbox-->
           </th>
         </tr>
       </template>
       <template slot="items" slot-scope="props">
-        <tr :active="props.selected" @click="props.selected = !props.selected">
+        <tr>
           <td>{{ props.item.name }}</td>
           <td>{{ props.item.updated }}</td>
           <td>
             <v-layout align-center justify-end>
               <v-btn @click.stop="showDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
-              <v-checkbox
+              <v-btn @click.stop="showDomainDeletionDialog(props.item.name)" class="_delete" flat icon><v-icon>delete</v-icon></v-btn>
+              <!--v-checkbox
                 :input-value="props.selected"
                 primary
                 hide-details
                 class="shrink"
-              ></v-checkbox>
+              ></v-checkbox-->
             </v-layout>
           </td>
         </tr>
@@ -142,32 +136,36 @@ ns2.desec.io
         <div class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
-          <v-btn color="primary" depressed @click.stop="dialog = true">Create new domain</v-btn>
+          <v-btn color="primary" depressed @click.stop="newDomainDialog = true">Create new domain</v-btn>
         </div>
       </template>
     </v-data-table>
-    <div>
-      <h1>dev stuff</h1>
-      <div><v-btn color="secondary" depressed @click.stop="domains = []"><v-icon>delete</v-icon> Clear all domains</v-btn></div>
-      <p>{{ selected }}</p>
-      <v-alert :value="errors && errors.length" type="error">
-        <li v-for="error of errors" :key="error">
-          <b>{{ error.message }}</b>
-          {{ error }}
-        </li>
-      </v-alert>
-    </div>
+    <confirmation
+      v-model="domainDeletionDialog"
+      info="This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet."
+      title="Domain Deletion"
+      :callback="deleteDomain"
+      :args="[domainDeletionDomainName]"
+    >
+      <p>Do you really want to delete the domain <b>{{ domainDeletionDomainName }}</b>?</p>
+    </confirmation>
   </v-card>
 </template>
 
 <script>
-import {HTTP} from '../../http-common'
+import {HTTP} from '../../../http-common'
+import Confirmation from '../Confirmation.vue'
 
 export default {
   name: 'DomainList',
+  components: {
+    Confirmation
+  },
   data: () => ({
-    dialog: false,
-    dialogDomainName: '',
+    newDomainDialog: false,
+    newDomainDialogDomainName: '',
+    domainDeletionDialog: false,
+    domainDeletionDomainName: '',
     domainDetailsDialog: false,
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
@@ -177,7 +175,6 @@ export default {
       sortBy: 'name'
     },
     errors: [],
-    selected: [],
     search: '',
     headers: [
       { text: 'Name', value: 'name', align: 'left' },
@@ -195,6 +192,15 @@ export default {
     }
   },
   methods: {
+    showDomainDeletionDialog (name) {
+      this.domainDeletionDomainName = name
+      this.domainDeletionDialog = true
+    },
+    async deleteDomain (name) {
+      await HTTP.delete('domains/' + name + '/')
+      this.domains = this.domains.filter(domain => domain.name !== name)
+      this.domainDeletionDomainName = ''
+    },
     showDomainDetailsDialog (name, showAlert = false) {
       this.domainDetailsDialogDScopied = false
       this.domainDetailsDialogDomainName = name
@@ -203,10 +209,6 @@ export default {
       dsList = dsList.concat.apply([], dsList)
       this.domainDetailsDialogDS = dsList
       this.domainDetailsDialog = true
-    },
-    toggleAll () {
-      if (this.selected.length) this.selected = []
-      else this.selected = this.domains.slice()
     },
     changeSort (column) {
       if (this.pagination.sortBy === column) {
@@ -222,13 +224,13 @@ export default {
     },
     async createNewDomain () {
       try {
-        let name = this.dialogDomainName
+        let name = this.newDomainDialogDomainName
         const response = await HTTP.post('domains/', {
           'name': name
         })
         this.domains.push(response.data)
-        this.dialogDomainName = ''
-        this.dialog = false
+        this.newDomainDialogDomainName = ''
+        this.newDomainDialog = false
         this.showDomainDetailsDialog(name, true)
       } catch (e) {
         console.log(e)
@@ -251,5 +253,11 @@ export default {
   .v-input--checkbox {
     display: inline-flex;
     width: auto;
+  }
+  button._delete {
+    color: #9E9E9E; /* grey */
+  }
+  button._delete:hover {
+    color: #C62828; /* red darken-3 */
   }
 </style>

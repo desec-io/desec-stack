@@ -4,7 +4,7 @@ import SignUp from '@/components/SignUp'
 import LogIn from '@/components/LogIn'
 import Reset from '@/components/Reset'
 import Authenticated from '@/components/authenticated/Authenticated'
-import DomainList from '@/components/authenticated/DomainList'
+import DomainList from '@/components/authenticated/DomainList/App'
 
 Vue.use(Router)
 
