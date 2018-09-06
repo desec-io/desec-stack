@@ -17,17 +17,3 @@ of JSON encoding and the content type header automatically.  Of course,
 
 .. _HTTPie: https://httpie.org/
 
-
-User Registration and Management
---------------------------------
-
-User management is handled via Django's djoser library.  For usage, please
-check the `djoser endpoint documentation`_.
-
-.. _djoser endpoint documentation:
-    https://github.com/sunscrapers/djoser/blob/1.1.5/docs/source/getting_started.rst#available-endpoints
-
-Most operations require authentication of the domain owner using a token that
-is returned by djoser's ``token/create/`` endpoint.  To authenticate, this
-token is transmitted via the HTTP ``Authorization`` header, as shown in the
-examples in this document.

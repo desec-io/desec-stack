@@ -1,10 +1,31 @@
 Endpoint Reference
 ------------------
 
-Endpoints related to `User Registration and Management`_ are described in the
-`djoser endpoint documentation`_.  The following table summarizes basic
-information about the deSEC API endpoints used for `Domain Management`_ and
-`Retrieving and Manipulating DNS Information`_.
+The following table summarizes basic information about the deSEC API endpoints used
+for `User Registration and Management`_.
+
++------------------------------------------------+------------+---------------------------------------------+
+| Endpoint ``/api/v1``...                        | Methods    | Use case                                    |
++================================================+============+=============================================+
+| ...\ ``/auth/users/create/``                   | ``POST``   | Create user account                         |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/auth/password/reset/``                 | ``POST``   | Request password reset                      |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/auth/password/reset/confirm/``         | ``POST``   | Confirm password reset                      |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/auth/token/create/``                   | ``POST``   | Log in and request authentication token     |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/auth/token/destroy/``                  | ``POST``   | Log out and destroy authentication token    |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/tokens/``                              | ``GET``    | Retrieve all current tokens                 |
+|                                                +------------+---------------------------------------------+
+|                                                | ``POST``   | Create new token                            |
++------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/tokens/{id}/``                         | ``DELETE`` | Delete token                                |
++------------------------------------------------+------------+---------------------------------------------+
+
+The following table summarizes basic information about the deSEC API endpoints used
+for `Domain Management`_ and `Retrieving and Manipulating DNS Information`_.
 
 +------------------------------------------------+------------+---------------------------------------------+
 | Endpoint ``/api/v1/domains``...                | Methods    | Use case                                    |
