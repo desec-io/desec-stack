@@ -263,6 +263,21 @@ describe("API", function () {
                     itShowsUpInPdnsAs('', domain, 'A', ['127.0.0.1'], 60);
                 });
 
+                describe("cannot create RRsets of restricted or dead type", function () {
+
+                    var rrTypes = ['DNAME', 'ALIAS', 'SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT'];
+                    for (var i = 0; i < rrTypes.length; i++) {
+                        var rrType = rrTypes[i];
+                        it(rrType, function () {
+                            return expect(chakram.post(
+                                    '/domains/' + domain + '/rrsets/',
+                                    {'subname': 'not-welcome', 'type': rrType, 'records': ['127.0.0.1'], 'ttl': 60}
+                                )).to.have.status(400);
+                        });
+                    }
+
+                });
+
                 it("cannot update RRSets for nonexistent domain name", function () {
                     return expect(chakram.patch(
                             '/domains/nonexistent.e2e.domain/rrsets/',

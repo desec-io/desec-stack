@@ -432,6 +432,7 @@ class RRset(models.Model, mixins.SetterMixin):
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     _dirty = False
+    DEAD_TYPES = ('ALIAS', 'DNAME')
     RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT')
 
 
