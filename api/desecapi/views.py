@@ -160,6 +160,7 @@ class DomainList(generics.ListCreateAPIView):
 class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
     permission_classes = (permissions.IsAuthenticated, IsOwner,)
+    lookup_field = 'name'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -178,10 +179,6 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
             ex = ValidationError(detail={"detail": str(e)})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
-
-
-class DomainDetailByName(DomainDetail):
-    lookup_field = 'name'
 
 
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
