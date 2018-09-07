@@ -21,7 +21,7 @@ for `User Registration and Management`_.
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create new token                            |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/tokens/{id}/``                         | ``DELETE`` | Delete token                                |
+| ...\ ``/tokens/:id/``                          | ``DELETE`` | Delete token                                |
 +------------------------------------------------+------------+---------------------------------------------+
 
 The following table summarizes basic information about the deSEC API endpoints used
@@ -34,13 +34,13 @@ for `Domain Management`_ and `Retrieving and Manipulating DNS Information`_.
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/``                            | ``GET``    | Retrieve a specific domain                  |
+| ...\ ``/:name/``                               | ``GET``    | Retrieve a specific domain                  |
 |                                                +------------+---------------------------------------------+
 |                                                | ``PATCH``  | Modify a domain (deprecated)                |
 |                                                +------------+---------------------------------------------+
 |                                                | ``DELETE`` | Delete a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/rrsets/``                     | ``GET``    | Retrieve all RRsets from ``domain``, filter |
+| ...\ ``/:name/rrsets/``                        | ``GET``    | Retrieve all RRsets from ``domain``, filter |
 |                                                |            | by ``subname`` or ``type`` query parameter  |
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create one or more RRsets                   |
@@ -49,7 +49,7 @@ for `Domain Management`_ and `Retrieving and Manipulating DNS Information`_.
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Create, modify or delete one or more RRsets |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/{domain}/rrsets/{subname}.../{type}/`` | ``GET``    | Retrieve a specific RRset                   |
+| ...\ ``/:name/rrsets/:subname.../:type/``      | ``GET``    | Retrieve a specific RRset                   |
 |                                                +------------+---------------------------------------------+
 |                                                | ``PATCH``  | Modify an RRset                             |
 |                                                +------------+---------------------------------------------+

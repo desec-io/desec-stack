@@ -208,7 +208,7 @@ To delete an existing token via the token management endpoints, issue a
 ``DELETE`` request on the token's endpoint::
 
     http DELETE \
-        https://desec.io/api/v1/tokens/{id}/ \
+        https://desec.io/api/v1/tokens/:id/ \
         Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will reply with ``204 No Content``, even if the token was not found.
