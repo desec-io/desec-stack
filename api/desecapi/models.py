@@ -62,7 +62,7 @@ class Token(rest_framework.authtoken.models.Token):
         super().save(*args, **kwargs) # Call the "real" save() method.
 
     def generate_key(self):
-        return b64encode(urandom(21)).decode('utf-8')
+        return b64encode(urandom(21)).decode('utf-8').replace('/', '-').replace('=', '_').replace('+', '.')
 
     class Meta:
         abstract = False
