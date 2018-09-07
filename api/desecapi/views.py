@@ -15,7 +15,7 @@ from rest_framework.renderers import StaticHTMLRenderer
 from dns import resolver
 from django.template.loader import get_template
 import desecapi.authentication as auth
-import base64
+import base64, binascii
 from desecapi import settings
 from rest_framework.exceptions import (
     APIException, MethodNotAllowed, PermissionDenied, ValidationError)
@@ -363,6 +363,8 @@ class DynDNS12Update(APIView):
             except IndexError:
                 pass
             except UnicodeDecodeError:
+                pass
+            except binascii.Error:
                 pass
 
             # 4. username parameter
