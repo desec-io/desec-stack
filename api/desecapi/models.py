@@ -9,6 +9,7 @@ from django.core.validators import MinValueValidator
 from collections import OrderedDict
 import rest_framework.authtoken.models
 from time import time
+import random
 from os import urandom
 from base64 import b64encode
 
@@ -58,7 +59,7 @@ class Token(rest_framework.authtoken.models.Token):
 
     def save(self, *args, **kwargs):
         if not self.user_specific_id:
-            self.user_specific_id = int(time() * 100000)
+            self.user_specific_id = random.randrange(16**8)
         super().save(*args, **kwargs) # Call the "real" save() method.
 
     def generate_key(self):
