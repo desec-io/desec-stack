@@ -277,6 +277,13 @@ describe("API", function () {
                         )).to.have.status(404);
                 });
 
+                it("cannot set unicode RRsets", function () {
+                    return expect(chakram.post(
+                            '/domains/' + domain + '/rrsets/',
+                            {'subname': '想不出来', 'type': 'A', 'records': ['127.0.0.1'], 'ttl': 60}
+                        )).to.have.status(422);
+                });
+
                 describe("can set a wildcard AAAA RRset with multiple records", function () {
                     before(function () {
                         return chakram.post(
