@@ -21,12 +21,12 @@ class UnauthenticatedDomainTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnPut(self):
-        url = reverse('domain-detail', args=(1,))
+        url = reverse('domain-detail', args=('example.com',))
         response = self.client.put(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnDelete(self):
-        url = reverse('domain-detail', args=(1,))
+        url = reverse('domain-detail', args=('example.com',))
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -57,7 +57,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(httpretty.last_request().method, 'DELETE')
@@ -76,7 +76,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
@@ -89,19 +89,19 @@ class AuthenticatedDomainTests(APITestCase):
                                body='[]',
                                content_type="application/json")
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)
         self.assertTrue(isinstance(response.data['keys'], list))
 
     def testCantGetOtherDomains(self):
-        url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantChangeDomainName(self):
-        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         newname = utils.generateDomainname()
         response.data['name'] = newname
@@ -112,7 +112,7 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)
 
     def testCantPutOtherDomains(self):
-        url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.put(url, json.dumps({}), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -213,11 +213,8 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + name + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
 
     def testDomainDetailURL(self):
-        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
-        urlByName = reverse('domain-detail/byName', args=(self.ownedDomains[1].name,))
-
-        self.assertTrue(("/%d" % self.ownedDomains[1].pk) in url)
-        self.assertTrue("/" + self.ownedDomains[1].name in urlByName)
+        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        self.assertTrue("/" + self.ownedDomains[1].name in url)
 
     def testRollback(self):
         name = utils.generateDomainname()
@@ -250,7 +247,7 @@ class AuthenticatedDynDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -271,7 +268,7 @@ class AuthenticatedDynDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.otherDomains[1].pk,))
+        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
