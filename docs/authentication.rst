@@ -225,9 +225,9 @@ to change in the future.
 
 Any token is generated from 168 bits of true randomness at the server. Guessing
 the token correctly is hence practically impossible. The value corresponds to 21
-bytes and is represented by 28 characters in Base64 encoding. That is, any token
-will only consist of characters ``A-Z``, ``a-z``, ``/``, and ``+``. (We do not
-have any ``=`` padding at the end because the string length is a multiple of 4.)
+bytes and is represented by 28 characters in Base64-like encoding. That is, any token
+will only consist of URL-safe characters ``A-Z``, ``a-z``, ``-``, and ``.``. (We do not
+have any padding at the end because the string length is a multiple of 4.)
 
 As all tokens are stored in plain text on the server, the user may not choose
 the token value individually to prevent re-using passwords as tokens at deSEC.

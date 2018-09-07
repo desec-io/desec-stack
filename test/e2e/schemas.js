@@ -61,4 +61,4 @@ exports.tokens = {
     items: exports.token
 };
 
-exports.TOKEN_REGEX = /^[A-Za-z0-9+/]{28}$/
+exports.TOKEN_REGEX = /^[A-Za-z0-9\.\-]{28}$/
