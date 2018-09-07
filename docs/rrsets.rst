@@ -66,9 +66,16 @@ Field details:
 ``records``
     :Access mode: read, write
 
-    Array of record content strings.  The maximum number of array elements is
-    4091, and the maximum length of the array is 64,000 (after JSON encoding).
-    Note the `caveat on the priority field`_.
+    Array of record content strings.  Please note that when a record value
+    contains a domain name, it is in almost all cases required to add a final
+    dot after the domain name.  This applies, for example, to the ``CNAME``,
+    ``MX``, and ``SRV`` record types.  A typical ``MX`` value would thus be
+    be ``10 mx.example.com.`` (note the trailing dot).
+
+    Please also consider the `caveat on the priority field`_.
+
+    The maximum number of array elements is 4091, and the maximum length of
+    the array is 64,000 (after JSON encoding).
 
 ``subname``
     :Access mode: read, write-once (upon RRset creation)
