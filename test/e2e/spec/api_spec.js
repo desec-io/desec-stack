@@ -263,6 +263,20 @@ describe("API", function () {
                     itShowsUpInPdnsAs('', domain, 'A', ['127.0.0.1'], 60);
                 });
 
+                it("cannot update RRSets for nonexistent domain name", function () {
+                    return expect(chakram.patch(
+                            '/domains/nonexistent.e2e.domain/rrsets/',
+                            {'subname': '', 'type': 'A', 'records': ['127.0.0.1'], 'ttl': 60}
+                        )).to.have.status(404);
+                });
+
+                it("cannot create RRSets for nonexistent domain name", function () {
+                    return expect(chakram.post(
+                            '/domains/nonexistent.e2e.domain/rrsets/',
+                            {'subname': '', 'type': 'A', 'records': ['127.0.0.1'], 'ttl': 60}
+                        )).to.have.status(404);
+                });
+
                 describe("can set a wildcard AAAA RRset with multiple records", function () {
                     before(function () {
                         return chakram.post(

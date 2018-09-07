@@ -233,7 +233,10 @@ class RRsetList(ListBulkCreateUpdateAPIView):
 
     def get_queryset(self):
         name = self.kwargs['name']
-        rrsets = self.request.user.domains.get(name=name).rrset_set
+        try:
+            rrsets = self.request.user.domains.get(name=name).rrset_set
+        except Domain.DoesNotExist:
+            raise Http404
 
         for filter_field in ('subname', 'type'):
             value = self.request.query_params.get(filter_field)
