@@ -430,10 +430,12 @@ explained below.
 Restricted Types
 ````````````````
 
-**Note:**  Some record types are supported by the API, but not currently
-served by our nameservers (such as ``ALIAS`` or ``DNAME``).  If you wish to
-use such record types, shoot us an email.  In most cases, it should not be a
-problem to enable such functionality.
+``ALIAS``, ``DNAME``
+    These record types are used very rarely in the wild.  Due to conflicts with
+    the security guarantees we would like to give, these record types are
+    disabled in our API.  If you attempt to create such RRsets, you will receive
+    a ``400 Bad Request`` response.  In case you have a good reason for using
+    these record types, shoot us an email and we can discuss your case.
 
 ``DNSKEY``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in

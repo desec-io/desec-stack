@@ -184,6 +184,9 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
         return self._save(None, validated_data)
 
     def validate_type(self, value):
+        if value in RRset.DEAD_TYPES:
+            raise serializers.ValidationError(
+                "The %s RRset type is currently unsupported." % value)
         if value in RRset.RESTRICTED_TYPES:
             raise serializers.ValidationError(
                 "You cannot tinker with the %s RRset." % value)

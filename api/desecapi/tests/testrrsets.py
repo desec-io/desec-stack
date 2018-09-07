@@ -32,6 +32,7 @@ class UnauthenticatedDomainTests(APITestCase):
 
 
 class AuthenticatedRRsetTests(APITestCase):
+    dead_types = ('ALIAS', 'DNAME')
     restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
 
     def setUp(self):
@@ -150,6 +151,13 @@ class AuthenticatedRRsetTests(APITestCase):
         data = {'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def testCantPostDeadTypes(self):
+        for type_ in self.dead_types:
+            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+            data = {'records': ['www.example.com.'], 'ttl': 60, 'type': type_}
+            response = self.client.post(url, json.dumps(data), content_type='application/json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
