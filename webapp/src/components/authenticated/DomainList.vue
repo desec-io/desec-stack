@@ -1,6 +1,5 @@
 <!--
 TODO
-- table header: align left
 - When selecting, then searching, selected items can disappear while still being selected. User actions then performed must not be confusing.
 -->
 
@@ -17,13 +16,13 @@ TODO
         hide-details
       ></v-text-field>
       <v-dialog v-model="dialog" max-width="500px" @keydown.esc="dialog = false">
-        <v-btn slot="activator" color="primary" dark>Create new domain</v-btn>
+        <v-btn slot="activator" color="primary" depressed>Create new domain</v-btn>
         <v-card>
           <v-form @submit.prevent="createNewDomain">
             <v-card-title>
               <span class="title">Create a New Domain</span>
               <v-spacer></v-spacer>
-              <v-icon @click="dialog = false">close</v-icon>
+              <v-icon @click.stop="dialog = false">close</v-icon>
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text>
@@ -40,12 +39,12 @@ TODO
         </v-card>
       </v-dialog>
       <v-dialog v-model="domainDetailsDialog" max-width="700px" @keydown.esc="domainDetailsDialog = false">
-        <v-btn slot="activator" color="primary" dark>DS</v-btn>
+        <v-btn slot="activator" color="primary" depressed>DS</v-btn>
         <v-card>
           <v-card-title>
             <div class="title">Domain details</div>
             <v-spacer></v-spacer>
-            <v-icon @click="domainDetailsDialog = false">close</v-icon>
+            <v-icon @click.stop="domainDetailsDialog = false">close</v-icon>
           </v-card-title>
           <v-alert :value="true" type="success">Your domain <b>{{ 'example.com' }}</b> has been successfully created!</v-alert>
           <v-divider></v-divider>
@@ -69,8 +68,8 @@ ns2.desec.io
           </v-card-text>
           <v-card-actions class="pa-3">
             <v-spacer></v-spacer>
-            <v-btn xs12 color="primary" outline @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
-            <v-btn xs12 color="primary" dark depressed @click.native="domainDetailsDialog = false">Close and edit</v-btn>
+            <v-btn color="primary" outline @click.native="domainDetailsDialog = false; dialog = true">Create another domain</v-btn>
+            <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">Close and edit</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -95,13 +94,13 @@ ns2.desec.io
           <th
             v-for="header in props.headers"
             :key="header.text"
-            :class="['column sortable', pagination.descending ? 'desc' : 'asc', header.value === pagination.sortBy ? 'active' : '']"
+            :class="['column sortable', pagination.descending ? 'desc' : 'asc', header.value === pagination.sortBy ? 'active' : '', header.align ? 'text-xs-' + header.align : '']"
             @click="changeSort(header.value)"
           >
             <v-icon small>arrow_upward</v-icon>
             {{ header.text }}
           </th>
-          <th>
+          <th class="text-xs-right">
             <v-checkbox
               :input-value="props.all"
               :indeterminate="props.indeterminate"
@@ -116,7 +115,7 @@ ns2.desec.io
         <tr :active="props.selected" @click="props.selected = !props.selected">
           <td>{{ props.item.name }}</td>
           <td>{{ props.item.updated }}</td>
-          <td>
+          <td class="text-xs-right">
             <v-checkbox
               :input-value="props.selected"
               primary
@@ -129,13 +128,13 @@ ns2.desec.io
         <div class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
-          <v-btn color="primary" dark @click.stop="dialog = true">Create new domain</v-btn>
+          <v-btn color="primary" depressed @click.stop="dialog = true">Create new domain</v-btn>
         </div>
       </template>
     </v-data-table>
     <div>
       <h1>dev stuff</h1>
-      <div><v-btn color="secondary" @click="domains = []"><v-icon>delete</v-icon> Clear all domains</v-btn></div>
+      <div><v-btn color="secondary" depressed @click.stop="domains = []"><v-icon>delete</v-icon> Clear all domains</v-btn></div>
       <p>{{ selected }}</p>
       <v-alert :value="errors && errors.length" type="error">
         <li v-for="error of errors" :key="error">
@@ -222,5 +221,9 @@ export default {
   }
   button {
     min-width: 230px;
+  }
+  .v-input--checkbox {
+    display: inline-flex;
+    width: auto;
   }
 </style>

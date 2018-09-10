@@ -6,11 +6,7 @@ TODO
 <template>
   <v-app id="inspire">
     <v-content>
-      <v-container fill-height>
-        <v-layout align-center justify-center>
-          <router-view/>
-        </v-layout>
-      </v-container>
+      <router-view/>
     </v-content>
   </v-app>
 </template>
