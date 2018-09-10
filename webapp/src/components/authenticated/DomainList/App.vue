@@ -11,60 +11,6 @@
         hide-details
       ></v-text-field>
       <v-btn color="primary" depressed @click.native="showNewDomainDialog = true">Create new domain</v-btn>
-      <new-domain-dialog
-        v-model="showNewDomainDialog"
-        :current="() => (domains.length)"
-        :limit="5"
-        :error="newDomainError"
-        @createNewDomain="createNewDomain($event)"
-      ></new-domain-dialog>
-      <v-dialog v-model="showDomainDetailsDialog" max-width="700px" @keydown.esc="showDomainDetailsDialog = false">
-        <v-card>
-          <v-card-title>
-            <div class="title">Domain details for <b>{{ domainDetailsDialogDomainName }}</b></div>
-            <v-spacer></v-spacer>
-            <v-icon @click.stop="showDomainDetailsDialog = false">close</v-icon>
-          </v-card-title>
-          <v-divider></v-divider>
-          <v-alert :value="domainDetailsDialogDomainIsNew" type="success">Your domain <b>{{ domainDetailsDialogDomainName }}</b> has been successfully created!</v-alert>
-          <v-card-text>
-            <p>Please forward the following information to your domain registrar:</p>
-            <div class="caption font-weight-medium">NS records</div>
-<pre class="mb-3 pa-3">
-ns1.desec.io
-ns2.desec.io
-</pre>
-            <v-layout flex align-end>
-              <div class="caption font-weight-medium">DS records</div>
-              <v-spacer></v-spacer>
-              <div v-if="!domainDetailsDialogDScopied">
-                <v-icon
-                  small
-                  @click="true"
-                  v-clipboard:copy="domainDetailsDialogDS.join('\n')"
-                  v-clipboard:success="() => (domainDetailsDialogDScopied = true)"
-                  v-clipboard:error="() => (domainDetailsDialogDScopied = false)"
-                >content_copy</v-icon>
-              </div>
-              <div v-else>copied! <v-icon small>check</v-icon></div>
-            </v-layout>
-<pre
-  class="mb-3 pa-3"
-  v-clipboard:copy="domainDetailsDialogDS.join('\n')"
-  v-clipboard:success="() => (domainDetailsDialogDScopied = true)"
-  v-clipboard:error="() => (domainDetailsDialogDScopied = false)"
->
-{{ domainDetailsDialogDS.join('\n') }}
-</pre>
-            <p>Once your domain registrar processes this information, your deSEC DNS setup will be ready to use.</p>
-          </v-card-text>
-          <v-card-actions class="pa-3">
-            <v-spacer></v-spacer>
-            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="showDomainDetailsDialog = false; showNewDomainDialog = true">Create another domain</v-btn>
-            <v-btn color="primary" dark depressed @click.native="showDomainDetailsDialog = false">{{ domainDetailsDialogDomainIsNew ? 'Close and edit' : 'Close' }}</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </v-card-title>
 
     <v-data-table
@@ -127,6 +73,21 @@ ns2.desec.io
         </div>
       </template>
     </v-data-table>
+
+    <new-domain-dialog
+      v-model="showNewDomainDialog"
+      :current="() => (domains.length)"
+      :limit="5"
+      :error="newDomainError"
+      @createNewDomain="createNewDomain($event)"
+    ></new-domain-dialog>
+    <domain-details-dialog
+      v-model="showDomainDetailsDialog"
+      :name="domainDetailsDialogDomainName"
+      :is-new="domainDetailsDialogDomainIsNew"
+      :ds="domainDetailsDialogDS"
+      @createAnotherDomain="showDomainDetailsDialog = false; showNewDomainDialog = true"
+    ></domain-details-dialog>
     <confirmation
       v-model="showDomainDeletionDialog"
       info="This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet."
@@ -141,12 +102,14 @@ ns2.desec.io
 
 <script>
 import {HTTP} from '../../../http-common'
-import Confirmation from '../Confirmation.vue'
-import NewDomainDialog from './NewDomainDialog.vue'
+import Confirmation from '../Confirmation'
+import NewDomainDialog from './NewDomainDialog'
+import DomainDetailsDialog from './DomainDetailsDialog'
 
 export default {
   name: 'DomainList',
   components: {
+    DomainDetailsDialog,
     NewDomainDialog,
     Confirmation
   },
@@ -154,7 +117,6 @@ export default {
     domainDeletionDomainName: '',
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
-    domainDetailsDialogDScopied: false,
     domainDetailsDialogDomainIsNew: false,
     newDomainError: '',
     showDomainDeletionDialog: false,
@@ -220,7 +182,6 @@ export default {
       this.showDomainDeletionDialog = true
     },
     openDomainDetailsDialog (name, showAlert = false) {
-      this.domainDetailsDialogDScopied = false
       this.domainDetailsDialogDomainName = name
       this.domainDetailsDialogDomainIsNew = showAlert
       let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)
@@ -234,13 +195,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  .caption {
-    text-transform: uppercase;
-  }
-  pre {
-    background: lightgray;
-    overflow: auto;
-  }
   .v-input--checkbox {
     display: inline-flex;
     width: auto;
