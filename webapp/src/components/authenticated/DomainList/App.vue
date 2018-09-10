@@ -10,33 +10,20 @@
         single-line
         hide-details
       ></v-text-field>
-      <v-dialog v-model="newDomainDialog" max-width="500px" @keydown.esc="newDomainDialog = false">
-        <v-btn slot="activator" color="primary" depressed>Create new domain</v-btn>
-        <v-card>
-          <v-form @submit.prevent="createNewDomain">
-            <v-card-title>
-              <span class="title">Create a New Domain</span>
-              <v-spacer></v-spacer>
-              <v-icon @click.stop="newDomainDialog = false">close</v-icon>
-            </v-card-title>
-            <v-divider></v-divider>
-            <v-card-text>
-              <p>You have {{ 5 - domains.length }} of 5 domains left in your plan. <a>Upgrade now!</a></p>
-              <v-text-field v-model="newDomainDialogDomainName" label="Enter domain name" hint="example.com" required></v-text-field>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn color="primary" class="grow" outline @click.native="newDomainDialog = false">Cancel</v-btn>
-              <v-btn color="primary" class="grow" depressed type="submit">Create</v-btn>
-            </v-card-actions>
-          </v-form>
-        </v-card>
-      </v-dialog>
-      <v-dialog v-model="domainDetailsDialog" max-width="700px" @keydown.esc="domainDetailsDialog = false">
+      <v-btn color="primary" depressed @click.native="showNewDomainDialog = true">Create new domain</v-btn>
+      <new-domain-dialog
+        v-model="showNewDomainDialog"
+        :current="() => (domains.length)"
+        :limit="5"
+        :error="newDomainError"
+        @createNewDomain="createNewDomain($event)"
+      ></new-domain-dialog>
+      <v-dialog v-model="showDomainDetailsDialog" max-width="700px" @keydown.esc="showDomainDetailsDialog = false">
         <v-card>
           <v-card-title>
             <div class="title">Domain details for <b>{{ domainDetailsDialogDomainName }}</b></div>
             <v-spacer></v-spacer>
-            <v-icon @click.stop="domainDetailsDialog = false">close</v-icon>
+            <v-icon @click.stop="showDomainDetailsDialog = false">close</v-icon>
           </v-card-title>
           <v-divider></v-divider>
           <v-alert :value="domainDetailsDialogDomainIsNew" type="success">Your domain <b>{{ domainDetailsDialogDomainName }}</b> has been successfully created!</v-alert>
@@ -73,8 +60,8 @@ ns2.desec.io
           </v-card-text>
           <v-card-actions class="pa-3">
             <v-spacer></v-spacer>
-            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="domainDetailsDialog = false; newDomainDialog = true">Create another domain</v-btn>
-            <v-btn color="primary" dark depressed @click.native="domainDetailsDialog = false">{{ domainDetailsDialogDomainIsNew ? 'Close and edit' : 'Close' }}</v-btn>
+            <v-btn color="primary" outline v-if="domainDetailsDialogDomainIsNew" @click.native="showDomainDetailsDialog = false; showNewDomainDialog = true">Create another domain</v-btn>
+            <v-btn color="primary" dark depressed @click.native="showDomainDetailsDialog = false">{{ domainDetailsDialogDomainIsNew ? 'Close and edit' : 'Close' }}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -120,8 +107,8 @@ ns2.desec.io
           <td>{{ props.item.updated }}</td>
           <td>
             <v-layout align-center justify-end>
-              <v-btn @click.stop="showDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
-              <v-btn @click.stop="showDomainDeletionDialog(props.item.name)" class="_delete" flat icon><v-icon>delete</v-icon></v-btn>
+              <v-btn @click.stop="openDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
+              <v-btn @click.stop="openDomainDeletionDialog(props.item.name)" class="_delete" flat icon><v-icon>delete</v-icon></v-btn>
               <!--v-checkbox
                 :input-value="props.selected"
                 primary
@@ -136,12 +123,12 @@ ns2.desec.io
         <div class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
-          <v-btn color="primary" depressed @click.stop="newDomainDialog = true">Create new domain</v-btn>
+          <v-btn color="primary" depressed @click.stop="showNewDomainDialog = true">Create new domain</v-btn>
         </div>
       </template>
     </v-data-table>
     <confirmation
-      v-model="domainDeletionDialog"
+      v-model="showDomainDeletionDialog"
       info="This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet."
       title="Domain Deletion"
       :callback="deleteDomain"
@@ -155,22 +142,24 @@ ns2.desec.io
 <script>
 import {HTTP} from '../../../http-common'
 import Confirmation from '../Confirmation.vue'
+import NewDomainDialog from './NewDomainDialog.vue'
 
 export default {
   name: 'DomainList',
   components: {
+    NewDomainDialog,
     Confirmation
   },
   data: () => ({
-    newDomainDialog: false,
-    newDomainDialogDomainName: '',
-    domainDeletionDialog: false,
     domainDeletionDomainName: '',
-    domainDetailsDialog: false,
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
     domainDetailsDialogDScopied: false,
     domainDetailsDialogDomainIsNew: false,
+    newDomainError: '',
+    showDomainDeletionDialog: false,
+    showDomainDetailsDialog: false,
+    showNewDomainDialog: false,
     pagination: {
       sortBy: 'name'
     },
@@ -192,24 +181,6 @@ export default {
     }
   },
   methods: {
-    showDomainDeletionDialog (name) {
-      this.domainDeletionDomainName = name
-      this.domainDeletionDialog = true
-    },
-    async deleteDomain (name) {
-      await HTTP.delete('domains/' + name + '/')
-      this.domains = this.domains.filter(domain => domain.name !== name)
-      this.domainDeletionDomainName = ''
-    },
-    showDomainDetailsDialog (name, showAlert = false) {
-      this.domainDetailsDialogDScopied = false
-      this.domainDetailsDialogDomainName = name
-      this.domainDetailsDialogDomainIsNew = showAlert
-      let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)
-      dsList = dsList.concat.apply([], dsList)
-      this.domainDetailsDialogDS = dsList
-      this.domainDetailsDialog = true
-    },
     changeSort (column) {
       if (this.pagination.sortBy === column) {
         this.pagination.descending = !this.pagination.descending
@@ -222,20 +193,40 @@ export default {
       search = search.toString().toLowerCase()
       return items.filter(row => filter(row['name'], search))
     },
-    async createNewDomain () {
+    async createNewDomain (name) {
+      this.newDomainError = ''
       try {
-        let name = this.newDomainDialogDomainName
         const response = await HTTP.post('domains/', {
           'name': name
         })
         this.domains.push(response.data)
-        this.newDomainDialogDomainName = ''
-        this.newDomainDialog = false
-        this.showDomainDetailsDialog(name, true)
+        this.showNewDomainDialog = false
+        this.openDomainDetailsDialog(name, true)
       } catch (e) {
         console.log(e)
-        this.errors.push(e)
+        /* TODO
+        - make the message more human-readable
+         */
+        this.newDomainError = JSON.stringify(e.response.data)
       }
+    },
+    async deleteDomain (name) {
+      await HTTP.delete('domains/' + name + '/')
+      this.domains = this.domains.filter(domain => domain.name !== name)
+      this.domainDeletionDomainName = ''
+    },
+    openDomainDeletionDialog (name) {
+      this.domainDeletionDomainName = name
+      this.showDomainDeletionDialog = true
+    },
+    openDomainDetailsDialog (name, showAlert = false) {
+      this.domainDetailsDialogDScopied = false
+      this.domainDetailsDialogDomainName = name
+      this.domainDetailsDialogDomainIsNew = showAlert
+      let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)
+      dsList = dsList.concat.apply([], dsList)
+      this.domainDetailsDialogDS = dsList
+      this.showDomainDetailsDialog = true
     }
   }
 }
