@@ -36,15 +36,15 @@
             <v-icon small>arrow_upward</v-icon>
             {{ header.text }}
           </th>
-          <th class="text-xs-right">
-            <!--v-checkbox
+          <!--th class="text-xs-right">
+            <v-checkbox
               :input-value="props.all"
               :indeterminate="props.indeterminate"
               primary
               hide-details
               @click.native="toggleAll"
-            ></v-checkbox-->
-          </th>
+            ></v-checkbox>
+          </th-->
         </tr>
       </template>
       <template slot="items" slot-scope="props">
@@ -129,7 +129,8 @@ export default {
     search: '',
     headers: [
       { text: 'Name', value: 'name', align: 'left' },
-      { text: 'Updated', value: 'updated', align: 'left' }
+      { text: 'Updated', value: 'updated', align: 'left' },
+      { }
     ],
     domains: [
     ]
