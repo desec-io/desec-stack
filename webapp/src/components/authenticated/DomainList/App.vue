@@ -18,6 +18,7 @@
       :headers="headers"
       :items="domains"
       :must-sort="true"
+      :loading="loading"
       :no-data-text="''"
       :pagination.sync="pagination"
       :search="search"
@@ -66,7 +67,10 @@
         </tr>
       </template>
       <template slot="no-data">
-        <div class="py-5 text-xs-center">
+        <div v-if="loading" class="py-5 text-xs-center">
+          <p>fetching data ...</p>
+        </div>
+        <div v-else class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
           <v-btn color="primary" depressed @click.stop="showNewDomainDialog = true">Create new domain</v-btn>
@@ -132,13 +136,14 @@ export default {
       { text: 'Updated', value: 'updated', align: 'left' },
       { }
     ],
-    domains: [
-    ]
+    domains: [],
+    loading: true
   }),
   async mounted () {
     try {
       const response = await HTTP.get('domains/')
       this.domains = response.data
+      this.loading = false
     } catch (e) {
       this.errors.push(e)
     }
