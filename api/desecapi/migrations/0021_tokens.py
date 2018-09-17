@@ -20,15 +20,10 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created')),
                 ('key', models.CharField(db_index=True, max_length=40, unique=True, verbose_name='Key')),
-                ('name', models.CharField(max_length=64, verbose_name='Name')),
+                ('name', models.CharField(default='', max_length=64, verbose_name='Name')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='auth_tokens', to=settings.AUTH_USER_MODEL, verbose_name='User')),
-                ('user_specific_id', models.BigIntegerField()),
+                ('user_specific_id', models.BigIntegerField(verbose_name='User-Specific ID')),
             ],
-            options={
-                'verbose_name': 'Token',
-                'verbose_name_plural': 'Tokens',
-                'abstract': False,
-            },
         ),
         migrations.AlterUniqueTogether(
             name='token',
