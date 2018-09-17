@@ -16,7 +16,6 @@ A JSON object representing a domain has the following structure::
 
     {
         "name": "example.com",
-        "owner": "admin@example.com",
         "keys": [
             {
                 "dnskey": "257 3 13 WFRl60...",
@@ -62,11 +61,6 @@ Field details:
     per-user basis.  In general, a domain name consists of alphanumeric
     characters as well as hyphens ``-`` and underscores ``_`` (except at the
     beginning of the name).  The maximum length is 191.
-
-``owner``
-    :Access mode: read-only
-
-    Email address of the user owning the domain.
 
 
 Creating a Domain

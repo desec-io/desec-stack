@@ -202,12 +202,11 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
 
 class DomainSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.email')
     name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', trim_whitespace=False)
 
     class Meta:
         model = Domain
-        fields = ('name', 'owner', 'keys')
+        fields = ('name', 'keys')
 
 
 class DonationSerializer(serializers.ModelSerializer):
