@@ -17,9 +17,8 @@ exports.domain = {
             minItems: 1
         },
         name: { type: "string" },
-        owner: { type: "string" },
     },
-    required: ["name", "owner", "keys"]
+    required: ["name", "keys"]
 };
 
 exports.rrset = {
