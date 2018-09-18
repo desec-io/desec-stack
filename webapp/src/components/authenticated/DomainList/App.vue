@@ -81,7 +81,7 @@
     <new-domain-dialog
       v-model="showNewDomainDialog"
       :current="() => (domains.length)"
-      :limit="5"
+      :limit="limit_domains"
       :error="newDomainError"
       @createNewDomain="createNewDomain($event)"
     ></new-domain-dialog>
@@ -122,6 +122,7 @@ export default {
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
     domainDetailsDialogDomainIsNew: false,
+    limit_domains: 0,
     newDomainError: '',
     showDomainDeletionDialog: false,
     showDomainDetailsDialog: false,
@@ -144,6 +145,12 @@ export default {
       const response = await HTTP.get('domains/')
       this.domains = response.data
       this.loading = false
+    } catch (e) {
+      this.errors.push(e)
+    }
+    try {
+      const response = await HTTP.get('auth/me/')
+      this.limit_domains = response.data.limit_domains
     } catch (e) {
       this.errors.push(e)
     }
