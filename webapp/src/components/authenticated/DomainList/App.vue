@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import {HTTP} from '../../../http-common'
+import {HTTP} from '../../../utils'
 import Confirmation from '../Confirmation'
 import NewDomainDialog from './NewDomainDialog'
 import DomainDetailsDialog from './DomainDetailsDialog'

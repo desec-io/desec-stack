@@ -111,7 +111,7 @@
 </template>
 
 <script>
-import {HTTP} from '../http-common'
+import {HTTP} from '../utils'
 import router from '../router'
 
 export default {

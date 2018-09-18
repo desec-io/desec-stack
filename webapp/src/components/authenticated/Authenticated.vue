@@ -29,7 +29,7 @@
 
 <script>
 import router from '../../router'
-import {HTTP} from '../../http-common'
+import {HTTP} from '../../utils'
 
 export default {
   name: 'Authenticated',
