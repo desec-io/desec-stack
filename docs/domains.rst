@@ -15,6 +15,7 @@ Domain Field Reference
 A JSON object representing a domain has the following structure::
 
     {
+        "created": "2018-09-18T16:36:16.510368Z",
         "name": "example.com",
         "keys": [
             {
@@ -29,10 +30,17 @@ A JSON object representing a domain has the following structure::
                 "keytype": "csk"
             },
             ...
-        ]
+        ],
+        "published": "2018-09-18T17:21:38.348112Z"
     }
 
 Field details:
+
+``created``
+    :Access mode: read-only
+
+    Timestamp of domain creation, in ISO 8601 format (e.g.
+    ``2013-01-29T12:34:56.000000Z``).
 
 ``keys``
     :Access mode: read-only
@@ -61,6 +69,18 @@ Field details:
     per-user basis.  In general, a domain name consists of alphanumeric
     characters as well as hyphens ``-`` and underscores ``_`` (except at the
     beginning of the name).  The maximum length is 191.
+
+``published``
+    :Access mode: read-only
+
+    Timestamp of when the domain's DNS records have last been published,
+    in ISO 8601 format (e.g. ``2013-01-29T12:34:56.000000Z``).
+
+    As we publish record modifications immediately, this indicates the
+    point in time of the last successful write request to a domain's
+    ``rrsets/`` endpoint.  Exception: If the user account is locked, record
+    changes are queued and not published immediately. In this case, the
+    ``published`` field is not updated.
 
 
 Creating a Domain
