@@ -128,10 +128,6 @@ def get_rrset_datas(domain):
             for rrset in get_zone(domain)['rrsets']]
 
 
-def set_rrset(rrset, notify=True):
-    return set_rrsets(rrset.domain, [rrset], notify=notify)
-
-
 def set_rrsets(domain, rrsets, notify=True):
     data = {'rrsets':
         [{'name': rrset.name, 'type': rrset.type, 'ttl': rrset.ttl,

@@ -206,7 +206,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('name', 'keys')
+        fields = ('created', 'published', 'name', 'keys')
 
 
 class DonationSerializer(serializers.ModelSerializer):

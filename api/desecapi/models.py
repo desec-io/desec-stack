@@ -130,6 +130,7 @@ class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191, unique=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+    published = models.DateTimeField(null=True)
     _dirtyName = False
 
     def setter_name(self, val):
@@ -185,10 +186,8 @@ class Domain(models.Model, mixins.SetterMixin):
             # response.
             pdns.create_zone(self, settings.DEFAULT_NS)
 
-            # Import RRsets that may have been created (e.g. during lock).
-            rrsets = self.rrset_set.all()
-            if rrsets:
-                pdns.set_rrsets(self, rrsets)
+            # Send RRsets to pdns that may have been created (e.g. during lock).
+            self._publish()
 
             # Make our RRsets consistent with pdns (specifically, NS may exist)
             self.sync_from_pdns()
@@ -215,9 +214,7 @@ class Domain(models.Model, mixins.SetterMixin):
             # do this through the pdns API (not to mention doing it atomically
             # with setting the new RRsets). So for now, we have disabled RRset
             # deletion for locked accounts.
-            rrsets = self.rrset_set.all()
-            if rrsets:
-                pdns.set_rrsets(self, rrsets)
+            self._publish()
 
     @transaction.atomic
     def sync_from_pdns(self):
@@ -341,11 +338,22 @@ class Domain(models.Model, mixins.SetterMixin):
                                 for rr in rrs])
 
         # Send RRsets to pdns
-        if rrsets_for_pdns and not self.owner.locked:
-            pdns.set_rrsets(self, rrsets_for_pdns)
+        if not self.owner.locked:
+            self._publish(rrsets_for_pdns)
 
         # Return RRsets
         return list(rrsets_to_return.values())
+
+    @transaction.atomic
+    def _publish(self, rrsets = None):
+        if rrsets is None:
+            rrsets = self.rrset_set.all()
+
+        self.published = timezone.now()
+        self.save()
+
+        if rrsets:
+            pdns.set_rrsets(self, rrsets)
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
@@ -493,8 +501,7 @@ class RRset(models.Model, mixins.SetterMixin):
         # For locked users, we can't easily sync deleted RRsets to pdns later,
         # so let's forbid it for now.
         assert not self.domain.owner.locked
-        super().delete(*args, **kwargs)
-        pdns.set_rrset(self)
+        self.domain.write_rrsets({self: []})
         self._dirties = {}
 
     def save(self, *args, **kwargs):

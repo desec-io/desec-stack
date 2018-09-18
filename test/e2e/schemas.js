@@ -26,8 +26,10 @@ exports.domain = {
             minItems: 1
         },
         name: { type: "string" },
+        created: { type: "string" },
+        published: { type: "string" },
     },
-    required: ["name", "keys"]
+    required: ["name", "keys", "created", "published"]
 };
 
 exports.rrset = {
