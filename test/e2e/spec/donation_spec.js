@@ -70,6 +70,6 @@ describe("donating", function () {
         return expect(response).to.have.status(201);
     });
 
-    // TODO it(sends emails)
+    it("sends emails")
 
 });
