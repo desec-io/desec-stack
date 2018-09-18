@@ -15,7 +15,10 @@ password. To register an user account, issue a request like this::
 
 Your email address is required for account recovery, in case you forgot your
 password, for contacting support, etc. It is deSEC's policy to require users
-to provide their real email address so that support requests can be verified.
+to provide a valid email address so that support requests can be verified.
+**If you provide an invalid email address, we will not be able to help you
+if you need support.**
+
 Note that while we do not enforce restrictions on your password, please do not
 choose a weak one.
 
@@ -53,7 +56,10 @@ require an email address and a password.
 
 Your email address is required for account recovery, in case you forgot your
 password, for contacting support, etc. It is deSEC's policy to require users
-to provide their real email address so that support requests can be verified.
+to provide a valid email address so that support requests can be verified.
+**If you provide an invalid email address, we will not be able to help you
+if you need support.**
+
 Note that while we do not enforce restrictions on your password, please do not
 choose a weak one.
 
@@ -134,8 +140,63 @@ header::
 The server will delete the token and respond with ``204 No Content``.
 
 
-Additional Tokens
-~~~~~~~~~~~~~~~~~
+Manage Account
+~~~~~~~~~~~~~~
+
+Change Email Address
+````````````````````
+
+You can change your account email address by sending a ``PUT`` request to the
+``auth/me/`` endpoint::
+
+    http PUT \
+        https://desec.io/api/v1/auth/me/ \
+        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe" \
+        email:='"new-email@example.com"'
+
+Please note that our email support only acts upon requests that originate from
+the email address associated with the deSEC user in question.  It is therefore
+required that you provide a valid email address.  However, we do not
+automatically verify the validity of the address provided.
+
+**If you provide an invalid email address and forget your account password and
+tokens, we will not be able to help you, and access will be lost permanently.**
+
+
+Password Reset
+``````````````
+
+To reset your account password, you will need to have access to your email
+account. It is a two step process. First, let us know you want to reset your
+password by issuing a POST request::
+
+    http POST \
+        https://desec.io/api/v1/auth/password/reset/ \
+        email:='"youremail@example.com"'
+
+The server will respond with ``204 No Content`` regardless of whether the email
+address is known or not. If the email address has a user account associated,
+we will send an email containing a ``uid`` and a ``token``, encoded into a
+URL that will look like this::
+
+    https://desec.io/#/password/reset/confirm/MQ/4zd-1d20102485862f7bae7b
+
+In this example, the ``uid`` is ``MQ``, and ``4zd-1d...`` is the ``token``. To
+reset your account password, issue a ``POST`` request containing ``uid``,
+``token`` and the new password::
+
+    http POST \
+        https://desec.io/api/v1/auth/password/reset/confirm/ \
+        uid:='"MQ"'
+        token:='"4zd-1d20102485862f7bae7b"'
+        new_password:='"your new password"'
+
+Please note that the password reset token and the API authentication token are
+unrelated and only coincidentally carry the same name. (Sorry about that!)
+
+
+Manage Tokens
+~~~~~~~~~~~~~
 
 To make authentication more flexible, the API can provide you with multiple
 authentication tokens. To that end, we provide a set of token management
@@ -235,35 +296,3 @@ the token value individually to prevent re-using passwords as tokens at deSEC.
 Old versions of deSEC encoded 20-byte tokens in 40 characters with hexadecimal
 representation. Such tokens will not be issued anymore, but remain valid until
 invalidated by the user.
-
-
-Password Recovery
-~~~~~~~~~~~~~~~~~
-
-To reset your account password, you will need to have access to your email
-account. It is a two step process. First, let us know you want to reset your
-password by issuing a POST request::
-
-    http POST \
-        https://desec.io/api/v1/auth/password/reset/ \
-        email:='"youremail@example.com"'
-
-The server will respond with ``204 No Content`` regardless of whether the email
-address is known or not. If the email address has a user account associated,
-we will send an email containing a ``uid`` and a ``token``, encoded into a
-URL that will look like this::
-
-    https://desec.io/#/password/reset/confirm/MQ/4zd-1d20102485862f7bae7b
-
-In this example, the ``uid`` is ``MQ``, and ``4zd-1d...`` is the ``token``. To
-reset your account password, issue a ``POST`` request containing ``uid``,
-``token`` and the new password::
-
-    http POST \
-        https://desec.io/api/v1/auth/password/reset/confirm/ \
-        uid:='"MQ"'
-        token:='"4zd-1d20102485862f7bae7b"'
-        new_password:='"your new password"'
-
-Please note that the password reset token and the API authentication token are
-unrelated and only coincidentally carry the same name. (Sorry about that!)

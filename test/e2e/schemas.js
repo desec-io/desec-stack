@@ -1,3 +1,12 @@
+exports.user = {
+    properties: {
+        dyn: { type: "boolean" },
+        email: { type: "string" },
+        limit_domains: { type: "integer" },
+    },
+    required: ["dyn", "email", "limit_domains"]
+};
+
 exports.domain = {
     properties: {
         keys: {
