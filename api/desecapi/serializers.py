@@ -227,7 +227,10 @@ class UserSerializer(djoserSerializers.UserSerializer):
     class Meta(djoserSerializers.UserSerializer.Meta):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
+            'dyn',
+            'limit_domains',
         )
+        read_only_fields = ('dyn', 'limit_domains',)
 
 
 class UserCreateSerializer(djoserSerializers.UserCreateSerializer):
