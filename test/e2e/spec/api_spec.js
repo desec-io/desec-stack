@@ -41,9 +41,9 @@ describe("API", function () {
         it("locks new users that look suspicious");
     });
 
-    describe("user login", function () {
+    describe("user account", function () {
 
-        var email, password, token;
+        var email, password;
 
         before(function () {
 
@@ -59,13 +59,56 @@ describe("API", function () {
             return expect(response).to.have.status(201);
         });
 
-        it("returns a token", function () {
+        it("returns a token when logging in", function () {
             return chakram.post('/auth/token/create/', {
                 "email": email,
                 "password": password,
             }).then(function (loginResponse) {
                 expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                token = loginResponse.body.auth_token;
+            });
+        });
+
+        describe("auth/me/ endpoint", function () {
+            var email2, password2, token2;
+
+            before(function () {
+                // register an independent user to screw around with
+                email2 = require("uuid").v4() + '@e2etest.local';
+                password2 = require("uuid").v4();
+
+                return chakram.post('/auth/users/create/', {
+                    "email": email2,
+                    "password": password2,
+                }).then(function () {
+                    return chakram.post('/auth/token/create/', {
+                        "email": email2,
+                        "password": password2,
+                    }).then(function (response) {
+                        token2 = response.body.auth_token
+                    });
+                });
+            });
+
+            it("returns JSON of correct schema", function () {
+                var response = chakram.get('/auth/me/', {
+                    headers: {'Authorization': 'Token ' + token2 }
+                });
+                expect(response).to.have.status(200);
+                expect(response).to.have.schema(schemas.user);
+                return chakram.wait();
+            });
+
+            it("allows changing email address", function () {
+                let email3 = require("uuid").v4() + '@e2etest.local';
+
+                return chakram.put('/auth/me/',
+                    {'email': email3},
+                    {headers: {'Authorization': 'Token ' + token2}}
+                ).then(function (response) {
+                    expect(response).to.have.status(200);
+                    expect(response).to.have.schema(schemas.user);
+                    expect(response.body.email).to.equal(email3);
+                });
             });
         });
 
