@@ -51,7 +51,7 @@
       <template slot="items" slot-scope="props">
         <tr>
           <td>{{ props.item.name }}</td>
-          <td>{{ props.item.updated }}</td>
+          <td><span :title="props.item.published">{{ timeAgo.format(new Date(props.item.published)) }}</span></td>
           <td>
             <v-layout align-center justify-end>
               <v-btn @click.stop="openDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import {HTTP} from '../../../utils'
+import {HTTP, timeAgo} from '../../../utils'
 import Confirmation from '../Confirmation'
 import NewDomainDialog from './NewDomainDialog'
 import DomainDetailsDialog from './DomainDetailsDialog'
@@ -133,7 +133,7 @@ export default {
     search: '',
     headers: [
       { text: 'Name', value: 'name', align: 'left' },
-      { text: 'Updated', value: 'updated', align: 'left' },
+      { text: 'Published', value: 'published', align: 'left' },
       { }
     ],
     domains: [],
@@ -194,6 +194,11 @@ export default {
       dsList = dsList.concat.apply([], dsList)
       this.domainDetailsDialogDS = dsList
       this.showDomainDetailsDialog = true
+    }
+  },
+  computed: {
+    timeAgo () {
+      return timeAgo
     }
   }
 }

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "axios": "~0.18.0",
+    "javascript-time-ago": "~1.0.31",
     "material-design-icons-iconfont": "~3.0.3",
     "vue": "^2.5.17",
     "vue-clipboard2": "~0.2.1",
