@@ -223,14 +223,19 @@ class DonationSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(djoserSerializers.UserSerializer):
+    locked = serializers.SerializerMethodField()
 
     class Meta(djoserSerializers.UserSerializer.Meta):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
             'dyn',
             'limit_domains',
+            'locked',
         )
-        read_only_fields = ('dyn', 'limit_domains',)
+        read_only_fields = ('dyn', 'limit_domains', 'locked',)
+
+    def get_locked(self, obj):
+        return bool(obj.locked)
 
 
 class UserCreateSerializer(djoserSerializers.UserCreateSerializer):

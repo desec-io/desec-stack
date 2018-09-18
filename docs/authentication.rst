@@ -143,6 +143,55 @@ The server will delete the token and respond with ``204 No Content``.
 Manage Account
 ~~~~~~~~~~~~~~
 
+Field Reference
+```````````````
+
+A JSON object representing a user has the following structure::
+
+    {
+        "dyn": false,
+        "email": "address@example.com",
+        "limit_domains": 5,
+        "locked": false
+    }
+
+Field details:
+
+``dyn``
+    :Access mode: read-only (deprecated)
+
+    Indicates whether the account is restricted to dynDNS domains under
+    dedyn.io.
+
+``email``
+    :Access mode: read, write
+
+    Email address associated with the account.  This address must be valid
+    in order to submit support requests to deSEC.
+
+``limit_domains``
+    :Access mode: read-only
+
+    Maximum number of DNS zones the user can create.
+
+``locked``
+    :Access mode: read-only
+
+    Indicates whether the account is locked.  If so, publication of DNS
+    record changes will be adjourned.
+
+
+Retrieve Account Information
+````````````````````````````
+
+To request information about your account, send a ``GET`` request to the
+``auth/me/`` endpoint::
+
+    http GET \
+        https://desec.io/api/v1/auth/me/ \
+        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+
+
 Change Email Address
 ````````````````````
 
