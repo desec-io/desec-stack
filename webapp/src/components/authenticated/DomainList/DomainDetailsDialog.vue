@@ -58,7 +58,7 @@ export default {
     },
     isNew: {
       type: Boolean,
-      required: true
+      default: true
     },
     ds: {
       type: Array,
