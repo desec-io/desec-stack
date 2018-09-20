@@ -65,6 +65,9 @@ chakram.setRequestHeader = function (header, value) {
     chakram.setRequestSettings(s);
 };
 
+// Make JSON format validators available
+chakram.addSchemaFormat(require('tv4-formats'))
+
 /*
  * DNS Resolver Testing
  */
