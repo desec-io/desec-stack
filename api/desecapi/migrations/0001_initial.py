@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 ('arecord', models.CharField(max_length=255, blank=True)),
                 ('aaaarecord', models.CharField(max_length=1024, blank=True)),
                 ('dyn', models.BooleanField(default=False)),
-                ('owner', models.ForeignKey(related_name='domains', to=settings.AUTH_USER_MODEL)),
+                ('owner', models.ForeignKey(related_name='domains', on_delete=models.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ('created',),

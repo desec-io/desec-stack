@@ -11,15 +11,15 @@ for `User Registration and Management`_.
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Change account email address                |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/users/create/``                   | ``POST``   | Create user account                         |
+| ...\ ``/auth/users/``                          | ``POST``   | Create user account                         |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/auth/password/reset/``                 | ``POST``   | Request password reset                      |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/auth/password/reset/confirm/``         | ``POST``   | Confirm password reset                      |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/token/create/``                   | ``POST``   | Log in and request authentication token     |
+| ...\ ``/auth/token/login/``                    | ``POST``   | Log in and request authentication token     |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/token/destroy/``                  | ``POST``   | Log out and destroy authentication token    |
+| ...\ ``/auth/token/logout/``                   | ``POST``   | Log out and destroy authentication token    |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/tokens/``                              | ``GET``    | Retrieve all current tokens                 |
 |                                                +------------+---------------------------------------------+

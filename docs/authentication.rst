@@ -9,7 +9,7 @@ can register free of charge through the API, providing an email address and a
 password. To register an user account, issue a request like this::
 
     http POST \
-        https://desec.io/api/v1/auth/users/create/ \
+        https://desec.io/api/v1/auth/users/ \
         email:='"anemailaddress@example.com"' \
         password:='"yourpassword"'
 
@@ -25,10 +25,10 @@ choose a weak one.
 Once a user account has been registered, you will be able to log in. Log in is
 done by asking the API for a token that can be used to authorize subsequent DNS
 management requests. To obtain such a token, send your email address and password to the
-``/auth/token/create/`` endpoint::
+``/auth/token/login/`` endpoint::
 
     http POST \
-        https://desec.io/api/v1/auth/token/create/ \
+        https://desec.io/api/v1/auth/token/login/ \
         email:='"anemailaddress@example.com"' \
         password:='"yourpassword"'
 
@@ -104,7 +104,7 @@ To obtain an authentication token, log in by sending your email address and
 password to the token create endpoint of the API::
 
     http POST \
-        https://desec.io/api/v1/auth/token/create/ \
+        https://desec.io/api/v1/auth/token/login/ \
         email:='"anemailaddress@example.com"' \
         password:='"yourpassword"'
 
@@ -134,7 +134,7 @@ the token destroy endpoint, using the token in question in the ``Authorization``
 header::
 
     http POST \
-        https://desec.io/api/v1/auth/token/destroy/ \
+        https://desec.io/api/v1/auth/token/logout/ \
         Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
 The server will delete the token and respond with ``204 No Content``.

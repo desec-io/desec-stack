@@ -24,11 +24,11 @@ describe("dyndns service", function () {
             // register a user that we can login and work with
             password = require("uuid").v4();
 
-            return chakram.post('/auth/users/create/', {
+            return chakram.post('/auth/users/', {
                 "email": email,
                 "password": password,
             }).then(function () {
-                return chakram.post('/auth/token/create/', {
+                return chakram.post('/auth/token/login/', {
                     "email": email,
                     "password": password,
                 }).then(function (loginResponse) {

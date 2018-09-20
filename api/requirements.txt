@@ -1,11 +1,11 @@
-Django==1.11.*
+Django==2.1.*
 mysqlclient==1.3.*
-djangorestframework==3.7.*
-djoser==1.1.*
+djangorestframework==3.7.*  # djangorestframework-bulk 0.2.0 stops us from upgrading to 3.8
+djoser==1.2.*  # https://github.com/sunscrapers/djoser/issues/312 stops us from upgrading to 1.3.*
 dnspython==1.15.*
-httpretty==0.8.*
-requests==2.18.*
+httpretty==0.9.*
+requests==2.19.*
 uwsgi==2.0.*
-django-nocaptcha-recaptcha==0.0.19  # updated manually
+django-nocaptcha-recaptcha==0.0.20  # updated manually
 sqlparse==0.2.*
 djangorestframework-bulk==0.2.*
