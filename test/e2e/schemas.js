@@ -1,7 +1,12 @@
+// For format specs, see https://json-schema.org/latest/json-schema-validation.html#rfc.section.7.3
+
 exports.user = {
     properties: {
         dyn: { type: "boolean" },
-        email: { type: "string" },
+        email: {
+            type: "string",
+            format: "email"
+        },
         limit_domains: { type: "integer" },
     },
     required: ["dyn", "email", "limit_domains"]
@@ -25,9 +30,18 @@ exports.domain = {
             },
             minItems: 1
         },
-        name: { type: "string" },
-        created: { type: "string" },
-        published: { type: "string" },
+        name: {
+            type: "string",
+            format: "hostname"
+        },
+        created: {
+            type: "string",
+            format: "date-time"
+        },
+        published: {
+            type: "string",
+            format: "date-time"
+        },
     },
     required: ["name", "keys", "created", "published"]
 };
