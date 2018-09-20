@@ -30,7 +30,7 @@ describe("API", function () {
             email = require("uuid").v4() + '@e2etest.local';
             password = require("uuid").v4();
 
-            var response = chakram.post('/auth/users/create/', {
+            var response = chakram.post('/auth/users/', {
                 "email": email,
                 "password": password,
             });
@@ -51,7 +51,7 @@ describe("API", function () {
             email = require("uuid").v4() + '@e2etest.local';
             password = require("uuid").v4();
 
-            var response = chakram.post('/auth/users/create/', {
+            var response = chakram.post('/auth/users/', {
                 "email": email,
                 "password": password,
             });
@@ -60,7 +60,7 @@ describe("API", function () {
         });
 
         it("returns a token when logging in", function () {
-            return chakram.post('/auth/token/create/', {
+            return chakram.post('/auth/token/login/', {
                 "email": email,
                 "password": password,
             }).then(function (loginResponse) {
@@ -76,11 +76,11 @@ describe("API", function () {
                 email2 = require("uuid").v4() + '@e2etest.local';
                 password2 = require("uuid").v4();
 
-                return chakram.post('/auth/users/create/', {
+                return chakram.post('/auth/users/', {
                     "email": email2,
                     "password": password2,
                 }).then(function () {
-                    return chakram.post('/auth/token/create/', {
+                    return chakram.post('/auth/token/login/', {
                         "email": email2,
                         "password": password2,
                     }).then(function (response) {
@@ -118,7 +118,7 @@ describe("API", function () {
 
             function createTwoTokens() {
                 return chakram.waitFor([
-                    chakram.post('/auth/token/create/', {
+                    chakram.post('/auth/token/login/', {
                         "email": email,
                         "password": password,
                     }).then(function (loginResponse) {
@@ -127,7 +127,7 @@ describe("API", function () {
                         token1 = loginResponse.body.auth_token;
                         expect(token1).to.not.equal(token2);
                     }),
-                    chakram.post('/auth/token/create/', {
+                    chakram.post('/auth/token/login/', {
                         "email": email,
                         "password": password,
                     }).then(function (loginResponse) {
@@ -140,7 +140,7 @@ describe("API", function () {
             }
 
             function deleteToken(token) {
-                var response = chakram.post('/auth/token/destroy/', null, {
+                var response = chakram.post('/auth/token/logout/', null, {
                     headers: {'Authorization': 'Token ' + token}
                 });
 
@@ -168,7 +168,7 @@ describe("API", function () {
                 describe("and one deleted", function () {
 
                     before(function () {
-                        var response = chakram.post('/auth/token/destroy/', undefined,
+                        var response = chakram.post('/auth/token/logout/', undefined,
                             { headers: {'Authorization': 'Token ' + token1 } }
                         );
 
@@ -215,11 +215,11 @@ describe("API", function () {
             // register a user that we can login and work with
             password = require("uuid").v4();
 
-            return chakram.post('/auth/users/create/', {
+            return chakram.post('/auth/users/', {
                 "email": email,
                 "password": password,
             }).then(function () {
-                return chakram.post('/auth/token/create/', {
+                return chakram.post('/auth/token/login/', {
                     "email": email,
                     "password": password,
                 }).then(function (loginResponse) {

@@ -284,7 +284,7 @@ class RRsetList(ListBulkCreateUpdateAPIView):
 
 class Root(APIView):
     def get(self, request, format=None):
-        if self.request.user and self.request.user.is_authenticated():
+        if self.request.user and self.request.user.is_authenticated:
             return Response({
                 'domains': reverse('domain-list'),
                 'user': reverse('user'),

@@ -129,7 +129,7 @@ class User(AbstractBaseUser):
 class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191, unique=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='domains')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True)
     _dirtyName = False
 
