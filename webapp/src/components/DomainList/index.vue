@@ -1,29 +1,22 @@
 <template>
   <v-card>
     <v-card-title>
-      <div class="headline">{{ $route.params.name }}</div>
-    </v-card-title>
-
-    <v-toolbar>
-      <v-btn color="primary" depressed>Add record</v-btn>
+      <div class="headline">Your domains</div>
+      <v-spacer></v-spacer>
       <v-text-field
         v-model="search"
         append-icon="search"
-        label="Search subname or value"
+        label="Search"
         single-line
         hide-details
       ></v-text-field>
-      <v-spacer></v-spacer>
-      <v-toolbar-items>
-        <v-btn flat>Import</v-btn>
-        <v-btn flat>Export all</v-btn>
-      </v-toolbar-items>
-    </v-toolbar>
+      <v-btn color="primary" depressed @click.native="showNewDomainDialog = true">Create new domain</v-btn>
+    </v-card-title>
 
     <v-data-table
       :custom-filter="customFilter"
       :headers="headers"
-      :items="rrsets"
+      :items="domains"
       :must-sort="true"
       :loading="loading"
       :no-data-text="''"
@@ -56,15 +49,13 @@
         </tr>
       </template>
       <template slot="items" slot-scope="props">
-        <tr>
-          <td>{{ props.item.type }}</td>
-          <td>{{ props.item.subname }}</td>
-          <td>{{ props.item.records }}</td>
-          <td>{{ props.item.ttl }}</td>
+        <tr @click="$router.push({name: 'Domain', params: { name: props.item.name }})">
+          <td>{{ props.item.name }}</td>
+          <td><span :title="props.item.published">{{ timeAgo.format(new Date(props.item.published)) }}</span></td>
           <td>
             <v-layout align-center justify-end>
-              <v-btn color="grey" flat icon><v-icon>edit</v-icon></v-btn>
-              <v-btn @click.stop="openRRsetDeletionDialog(props.item)" class="_delete" flat icon><v-icon>delete</v-icon></v-btn>
+              <v-btn @click.stop="openDomainDetailsDialog(props.item.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
+              <v-btn @click.stop="openDomainDeletionDialog(props.item.name)" class="_delete" flat icon><v-icon>delete</v-icon></v-btn>
               <!--v-checkbox
                 :input-value="props.selected"
                 primary
@@ -82,73 +73,84 @@
         <div v-else class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
           <p>Create a new domain to get started.</p>
-          <v-btn color="primary" depressed>Add record</v-btn>
+          <v-btn color="primary" depressed @click.stop="showNewDomainDialog = true">Create new domain</v-btn>
         </div>
       </template>
     </v-data-table>
-    <div>
-      <h2>dev</h2>
-      <v-btn color="primary" depressed @click.native="router.replace({name: 'DomainList'})">back</v-btn>
-    </div>
 
+    <new-domain-dialog
+      v-model="showNewDomainDialog"
+      :current="() => (domains.length)"
+      :limit="limit_domains"
+      :error="newDomainError"
+      @createNewDomain="createNewDomain($event)"
+    ></new-domain-dialog>
     <domain-details-dialog
       v-model="showDomainDetailsDialog"
       :name="domainDetailsDialogDomainName"
+      :is-new="domainDetailsDialogDomainIsNew"
       :ds="domainDetailsDialogDS"
+      @createAnotherDomain="showDomainDetailsDialog = false; showNewDomainDialog = true"
     ></domain-details-dialog>
     <confirmation
-      v-model="showRRsetDeletionDialog"
-      title="Record Deletion"
-      :callback="deleteRRset"
-      :args="[rrsetDeletionSubname, rrsetDeletionType]"
+      v-model="showDomainDeletionDialog"
+      info="This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet."
+      title="Domain Deletion"
+      :callback="deleteDomain"
+      :args="[domainDeletionDomainName]"
     >
-      <p>Do you really want to delete the <b>{{ rrsetDeletionType }}</b> record on <b>{{ rrsetDeletionName }}</b>?</p>
+      <p>Do you really want to delete the domain <b>{{ domainDeletionDomainName }}</b>?</p>
     </confirmation>
   </v-card>
 </template>
 
 <script>
-import {HTTP} from '../../../utils'
-import router from '../../../router'
+import {HTTP, timeAgo} from '@/utils'
 import Confirmation from '../Confirmation'
-import DomainDetailsDialog from '../DomainList/DomainDetailsDialog'
+import NewDomainDialog from './NewDomainDialog'
+import DomainDetailsDialog from '../DomainDetailsDialog'
 
 export default {
-  name: 'Domain',
+  name: 'DomainList',
   components: {
     DomainDetailsDialog,
+    NewDomainDialog,
     Confirmation
   },
   data: () => ({
-    rrsetDeletionName: '',
-    rrsetDeletionSubname: '',
-    rrsetDeletionType: '',
+    domainDeletionDomainName: '',
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
     domainDetailsDialogDomainIsNew: false,
-    showRRsetDeletionDialog: false,
+    limit_domains: 0,
+    newDomainError: '',
+    showDomainDeletionDialog: false,
     showDomainDetailsDialog: false,
+    showNewDomainDialog: false,
     pagination: {
       sortBy: 'name'
     },
     errors: [],
     search: '',
     headers: [
-      { text: 'Type', value: 'type', align: 'left' },
-      { text: 'Subname', value: 'subname', align: 'left' },
-      { text: 'Value', value: 'records', align: 'left' },
-      { text: 'TTL', value: 'ttl', align: 'left' },
+      { text: 'Name', value: 'name', align: 'left' },
+      { text: 'Published', value: 'published', align: 'left' },
       { }
     ],
-    rrsets: [],
+    domains: [],
     loading: true
   }),
   async mounted () {
     try {
-      const response = await HTTP.get('domains/' + this.$route.params.name + '/rrsets/')
-      let rrsets = response.data.filter(rrset => !(rrset.subname === '' && rrset.type === 'NS'))
-      this.rrsets = rrsets
+      const response = await HTTP.get('domains/')
+      this.domains = response.data
       this.loading = false
+    } catch (e) {
+      this.errors.push(e)
+    }
+    try {
+      const response = await HTTP.get('auth/me/')
+      this.limit_domains = response.data.limit_domains
     } catch (e) {
       this.errors.push(e)
     }
@@ -164,21 +166,33 @@ export default {
     },
     customFilter (items, search, filter) {
       search = search.toString().toLowerCase()
-      return items.filter(row => filter(row['subname'], search) || filter(row['records'], search))
+      return items.filter(row => filter(row['name'], search))
     },
-    async deleteRRset (subname, type) {
-      console.log('delete ' + 'domains/' + this.$route.params.name + '/rrsets/...' + subname + '/' + type + '/')
-      await HTTP.delete('domains/' + this.$route.params.name + '/rrsets/...' + subname + '/' + type + '/')
-      this.rrsets = this.rrsets.filter(rrset => !(rrset.subname === subname && rrset.type === type))
-      this.rrsetDeletionName = ''
-      this.rrsetDeletionSubname = ''
-      this.rrsetDeletionType = ''
+    async createNewDomain (name) {
+      this.newDomainError = ''
+      try {
+        const response = await HTTP.post('domains/', {
+          'name': name
+        })
+        this.domains.push(response.data)
+        this.showNewDomainDialog = false
+        this.openDomainDetailsDialog(name, true)
+      } catch (e) {
+        console.log(e)
+        /* TODO
+        - make the message more human-readable
+         */
+        this.newDomainError = JSON.stringify(e.response.data)
+      }
     },
-    openRRsetDeletionDialog (rrset) {
-      this.rrsetDeletionName = rrset.name.slice(0, -1)
-      this.rrsetDeletionSubname = rrset.subname
-      this.rrsetDeletionType = rrset.type
-      this.showRRsetDeletionDialog = true
+    async deleteDomain (name) {
+      await HTTP.delete('domains/' + name + '/')
+      this.domains = this.domains.filter(domain => domain.name !== name)
+      this.domainDeletionDomainName = ''
+    },
+    openDomainDeletionDialog (name) {
+      this.domainDeletionDomainName = name
+      this.showDomainDeletionDialog = true
     },
     openDomainDetailsDialog (name, showAlert = false) {
       this.domainDetailsDialogDomainName = name
@@ -190,8 +204,8 @@ export default {
     }
   },
   computed: {
-    router () {
-      return router
+    timeAgo () {
+      return timeAgo
     }
   }
 }

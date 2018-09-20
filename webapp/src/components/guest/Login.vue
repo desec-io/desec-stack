@@ -111,11 +111,10 @@
 </template>
 
 <script>
-import {HTTP} from '../utils'
-import router from '../router'
+import {HTTP} from '@/utils'
 
 export default {
-  name: 'LogIn',
+  name: 'Login',
   data: () => ({
     valid: false,
     working: false,
@@ -139,10 +138,11 @@ export default {
       try {
         const response = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + response.data.auth_token
-        if ('go' in this.$route.query && this.$route.query.go) {
-          router.replace(this.$route.query.go)
+        this.$store.commit('login', response.data.auth_token)
+        if ('redirect' in this.$route.query && this.$route.query.redirect) {
+          this.$router.replace(this.$route.query.redirect)
         } else {
-          router.replace({name: 'DomainList'})
+          this.$router.replace({path: '/'})
         }
       } catch (error) {
         if (error.response) {

@@ -81,7 +81,7 @@
           <v-layout column>
             <v-flex xs12 mt-5>
               Already registered?
-              <v-btn flat color="primary" :to="{name: 'LogIn'}">Sign in</v-btn>
+              <v-btn flat color="primary" :to="{name: 'Login'}">Sign in</v-btn>
             </v-flex>
           </v-layout>
         </v-container>
@@ -91,8 +91,7 @@
 </template>
 
 <script>
-import {HTTP} from '../utils'
-import router from '../router'
+import {HTTP} from '@/utils'
 
 export default {
   name: 'SignUp',
@@ -120,7 +119,7 @@ export default {
         await HTTP.post('auth/users/create/', {email: this.email, password: this.password})
         const loginResponse = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + loginResponse.data.auth_token
-        router.replace({name: 'DomainList'}) // TODO replace with welcome new users?
+        this.$router.replace({path: '/'}) // TODO replace with welcome new users?
       } catch (error) {
         if (error.response) {
           // The request was made and the server responded with a status code

@@ -50,7 +50,7 @@
           </v-form>
           <v-layout column>
             <v-flex xs12 mt-5>
-              <v-btn flat color="primary" :to="{name: 'LogIn'}">Log in</v-btn>
+              <v-btn flat color="primary" :to="{name: 'Login'}">Log in</v-btn>
               <v-btn flat color="primary" :to="{name: 'SignUp'}">Sign up</v-btn>
             </v-flex>
           </v-layout>
@@ -61,8 +61,7 @@
 </template>
 
 <script>
-import {HTTP} from '../utils'
-import router from '../router'
+import {HTTP} from '../../utils'
 
 export default {
   name: 'Reset',
@@ -83,7 +82,7 @@ export default {
       this.errors = []
       try {
         await HTTP.post('auth/password/reset/confirm/', {uid: this.$route.params.uid, token: this.$route.params.token, new_password: this.password})
-        router.replace({name: 'LogIn'}) // TODO automatically login instead? Then we need the email address, too
+        this.$router.replace({name: 'Login'}) // TODO automatically login instead? Then we need the email address, too
       } catch (error) {
         if (error.response) {
           // The request was made and the server responded with a status code

@@ -9,6 +9,7 @@ import router from './router'
 import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css' // Ensure you are using css-loader
 import VueClipboard from 'vue-clipboard2'
+import {store} from './utils'
 
 Vue.use(Vuetify)
 Vue.use(VueClipboard)
@@ -20,5 +21,6 @@ new Vue({
   el: '#app',
   router,
   components: { App },
-  template: '<App/>'
+  template: '<App/>',
+  store: store
 })
