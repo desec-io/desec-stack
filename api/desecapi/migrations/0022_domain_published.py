@@ -17,7 +17,7 @@ def forward_convert(apps, schema_editor):
 
         rrsets = RRset.objects.filter(domain=domain)
         created = rrsets.aggregate(Max('created'))['created__max']
-        published = rrsets.aggregate(Max('published'))['published__max'] or created
+        published = rrsets.aggregate(Max('updated'))['updated__max'] or created
         # .update() operates on a queryset (not on a Model instance)
         Domain.objects.filter(pk=domain.pk).update(published=max(created, published))
 
