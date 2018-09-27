@@ -1,11 +1,14 @@
 <template>
   <v-card>
     <v-card-title>
-      <div class="headline">{{ $route.params.name }}</div>
+      <div class="headline">
+        <v-btn @click.stop="openDomainDetailsDialog($route.params.name)" color="grey" flat icon><v-icon>info</v-icon></v-btn>
+        {{ $route.params.name }}
+      </div>
     </v-card-title>
 
-    <v-toolbar>
-      <v-btn color="primary" depressed>Add record</v-btn>
+    <v-toolbar class="elevation-0">
+      <v-btn color="primary" depressed :disabled="addRecord" @click.native="addRecord = true">Add record</v-btn>
       <v-text-field
         v-model="search"
         append-icon="search"
@@ -54,13 +57,11 @@
             ></v-checkbox>
           </th-->
         </tr>
-      </template>
-      <template slot="items" slot-scope="props">
-        <tr>
-          <td>{{ props.item.type }}</td>
-          <td>{{ props.item.subname }}</td>
-          <td>{{ props.item.records }}</td>
-          <td>{{ props.item.ttl }}</td>
+        <tr v-if="addRecord">
+          <td>1</td>
+          <td><v-text-field v-model="subname" placeholder="(empty)"></v-text-field></td>
+          <td><v-text-field v-model="records" required></v-text-field></td>
+          <td><v-text-field v-model="ttl" required></v-text-field></td>
           <td>
             <v-layout align-center justify-end>
               <v-btn color="grey" flat icon><v-icon>edit</v-icon></v-btn>
@@ -75,13 +76,20 @@
           </td>
         </tr>
       </template>
+      <template slot="items" slot-scope="props">
+        <rrset
+          :current="() => ([].concat(...rrsets.map(rrset => rrset.records)).length)"
+          :limit="10"
+          :rrset="props.item"
+        ></rrset>
+      </template>
       <template slot="no-data">
         <div v-if="loading" class="py-5 text-xs-center">
           <p>fetching data ...</p>
         </div>
-        <div v-else class="py-5 text-xs-center">
+        <div v-else-if="!addRecord" class="py-5 text-xs-center">
           <h2 class="title">Feels so empty here!</h2>
-          <p>Create a new domain to get started.</p>
+          <p>Create a new record to get started.</p>
           <v-btn color="primary" depressed>Add record</v-btn>
         </div>
       </template>
@@ -112,20 +120,27 @@
 import {HTTP} from '@/utils'
 import Confirmation from '../Confirmation'
 import DomainDetailsDialog from '../DomainDetailsDialog'
+import RRset from './RRset'
 
 export default {
   name: 'Domain',
   components: {
     DomainDetailsDialog,
-    Confirmation
+    Confirmation,
+    rrset: RRset
   },
   data: () => ({
+    addRecord: false,
+    domain: null,
+    type: '',
+    subname: '',
+    records: '',
+    ttl: 300,
     rrsetDeletionName: '',
     rrsetDeletionSubname: '',
     rrsetDeletionType: '',
     domainDetailsDialogDomainName: '',
     domainDetailsDialogDS: [],
-    domainDetailsDialogDomainIsNew: false,
     showRRsetDeletionDialog: false,
     showDomainDetailsDialog: false,
     pagination: {
@@ -180,10 +195,14 @@ export default {
       this.rrsetDeletionType = rrset.type
       this.showRRsetDeletionDialog = true
     },
-    openDomainDetailsDialog (name, showAlert = false) {
-      this.domainDetailsDialogDomainName = name
-      this.domainDetailsDialogDomainIsNew = showAlert
-      let dsList = this.domains.filter(domain => domain.name === name)[0].keys.map(key => key.ds)
+    async openDomainDetailsDialog (name, showAlert = false) {
+      if (this.domain === null) {
+        const response = await HTTP.get('domains/' + this.$route.params.name + '/')
+        this.domain = response.data
+      }
+
+      this.domainDetailsDialogDomainName = this.domain.name
+      let dsList = this.domain.keys.map(key => key.ds)
       dsList = dsList.concat.apply([], dsList)
       this.domainDetailsDialogDS = dsList
       this.showDomainDetailsDialog = true
