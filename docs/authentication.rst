@@ -236,8 +236,8 @@ reset your account password, issue a ``POST`` request containing ``uid``,
 
     http POST \
         https://desec.io/api/v1/auth/password/reset/confirm/ \
-        uid:='"MQ"'
-        token:='"4zd-1d20102485862f7bae7b"'
+        uid:='"MQ"' \
+        token:='"4zd-1d20102485862f7bae7b"' \
         new_password:='"your new password"'
 
 Please note that the password reset token and the API authentication token are
