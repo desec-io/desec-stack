@@ -116,8 +116,8 @@ export default {
       this.working = true
       this.errors = []
       try {
-        await HTTP.post('auth/users/create/', {email: this.email, password: this.password})
-        const loginResponse = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
+        await HTTP.post('auth/users/', {email: this.email, password: this.password})
+        const loginResponse = await HTTP.post('auth/token/login/', {email: this.email, password: this.password})
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + loginResponse.data.auth_token
         this.$router.replace({path: '/'}) // TODO replace with welcome new users?
       } catch (error) {

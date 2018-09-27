@@ -136,7 +136,7 @@ export default {
       this.working = true
       this.errors = []
       try {
-        const response = await HTTP.post('auth/token/create/', {email: this.email, password: this.password})
+        const response = await HTTP.post('auth/token/login/', {email: this.email, password: this.password})
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + response.data.auth_token
         this.$store.commit('login', response.data.auth_token)
         if ('redirect' in this.$route.query && this.$route.query.redirect) {
