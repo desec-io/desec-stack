@@ -5,7 +5,7 @@ import Login from '@/components/guest/Login'
 import Reset from '@/components/guest/Reset'
 import DomainList from '@/components/DomainList'
 import Domain from '@/components/Domain'
-import {logout, store} from '@/utils'
+import {logout, store, HTTP} from '@/utils'
 
 Vue.use(Router)
 
@@ -49,6 +49,14 @@ const router = new Router({
 })
 
 router.beforeEach((to, from, next) => {
+  // see if there are credentials in the session store that we don't know of
+  let recovered = false
+  if (sessionStorage.getItem('token') && !store.state.authenticated) {
+    HTTP.defaults.headers.common['Authorization'] = 'Token ' + sessionStorage.getItem('token')
+    store.commit('login', sessionStorage.getItem('token'))
+    recovered = true
+  }
+
   if (!to.matched.every(record => record.meta.guest)) {
     // this route requires auth, check if logged in
     // if not, redirect to login page.
@@ -61,9 +69,20 @@ router.beforeEach((to, from, next) => {
       next()
     }
   } else {
-    // Log out if logged in unnecessarily
     if (store.state.authenticated) {
-      logout()
+      // Log in state was present, but not needed for the current page
+      if (recovered) {
+        // user restored a previous session
+        // redirect her to the home page for authorized users
+        next({
+          name: 'DomainList'
+        })
+      } else {
+        // use nagivated to a page that doesn't require auth
+        // from within the current session (without session restore)
+        // to bias on the safe side we log out
+        logout()
+      }
     }
     next() // make sure to always call next()!
   }

@@ -37,6 +37,7 @@ export async function logout () {
   }
   store.commit('logout')
   HTTP.defaults.headers.common['Authorization'] = ''
+  sessionStorage.removeItem('token')
 }
 
 TimeAgo.locale(en)

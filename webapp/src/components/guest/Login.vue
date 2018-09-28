@@ -47,6 +47,12 @@
                 ></v-text-field>
               </v-flex>
               <v-flex x12>
+                <v-checkbox
+                  label="Keep credentials for entire browser session (session storage)"
+                  v-model="useSessionStorage"
+                ></v-checkbox>
+              </v-flex>
+              <v-flex x12>
                 <v-btn
                   block
                   type="submit"
@@ -121,6 +127,7 @@ export default {
     email: '',
     password: '',
     terms: false,
+    useSessionStorage: false,
     email_rules: [ v => !!v || 'Please enter the email address associated with your account' ],
     email_errors: [],
     password_rules: [
@@ -139,6 +146,9 @@ export default {
         const response = await HTTP.post('auth/token/login/', {email: this.email, password: this.password})
         HTTP.defaults.headers.common['Authorization'] = 'Token ' + response.data.auth_token
         this.$store.commit('login', response.data.auth_token)
+        if (this.useSessionStorage) {
+          sessionStorage.setItem('token', response.data.auth_token)
+        }
         if ('redirect' in this.$route.query && this.$route.query.redirect) {
           this.$router.replace(this.$route.query.redirect)
         } else {
