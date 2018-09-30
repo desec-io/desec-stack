@@ -1,5 +1,5 @@
 <template>
-  <tr>
+  <tr class="rrset">
     <td>
       <v-combobox
         v-model="rrset.type"
@@ -10,16 +10,22 @@
       <v-text-field v-model="rrset.subname" placeholder="(empty)"></v-text-field>
     </td>
     <td>
-      <ul>
-        <li v-for="record in rrset.records" :key="record">{{ record }}</li>
-      </ul>
+      <component
+        :is="getRecordComponentName(rrset.type)"
+        v-for="record in rrset.records"
+        :key="record"
+        :content="record"
+        :clearable="rrset.records.length > 1"
+      ></component>
     </td>
     <td>
-      <v-form v-model="valid">
-        {{ rrset.ttl }}
-        {{ valid }}
-        <v-text-field v-model="rrset.ttl" required></v-text-field>
-      </v-form>
+        <v-text-field
+          v-model="rrset.ttl"
+          type="number"
+          :hide-details="!$v.rrset.ttl.$invalid"
+          :error="$v.rrset.ttl.$invalid"
+          :error-messages="errorMessages"
+        ></v-text-field>
     </td>
     <td>
       <v-layout align-center justify-end>
@@ -38,8 +44,21 @@
 </template>
 
 <script>
+import Record from './Record'
+import RecordA from './RecordA'
+import RecordCNAME from './RecordCNAME'
+
+import { required, integer, minValue } from 'vuelidate/lib/validators'
+
+const MinTTL = 10
+
 export default {
   name: 'RRset',
+  components: {
+    Record,
+    RecordA,
+    RecordCNAME: RecordCNAME
+  },
   props: {
     current: {
       type: Function,
@@ -55,10 +74,36 @@ export default {
     }
   },
   data: () => ({
-    valid: false,
-    types: ['A', 'AAAA', 'MX']
+    messagePool: {
+      required: 'This field is required.',
+      integer: 'TTL must be an integer.',
+      minValue: 'The minimum value is ' + MinTTL + '.'
+    },
+    types: ['A', 'AAAA', 'MX', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS', 'DNSKEY']
   }),
+  methods: {
+    getRecordComponentName (type) {
+      let genericComponentName = 'Record'
+      let specificComponentName = genericComponentName + type
+      if (this.types.includes(type) && specificComponentName in this.$options.components) {
+        return specificComponentName
+      }
+      return genericComponentName
+    }
+  },
+  validations: {
+    rrset: {
+      ttl: {
+        required,
+        integer,
+        minValue: minValue(MinTTL)
+      }
+    }
+  },
   computed: {
+    errorMessages () {
+      return Object.entries(this.messagePool).filter(entry => !this.$v.rrset.ttl[entry[0]]).map(entry => entry[1])
+    },
     left () {
       return this.limit - this.current()
     }
@@ -67,4 +112,8 @@ export default {
 </script>
 
 <style>
+/* TODO should be scoped, but scoped CSS doesn't work for some reason */
+.rrset td {
+  vertical-align: top;
+}
 </style>
