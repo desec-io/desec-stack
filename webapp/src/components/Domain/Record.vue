@@ -6,6 +6,7 @@
       :hide-details="!$v.value.$invalid"
       :error="$v.value.$invalid"
       :error-messages="errorMessages"
+      @input="$emit('update:content', value)"
     ></v-text-field>
     {{ value }}
   </div>

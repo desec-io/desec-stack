@@ -10,12 +10,14 @@
       <v-text-field v-model="rrset.subname" placeholder="(empty)"></v-text-field>
     </td>
     <td>
+      {{ rrset.records }}
       <component
         :is="getRecordComponentName(rrset.type)"
-        v-for="record in rrset.records"
-        :key="record"
+        v-for="(record, index) in rrset.records"
+        :key="index"
         :content="record"
         :clearable="rrset.records.length > 1"
+        @update:content="$set(rrset.records, index, $event)"
       ></component>
     </td>
     <td>
