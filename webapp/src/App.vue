@@ -55,3 +55,12 @@ export default {
   }
 }
 </script>
+
+<style>
+  html {
+    overflow-y: auto;  /* to remove always-there y-scrollbar, cf github.com/vuetifyjs/vuetify/issues/1197 */
+  }
+  button.hover-red:hover {
+    color: #C62828 !important; /* red darken-3 */
+  }
+</style>

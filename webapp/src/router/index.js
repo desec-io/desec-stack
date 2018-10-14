@@ -5,6 +5,8 @@ import Login from '@/components/guest/Login'
 import Reset from '@/components/guest/Reset'
 import DomainList from '@/components/DomainList'
 import Domain from '@/components/Domain'
+import TokenList from '@/components/TokenList'
+import AltDomainList from '@/components/AltDomainList'
 import {logout, store, HTTP} from '@/utils'
 
 Vue.use(Router)
@@ -44,6 +46,16 @@ const router = new Router({
       path: '/domains/:name',
       name: 'Domain',
       component: Domain
+    },
+    {
+      path: '/tokens',
+      name: 'TokenList',
+      component: TokenList
+    },
+    {
+      path: '/domainsalt',
+      name: 'AltDomainList',
+      component: AltDomainList
     }
   ]
 })
