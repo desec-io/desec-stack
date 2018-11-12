@@ -6,12 +6,12 @@ export default {
   name: 'RecordA',
   extends: Record,
   data: () => ({
-    messagePool: {
+    errors: {
       ipAddress: 'This field must contain an IPv4 address.'
-    }
-  }),
-  validations: {
-    value: { ipAddress }
-  }
+    },
+    fields: [
+      { name: 'value', value: '', validations: { ipAddress } }
+    ]
+  })
 }
 </script>

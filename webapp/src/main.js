@@ -18,26 +18,6 @@ Vue.use(VueClipboard)
 
 Vue.config.productionTip = false
 
-function mergeValidationsFirstOrder (toVal, fromVal) {
-  if (!toVal) return fromVal
-  if (!fromVal) return toVal
-
-  const toObj = typeof toVal === 'function' ? toVal.call(this) : toVal
-  const fromObj = typeof fromVal === 'function' ? fromVal.call(this) : fromVal
-
-  const fields = new Set([...Object.keys(toObj), ...Object.keys(fromObj)])
-
-  const mergedObj = {}
-  fields.forEach(field => {
-    mergedObj[field] = Object.assign({}, toObj[field], fromObj[field])
-  })
-
-  return mergedObj
-}
-
-Vue.config.optionMergeStrategies.validations =
-  Vue.config.optionMergeStrategies.validations || mergeValidationsFirstOrder
-
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

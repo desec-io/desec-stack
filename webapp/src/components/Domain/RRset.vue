@@ -10,7 +10,7 @@
       <v-text-field v-model="rrset.subname" placeholder="(empty)"></v-text-field>
     </td>
     <td>
-      {{ rrset.records }}
+      <!--parent RRset: {{ rrset.records }}-->
       <component
         :is="getRecordComponentName(rrset.type)"
         v-for="(record, index) in rrset.records"
@@ -26,7 +26,7 @@
           type="number"
           :hide-details="!$v.rrset.ttl.$invalid"
           :error="$v.rrset.ttl.$invalid"
-          :error-messages="errorMessages"
+          :error-messages="errors"
         ></v-text-field>
     </td>
     <td>
@@ -49,6 +49,8 @@
 import Record from './Record'
 import RecordA from './RecordA'
 import RecordCNAME from './RecordCNAME'
+import RecordMX from './RecordMX'
+import RecordSRV from './RecordSRV'
 
 import { required, integer, minValue } from 'vuelidate/lib/validators'
 
@@ -59,7 +61,9 @@ export default {
   components: {
     Record,
     RecordA,
-    RecordCNAME: RecordCNAME
+    RecordCNAME: RecordCNAME,
+    RecordMX: RecordMX,
+    RecordSRV: RecordSRV
   },
   props: {
     current: {
@@ -76,7 +80,7 @@ export default {
     }
   },
   data: () => ({
-    messagePool: {
+    errorDict: {
       required: 'This field is required.',
       integer: 'TTL must be an integer.',
       minValue: 'The minimum value is ' + MinTTL + '.'
@@ -103,8 +107,8 @@ export default {
     }
   },
   computed: {
-    errorMessages () {
-      return Object.entries(this.messagePool).filter(entry => !this.$v.rrset.ttl[entry[0]]).map(entry => entry[1])
+    errors () {
+      return Object.entries(this.errorDict).filter(entry => !this.$v.rrset.ttl[entry[0]]).map(entry => entry[1])
     },
     left () {
       return this.limit - this.current()
