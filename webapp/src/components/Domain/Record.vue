@@ -4,12 +4,20 @@
       <v-text-field
         v-model="field.value"
         :clearable="clearable"
-        :placeholder="field.placeholder"
-        @input="$emit('update:content', value)"
+        :label="field.label"
+        placeholder=" "
+        @input="inputHandler()"
+        @keydown.8="backspaceHandler(index, $event)"
+        @keydown.32="spaceHandler(index, $event)"
+        @keydown.35="endHandler($event)"
+        @keydown.36="homeHandler($event)"
+        @keydown.37="leftHandler(index, $event)"
+        @keydown.39="rightHandler(index, $event)"
+        @keydown.46="deleteHandler(index, $event)"
         :hide-details="!$v.fields.$each[index].$invalid && !$v.fields[index].$invalid"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
-        :style="{width: fieldWidth(index) }"
+        :style="{ width: fieldWidth(index) }"
         ref="input"
       ></v-text-field>
       <span ref="mirror" aria-hidden="true" style="opacity: 0; position: absolute; width: auto; white-space: pre; z-index: -1"></span>
@@ -38,20 +46,21 @@ export default {
   },
   data: () => ({
     errors: {
-      required: 'This field is required.'
+      required: ' '
     },
     fields: [
-      { 'name': 'value', 'value': '', 'validations': {} }
-    ]
+      { validations: {} }
+    ],
+    value: ''
   }),
   beforeMount () {
-    let values = this.content.split(' ')
-    let last = values.slice(this.fields.length - 1).join(' ')
-    values = values.slice(0, this.fields.length - 1).concat([last])
-
-    values.forEach((value, i) => {
-      this.fields[i].value = value
+    // Initialize per-field value storage
+    this.fields.forEach(field => {
+      this.$set(field, 'value', '')
     })
+
+    // Update internal and graphical representation
+    this.update(this.content)
   },
   validations () {
     const validations = {
@@ -71,11 +80,6 @@ export default {
     )
 
     return validations
-  },
-  computed: {
-    value () {
-      return this.fields.map(field => field.value).join(' ')
-    }
   },
   methods: {
     fieldErrorMessages (index) {
@@ -119,12 +123,129 @@ export default {
         mirror.style.padding = style.getPropertyValue('padding')
         mirror.style.textTransform = style.getPropertyValue('text-transform')
 
-        const value = this.fields[index].value || this.fields[index].placeholder
-        mirror.appendChild(document.createTextNode(value + ' '))
+        mirror.appendChild(document.createTextNode(this.fields[index].value + ' '))
 
-        ret = mirror.getBoundingClientRect().width + 'px'
+        ret = mirror.getBoundingClientRect().width
+
+        mirror.removeChild(mirror.childNodes[0])
+        mirror.appendChild(document.createTextNode(this.fields[index].label + ' '))
+        ret = Math.max(ret, mirror.getBoundingClientRect().width)
+        ret += 'px'
       }
       return ret
+    },
+    async update (value, caretPosition) {
+      await this.$nextTick()
+
+      let dirty = (value !== this.value)
+      if (dirty) {
+        this.value = value
+        this.updateFields()
+        this.$emit('update:content', this.value)
+      }
+
+      if (caretPosition !== undefined) {
+        this.setPosition(caretPosition)
+      }
+    },
+    positionAfterDelimiter (index) {
+      const ref = this.$refs['input'][index].$refs.input
+      return index > 0 && ref.selectionStart === 0 && ref.selectionEnd === 0
+    },
+    positionBeforeDelimiter (index) {
+      return index < this.fields.length - 1 &&
+        this.$refs['input'][index].$refs.input.selectionStart === this.fields[index].value.length
+    },
+    spaceHandler (index, event) {
+      if (!this.positionBeforeDelimiter(index)) {
+        return
+      }
+
+      if (this.fields[index + 1].value.length === 0) {
+        this.rightHandler(index, event)
+      }
+    },
+    backspaceHandler (index, event) {
+      if (!this.positionAfterDelimiter(index)) {
+        return
+      }
+
+      event.preventDefault()
+      const pos = this.getPosition()
+      this.update(this.value.substr(0, pos - 1) + this.value.substr(pos), pos - 1)
+    },
+    deleteHandler (index, event) {
+      if (!this.positionBeforeDelimiter(index)) {
+        return
+      }
+
+      event.preventDefault()
+      const pos = this.getPosition()
+      this.update(this.value.substr(0, pos) + this.value.substr(pos + 1), pos)
+    },
+    leftHandler (index, event) {
+      if (!this.positionAfterDelimiter(index)) {
+        return
+      }
+
+      event.preventDefault()
+      this.setPosition(this.getPosition() - 1)
+    },
+    rightHandler (index, event) {
+      if (!this.positionBeforeDelimiter(index)) {
+        return
+      }
+
+      event.preventDefault()
+      this.setPosition(this.getPosition() + 1)
+    },
+    endHandler (event) {
+      event.preventDefault()
+      this.setPosition(this.value.length)
+    },
+    homeHandler (event) {
+      event.preventDefault()
+      this.setPosition(0)
+    },
+    inputHandler () {
+      const pos = this.getPosition()
+      let value = this.fields.map((field, index, fields) => field.value).join(' ')
+      if (pos !== value.length) {
+        value = value.replace(/ +$/g, '')
+      }
+      this.update(value, pos)
+    },
+    async setPosition (pos) {
+      await this.$nextTick()
+      let i = 0
+      while (pos > this.fields[i].value.length && i + 1 < this.fields.length) {
+        pos -= this.fields[i].value.length + 1
+        i++
+      }
+
+      this.$refs['input'][i].$refs.input.setSelectionRange(pos, pos)
+      this.$refs['input'][i].$refs.input.focus()
+    },
+    getPosition () {
+      let caretPosition
+      const refs = this.$refs['input']
+      const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement)
+      if (dirty >= 0) {
+        caretPosition = refs[dirty].$refs.input.selectionStart
+        for (let i = 0; i < dirty; i++) {
+          caretPosition += refs[i].$refs.input.value.length + 1
+        }
+      }
+      return caretPosition
+    },
+    updateFields () {
+      let values = this.value.split(' ')
+      const last = values.slice(this.fields.length - 1).join(' ') // .replace(/^\s+/, '')
+      values = values.slice(0, this.fields.length - 1)
+      values = values.concat([last])
+      values.forEach((fieldValue, i) => {
+        this.$set(this.fields[i], 'value', fieldValue)
+      })
     }
   }
 }

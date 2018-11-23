@@ -10,7 +10,7 @@
       <v-text-field v-model="rrset.subname" placeholder="(empty)"></v-text-field>
     </td>
     <td>
-      <!--parent RRset: {{ rrset.records }}-->
+      <pre>{{ rrset.records }}</pre>
       <component
         :is="getRecordComponentName(rrset.type)"
         v-for="(record, index) in rrset.records"
