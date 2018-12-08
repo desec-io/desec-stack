@@ -137,12 +137,25 @@ export default {
     async update (value, caretPosition) {
       await this.$nextTick()
 
+      // Right-trim if the cursor position is not after the last character
+      let trimmed = value.replace(/ +$/g, '')
+      const n = (trimmed.match(/ /g) || []).length
+      const diff = Math.max(0, (this.fields.length - 1) - n)
+      trimmed += ' '.repeat(diff)
+      if (caretPosition === undefined || caretPosition < trimmed.length) {
+        value = trimmed
+      }
+
+      // Only emit update event if there's news
       let dirty = (value !== this.value)
       if (dirty) {
         this.value = value
-        this.updateFields()
         this.$emit('update:content', this.value)
       }
+
+      // Always update fields as left-side fields with empty neighbor might have a trailing space
+      // This case does not change the record value, but the field representation needs an update
+      this.updateFields()
 
       if (caretPosition !== undefined) {
         this.setPosition(caretPosition)
@@ -161,8 +174,12 @@ export default {
         return
       }
 
-      if (this.fields[index + 1].value.length === 0) {
-        this.rightHandler(index, event)
+      const length = this.fields.slice(index + 1)
+        .map(field => field.value.length)
+        .reduce((acc, curr) => acc + curr, 0)
+
+      if (length === 0 || this.fields[this.fields.length - 1].value.length > 0) {
+        return this.rightHandler(index, event)
       }
     },
     backspaceHandler (index, event) {
@@ -209,10 +226,7 @@ export default {
     },
     inputHandler () {
       const pos = this.getPosition()
-      let value = this.fields.map((field, index, fields) => field.value).join(' ')
-      if (pos !== value.length) {
-        value = value.replace(/ +$/g, '')
-      }
+      const value = this.fields.map((field, index, fields) => field.value).join(' ')
       this.update(value, pos)
     },
     async setPosition (pos) {
@@ -240,11 +254,12 @@ export default {
     },
     updateFields () {
       let values = this.value.split(' ')
-      const last = values.slice(this.fields.length - 1).join(' ') // .replace(/^\s+/, '')
+      const last = values.slice(this.fields.length - 1).join(' ')
       values = values.slice(0, this.fields.length - 1)
       values = values.concat([last])
-      values.forEach((fieldValue, i) => {
-        this.$set(this.fields[i], 'value', fieldValue)
+      // Make sure to reset trailing fields if value does not have enough spaces
+      this.fields.forEach((foo, i) => {
+        this.$set(this.fields[i], 'value', values[i] || '')
       })
     }
   }
