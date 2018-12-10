@@ -173,7 +173,7 @@ const safeget = (path, object) =>
     (xs && xs[x]) ? xs[x] : null, object)
 
 export default {
-  name: 'Domain',
+  name: 'CrudList',
   components: {
     RRSetType,
     TimeAgo,
