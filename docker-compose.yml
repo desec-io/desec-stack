@@ -10,6 +10,7 @@ services:
     volumes:
     - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
     - ./www/html:/usr/share/nginx/html:ro
+    - webapp_dist:/usr/share/nginx/html/app:ro
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_WWW_CERTS
@@ -33,6 +34,8 @@ services:
   static:
     build: static
     image: desec/dedyn-static:latest
+    volumes:
+    - webapp_dist:/usr/share/nginx/html/webapp/
     networks:
     - rearwww
     logging:
@@ -172,10 +175,23 @@ services:
         tag: "desec/nsmaster"
     restart: unless-stopped
 
+  webapp:
+    image: node:latest
+    volumes:
+    - ./webapp/:/usr/src/app/
+    - webapp_dist:/usr/src/app/dist
+    working_dir: /usr/src/app/
+    command: bash -c "npm install && npm run build -- --no-clean"
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/nsmaster"
+
 volumes:
   dbapi_mysql:
   dblord_mysql:
   dbmaster_mysql:
+  webapp_dist:
 
 networks:
   # Note that it is required that the front network ranks lower (in lexical order)

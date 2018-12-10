@@ -10,6 +10,8 @@ services:
     - webapp
     networks:
     - rearwebapp
+    volumes:
+    - ./www/99-desec.webapp.dev.location:/etc/nginx/sites-available/99-desec.webapp.dev.location
     logging:
       driver: "json-file"
 
@@ -51,9 +53,11 @@ services:
       driver: "json-file"
 
   webapp:
-    build: webapp
+    image: node:latest
     volumes:
     - ./webapp/:/usr/src/app/
+    working_dir: /usr/src/app/
+    command: npm run dev
     environment:
     - HOST=0.0.0.0
     - PORT=443
