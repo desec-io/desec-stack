@@ -85,6 +85,7 @@
           <component
             :is="getDatatype(c.datatype, props.item)"
             v-model="props.item[c.value]"
+            v-bind="c.fieldProps ? c.fieldProps(props.item) : {}"
           ></component>
           <!-- :clearable="rrset.records.length > 1"
                @update:value="$set(rrset.records, index, $event)" -->
@@ -160,9 +161,7 @@ import RRSetTypeField from './Field/RRSetTypeField'
 import TimeAgoField from './Field/TimeAgoField'
 import CodeField from './Field/CodeField'
 import TextField from './Field/TextField'
-import RRSetAField from './Field/RRSetAField'
-import RRSetNSField from './Field/RRSetNSField'
-import RRSetMXField from './Field/RRSetMXField'
+import RRSetField from './Field/RRSetField'
 
 // safely access deeply nested objects
 const safeget = (path, object) =>
@@ -176,9 +175,7 @@ export default {
     TimeAgoField,
     CodeField,
     TextField,
-    RRSetAField,
-    RRSetNSField,
-    RRSetMXField
+    RRSetField
   },
   data: () => ({
     createDialog: false,

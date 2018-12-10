@@ -2,7 +2,7 @@
   <div>
     <code>{{ value }}</code>
     <component
-      :is="type"
+      :is="'Record' + type"
       v-for="(record, index) in value"
       :key="index"
       :content="value[index]"
@@ -34,6 +34,23 @@ export default {
     value: {
       type: Array,
       required: true
+    },
+    type: {
+      type: String,
+      required: true
+    }
+  },
+  data: () => ({
+    types: ['A', 'AAAA', 'MX', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS', 'DNSKEY']
+  }),
+  methods: {
+    getRecordComponentName () {
+      let genericComponentName = 'Record'
+      let specificComponentName = genericComponentName + this.type
+      if (this.types.includes(this.type) && specificComponentName in this.$options.components) {
+        return specificComponentName
+      }
+      return genericComponentName
     }
   }
 }

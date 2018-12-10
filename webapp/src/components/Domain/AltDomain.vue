@@ -45,7 +45,8 @@ export default {
         sortable: true,
         value: 'records',
         readonly: false,
-        datatype: (rrset) => (rrset.type === undefined || rrset.type === '' ? 'RRSetAField' : 'RRSet' + rrset.type + 'Field'),
+        datatype: 'RRSetField',
+        fieldProps: (rrSet) => ({ type: rrSet.type === undefined || rrSet.type === '' ? 'A' : rrSet.type }),
         searchable: true
       },
       ttl: {
