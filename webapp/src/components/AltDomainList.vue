@@ -52,7 +52,8 @@ export default {
       'delete': 'domains/:name/'
     },
     defaultObject: { name: '' },
-    postcreate: (d) => (alert('postcreate ' + d.name))
+    postcreate: (d) => (alert('postcreate ' + d.name)),
+    rowclick: function (domain) { this.$router.push({name: 'AltDomain', params: { name: domain.name }}) }
   })
 }
 </script>

@@ -24,6 +24,9 @@
             >
               Logout
             </v-btn>
+            <v-btn to="/domainsalt">My Domains (CrudList)</v-btn>
+            <v-btn to="/domains">My Domains</v-btn>
+            <v-btn to="/tokens">My Tokens</v-btn>
             <router-view/>
           </v-flex>
         </v-layout>

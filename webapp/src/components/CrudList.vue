@@ -83,38 +83,40 @@
     >
       <!-- row template -->
       <template slot="items" slot-scope="props">
-        <td v-for="(c, id) in columns" :key="id">
-          <component
-            :is="getDatatype(c.datatype, props.item)"
-            v-model="props.item[c.value]"
-            v-bind="c.fieldProps ? c.fieldProps(props.item) : {}"
-          ></component>
-          <!-- :clearable="rrset.records.length > 1"
-               @update:value="$set(rrset.records, index, $event)" -->
-          <!--<span v-if="c.datatype=='timeago'" :title="props.item[c.value]">{{ timeAgo.format(new Date(props.item[c.value])) }}</span>-->
-          <!--<span v-else-if="c.datatype=='code'"><code>{{ props.item[c.value] }}</code></span>-->
-          <!--<span v-else-if="c.datatype=='rrsettype'"><r-r-set-type :type="props.item[c.value]"></r-r-set-type></span>-->
-          <!--<span v-else>{{ props.item[c.value] }}</span>-->
-        </td>
-        <td>
-          <v-layout align-center justify-end>
-            <v-btn
-              v-for="action in actions"
-              v-bind:key="action.key"
-              color="grey" flat icon
-              @click.stop="action.go(props.item)"
+        <tr @click="rowclick(props.item)">
+          <td v-for="(c, id) in columns" :key="id">
+            <component
+              :is="getDatatype(c.datatype, props.item)"
+              v-model="props.item[c.value]"
+              v-bind="c.fieldProps ? c.fieldProps(props.item) : {}"
+            ></component>
+            <!-- :clearable="rrset.records.length > 1"
+                 @update:value="$set(rrset.records, index, $event)" -->
+            <!--<span v-if="c.datatype=='timeago'" :title="props.item[c.value]">{{ timeAgo.format(new Date(props.item[c.value])) }}</span>-->
+            <!--<span v-else-if="c.datatype=='code'"><code>{{ props.item[c.value] }}</code></span>-->
+            <!--<span v-else-if="c.datatype=='rrsettype'"><r-r-set-type :type="props.item[c.value]"></r-r-set-type></span>-->
+            <!--<span v-else>{{ props.item[c.value] }}</span>-->
+          </td>
+          <td>
+            <v-layout align-center justify-end>
+              <v-btn
+                v-for="action in actions"
+                v-bind:key="action.key"
+                color="grey" flat icon
+                @click.stop="action.go(props.item)"
+                >
+                <v-icon>{{action.icon}}</v-icon>
+              </v-btn>
+              <v-btn
+                v-if="destroyable"
+                color="grey" class="hover-red" flat icon
+                @click.stop="destroyAsk(props.item)"
               >
-              <v-icon>{{action.icon}}</v-icon>
-            </v-btn>
-            <v-btn
-              v-if="destroyable"
-              color="grey" class="hover-red" flat icon
-              @click.stop="destroyAsk(props.item)"
-            >
-              <v-icon>delete</v-icon>
-            </v-btn>
-          </v-layout>
-        </td>
+                <v-icon>delete</v-icon>
+              </v-btn>
+            </v-layout>
+          </td>
+        </tr>
       </template>
       <template slot="no-data">
         <div v-if="working" class="py-5 text-xs-center">
@@ -228,7 +230,8 @@ export default {
     preupdate: () => (undefined),
     postupdate: () => (undefined),
     predelete: () => (undefined),
-    postdelete: () => (undefined)
+    postdelete: () => (undefined),
+    rowclick: () => (undefined)
   }),
   async mounted () {
     this.createDialogItem = Object.assign({}, this.defaultObject)
