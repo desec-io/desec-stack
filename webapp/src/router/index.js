@@ -5,6 +5,7 @@ import Login from '@/components/guest/Login'
 import Reset from '@/components/guest/Reset'
 import DomainList from '@/components/DomainList'
 import Domain from '@/components/Domain'
+import AltDomain from '@/components/Domain/AltDomain'
 import TokenList from '@/components/TokenList'
 import AltDomainList from '@/components/AltDomainList'
 import {logout, store, HTTP} from '@/utils'
@@ -46,6 +47,11 @@ const router = new Router({
       path: '/domains/:name',
       name: 'Domain',
       component: Domain
+    },
+    {
+      path: '/domainsalt/:name',
+      name: 'AltDomain',
+      component: AltDomain
     },
     {
       path: '/tokens',

@@ -82,9 +82,16 @@
       <!-- row template -->
       <template slot="items" slot-scope="props">
         <td v-for="(c, id) in columns" :key="id">
-          <span v-if="c.datatype=='timeago'" :title="props.item[c.value]">{{ timeAgo.format(new Date(props.item[c.value])) }}</span>
-          <span v-else-if="c.datatype=='code'"><code>{{ props.item[c.value] }}</code></span>
-          <span v-else>{{ props.item[c.value] }}</span>
+          <component
+            :is="getDatatype(c.datatype, props.item)"
+            v-model="props.item[c.value]"
+          ></component>
+          <!-- :clearable="rrset.records.length > 1"
+               @update:value="$set(rrset.records, index, $event)" -->
+          <!--<span v-if="c.datatype=='timeago'" :title="props.item[c.value]">{{ timeAgo.format(new Date(props.item[c.value])) }}</span>-->
+          <!--<span v-else-if="c.datatype=='code'"><code>{{ props.item[c.value] }}</code></span>-->
+          <!--<span v-else-if="c.datatype=='rrsettype'"><r-r-set-type :type="props.item[c.value]"></r-r-set-type></span>-->
+          <!--<span v-else>{{ props.item[c.value] }}</span>-->
         </td>
         <td>
           <v-layout align-center justify-end>
@@ -148,7 +155,14 @@
 </template>
 
 <script>
-import {HTTP, timeAgo} from '@/utils'
+import { HTTP } from '@/utils'
+import RRSetTypeField from './Field/RRSetTypeField'
+import TimeAgoField from './Field/TimeAgoField'
+import CodeField from './Field/CodeField'
+import TextField from './Field/TextField'
+import RRSetAField from './Field/RRSetAField'
+import RRSetNSField from './Field/RRSetNSField'
+import RRSetMXField from './Field/RRSetMXField'
 
 // safely access deeply nested objects
 const safeget = (path, object) =>
@@ -158,6 +172,13 @@ const safeget = (path, object) =>
 export default {
   name: 'Domain',
   components: {
+    RRSetTypeField,
+    TimeAgoField,
+    CodeField,
+    TextField,
+    RRSetAField,
+    RRSetNSField,
+    RRSetMXField
   },
   data: () => ({
     createDialog: false,
@@ -215,7 +236,7 @@ export default {
     try {
       this.working = true
       this.preload()
-      this.rows = (await HTTP.get(this.paths.list)).data
+      this.rows = (await HTTP.get(this.resourcePath(this.paths.list, this.$route.params, '::'))).data
       this.postload()
     } catch (e) {
       this.error(e)
@@ -243,7 +264,9 @@ export default {
       this.destroyDialogWorking = true
       this.destroyDialogError = null
       try {
-        const url = this.resourcePath(this.paths.delete, item)
+        const url = this.resourcePath(
+          this.resourcePath(this.paths.delete, this.$route.params, '::'),
+          item, ':')
         this.predelete()
         await HTTP.delete(url)
         this.rows.splice(this.rows.indexOf(item), 1)
@@ -281,7 +304,11 @@ export default {
         // new item
         try {
           this.precreate()
-          const url = this.resourcePath(this.paths.create, this.createDialogItem)
+          const url = this.resourcePath(
+            this.resourcePath(this.paths.create, this.$route.params, '::'),
+            this.createDialogItem,
+            ':'
+          )
           this.rows.push((await HTTP.post(url, this.createDialogItem)).data)
           this.postcreate(this.rows[this.rows.length - 1])
           this.close()
@@ -345,10 +372,10 @@ export default {
      * @param obj An object to take values from, like { id: 23, text: 'foo' }
      * @returns URL, like /api/users/23/posts/
      */
-    resourcePath (p, obj) {
+    resourcePath (p, obj, marker) {
       for (const property in obj) {
         if (obj.hasOwnProperty(property)) {
-          p = p.replace(':' + property, obj[property])
+          p = p.replace(marker + property, obj[property])
         }
       }
       return p
@@ -362,12 +389,12 @@ export default {
       return items.filter((row) => (
         Object.keys(this.columns).some(c => (this.columns[c].searchable && filter(row[c], search)))
       ))
+    },
+    getDatatype (datatype, item) {
+      return datatype instanceof Function ? datatype(item) : datatype
     }
   },
   computed: {
-    timeAgo () {
-      return timeAgo
-    },
     headers () {
       let h = Object.assign({}, this.columns) // copy cols (a shallow copy is sufficient here)
       h.actions = {
