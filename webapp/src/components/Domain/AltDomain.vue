@@ -66,7 +66,7 @@ export default {
       'create': 'domains/::name/rrsets/',
       'delete': 'domains/::name/rrsets/:subname.../:type/'
     },
-    defaultObject: { type: 'A', subname: '', records: '[]', ttl: 60 * 60 * 24 * 7 }
+    defaultObject: { type: 'A', subname: '', records: [''], ttl: 60 * 60 * 24 * 7 }
   })
 }
 </script>

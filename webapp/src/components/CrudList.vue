@@ -48,15 +48,17 @@
               <p>{{ texts.create() }}</p>
 
               <!-- New Form -->
-              <v-text-field
+              <component
                 v-for="(c, id) in columns"
                 :key="id"
+                :is="getDatatype(c.datatype, createDialogItem)"
+                v-bind="c.fieldProps ? c.fieldProps(createDialogItem) : {}"
                 v-if="!c.readonly"
                 v-model="createDialogItem[c.value]"
                 :label="c.textCreate || c.text"
                 :error-messages="c.createErrors"
                 autofocus
-              ></v-text-field>
+              ></component>
             </v-card-text>
 
             <v-card-actions>
@@ -229,7 +231,7 @@ export default {
     postdelete: () => (undefined)
   }),
   async mounted () {
-    this.createDialogItem = Object.assign({}, this.createDialogItem)
+    this.createDialogItem = Object.assign({}, this.defaultObject)
     try {
       this.working = true
       this.preload()
@@ -321,7 +323,7 @@ export default {
      */
     close () {
       this.createDialog = false
-      this.createDialogItem = Object.assign({}, this.defaultItem)
+      this.createDialogItem = Object.assign({}, this.defaultObject)
       this.createDialogIndex = -1
       this.createDialogError = false
       for (let c in this.columns) {
