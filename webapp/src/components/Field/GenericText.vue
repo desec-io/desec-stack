@@ -1,12 +1,9 @@
 <template>
-  <div>
-    <code>{{ value }}</code>
-    <v-text-field
-      v-bind:value="value"
-      v-on:input="input($event)"
-      placeholder="(empty)"
-    ></v-text-field>
-  </div>
+  <v-text-field
+    v-bind:value="value"
+    v-on:input="input($event)"
+    placeholder="(empty)"
+  ></v-text-field>
 </template>
 
 <script>

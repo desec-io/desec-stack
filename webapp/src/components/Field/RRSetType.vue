@@ -1,12 +1,9 @@
 <template>
-  <div>
-    <code>{{ value }}</code>
-    <v-combobox
-      v-bind:value="value"
-      v-on:input="input($event)"
-      :items="types"
-    ></v-combobox>
-  </div>
+  <v-combobox
+    v-bind:value="value"
+    v-on:input="input($event)"
+    :items="types"
+  ></v-combobox>
 </template>
 
 <script>
