@@ -25,8 +25,8 @@ export default {
         align: 'left',
         sortable: true,
         value: 'name',
-        readonly: false,
-        datatype: '',
+        readonly: true,
+        datatype: 'GenericText',
         searchable: true
       },
       published: {
@@ -35,7 +35,7 @@ export default {
         sortable: true,
         value: 'published',
         readonly: true,
-        datatype: 'timeago',
+        datatype: 'TimeAgo',
         searchable: false
       }
     },

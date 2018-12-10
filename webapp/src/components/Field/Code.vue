@@ -4,7 +4,12 @@
 
 <script>
 export default {
-  name: 'Code'
+  name: 'Code',
+  props: {
+    value: {
+      required: true
+    }
+  }
 }
 </script>
 

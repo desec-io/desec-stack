@@ -22,7 +22,7 @@ export default {
         sortable: true,
         value: 'created',
         readonly: true,
-        datatype: 'timeago',
+        datatype: 'TimeAgo',
         searchable: false
       },
       id: {
@@ -31,7 +31,7 @@ export default {
         sortable: true,
         value: 'id',
         readonly: true,
-        datatype: 'code',
+        datatype: 'Code',
         searchable: true
       },
       name: {
@@ -41,7 +41,7 @@ export default {
         sortable: true,
         value: 'name',
         readonly: false,
-        datatype: '',
+        datatype: 'GenericText',
         searchable: true
       },
       value: {
@@ -50,7 +50,7 @@ export default {
         sortable: true,
         value: 'value',
         readonly: true,
-        datatype: 'code',
+        datatype: 'Code',
         searchable: true
       }
     },
