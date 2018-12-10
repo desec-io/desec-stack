@@ -13,15 +13,15 @@
 </template>
 
 <script>
-import Record from '../Domain/Record'
-import RecordA from '../Domain/RecordA'
-import RecordCNAME from '../Domain/RecordCNAME'
-import RecordMX from '../Domain/RecordMX'
-import RecordSRV from '../Domain/RecordSRV'
-import RecordNS from '../Domain/RecordNS'
+import Record from './Record'
+import RecordA from './RecordA'
+import RecordCNAME from './RecordCNAME'
+import RecordMX from './RecordMX'
+import RecordSRV from './RecordSRV'
+import RecordNS from './RecordNS'
 
 export default {
-  name: 'RRSetField',
+  name: 'RRSet',
   components: {
     Record,
     RecordA,

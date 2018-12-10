@@ -6,7 +6,7 @@
 import { timeAgo } from '@/utils'
 
 export default {
-  name: 'TimeAgoField',
+  name: 'TimeAgo',
   computed: {
     timeAgo () {
       return timeAgo

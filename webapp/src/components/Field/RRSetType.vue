@@ -11,7 +11,7 @@
 
 <script>
 export default {
-  name: 'RRSetTypeField',
+  name: 'RRSetType',
   props: {
     value: {
       type: String,

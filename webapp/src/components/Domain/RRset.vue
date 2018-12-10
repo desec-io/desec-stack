@@ -46,11 +46,11 @@
 </template>
 
 <script>
-import Record from './Record'
-import RecordA from './RecordA'
-import RecordCNAME from './RecordCNAME'
-import RecordMX from './RecordMX'
-import RecordSRV from './RecordSRV'
+import Record from '../Field/Record'
+import RecordA from '../Field/RecordA'
+import RecordCNAME from '../Field/RecordCNAME'
+import RecordMX from '../Field/RecordMX'
+import RecordSRV from '../Field/RecordSRV'
 
 import { required, integer, minValue } from 'vuelidate/lib/validators'
 

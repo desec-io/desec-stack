@@ -11,7 +11,7 @@
 
 <script>
 export default {
-  name: 'TextField',
+  name: 'GenericText',
   props: {
     value: {
       type: String | Number,

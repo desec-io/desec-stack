@@ -26,7 +26,7 @@ export default {
         sortable: true,
         value: 'type',
         readonly: false,
-        datatype: 'RRSetTypeField',
+        datatype: 'RRSetType',
         searchable: true
       },
       subname: {
@@ -35,7 +35,7 @@ export default {
         sortable: true,
         value: 'subname',
         readonly: true,
-        datatype: 'TextField',
+        datatype: 'GenericText',
         searchable: true
       },
       records: {
@@ -45,7 +45,7 @@ export default {
         sortable: true,
         value: 'records',
         readonly: false,
-        datatype: 'RRSetField',
+        datatype: 'RRSet',
         fieldProps: (rrSet) => ({ type: rrSet.type === undefined || rrSet.type === '' ? 'A' : rrSet.type }),
         searchable: true
       },
@@ -55,7 +55,7 @@ export default {
         sortable: true,
         value: 'ttl',
         readonly: false,
-        datatype: 'TextField',
+        datatype: 'GenericText',
         searchable: true
       }
     },

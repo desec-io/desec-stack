@@ -157,11 +157,11 @@
 
 <script>
 import { HTTP } from '@/utils'
-import RRSetTypeField from './Field/RRSetTypeField'
-import TimeAgoField from './Field/TimeAgoField'
-import CodeField from './Field/CodeField'
-import TextField from './Field/TextField'
-import RRSetField from './Field/RRSetField'
+import RRSetType from './Field/RRSetType'
+import TimeAgo from './Field/TimeAgo'
+import Code from './Field/Code'
+import GenericText from './Field/GenericText'
+import RRSet from './Field/RRSet'
 
 // safely access deeply nested objects
 const safeget = (path, object) =>
@@ -171,11 +171,11 @@ const safeget = (path, object) =>
 export default {
   name: 'Domain',
   components: {
-    RRSetTypeField,
-    TimeAgoField,
-    CodeField,
-    TextField,
-    RRSetField
+    RRSetType,
+    TimeAgo,
+    Code,
+    GenericText,
+    RRSet
   },
   data: () => ({
     createDialog: false,
