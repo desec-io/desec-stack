@@ -44,7 +44,6 @@ server {
 	access_log /var/log/nginx/access.log main;
 	error_log /var/log/nginx/error.log;
 	
-	ssl on;
 	ssl_certificate ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.cer;
 	ssl_certificate_key ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.key;
 	add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
