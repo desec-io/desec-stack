@@ -1,7 +1,7 @@
 FROM nginx:1.15-alpine
 
 # Add dependencies for our scripts
-RUN apk add --no-cache bash openssl
+RUN apk add --no-cache bash openssl inotify-tools
 
 # nginx configuration and entrypoint
 COPY conf /etc/nginx
