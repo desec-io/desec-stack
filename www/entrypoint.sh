@@ -69,6 +69,6 @@ else
 fi
 
 # replace environment references in config files
-./etc/nginx/sites-available/envreplace.sh
+/etc/nginx/sites-available/envreplace.sh
 
 nginx -g "daemon off;"
