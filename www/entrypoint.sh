@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # list of domains we're using
 DOMAINS="\
@@ -71,4 +71,34 @@ fi
 # replace environment references in config files
 /etc/nginx/sites-available/envreplace.sh
 
-nginx -g "daemon off;"
+(
+  echo "Starting nginx"
+  nginx -g 'daemon off;' && exit 1
+) &
+
+nginx_pid=$!
+echo "nginx PID: ${nginx_pid}"
+
+if [ -z "$FILES_MISSING" ] ; then
+  (
+    echo "Setting up monitoring for certificate files in $CERT_PATH"
+    inotifywait -m -e create,modify,move,delete $CERT_PATH | while read line; do
+      echo "File update detected: $line"
+
+      nginx -t
+      if [ $? -ne 0 ]; then
+        echo "Error: invalid nginx configuration"
+      else
+        echo "Reloading nginx with new configuration"
+        nginx -s reload
+      fi
+    done
+
+    echo "inotifywait failed, killing nginx with PID ${nginx_pid}"
+    kill -TERM $nginx_pid
+  ) &
+else
+  echo "Warning: Not monitoring certificate rotation as not all certificates were provided"
+fi
+
+wait $nginx_pid || exit 1

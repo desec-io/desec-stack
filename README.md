@@ -30,7 +30,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
     - certificates
-      - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container
+      - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container. This directory is monitored for changes so that nginx can reload when new keys/certificates are provided. **Note:** The reload is done any time something changes in the directory. The relevant files are **not** watched individually.
       - `DESECSTACK_DBMASTER_CERTS`: `./path/to/certificates` for `dbmaster` container
     - API-related
       - `DESECSTACK_API_ADMIN`: white-space separated list of Django admin email addresses
