@@ -1,4 +1,4 @@
-FROM mariadb:10.2
+FROM mariadb:10.3
 
 # Use random throw-away root password. Our init scripts switch authentication to socket logins only
 ENV MYSQL_RANDOM_ROOT_PASSWORD=yes
