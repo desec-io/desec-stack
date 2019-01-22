@@ -57,7 +57,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'desecapi.urls'
+ROOT_URLCONF = 'api.urls'
 
 WSGI_APPLICATION = 'desecapi.wsgi.application'
 

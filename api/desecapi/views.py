@@ -16,7 +16,7 @@ from dns import resolver
 from django.template.loader import get_template
 import desecapi.authentication as auth
 import base64, binascii
-from desecapi import settings
+from api import settings
 from rest_framework.exceptions import (
     APIException, MethodNotAllowed, PermissionDenied, ValidationError)
 import django.core.exceptions
