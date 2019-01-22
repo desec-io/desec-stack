@@ -538,6 +538,14 @@ describe("API", function () {
                         );
                         return expect(response).to.have.status(422);
                     });
+
+                    it("gives the right response for records contents being null", function () {
+                        var response = chakram.post(
+                            '/domains/' + domain + '/rrsets/',
+                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                        );
+                        return expect(response).to.have.status(400);
+                    });
                 });
 
             });
@@ -758,6 +766,14 @@ describe("API", function () {
                             [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
                         return expect(response).to.have.status(422);
+                    });
+
+                    it("gives the right response for records contents being null", function () {
+                        var response = chakram.put(
+                            '/domains/' + domain + '/rrsets/',
+                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                        );
+                        return expect(response).to.have.status(400);
                     });
                 });
 
@@ -1031,6 +1047,14 @@ describe("API", function () {
                             [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
                         return expect(response).to.have.status(422);
+                    });
+
+                    it("gives the right response for records contents being null", function () {
+                        var response = chakram.patch(
+                            '/domains/' + domain + '/rrsets/',
+                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                        );
+                        return expect(response).to.have.status(400);
                     });
                 });
 
