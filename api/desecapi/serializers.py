@@ -25,13 +25,10 @@ class RRSerializer(serializers.ModelSerializer):
         model = RR
         fields = ('content',)
 
-    def to_representation(self, instance):
-        return instance.content
-
     def to_internal_value(self, data):
         if not isinstance(data, dict):
             data = {'content': data}
-        return self.Meta.model(**data)
+        return super().to_internal_value(data)
 
 
 class RRsetBulkListSerializer(BulkListSerializer):
@@ -139,7 +136,7 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
             if records is None:
                 rrsets[rrset] = None
             else:
-                rr_data = [{'content': x.content, 'rrset': rrset} for x in records]
+                rr_data = [{'content': x.content} for x in records]
 
                 # Use RRSerializer to validate records inputs
                 allow_empty = (method in ('PATCH', 'PUT'))
@@ -154,7 +151,8 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
                     continue
 
                 # Blessings have been given, so add RRset to the to-write dict
-                rrsets[rrset] = [rr for rr in rr_serializer.validated_data]
+                rrsets[rrset] = [RR(rrset=rrset, **rr_validated_data)
+                                 for rr_validated_data in rr_serializer.validated_data]
 
             errors.append({})
 
