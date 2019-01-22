@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.utils import timezone
 from desecapi.models import User, MyUserManager
 from .utils import utils
-from desecapi import settings
+from api import settings
 from datetime import timedelta
 
 

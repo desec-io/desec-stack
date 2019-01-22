@@ -1,7 +1,7 @@
 import requests
 import json
 import random
-from desecapi import settings
+from api import settings
 from desecapi.exceptions import PdnsException
 
 

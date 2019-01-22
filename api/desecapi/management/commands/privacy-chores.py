@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand
 from desecapi.models import User
-from desecapi import settings
+from api import settings
 from django.utils import timezone
 from datetime import timedelta
 

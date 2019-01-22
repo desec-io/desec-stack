@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.core import mail
 from desecapi.emails import send_account_lock_email
-from desecapi import settings
+from api import settings
 
 
 class RegistrationTest(APITestCase):
