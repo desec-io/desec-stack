@@ -511,7 +511,7 @@ class UserCreateView(views.UserCreateView):
         user = serializer.save(registration_remote_ip=remote_ip, lock=lock)
         if user.locked:
             send_account_lock_email(self.request, user)
-        elif not user.dyn:
+        if not user.dyn:
             context = {'token': user.get_token()}
             send_token_email(context, user)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
