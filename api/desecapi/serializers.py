@@ -200,7 +200,7 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
 
 class DomainSerializer(serializers.ModelSerializer):
-    name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', trim_whitespace=False)
+    name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', max_length=191, trim_whitespace=False)
 
     class Meta:
         model = Domain
