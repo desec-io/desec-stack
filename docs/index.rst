@@ -1,8 +1,3 @@
-deSEC DNS API Documentation
-===========================
-
-.. contents:: Table of Contents
-
 .. include:: introduction.rst
 .. include:: authentication.rst
 .. include:: domains.rst
