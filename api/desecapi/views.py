@@ -17,8 +17,7 @@ from django.template.loader import get_template
 import desecapi.authentication as auth
 import base64, binascii
 from api import settings
-from rest_framework.exceptions import (
-    APIException, MethodNotAllowed, PermissionDenied, ValidationError)
+from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
 import django.core.exceptions
 from djoser import views, signals
 from rest_framework import status
@@ -430,7 +429,7 @@ class DynDNS12Update(APIView):
         domain = self.findDomain(request)
 
         if domain is None:
-            raise Http404
+            raise NotFound('nohost')
 
         datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
         rrsets = RRset.plain_to_RRsets(
