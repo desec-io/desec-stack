@@ -7,6 +7,7 @@ import django.core.exceptions
 from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 import re
 from rest_framework.fields import empty
+from rest_framework.settings import api_settings
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -145,8 +146,8 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
                 if not rr_serializer.is_valid():
                     error = rr_serializer.errors
-                    if 'non_field_errors' in error:
-                        error['records'] = error.pop('non_field_errors')
+                    if api_settings.NON_FIELD_ERRORS_KEY in error:
+                        error['records'] = error.pop(api_settings.NON_FIELD_ERRORS_KEY)
                     errors.append(error)
                     continue
 
