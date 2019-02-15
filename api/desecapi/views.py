@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authentication import get_authorization_header
-from rest_framework.renderers import StaticHTMLRenderer
+from desecapi.renderers import PlainTextRenderer
 from dns import resolver
 from django.template.loader import get_template
 import desecapi.authentication as auth
@@ -350,7 +350,7 @@ class DnsQuery(APIView):
 
 class DynDNS12Update(APIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
-    renderer_classes = [StaticHTMLRenderer]
+    renderer_classes = [PlainTextRenderer]
 
     def findDomain(self, request):
         def findDomainname(request):
@@ -439,7 +439,7 @@ class DynDNS12Update(APIView):
             domain=domain)
         domain.write_rrsets(rrsets)
 
-        return Response('good')
+        return Response('good', content_type='text/plain')
 
 class DonationList(generics.CreateAPIView):
     serializer_class = DonationSerializer
