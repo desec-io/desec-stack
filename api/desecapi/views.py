@@ -36,6 +36,7 @@ import djoser.views
 from djoser.serializers import TokenSerializer as DjoserTokenSerializer
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import mixins
+from rest_framework.settings import api_settings
 
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
@@ -209,6 +210,11 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
             domain__name=name, subname=subname, type=type_)
 
     def update(self, request, *args, **kwargs):
+        if not isinstance(request.data, dict):
+            raise ValidationError({
+                api_settings.NON_FIELD_ERRORS_KEY: ['Invalid data. Expected a JSON object.']
+            }, code='invalid')
+
         if request.data.get('records') == []:
             return self.delete(request, *args, **kwargs)
 
