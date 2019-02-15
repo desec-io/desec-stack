@@ -520,7 +520,7 @@ class UserCreateView(views.UserCreateView):
         if user.locked:
             send_account_lock_email(self.request, user)
         if not user.dyn:
-            context = {'token': user.get_token()}
+            context = {'token': user.get_or_create_first_token()}
             send_token_email(context, user)
         signals.user_registered.send(sender=self.__class__, user=user, request=self.request)
 
@@ -537,7 +537,7 @@ def unlock(request, email):
                 if user.locked:
                     user.unlock()
                     if not user.dyn:
-                        context = {'token': user.get_token()}
+                        context = {'token': user.get_or_create_first_token()}
                         send_token_email(context, user)
             except User.DoesNotExist:
                 # fail silently, so people can't probe registered addresses

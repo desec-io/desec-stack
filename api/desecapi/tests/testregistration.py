@@ -199,4 +199,4 @@ class RegistrationTest(APITestCase):
         self.assertEqual(len(mail.outbox), outboxlen + 1)
 
         user = models.User.objects.get(email=data['email'])
-        self.assertTrue(user.get_token() in mail.outbox[-1].body)
+        self.assertTrue(user.get_or_create_first_token() in mail.outbox[-1].body)

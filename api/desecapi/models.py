@@ -95,8 +95,11 @@ class User(AbstractBaseUser):
     def get_short_name(self):
         return self.email
 
-    def get_token(self):
-        token, created = Token.objects.get_or_create(user=self)
+    def get_or_create_first_token(self):
+        try:
+            token = Token.objects.filter(user=self).earliest('created')
+        except Token.DoesNotExist:
+            token = Token.objects.create(user=self)
         return token.key
 
     def __str__(self):
