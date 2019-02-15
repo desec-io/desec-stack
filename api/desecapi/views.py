@@ -213,6 +213,8 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
             return self.delete(request, *args, **kwargs)
 
         for k in ('type', 'subname'):
+            # This works because we exclusively use JSONParser which causes request.data to be
+            # a dict (and not an immutable QueryDict, as is the case for other parsers)
             request.data[k] = request.data.pop(k, self.kwargs[k])
 
         try:
