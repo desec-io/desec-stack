@@ -231,7 +231,6 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class RRsetList(ListBulkCreateUpdateAPIView):
-    authentication_classes = (auth.TokenAuthentication, auth.IPAuthentication,)
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
