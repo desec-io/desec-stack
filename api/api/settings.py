@@ -71,10 +71,10 @@ DATABASES = {
 
 }
 
+# This is necessary because the default is America/Chicago
 TIME_ZONE = 'UTC'
 
 USE_TZ = True
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
