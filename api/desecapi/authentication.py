@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import base64, os
+import base64
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authentication import BaseAuthentication, get_authorization_header, authenticate
 from desecapi.models import Domain, Token
@@ -98,22 +98,3 @@ class URLParamAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed('badauth')
 
         return token.user, token
-
-
-class IPAuthentication(BaseAuthentication):
-
-    """
-    Authentication against remote IP address for dedyn.io management by nslord
-    """
-    def authenticate(self, request):
-        nslord = '%s.1.11' % os.environ['DESECSTACK_IPV4_REAR_PREFIX16']
-
-        # Make sure this is dual-stack safe
-        if request.META.get('REMOTE_ADDR') in [nslord, '::ffff:%s' % nslord]:
-            try:
-                domain = Domain.objects.get(name='dedyn.io')
-                return (domain.owner, None)
-            except Domain.DoesNotExist:
-                return None
-
-        return None
