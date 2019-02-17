@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import base64
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authentication import BaseAuthentication, get_authorization_header, authenticate
-from desecapi.models import Domain, Token
+from desecapi.models import Token
 from rest_framework.authentication import TokenAuthentication as RestFrameworkTokenAuthentication
 
 
@@ -54,12 +54,6 @@ class BasicTokenAuthentication(BaseAuthentication):
 
         if not token.user.is_active:
             raise exceptions.AuthenticationFailed(invalid_token_message)
-
-        if user:
-            try:
-                Domain.objects.get(owner=token.user.pk, name=user)
-            except:
-                raise exceptions.AuthenticationFailed('Invalid username')
 
         return token.user, token
 

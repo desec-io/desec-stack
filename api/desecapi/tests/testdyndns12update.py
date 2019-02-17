@@ -182,7 +182,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + '.invalid:' + self.password).encode()).decode())
         url = reverse('dyndns12update')
         response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testIdentificationByTokenWithEmptyUser(self):
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((':' + self.password).encode()).decode())
