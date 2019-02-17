@@ -45,14 +45,15 @@ class BasicTokenAuthentication(BaseAuthentication):
         return self.authenticate_credentials(auth[1])
 
     def authenticate_credentials(self, basic):
+        invalid_token_message = 'Invalid basic auth token'
         try:
             user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
             token = self.model.objects.get(key=key)
         except:
-            raise exceptions.AuthenticationFailed('Invalid basic auth token')
+            raise exceptions.AuthenticationFailed(invalid_token_message)
 
         if not token.user.is_active:
-            raise exceptions.AuthenticationFailed('User inactive or deleted')
+            raise exceptions.AuthenticationFailed(invalid_token_message)
 
         if user:
             try:
@@ -94,7 +95,7 @@ class URLParamAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed('badauth')
 
         if not token.user.is_active:
-            raise exceptions.AuthenticationFailed('User inactive or deleted')
+            raise exceptions.AuthenticationFailed('badauth')
 
         return token.user, token
 
