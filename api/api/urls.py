@@ -1,5 +1,6 @@
 from django.conf.urls import include, url
 from desecapi import views
+from djoser.views import UserView
 from rest_framework.routers import SimpleRouter
 
 tokens_router = SimpleRouter()
@@ -13,7 +14,7 @@ auth_urls = [
     url(r'^token/login/$', views.TokenCreateView.as_view(), name='login'),
     url(r'^token/logout/$', views.TokenDestroyView.as_view(), name='logout'),
     url(r'^tokens/', include(tokens_router.urls)),
-    url(r'^', include('djoser.urls')),
+    url(r'^me/?$', UserView.as_view(), name='user'),
     url(r'^', include('djoser.urls.authtoken')),
 ]
 
