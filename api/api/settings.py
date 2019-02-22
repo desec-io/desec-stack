@@ -84,6 +84,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    'EXCEPTION_HANDLER': 'desecapi.exception_handlers.handle_db_unavailable',
 }
 
 # user management configuration
