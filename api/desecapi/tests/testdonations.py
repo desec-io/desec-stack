@@ -1,35 +1,31 @@
 # coding: utf-8
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .utils import utils
-from django.db import transaction
-from desecapi.models import Domain
+from desecapi.tests.utils import utils
 from django.core import mail
-import httpretty
-from django.conf import settings
 
 
 class UnsuccessfulDonationTests(APITestCase):
     def testExpectUnauthorizedOnGet(self):
-        url = reverse('donation')
+        url = reverse('v1:donation')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testExpectUnauthorizedOnPut(self):
-        url = reverse('donation')
+        url = reverse('v1:donation')
         response = self.client.put(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testExpectUnauthorizedOnDelete(self):
-        url = reverse('donation')
+        url = reverse('v1:donation')
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class SuccessfulDonationTests(APITestCase):
     def testCanPostDonations(self):
-        url = reverse('donation')
+        url = reverse('v1:donation')
         data = \
             {
                 'name': 'Komplizierter Vörnämü-ßßß 马大为',

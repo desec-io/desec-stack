@@ -1,7 +1,7 @@
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .utils import utils
+from desecapi.tests.utils import utils
 from desecapi.models import Domain
 from django.core import mail
 import httpretty
@@ -11,22 +11,22 @@ import json
 
 class UnauthenticatedDomainTests(APITestCase):
     def testExpectUnauthorizedOnGet(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnPost(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         response = self.client.post(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnPut(self):
-        url = reverse('domain-detail', args=('example.com',))
+        url = reverse('v1:domain-detail', args=('example.com',))
         response = self.client.put(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnDelete(self):
-        url = reverse('domain-detail', args=('example.com',))
+        url = reverse('v1:domain-detail', args=('example.com',))
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -45,7 +45,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.disable()
 
     def testExpectOnlyOwnedDomains(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
@@ -57,7 +57,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(httpretty.last_request().method, 'DELETE')
@@ -76,7 +76,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
@@ -89,19 +89,19 @@ class AuthenticatedDomainTests(APITestCase):
                                body='[]',
                                content_type="application/json")
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)
         self.assertTrue(isinstance(response.data['keys'], list))
 
     def testCantGetOtherDomains(self):
-        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantChangeDomainName(self):
-        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         newname = utils.generateDomainname()
         response.data['name'] = newname
@@ -112,12 +112,12 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)
 
     def testCantPutOtherDomains(self):
-        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.put(url, json.dumps({}), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanPostDomains(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -138,14 +138,14 @@ class AuthenticatedDomainTests(APITestCase):
                                content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': name}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 0)
 
     def testCantPostDomainAlreadyTakenInAPI(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
 
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
@@ -168,13 +168,13 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones',
                                body='{"error": "Domain \'' + name + '.\' already exists"}', status=422)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': name}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def testCantPostDomainsViolatingPolicy(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
 
         data = {'name': '*.' + utils.generateDomainname()}
         response = self.client.post(url, data)
@@ -182,7 +182,7 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue("does not match the required pattern." in response.data['name'][0])
 
     def testCanPostComplicatedDomains(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -202,7 +202,7 @@ class AuthenticatedDomainTests(APITestCase):
                                content_type="application/json")
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         self.client.post(url, {'name': name})
 
         self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'POST')
@@ -213,7 +213,7 @@ class AuthenticatedDomainTests(APITestCase):
         self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + name + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
 
     def testDomainDetailURL(self):
-        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
         self.assertTrue("/" + self.ownedDomains[1].name in url)
 
     def testRollback(self):
@@ -222,7 +222,7 @@ class AuthenticatedDomainTests(APITestCase):
         httpretty.enable()
         httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones', body="some error", status=500)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': name}
         self.client.post(url, data)
 
@@ -247,7 +247,7 @@ class AuthenticatedDynDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
 
-        url = reverse('domain-detail', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -268,14 +268,14 @@ class AuthenticatedDynDomainTests(APITestCase):
         httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
         httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
 
-        url = reverse('domain-detail', args=(self.otherDomains[1].name,))
+        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
         self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
 
     def testCanPostDynDomains(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': utils.generateDynDomainname()}
         response = self.client.post(url, data)
         email = str(mail.outbox[0].message())
@@ -289,7 +289,7 @@ class AuthenticatedDynDomainTests(APITestCase):
         # it is currently not covered.
 
     def testCantPostNonDynDomains(self):
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
 
         data = {'name': utils.generateDomainname()}
         response = self.client.post(url, data)
@@ -308,7 +308,7 @@ class AuthenticatedDynDomainTests(APITestCase):
 
         outboxlen = len(mail.outbox)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
             name = utils.generateDynDomainname()
 
@@ -352,7 +352,7 @@ class AuthenticatedDynDomainTests(APITestCase):
             'at@sign.com',
         ]
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         for domainname in invalidnames:
             data = {'name': domainname}
             response = self.client.post(url, data)

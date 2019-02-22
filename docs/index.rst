@@ -3,6 +3,7 @@
 .. include:: domains.rst
 .. include:: rrsets.rst
 .. include:: endpoint-reference.rst
+.. include:: lifecycle.rst
 
 Getting Help
 ------------

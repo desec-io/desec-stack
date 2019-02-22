@@ -1,7 +1,7 @@
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .utils import utils
+from desecapi.tests.utils import utils
 import httpretty
 from django.conf import settings
 import json
@@ -11,22 +11,22 @@ from django.utils import timezone
 
 class UnauthenticatedDomainTests(APITestCase):
     def testExpectUnauthorizedOnGet(self):
-        url = reverse('rrsets', args=('example.com',))
+        url = reverse('v1:rrsets', args=('example.com',))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnPost(self):
-        url = reverse('rrsets', args=('example.com',))
+        url = reverse('v1:rrsets', args=('example.com',))
         response = self.client.post(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnPut(self):
-        url = reverse('rrsets', args=('example.com',))
+        url = reverse('v1:rrsets', args=('example.com',))
         response = self.client.put(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def testExpectUnauthorizedOnDelete(self):
-        url = reverse('rrsets', args=('example.com',))
+        url = reverse('v1:rrsets', args=('example.com',))
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -50,24 +50,24 @@ class AuthenticatedRRsetTests(APITestCase):
             self.otherToken = utils.createToken(user=self.otherOwner)
 
     def testCanGetOwnRRsets(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1) # don't forget NS RRset
 
     def testCantGetForeignRRsets(self):
-        url = reverse('rrsets', args=(self.otherDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRsetsEmptySubname(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url + '?subname=')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1) # don't forget NS RRset
 
     def testCanGetOwnRRsetsFromSubname(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
 
         data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
@@ -90,12 +90,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(len(response.data), 2)
 
     def testCantGetForeignRRsetsFromSubname(self):
-        url = reverse('rrsets', args=(self.otherDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[1].name,))
         response = self.client.get(url + '?subname=test')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRsetsFromType(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
 
         data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
@@ -118,12 +118,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(len(response.data), 2)
 
     def testCantGetForeignRRsetsFromType(self):
-        url = reverse('rrsets', args=(self.otherDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[1].name,))
         response = self.client.get(url + '?test=A')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanPostOwnRRsets(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -132,18 +132,18 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1 + 1) # don't forget NS RRset
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
 
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['desec.io.'], 'ttl': 900, 'type': 'PTR'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def testCantPostEmptyRRset(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': [], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -154,37 +154,37 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCantPostDeadTypes(self):
         for type_ in self.dead_types:
-            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+            url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
             data = {'records': ['www.example.com.'], 'ttl': 60, 'type': type_}
             response = self.client.post(url, json.dumps(data), content_type='application/json')
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCantPostRestrictedTypes(self):
         for type_ in self.restricted_types:
-            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+            url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
             data = {'records': ['ns1.desec.io. peter.desec.io. 2584 10800 3600 604800 60'], 'ttl': 60, 'type': type_}
             response = self.client.post(url, json.dumps(data), content_type='application/json')
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCantPostForeignRRsets(self):
-        url = reverse('rrsets', args=(self.otherDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantPostTwiceRRsets(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['3.2.2.1'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def testCantPostFaultyRRsets(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
 
         # New record without a value is a syntactical error --> 400
         data = {'records': [], 'ttl': 60, 'type': 'TXT'}
@@ -197,30 +197,30 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         # Unknown type is a semantical error --> 422
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['123456'], 'ttl': 60, 'type': 'AA'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     def testCanGetOwnRRset(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
         self.assertEqual(response.data['ttl'], 60)
 
     def testCanGetOwnRRsetApex(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
@@ -228,28 +228,28 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCantGetRestrictedTypes(self):
         for type_ in self.restricted_types:
-            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+            url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
             response = self.client.get(url + '?type=%s' % type_)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-            url = reverse('rrset', args=(self.ownedDomains[1].name, '', type_,))
+            url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', type_,))
             response = self.client.get(url)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def testCantGetForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrsets', args=(self.otherDomains[0].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[0].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.otherDomains[0].name, '', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCanGetOwnRRsetWithSubname(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
 
         data = {'records': ['1.2.3.4'], 'ttl': 120, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
@@ -267,7 +267,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, 'test', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, 'test', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '2.2.3.4')
@@ -276,7 +276,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCanGetOwnRRsetWithWildcard(self):
         for subname in ('*', '*.foobar'):
-            url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+            url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
 
             data = {'records': ['"barfoo"'], 'ttl': 120, 'type': 'TXT', 'subname': subname}
             response = self.client.post(url, json.dumps(data), content_type='application/json')
@@ -288,17 +288,17 @@ class AuthenticatedRRsetTests(APITestCase):
             self.assertEqual(response1.data[0]['ttl'], 120)
             self.assertEqual(response1.data[0]['name'], subname + '.' + self.ownedDomains[1].name + '.')
 
-            url = reverse('rrset', args=(self.ownedDomains[1].name, subname, 'TXT',))
+            url = reverse('v1:rrset', args=(self.ownedDomains[1].name, subname, 'TXT',))
             response2 = self.client.get(url)
             self.assertEqual(response2.data, response1.data[0])
 
     def testCanPutOwnRRset(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
 
         data = {'records': ['2.2.3.4'], 'ttl': 30}
         response = self.client.put(url, json.dumps(data), content_type='application/json')
@@ -318,12 +318,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCanPutOwnRRsetApex(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
 
         data = {'records': ['2.2.3.4'], 'ttl': 30}
         response = self.client.put(url, json.dumps(data), content_type='application/json')
@@ -343,13 +343,13 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def testCanPatchOwnRRset(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Change records and TTL
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 32}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -381,13 +381,13 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.data['ttl'], 37)
 
     def testCanPatchOwnRRsetApex(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Change records and TTL
-        url = reverse('rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 32}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -420,13 +420,13 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCantChangeForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrsets', args=(self.otherDomains[0].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[0].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.otherDomains[0].name, '', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 30, 'type': 'A'}
 
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
@@ -437,13 +437,13 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCantChangeForeignRRsetApex(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrsets', args=(self.otherDomains[0].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[0].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('rrset@', args=(self.otherDomains[0].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.otherDomains[0].name, '@', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 30, 'type': 'A'}
 
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
@@ -453,13 +453,13 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testCantChangeEssentialProperties(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A', 'subname': 'test1'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Changing the subname is expected to cause an error
-        url = reverse('rrset', args=(self.ownedDomains[1].name, 'test1', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, 'test1', 'A',))
         data = {'records': ['3.2.3.4'], 'ttl': 120, 'subname': 'test2'}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -495,12 +495,12 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCanDeleteOwnRRset(self):
         # Try PATCH with empty records
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         data = {'records': []}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -509,12 +509,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Try DELETE
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -523,12 +523,12 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCanDeleteOwnRRsetApex(self):
         # Try PATCH with empty records
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
         data = {'records': []}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -537,12 +537,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Try DELETE
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '@', 'A',))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -551,13 +551,13 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCantDeleteForeignRRset(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrsets', args=(self.otherDomains[0].name,))
+        url = reverse('v1:rrsets', args=(self.otherDomains[0].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('rrset', args=(self.otherDomains[0].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.otherDomains[0].name, '', 'A',))
 
         # Try PATCH with empty records
         data = {'records': []}
@@ -570,7 +570,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         # Make sure it actually is still there
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.otherToken)
-        url = reverse('rrset@', args=(self.otherDomains[0].name, '@', 'A',))
+        url = reverse('v1:rrset@', args=(self.otherDomains[0].name, '@', 'A',))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
@@ -579,12 +579,12 @@ class AuthenticatedRRsetTests(APITestCase):
         self.owner.locked = timezone.now()
         self.owner.save()
 
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
 
         # Try PATCH with empty records
         data = {'records': []}
@@ -600,7 +600,7 @@ class AuthenticatedRRsetTests(APITestCase):
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './notify')
 
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         self.client.post(url, json.dumps(data), content_type='application/json')
 
@@ -615,12 +615,12 @@ class AuthenticatedRRsetTests(APITestCase):
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './notify')
 
         # Create record, should cause a pdns PATCH request and a notify
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         self.client.post(url, json.dumps(data), content_type='application/json')
 
         # Delete record, should cause a pdns PATCH request and a notify
-        url = reverse('rrset', args=(self.ownedDomains[1].name, '', 'A',))
+        url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -637,7 +637,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(httpretty.httpretty.latest_requests[-1].method, 'PUT')
 
     def testImportRRsets(self):
-        url = reverse('rrsets', args=(self.ownedDomains[1].name,))
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
