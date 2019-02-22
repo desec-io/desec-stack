@@ -1,7 +1,7 @@
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .utils import utils
+from desecapi.tests.utils import utils
 import httpretty
 import base64
 from django.conf import settings
@@ -20,11 +20,11 @@ class DynUpdateAuthenticationTests(APITestCase):
             self.user = utils.createUser(self.username, self.password)
             self.token = utils.createToken(user=self.user)
             self.setCredentials(self.username, self.password)
-            self.url = reverse('dyndns12update')
+            self.url = reverse('v1:dyndns12update')
 
             self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
             self.domain = utils.generateDynDomainname()
-            url = reverse('domain-list')
+            url = reverse('v1:domain-list')
             data = {'name': self.domain}
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)

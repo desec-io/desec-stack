@@ -4,7 +4,35 @@ var itPropagatesToTheApi = require("./../setup.js").itPropagatesToTheApi;
 var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
 var schemas = require("./../schemas.js");
 
-describe("API", function () {
+describe("API Versioning", function () {
+
+    before(function () {
+        chakram.setRequestDefaults({
+            headers: {
+                'Host': 'desec.' + process.env.DESECSTACK_DOMAIN,
+            },
+            followRedirect: false,
+            baseUrl: 'https://www/api',
+        })
+    });
+
+    [
+        'v1',
+        'v2',
+    ].forEach(function (version) {
+        it("maintains the requested version " + version, function() {
+            chakram.get('/' + version + '/').then(function (response) {
+                expect(response).to.have.schema(schemas.rootNoLogin);
+                let regex = new RegExp('http://[^/]+/api/' + version + '/auth/users/', 'g')
+                expect(response.body.login).to.match(regex);
+                return chakram.wait();
+            });
+        });
+    })
+
+});
+
+describe("API v1", function () {
     this.timeout(3000);
 
     before(function () {
@@ -18,8 +46,11 @@ describe("API", function () {
     });
 
     it("provides an index page", function () {
-        var response = chakram.get('/');
-        return expect(response).to.have.status(200);
+        chakram.get('/').then(function (response) {
+            expect(response).to.have.schema(schemas.rootNoLogin);
+            expect(response.body.login).to.match(/http:\/\/[^\/]+\/api\/v1\/auth\/users\//);
+            return chakram.wait();
+        });
     });
 
     describe("user registration", function () {

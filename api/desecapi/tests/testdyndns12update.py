@@ -1,7 +1,7 @@
-from django.urls import reverse
+from rest_framework.reverse import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from .utils import utils
+from desecapi.tests.utils import utils
 import base64
 import httpretty
 from django.conf import settings
@@ -22,7 +22,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.domain = utils.generateDynDomainname()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         data = {'name': self.domain}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -59,7 +59,7 @@ class DynDNS12UpdateTest(APITestCase):
         name = name or self.username
 
         def verify_response(type_, ip):
-            url = reverse('rrset', args=(name, '', type_,))
+            url = reverse('v1:rrset', args=(name, '', type_,))
             response = self.client.get(url)
 
             if ip is not None:
@@ -76,7 +76,7 @@ class DynDNS12UpdateTest(APITestCase):
 
     def testDynDNS1UpdateDDClientSuccess(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myip=10.1.2.3
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'action': 'edit',
@@ -91,7 +91,7 @@ class DynDNS12UpdateTest(APITestCase):
 
     def testDynDNS1UpdateDDClientIPv6Success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myipv6=::1337
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'action': 'edit',
@@ -106,7 +106,7 @@ class DynDNS12UpdateTest(APITestCase):
 
     def testDynDNS2UpdateDDClientIPv4Success(self):
         #/nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'system': 'dyndns',
@@ -119,7 +119,7 @@ class DynDNS12UpdateTest(APITestCase):
 
     def testDynDNS2UpdateDDClientIPv6Success(self):
         #/nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'system': 'dyndns',
@@ -132,14 +132,14 @@ class DynDNS12UpdateTest(APITestCase):
 
     def testFritzBox(self):
         #/
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
     def testUnsetIP(self):
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
 
         def testVariant(params, **kwargs):
             response = self.client.get(url, params)
@@ -168,25 +168,25 @@ class DynDNS12UpdateTest(APITestCase):
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         response = self.client.post(url, {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.5.5.5')
 
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + '.invalid:' + self.password).encode()).decode())
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def testIdentificationByTokenWithEmptyUser(self):
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((':' + self.password).encode()).decode())
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url, REMOTE_ADDR='10.5.5.6')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
@@ -207,18 +207,18 @@ class DynDNS12UpdateTest(APITestCase):
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         response = self.client.post(url, {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url, REMOTE_ADDR='10.5.5.7')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def testManual(self):
         #/update?username=foobar.dedyn.io&password=secret
         self.client.credentials(HTTP_AUTHORIZATION='')
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'username': self.username,
@@ -232,7 +232,7 @@ class DynDNS12UpdateTest(APITestCase):
         # The dynamic update will try to set the TTL to 60. Here, we create
         # a record with a different TTL beforehand and then make sure that
         # updates still work properly.
-        url = reverse('rrsets', args=(self.domain,))
+        url = reverse('v1:rrsets', args=(self.domain,))
         data = {'records': ['127.0.0.1'], 'ttl': 3600, 'type': 'A'}
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, json.dumps(data),
@@ -241,7 +241,7 @@ class DynDNS12UpdateTest(APITestCase):
 
         self.httpretty_reset_uris()
 
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
         response = self.client.get(url)
         self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
@@ -254,7 +254,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.owner.locked = timezone.now()
         self.owner.save()
 
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'system': 'dyndns',
@@ -289,7 +289,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.owner.save()
 
         # While in locked state, create a domain and set some records
-        url = reverse('domain-list')
+        url = reverse('v1:domain-list')
         newdomain = utils.generateDynDomainname()
 
         data = {'name': newdomain}
@@ -301,7 +301,7 @@ class DynDNS12UpdateTest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('dyndns12update')
+        url = reverse('v1:dyndns12update')
         response = self.client.get(url,
                                    {
                                        'system': 'dyndns',

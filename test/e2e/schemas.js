@@ -1,5 +1,12 @@
 // For format specs, see https://json-schema.org/latest/json-schema-validation.html#rfc.section.7.3
 
+exports.rootNoLogin = {
+    properties: {
+        login: { type: "string" },
+        register: { type: "string" },
+    }
+};
+
 exports.user = {
     properties: {
         dyn: { type: "boolean" },

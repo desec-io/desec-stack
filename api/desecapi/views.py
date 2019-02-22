@@ -297,14 +297,14 @@ class Root(APIView):
     def get(self, request, format=None):
         if self.request.user and self.request.user.is_authenticated:
             return Response({
-                'domains': reverse('domain-list'),
-                'user': reverse('user'),
-                'logout': reverse('token-destroy'),  # TODO change interface to token-destroy, too?
+                'domains': reverse('domain-list', request=request),
+                'user': reverse('user', request=request),
+                'logout': reverse('token-destroy', request=request),  # TODO change interface to token-destroy, too?
             })
         else:
             return Response({
-                'login': reverse('token-create', request=request, format=format),  # TODO change interface to token-create, too?
-                'register': reverse('register', request=request, format=format),
+                'login': reverse('token-create', request=request),
+                'register': reverse('register', request=request),
             })
 
 
@@ -546,7 +546,7 @@ def unlock(request, email):
                 # fail silently, so people can't probe registered addresses
                 pass
 
-            return HttpResponseRedirect(reverse('unlock/done'))
+            return HttpResponseRedirect(reverse('unlock/done', request=request))
 
     # if a GET (or any other method) we'll create a blank form
     else:

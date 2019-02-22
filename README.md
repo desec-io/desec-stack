@@ -1,5 +1,5 @@
 deSEC Stack
-=====
+===========
 
 This is a docker-compose application providing the basic stack for deSEC name services. It consists of
 
@@ -11,7 +11,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 
 
 Requirements
------
+------------
 
 Although most configuration is contained in this repository, some external dependencies need to be met before the application can be run. Dependencies are:
 
@@ -61,7 +61,7 @@ Running the standard stack will also fire up an instance of the `www` proxy serv
 
 
 How to Run
------
+----------
 
 Development:
 
@@ -73,13 +73,26 @@ Production:
 
 
 Storage
----
+-------
 All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desecstack_{dbapi,dblord,dbmaster}_mysql`.
 This is the location you will want to back up. (Be sure to follow standard MySQL backup practices, i.e. make sure things are consistent.)
 
 
+API Versions and Roadmap
+------------------------
+
+deSEC currently maintains the following API versions:
+
+API Version | URL Prefix | Status                                   | Support Ends
+----------- | ---------- | ---------------------------------------- | ------------
+Version 1   | `/api/v1/` |  unstable, stable release exp. June 2019 | earliest 6 months after v2 is declared stable
+Version 2   | `/api/v2/` |  unstable
+
+You can find our documentation for all API versions at https://desec.readthedocs.io/. (Select the version of interest in the navigation bar.)
+
+
 Notes on IPv6
------
+-------------
 
 This stack is IPv6-capable. Caveats:
 
