@@ -77,11 +77,14 @@ TIME_ZONE = 'UTC'
 USE_TZ = True
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'desecapi.authentication.TokenAuthentication',
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
     ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'desecapi.authentication.TokenAuthentication',
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'EXCEPTION_HANDLER': 'desecapi.exception_handlers.handle_db_unavailable',
