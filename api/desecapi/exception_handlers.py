@@ -1,7 +1,8 @@
 from django.db.utils import OperationalError
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import exception_handler, set_rollback
+from rest_framework.views import exception_handler
+import logging
 
 
 def handle_db_unavailable(exc, context):
@@ -21,6 +22,9 @@ def handle_db_unavailable(exc, context):
                 2009,  # Wrong host info
                 2026,  # SSL connection error
         ):
+            logging.getLogger('django.request').error('OperationalError Supplementary Information',
+                                                      exc_info=exc, stack_info=False)
+
             # Gracefully let clients know that we cannot connect to the database
             data = {'detail': 'Please try again later.'}
 
