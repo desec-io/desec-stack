@@ -1,11 +1,11 @@
 Hi there,
 
-And welcome to the deSEC DNS service! I'm Nils, CTO of deSEC. If you
-have any questions or concerns, please do not hestitate to contact me.
+Welcome to the deSEC DNS service! I'm Nils, CTO of deSEC. If you have
+any questions or concerns, please do not hestitate to contact me.
 
 To get started with our REST API, please take a look at our
-documentation at https://desec.io/docs.html. Please make sure to read
-the introduction and the chapter on how to create domains and DNS
+documentation at https://desec.readthedocs.io/. Please make sure to
+read the introduction and the chapter on how to create domains and DNS
 records ("RRsets").
 
 For access to our REST API, you will have to transmit an authorization
@@ -23,7 +23,7 @@ be made publicly available on the following nameservers:
 Note that no private key material is stored outside of Germany.
 
 Publication is usually a matter of seconds. (Creation of new domains
-takes around a minute, though.)
+may take up to a minute, though.)
 
 2.)
 All DNS records are automatically secured with DNSSEC. For the system
@@ -35,15 +35,15 @@ the root zone.
 
 You need to ask our API for these DS records so that you can forward
 them to your registrar. To do so, retrieve your domain from our API
-(GET https://desec.io/api/v1/domains/{name}/) and take a look at the
+(GET https://desec.io/api/v1/domains/:name/) and take a look at the
 "keys" field.
 
 Some registrars ask for a DNSKEY value instead of DS records. The
 DNSKEY value is also contained in the "keys" field of your domain.
 
 For more information, please refer to the documentation:
-  https://desec.io/docs.html#domain-field-reference
-  https://desec.io/docs.html#retrieving-a-specific-domain
+  https://desec.readthedocs.io/en/latest/#domain-field-reference
+  https://desec.readthedocs.io/en/latest/#retrieving-a-specific-domain
 
 
 While this service is in beta test, we make no guarantees regarding
@@ -57,15 +57,15 @@ an email if we can do anything better.
 Thanks for using deSEC, we hope you do enjoy your DNSSEC-enabled
 DNS hosting service.
 
-Cheers,
+Stay secure,
 Nils
 
 --
 deSEC
-Maybachufer 9
-12047 Berlin
+Kyffhäuserstr. 5
+10781 Berlin
 Germany
 
 phone: +49-30-47384344
 
-Vertreten durch: Dr. Peter Thomassen, Nils Wisiol
+Vorstandsvorsitzender: Nils Wisiol

@@ -36,15 +36,15 @@ an email if we can do anything better.
 Thanks for using deSEC, we hope you do enjoy your DNSSEC-enabled
 dynDNS.
 
-Cheers,
+Stay secure,
 Nils
 
 --
 deSEC
-Maybachufer 9
-12047 Berlin
+Kyffhäuserstr. 5
+10781 Berlin
 Germany
 
 phone: +49-30-47384344
 
-Vertreten durch: Dr. Peter Thomassen, Nils Wisiol
+Vorstandsvorsitzender: Nils Wisiol
