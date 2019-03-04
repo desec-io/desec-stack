@@ -241,17 +241,35 @@ To retrieve an RRset with a specific name and type from your zone (e.g. the
 like this::
 
     http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
+        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
         Authorization:"Token {token}"
 
 This will return only one RRset (i.e., the response is not a JSON array).  The
 response status code is ``200 OK`` if the requested RRset exists, and ``404
 Not Found`` otherwise.
 
-Note the three dots after ``:subname``.  You can think of them as abbreviating
-the rest of the DNS name.  To retrieve all records associated with the zone
-apex (i.e. ``example.com`` where ``subname`` is empty), simply use
-``rrsets/.../``.
+Accessing the Zone Apex
+```````````````````````
+
+**Note:** The RRset at the zone apex (the domain root with an empty subname)
+*cannot* be queried via ``/api/v1/domains/:name/rrsets//:type/``.  This is due
+to normalization rules of the HTTP specification which cause the double-slash
+``//`` to be replaced with a single slash ``/``, breaking the URL structure.
+
+To access an RRset at the root of your domain, we reserved the special subname
+value ``@``.  This is a common placeholder for this use case (see RFC 1035).
+As an example, you can retrieve the IPv4 address(es) of your domain root by
+querying ``/api/v1/domains/:name/rrsets/@/A/``.
+
+**Pro tip:**: If you like to have the convenience of simple string expansion
+in the URL, you can add three dots after ``:subname``, like so::
+
+    http GET \
+        https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
+        Authorization:"Token {token}"
+
+With this syntax, the above-mentioned normalization problem does not occur.
+You can think of the three dots as abbreviating the rest of the DNS name.
 
 
 Modifying an RRset
@@ -264,11 +282,11 @@ need to be provided, where the ``PUT`` method requires specification of both
 fields.  Examples::
 
     http PUT \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
+        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
         Authorization:"Token {token}" records:='["127.0.0.1"]' ttl:=3600
 
     http PATCH \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
+        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
         Authorization:"Token {token}" ttl:=86400
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
@@ -278,6 +296,9 @@ the API responds with ``400 Bad Request``.  If field values were semantically
 invalid (e.g. when you provide an unknown record type, or an `A` value that is
 not an IPv4 address), ``422 Unprocessable Entity`` is returned.  If the RRset
 does not exist, ``404 Not Found`` is returned.
+
+To modify an RRset at the zone apex (empty subname), use the special subname
+value ``@`` (read more about `Accessing the Zone Apex`_).
 
 Bulk Modification of RRsets
 ```````````````````````````
@@ -339,6 +360,9 @@ and ``PUT`` request methods. You can simply send an array of RRset objects
             '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe", "c0ff::ee"]},' \
             '{"subname": "backup", "type": "MX", "records": []},' \
             '...]'
+
+Note that ``@`` is not accepted here as an alias for the empty subname. For
+context, see `Accessing the Zone Apex`_.
 
 Atomicity
 `````````
