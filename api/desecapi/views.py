@@ -186,6 +186,11 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
 
+    def dispatch(self, request, *args, **kwargs):
+        if kwargs['subname'] == '@':
+            kwargs['subname'] = ''
+        return super().dispatch(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         if request.user.locked:
             detail = "You cannot delete RRsets while your account is locked."

@@ -13,6 +13,7 @@ apiurls = [
     url(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/$', views.DomainDetail.as_view(), name='domain-detail'),
     url(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/$', views.RRsetList.as_view(), name='rrsets'),
     url(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/(?P<subname>(\*)?[a-zA-Z\.\-_0-9=]*)\.\.\./(?P<type>[A-Z][A-Z0-9]*)/$', views.RRsetDetail.as_view(), name='rrset'),
+    url(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/(?P<subname>[*@]|[a-zA-Z\.\-_0-9=]+)/(?P<type>[A-Z][A-Z0-9]*)/$', views.RRsetDetail.as_view(), name='rrset@'),
     url(r'^tokens/', include(token_urls)),
     url(r'^dns$', views.DnsQuery.as_view(), name='dns-query'),
     url(r'^dyndns/update$', views.DynDNS12Update.as_view(), name='dyndns12update'),

@@ -274,6 +274,10 @@ describe("API", function () {
                         expect(response).to.have.status(200);
                         expect(response).to.have.schema(schemas.rrset);
 
+                        response = chakram.get('/domains/' + domain + '/rrsets/@/NS/');
+                        expect(response).to.have.status(200);
+                        expect(response).to.have.schema(schemas.rrset);
+
                         return chakram.wait();
                     });
                 });
