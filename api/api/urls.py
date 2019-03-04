@@ -21,8 +21,6 @@ apiurls = [
     url(r'^unlock/done', views.unlock_done, name='unlock/done'),
 ]
 
-apiurls = format_suffix_patterns(apiurls)
-
 urlpatterns = [
     url(r'^api/v1/auth/users/create/$', views.UserCreateView.as_view(), name='user-create'),  # deprecated
     url(r'^api/v1/auth/token/create/$', views.TokenCreateView.as_view(), name='token-create'),  # deprecated
