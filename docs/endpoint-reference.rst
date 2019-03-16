@@ -21,11 +21,11 @@ for `User Registration and Management`_.
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/auth/token/logout/``                   | ``POST``   | Log out and destroy authentication token    |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/tokens/``                              | ``GET``    | Retrieve all current tokens                 |
+| ...\ ``/auth/tokens/``                         | ``GET``    | Retrieve all current tokens                 |
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create new token                            |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/tokens/:id/``                          | ``DELETE`` | Delete token                                |
+| ...\ ``/auth/tokens/:id/``                     | ``DELETE`` | Delete token                                |
 +------------------------------------------------+------------+---------------------------------------------+
 
 The following table summarizes basic information about the deSEC API endpoints used

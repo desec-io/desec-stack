@@ -42,7 +42,7 @@ Most interactions with the API require authentication of the domain owner using
 this token. To authenticate, the token is transmitted via the HTTP
 ``Authorization`` header, as shown in the examples in this document.
 
-Additionally, the API provides you with the ``tokens/`` endpoint which you can
+Additionally, the API provides you with the ``/auth/tokens/`` endpoint which you can
 use to create and destroy additional tokens (see below). Such token can be used
 to authenticate devices independently of your current login session, such as
 routers. They can be revoked individually.
@@ -261,7 +261,7 @@ Retrieving All Current Tokens
 To retrieve a list of currently valid tokens, issue a ``GET`` request::
 
     http \
-        https://desec.io/api/v1/tokens/ \
+        https://desec.io/api/v1/auth/tokens/ \
         Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will respond with a list of token objects, each containing a
@@ -296,7 +296,7 @@ To create another token using the token management interface, issue a
 ``POST`` request to the same endpoint::
 
     http POST \
-        https://desec.io/api/v1/tokens/ \
+        https://desec.io/api/v1/auth/tokens/ \
         Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond" \
         name:='"my new token"'
 
@@ -318,7 +318,7 @@ To delete an existing token via the token management endpoints, issue a
 ``DELETE`` request on the token's endpoint::
 
     http DELETE \
-        https://desec.io/api/v1/tokens/:id/ \
+        https://desec.io/api/v1/auth/tokens/:id/ \
         Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will reply with ``204 No Content``, even if the token was not found.
