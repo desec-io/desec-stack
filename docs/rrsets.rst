@@ -261,7 +261,7 @@ value ``@``.  This is a common placeholder for this use case (see RFC 1035).
 As an example, you can retrieve the IPv4 address(es) of your domain root by
 querying ``/api/v1/domains/:name/rrsets/@/A/``.
 
-**Pro tip:**: If you like to have the convenience of simple string expansion
+**Pro tip:** If you like to have the convenience of simple string expansion
 in the URL, you can add three dots after ``:subname``, like so::
 
     http GET \

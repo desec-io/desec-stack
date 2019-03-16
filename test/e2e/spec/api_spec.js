@@ -1064,14 +1064,14 @@ describe("API", function () {
 
             });
 
-            describe("tokens/ endpoint", function () {
+            describe("auth/tokens/ endpoint", function () {
 
                 var tokenId;
                 var tokenValue;
 
                 function createTokenWithName () {
                     var tokenname = "e2e-token-" + require("uuid").v4();
-                    return chakram.post('/tokens/', { name: tokenname }).then(function (response) {
+                    return chakram.post('/auth/tokens/', { name: tokenname }).then(function (response) {
                         expect(response).to.have.status(201);
                         expect(response).to.have.json('name', tokenname);
                         tokenId = response.body['id'];
@@ -1079,7 +1079,7 @@ describe("API", function () {
                 }
 
                 function createToken () {
-                    return chakram.post('/tokens/').then(function (response) {
+                    return chakram.post('/auth/tokens/').then(function (response) {
                         expect(response).to.have.status(201);
                         tokenId = response.body['id'];
                         tokenValue = response.body['value'];
@@ -1094,19 +1094,19 @@ describe("API", function () {
                     before(createToken)
 
                     it("a list of tokens can be retrieved", function () {
-                        var response = chakram.get('/tokens/');
+                        var response = chakram.get('/auth/tokens/');
                         return expect(response).to.have.schema(schemas.tokens);
                     });
 
                     describe("can delete token", function () {
 
                         before( function () {
-                            var response = chakram.delete('/tokens/' + tokenId + '/');
+                            var response = chakram.delete('/auth/tokens/' + tokenId + '/');
                             return expect(response).to.have.status(204);
                         });
 
                         it("deactivates the token", function () {
-                            return expect(chakram.get('/tokens/', {
+                            return expect(chakram.get('/auth/tokens/', {
                                 headers: {'Authorization': 'Token ' + tokenValue }
                             })).to.have.status(401);
                         });
@@ -1114,7 +1114,7 @@ describe("API", function () {
                     });
 
                     it("deleting nonexistent tokens yields 204", function () {
-                        var response = chakram.delete('/tokens/wedonthavethisid/');
+                        var response = chakram.delete('/auth/tokens/wedonthavethisid/');
                         return expect(response).to.have.status(204);
                     });
 
