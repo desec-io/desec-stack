@@ -1,13 +1,23 @@
 from django.conf.urls import include, url
-from rest_framework.urlpatterns import format_suffix_patterns
 from desecapi import views
 from rest_framework.routers import SimpleRouter
 
 tokens_router = SimpleRouter()
 tokens_router.register(r'', views.TokenViewSet, base_name='token')
-tokens_urls = tokens_router.urls
 
-apiurls = [
+auth_urls = [
+    url(r'^users/create/$', views.UserCreateView.as_view(), name='user-create'),  # deprecated
+    url(r'^token/create/$', views.TokenCreateView.as_view(), name='token-create'),  # deprecated
+    url(r'^token/destroy/$', views.TokenDestroyView.as_view(), name='token-destroy'),  # deprecated
+    url(r'^users/$', views.UserCreateView.as_view(), name='register'),
+    url(r'^token/login/$', views.TokenCreateView.as_view(), name='login'),
+    url(r'^token/logout/$', views.TokenDestroyView.as_view(), name='logout'),
+    url(r'^tokens/', include(tokens_router.urls)),
+    url(r'^', include('djoser.urls')),
+    url(r'^', include('djoser.urls.authtoken')),
+]
+
+api_urls = [
     url(r'^$', views.Root.as_view(), name='root'),
     url(r'^domains/$', views.DomainList.as_view(), name='domain-list'),
     url(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/$', views.DomainDetail.as_view(), name='domain-detail'),
@@ -22,14 +32,6 @@ apiurls = [
 ]
 
 urlpatterns = [
-    url(r'^api/v1/auth/users/create/$', views.UserCreateView.as_view(), name='user-create'),  # deprecated
-    url(r'^api/v1/auth/token/create/$', views.TokenCreateView.as_view(), name='token-create'),  # deprecated
-    url(r'^api/v1/auth/token/destroy/$', views.TokenDestroyView.as_view(), name='token-destroy'),  # deprecated
-    url(r'^api/v1/auth/users/$', views.UserCreateView.as_view(), name='register'),
-    url(r'^api/v1/auth/token/login/$', views.TokenCreateView.as_view(), name='login'),
-    url(r'^api/v1/auth/token/logout/$', views.TokenDestroyView.as_view(), name='logout'),
-    url(r'^api/v1/auth/tokens/', include(tokens_urls)),
-    url(r'^api/v1/auth/', include('djoser.urls')),
-    url(r'^api/v1/auth/', include('djoser.urls.authtoken')),
-    url(r'^api/v1/', include(apiurls)),
+    url(r'^api/v1/auth/', include(auth_urls)),
+    url(r'^api/v1/', include(api_urls)),
 ]
