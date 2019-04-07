@@ -78,9 +78,7 @@ Field details:
 
     As we publish record modifications immediately, this indicates the
     point in time of the last successful write request to a domain's
-    ``rrsets/`` endpoint.  Exception: If the user account is locked, record
-    changes are queued and not published immediately. In this case, the
-    ``published`` field is not updated.
+    ``rrsets/`` endpoint.
 
 
 Creating a Domain

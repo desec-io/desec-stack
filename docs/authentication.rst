@@ -85,12 +85,12 @@ Preventing Abuse
 
 We enforce some limits on user creation requests to make abuse harder. In cases
 where our heuristic suspects abuse, the server will still reply with
-``201 Created`` but will send you an email asking to solve a
+``201 Created`` but will send you an (additional) email asking to solve a
 Google ReCaptcha. We implemented this as privacy-friendly as possible, but
 recommend solving the captcha using some additional privacy measures such as an
 anonymous browser-tab, VPN, etc. Before solving the captcha, the account will
-be on hold, that is, it will be possible to log in and issue most requests as
-normal; however, any DNS settings will not be deployed to our servers.
+be locked, that is, it will be possible to log in; however, most operations on
+the API will be limited to read-only.
 
 
 Log In
@@ -177,8 +177,8 @@ Field details:
 ``locked``
     :Access mode: read-only
 
-    Indicates whether the account is locked.  If so, publication of DNS
-    record changes will be adjourned.
+    Indicates whether the account is locked.  If so, domains put in
+    read-only mode.  Changes are not propagated in the DNS system.
 
 
 Retrieve Account Information
