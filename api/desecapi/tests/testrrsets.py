@@ -575,18 +575,37 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
 
-    def testCantDeleteOwnRRsetWhileAccountIsLocked(self):
+    def testCantCreateRRsetWhileAccountIsLocked(self):
         self.owner.locked = timezone.now()
         self.owner.save()
 
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testCantModifyRRsetWhileAccountIsLocked(self):
+        url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.owner.locked = timezone.now()
+        self.owner.save()
 
         url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
 
-        # Try PATCH with empty records
+        # Try PUT
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Try PATCH
+        data = {'records': ['4.3.2.1']}
+        response = self.client.patch(url, json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Try PATCH to delete
         data = {'records': []}
         response = self.client.patch(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

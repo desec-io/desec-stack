@@ -7,6 +7,8 @@ from django.core import mail
 import httpretty
 from django.conf import settings
 import json
+from django.utils import timezone
+from desecapi.exceptions import PdnsException
 
 
 class UnauthenticatedDomainTests(APITestCase):
@@ -180,6 +182,41 @@ class AuthenticatedDomainTests(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("does not match the required pattern." in response.data['name'][0])
+
+    def testCantPostDomainsWhenAccountIsLocked(self):
+        # Lock user
+        self.owner.locked = timezone.now()
+        self.owner.save()
+
+        url = reverse('v1:domain-list')
+        data = {'name': utils.generateDomainname()}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def testCantModifyDomainsWhenAccountIsLocked(self):
+        name = utils.generateDomainname()
+        data = {'name': name}
+        url = reverse('v1:domain-list')
+        self.client.post(url, data)
+
+        # Lock user
+        self.owner.locked = timezone.now()
+        self.owner.save()
+
+        url = reverse('v1:domain-detail', args=(name,))
+        data = {'name': 'test.de'}
+
+        # PATCH
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # PUT
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # DELETE
+        response = self.client.put(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def testCanPostComplicatedDomains(self):
         url = reverse('v1:domain-list')
@@ -358,3 +395,51 @@ class AuthenticatedDynDomainTests(APITestCase):
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(mail.outbox), outboxlen)
+
+    def testDomainCreationUponUnlockingLockedAccount(self):
+        # Lock user
+        self.owner.locked = timezone.now()
+        self.owner.save()
+
+        newdomain = utils.generateDynDomainname()
+        data = {'name': newdomain}
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
+
+        url = reverse('v1:domain-list')
+
+        # Dyn users should be able to create domains under dedyn.io even when locked
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # See what happens upon unlock if pdns knows this domain already
+        httpretty.register_uri(httpretty.POST,
+                               settings.NSLORD_PDNS_API + '/zones',
+                               body='{"error": "Domain \'' + newdomain + '.\' already exists"}',
+                               status=422)
+
+        with self.assertRaises(PdnsException) as cm:
+            self.owner.unlock()
+
+        self.assertEqual(str(cm.exception),
+                         "Domain '" + newdomain + ".' already exists")
+
+        # See what happens upon unlock if this domain is new to pdns
+        httpretty.register_uri(httpretty.POST,
+                               settings.NSLORD_PDNS_API + '/zones')
+
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.',
+                               body='{"rrsets": [{"comments": [], "name": "%s.", "records": [ { "content": "ns1.desec.io.", "disabled": false }, { "content": "ns2.desec.io.", "disabled": false } ], "ttl": 60, "type": "NS"}]}' % newdomain,
+                               content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + newdomain + './notify', status=200)
+
+        self.owner.unlock()
+
+        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'POST')
+        self.assertTrue((settings.NSLORD_PDNS_API + '/zones').endswith(httpretty.httpretty.latest_requests[-3].path))

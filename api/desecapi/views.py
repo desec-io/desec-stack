@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from desecapi.models import Domain, User, RRset, RR, Token
+from desecapi.models import Domain, User, RRset, Token
 from desecapi.serializers import (
     DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer)
 from rest_framework import generics
-from desecapi.permissions import IsOwner, IsDomainOwner
+from desecapi.permissions import *
 from rest_framework import permissions
 from django.http import Http404, HttpResponseRedirect
 from rest_framework.views import APIView
@@ -84,7 +84,7 @@ class TokenViewSet(mixins.CreateModelMixin,
 
     def destroy(self, request, *args, **kwargs):
         try:
-            super().destroy(self, request, *args, **kwargs)
+            super().destroy(request, *args, **kwargs)
         except Http404:
             pass
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -95,7 +95,7 @@ class TokenViewSet(mixins.CreateModelMixin,
 
 class DomainList(generics.ListCreateAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsOwner, IsUnlockedOrDyn,)
 
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
@@ -159,7 +159,7 @@ class DomainList(generics.ListCreateAPIView):
 
 class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsOwner, IsUnlocked,)
     lookup_field = 'name'
 
     def delete(self, request, *args, **kwargs):
@@ -184,7 +184,7 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'type'
     serializer_class = RRsetSerializer
-    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def dispatch(self, request, *args, **kwargs):
         if kwargs['subname'] == '@':
@@ -192,9 +192,6 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        if request.user.locked:
-            detail = "You cannot delete RRsets while your account is locked."
-            raise PermissionDenied(detail)
         try:
             super().delete(request, *args, **kwargs)
         except Http404:
@@ -237,7 +234,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class RRsetList(ListBulkCreateUpdateAPIView):
     serializer_class = RRsetSerializer
-    permission_classes = (permissions.IsAuthenticated, IsDomainOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def get_queryset(self):
         name = self.kwargs['name']
@@ -357,6 +354,10 @@ class DynDNS12Update(APIView):
     renderer_classes = [PlainTextRenderer]
 
     def findDomain(self, request):
+        if self.request.user.locked:
+            # Error code from https://help.dyn.com/remote-access-api/return-codes/
+            raise PermissionDenied('abuse')
+
         def findDomainname(request):
             # 1. hostname parameter
             if 'hostname' in request.query_params and request.query_params['hostname'] != 'YES':
