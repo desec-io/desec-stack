@@ -1,2 +1,12 @@
+# python virtualenv
 .env
+api/venv
+
+# IDE files
 .idea
+
+# development helper scripts
+/*.sh
+
+# local certificates
+/certs/
