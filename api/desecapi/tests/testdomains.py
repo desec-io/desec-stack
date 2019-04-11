@@ -108,7 +108,7 @@ class AuthenticatedDomainTests(APITestCase):
         newname = utils.generateDomainname()
         response.data['name'] = newname
         response = self.client.put(url, json.dumps(response.data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.ownedDomains[1].name)

@@ -152,7 +152,7 @@ class Domain(models.Model, mixins.SetterMixin):
 
     def clean(self):
         if self._dirtyName:
-            raise ValidationError('You must not change the domain name')
+            raise ValidationError('You must not change the domain name.')
 
     @property
     def keys(self):

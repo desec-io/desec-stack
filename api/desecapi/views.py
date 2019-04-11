@@ -176,9 +176,7 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
         try:
             return super().update(request, *args, **kwargs)
         except django.core.exceptions.ValidationError as e:
-            ex = ValidationError(detail={"detail": str(e)})
-            ex.status_code = status.HTTP_409_CONFLICT
-            raise ex
+            raise ValidationError(detail={"detail": e.message})
 
 
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
