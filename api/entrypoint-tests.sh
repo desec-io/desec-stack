@@ -8,4 +8,5 @@ echo "waiting for dependencies ..."
 /root/cronhook/start-cron.sh &
 
 echo Starting API tests ...
-python3 manage.py test -v 3 --noinput
+coverage run --source='.' manage.py test -v 3 --noinput
+coverage report
