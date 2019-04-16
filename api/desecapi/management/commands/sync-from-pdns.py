@@ -1,5 +1,5 @@
 from django.core.management import BaseCommand, CommandError
-from desecapi.models import Domain, RRset
+from desecapi.models import Domain
 
 
 class Command(BaseCommand):

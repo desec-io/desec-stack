@@ -1,7 +1,7 @@
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
-from desecapi.models import User, MyUserManager
+from desecapi.models import User
 from .utils import utils
 from api import settings
 from datetime import timedelta
