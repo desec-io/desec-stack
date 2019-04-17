@@ -374,7 +374,7 @@ describe("API v1", function () {
                     return expect(chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             {'subname': '想不出来', 'type': 'A', 'records': ['127.0.0.1'], 'ttl': 60}
-                        )).to.have.status(422);
+                        )).to.have.status(400);
                 });
 
                 describe("can set a wildcard AAAA RRset with multiple records", function () {

@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
+from rest_framework.generics import get_object_or_404
+
 from desecapi.models import Domain, User, RRset, Token
 from desecapi.serializers import (
     DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer)
@@ -180,7 +182,6 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
-    lookup_field = 'type'
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
@@ -192,16 +193,26 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
-        name = self.kwargs['name']
-        subname = self.kwargs.get('subname', '')
-        type_ = self.kwargs['type']
+        domain_name = self.kwargs['name']
 
-        if type_ in RRset.RESTRICTED_TYPES:
-            raise PermissionDenied("You cannot tinker with the %s RRset." % type_)
+        try:
+            return self.request.user.domains.get(name=domain_name).rrset_set
+        except Domain.DoesNotExist:
+            raise Http404()
 
-        return RRset.objects.filter(
-            domain__owner=self.request.user.pk,
-            domain__name=name, subname=subname, type=type_)
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        rrset_type = self.kwargs['type']
+
+        if rrset_type in RRset.RESTRICTED_TYPES:
+            raise PermissionDenied("You cannot tinker with the %s RRset." % rrset_type)
+
+        obj = get_object_or_404(queryset, type=rrset_type, subname=self.kwargs['subname'])
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def update(self, request, *args, **kwargs):
         if not isinstance(request.data, dict):
@@ -212,8 +223,12 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         if request.data.get('records') == []:
             return self.delete(request, *args, **kwargs)
 
-        request.data['type'] = request.data.pop('type', self.kwargs['type'])
-        request.data['subname'] = request.data.pop('subname', self.kwargs.get('subname', ''))
+        # Attach URL parameters (self.kwargs) to the request body object (request.data),
+        # the latter having preference with both are given.
+        for k in ('type', 'subname'):
+            # This works because we exclusively use JSONParser which causes request.data to be
+            # a dict (and not an immutable QueryDict, as is the case for other parsers)
+            request.data[k] = request.data.pop(k, self.kwargs[k])
 
         try:
             return super().update(request, *args, **kwargs)
