@@ -22,6 +22,7 @@ class DynDNS12UpdateTest(APITestCase):
 
         url = reverse('v1:domain-list')
         data = {'name': self.domain}
+        utils.httpretty_for_pdns_domain_creation(data['name'])
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -29,7 +30,7 @@ class DynDNS12UpdateTest(APITestCase):
         self.password = self.token
         self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
 
-        httpretty.enable()
+        httpretty.enable(allow_net_connect=False)
         httpretty.HTTPretty.allow_net_connect = False
         self.httpretty_reset_uris()
 

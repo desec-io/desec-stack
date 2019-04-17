@@ -1,6 +1,9 @@
 import random
 import string
 
+from httpretty import httpretty
+
+from api import settings
 from desecapi.models import Domain, User, Token
 
 
@@ -54,8 +57,24 @@ class utils(object):
         else:
             name = cls.generateDomainname()
         domain = Domain(name=name, owner=owner)
+        cls.httpretty_for_pdns_domain_creation(name)
         domain.save()
         return domain
+
+    @classmethod
+    def httpretty_for_pdns_domain_creation(cls, name):
+        httpretty.enable(allow_net_connect=False)
+        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
+                               body='{"rrsets": []}',
+                               content_type="application/json")
+        httpretty.register_uri(httpretty.GET,
+                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
+                               body='[]',
+                               content_type="application/json")
+        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify',
+                               status=200)
 
     @classmethod
     def createToken(cls, user):

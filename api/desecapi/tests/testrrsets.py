@@ -36,9 +36,6 @@ class AuthenticatedRRsetTests(APITestCase):
     restricted_types = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM')
 
     def setUp(self):
-        httpretty.reset()
-        httpretty.disable()
-
         if not hasattr(self, 'owner'):
             self.owner = utils.createUser()
             self.ownedDomains = [utils.createDomain(self.owner), utils.createDomain(self.owner)]
@@ -49,11 +46,18 @@ class AuthenticatedRRsetTests(APITestCase):
             self.otherDomains = [utils.createDomain(self.otherOwner), utils.createDomain()]
             self.otherToken = utils.createToken(user=self.otherOwner)
 
+            httpretty.reset()
+            httpretty.enable(allow_net_connect=False)
+            for domain in self.ownedDomains + self.otherDomains:
+                httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + domain.name + '.')
+                httpretty.register_uri(httpretty.PUT,
+                                       settings.NSLORD_PDNS_API + '/zones/' + domain.name + './notify')
+
     def testCanGetOwnRRsets(self):
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 0)  # NS RRset unavailable in mock pdns environment
 
     def testCantGetForeignRRsets(self):
         url = reverse('v1:rrsets', args=(self.otherDomains[1].name,))
@@ -64,7 +68,7 @@ class AuthenticatedRRsetTests(APITestCase):
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         response = self.client.get(url + '?subname=')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 0)  # NS RRset unavailable in mock pdns environment
 
     def testCanGetOwnRRsetsFromSubname(self):
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
@@ -83,7 +87,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 3)  # NS RRset unavailable in mock pdns environment
 
         response = self.client.get(url + '?subname=test')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -111,7 +115,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 3)  # NS RRset unavailable in mock pdns environment
 
         response = self.client.get(url + '?type=A')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -130,7 +134,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1 + 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 1)  # NS RRset unavailable in mock pdns environment
 
         url = reverse('v1:rrset', args=(self.ownedDomains[1].name, '', 'A',))
         response = self.client.get(url)
@@ -199,6 +203,8 @@ class AuthenticatedRRsetTests(APITestCase):
         # Unknown type is a semantical error --> 422
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
         data = {'records': ['123456'], 'ttl': 60, 'type': 'AA'}
+        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.',
+                               body='', status=422)
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
@@ -265,7 +271,7 @@ class AuthenticatedRRsetTests(APITestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3 + 1) # don't forget NS RRset
+        self.assertEqual(len(response.data), 3, response.data)  # NS RRset unavailable in mock pdns environment
 
         url = reverse('v1:rrset', args=(self.ownedDomains[1].name, 'test', 'A',))
         response = self.client.get(url)
@@ -615,7 +621,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def testPostCausesPdnsAPICall(self):
-        httpretty.enable()
+        httpretty.enable(allow_net_connect=False)
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './notify')
 
@@ -629,7 +635,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(httpretty.last_request().method, 'PUT')
 
     def testDeleteCausesPdnsAPICall(self):
-        httpretty.enable()
+        httpretty.enable(allow_net_connect=False)
         httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
         httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './notify')
 
@@ -662,4 +668,7 @@ class AuthenticatedRRsetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Not checking anything here; errors will raise an exception
+        httpretty.register_uri(httpretty.GET, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.',
+                               status=200, body='{"rrsets":[{"name":"asdf","type":"A",' +
+                                                '"records":[{"content":"1.1.1.1"},{"content":"2.2.2.2"}],"ttl":20}]}')
         call_command('sync-from-pdns', self.ownedDomains[1].name)

@@ -26,10 +26,11 @@ class DynUpdateAuthenticationTests(APITestCase):
             self.domain = utils.generateDynDomainname()
             url = reverse('v1:domain-list')
             data = {'name': self.domain}
+            utils.httpretty_for_pdns_domain_creation(data['name'])
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-            httpretty.enable()
+            httpretty.enable(allow_net_connect=False)
             httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
             httpretty.register_uri(httpretty.GET,
                                    settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
