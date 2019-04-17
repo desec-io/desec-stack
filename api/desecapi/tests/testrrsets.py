@@ -325,11 +325,12 @@ class AuthenticatedRRsetTests(APITestCase):
 
     def testCanPutOwnRRsetApex(self):
         url = reverse('v1:rrsets', args=(self.ownedDomains[1].name,))
-        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'subname': 'sub', 'type': 'A'}
         response = self.client.post(url, json.dumps(data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, '', 'A',))
+        # Put a non-empty subdomain here to also test URLs like rrsets/<subname>@/
+        url = reverse('v1:rrset@', args=(self.ownedDomains[1].name, 'sub', 'A',))
 
         data = {'records': ['2.2.3.4'], 'ttl': 30}
         response = self.client.put(url, json.dumps(data), content_type='application/json')

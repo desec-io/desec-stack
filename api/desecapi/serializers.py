@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from desecapi.models import Domain, Donation, User, RR, RRset, Token
@@ -48,9 +49,11 @@ class RRsetBulkListSerializer(BulkListSerializer):
         return self.child._save([None] * len(validated_data), validated_data)
 
 
-class RRsetTypeField(serializers.CharField):
+class RequiredOnPartialUpdateCharField(serializers.CharField):
+    """
+    This field is always required, even for partial updates (e.g. using PATCH).
+    """
     def validate_empty_values(self, data):
-        # The type field is always required, regardless of PATCH or not
         if data is empty:
             self.fail('required')
 
@@ -69,10 +72,19 @@ class SlugRRField(serializers.SlugRelatedField):
 
 class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
     domain = serializers.StringRelatedField()
-    subname = serializers.CharField(allow_blank=True, required=False)
-    type = RRsetTypeField()
+    subname = serializers.CharField(
+        allow_blank=True,
+        required=False,
+        validators=[
+            RegexValidator(regex=r'^\*?[a-zA-Z\.\-_0-9]*$', message='Subname malformed.', code='invalid_subname'),
+        ]
+    )
+    type = RequiredOnPartialUpdateCharField(
+        allow_blank=False,
+        required=True,
+        validators=[RegexValidator(regex=r'^[A-Z][A-Z0-9]*$', message='Type malformed.', code='invalid_type')]
+    )
     records = SlugRRField(many=True)
-
 
     class Meta:
         model = RRset
