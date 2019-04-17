@@ -88,12 +88,6 @@ Field details:
     (see RFC 4592 for details).  The maximum length is 178.  Further
     restrictions may apply on a per-user basis.
 
-    If a ``subname`` contains slashes ``/`` and you are using it in the URL
-    path (e.g. when `retrieving a specific RRset`_), it is required to escape
-    them by replacing them with ``=2F``, to resolve the ambiguity that
-    otherwise arises.  (This escape mechanism does not apply to query strings
-    or inside JSON documents.)
-
 ``ttl``
     :Access mode: read, write
 

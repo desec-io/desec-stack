@@ -163,11 +163,8 @@ class Domain(models.Model, mixins.SetterMixin):
         if '/' in self.name or '?' in self.name:
             raise SuspiciousOperation('Invalid hostname ' + self.name)
 
-        # Transform to be valid pdns API identifiers (:id in their docs).  The
-        # '/' case here is just a safety measure (this case should never occur due
-        # to the above check).
         # See also pdns code, apiZoneNameToId() in ws-api.cc
-        name = self.name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
+        name = self.name.translate(str.maketrans({'_': '=5F'}))
 
         if not name.endswith('.'):
             name += '.'
