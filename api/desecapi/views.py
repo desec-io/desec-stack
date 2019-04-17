@@ -545,7 +545,7 @@ def unlock(request, email):
                 # fail silently, so people can't probe registered addresses
                 pass
 
-            return HttpResponseRedirect(reverse('unlock/done', request=request))
+            return HttpResponseRedirect(reverse('v1:unlock/done', request=request))  # TODO remove dependency on v1
 
     # if a GET (or any other method) we'll create a blank form
     else:
