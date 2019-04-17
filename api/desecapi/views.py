@@ -184,11 +184,6 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
-    def dispatch(self, request, *args, **kwargs):
-        if kwargs['subname'] == '@':
-            kwargs['subname'] = ''
-        return super().dispatch(request, *args, **kwargs)
-
     def delete(self, request, *args, **kwargs):
         try:
             super().delete(request, *args, **kwargs)
@@ -198,7 +193,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         name = self.kwargs['name']
-        subname = self.kwargs['subname'].replace('=2F', '/')
+        subname = self.kwargs.get('subname', '')
         type_ = self.kwargs['type']
 
         if type_ in RRset.RESTRICTED_TYPES:
@@ -217,10 +212,8 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         if request.data.get('records') == []:
             return self.delete(request, *args, **kwargs)
 
-        for k in ('type', 'subname'):
-            # This works because we exclusively use JSONParser which causes request.data to be
-            # a dict (and not an immutable QueryDict, as is the case for other parsers)
-            request.data[k] = request.data.pop(k, self.kwargs[k])
+        request.data['type'] = request.data.pop('type', self.kwargs['type'])
+        request.data['subname'] = request.data.pop('subname', self.kwargs.get('subname', ''))
 
         try:
             return super().update(request, *args, **kwargs)

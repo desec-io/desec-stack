@@ -34,10 +34,15 @@ api_urls = [
 
     # Domain and RRSet endpoints
     path('domains/', views.DomainList.as_view(), name='domain-list'),
-    re_path(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/$', views.DomainDetail.as_view(), name='domain-detail'),
-    re_path(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/$', views.RRsetList.as_view(), name='rrsets'),
-    re_path(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/(?P<subname>(\*)?[a-zA-Z\.\-_0-9=]*)\.\.\./(?P<type>[A-Z][A-Z0-9]*)/$', views.RRsetDetail.as_view(), name='rrset'),
-    re_path(r'^domains/(?P<name>[a-zA-Z\.\-_0-9]+)/rrsets/(?P<subname>[*@]|[a-zA-Z\.\-_0-9=]+)/(?P<type>[A-Z][A-Z0-9]*)/$', views.RRsetDetail.as_view(), name='rrset@'),
+    path('domains/<name>/', views.DomainDetail.as_view(), name='domain-detail'),
+    path('domains/<name>/rrsets/', views.RRsetList.as_view(), name='rrsets'),
+    path('domains/<name>/rrsets/.../<type>/', views.RRsetDetail.as_view()),
+    re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>(\*)?[a-zA-Z.\-_0-9]*)\.\.\./(?P<type>[A-Z][A-Z0-9]*)/',
+                views.RRsetDetail.as_view(), name='rrset'),
+    path('domains/<name>/rrsets/@/<type>/', views.RRsetDetail.as_view()),
+    path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
+    re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>(\*)?[a-zA-Z.\-_0-9]*)@/(?P<type>[A-Z][A-Z0-9]*)/',
+            views.RRsetDetail.as_view(), name='rrset@'),
 
     # DNS query endpoint
     # TODO remove?
