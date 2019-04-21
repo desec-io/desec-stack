@@ -4,25 +4,14 @@ from rest_framework.test import APITestCase
 from django.core import mail
 
 
-class UnsuccessfulDonationTests(APITestCase):
-    def testExpectUnauthorizedOnGet(self):
-        url = reverse('v1:donation')
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+class DonationTests(APITestCase):
 
-    def testExpectUnauthorizedOnPut(self):
-        url = reverse('v1:donation')
-        response = self.client.put(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+    def test_unauthorized_access(self):
+        for method in [self.client.get, self.client.put, self.client.delete]:
+            response = method(reverse('v1:donation'))
+            self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def testExpectUnauthorizedOnDelete(self):
-        url = reverse('v1:donation')
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-class SuccessfulDonationTests(APITestCase):
-    def testCanPostDonations(self):
+    def test_create_donation(self):
         url = reverse('v1:donation')
         data = \
             {
@@ -34,7 +23,7 @@ class SuccessfulDonationTests(APITestCase):
                 'email': 'email@example.com',
             }
         response = self.client.post(url, data)
-        self.assertTrue(len(mail.outbox) > 0)
+        self.assertTrue(mail.outbox)
         email_internal = str(mail.outbox[0].message())
         direct_debit = str(mail.outbox[0].attachments[0][1])
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

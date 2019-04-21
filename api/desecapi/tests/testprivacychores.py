@@ -1,17 +1,18 @@
-from django.core.management import call_command
-from django.test import TestCase
-from django.utils import timezone
-from desecapi.models import User
-from .utils import utils
-from api import settings
 from datetime import timedelta
 
+from django.core.management import call_command
+from django.utils import timezone
 
-class PrivacyChoresCommandTest(TestCase):
+from desecapi.models import User
+from desecapi.tests.base import DesecTestCase
+from api import settings
 
-    def test_delete_registration_ip_for_old_users(self):
-        name1 = utils.generateUsername()
-        name2 = utils.generateUsername()
+
+class PrivacyChoresCommandTest(DesecTestCase):
+
+    def test_delete_registration_ip(self):
+        name1 = self.random_username()
+        name2 = self.random_username()
 
         User(
             email=name1,
