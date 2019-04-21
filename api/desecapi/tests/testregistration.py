@@ -1,208 +1,156 @@
-from django.test import RequestFactory
-from rest_framework.reverse import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
-from rest_framework.versioning import NamespaceVersioning
-
-from desecapi.tests.utils import utils
-from desecapi import models
 from datetime import timedelta
+
+from django.test import RequestFactory
 from django.utils import timezone
 from django.core import mail
+from rest_framework.reverse import reverse
+from rest_framework.versioning import NamespaceVersioning
+
+from desecapi.tests.base import DesecTestCase
+from desecapi import models
 from desecapi.emails import send_account_lock_email
 from api import settings
 
 
-class RegistrationTest(APITestCase):
+class RegistrationTestCase(DesecTestCase):
+
+    def assertRegistration(self, REMOTE_ADDR='', status=201, **kwargs):
+        url = reverse('v1:register')
+        post_kwargs = {}
+        if REMOTE_ADDR:
+            post_kwargs['REMOTE_ADDR'] = REMOTE_ADDR
+        response = self.client.post(url, kwargs, **post_kwargs)
+        self.assertEqual(response.status_code, status, kwargs)
+        return response
+
+
+class SingleRegistrationTestCase(RegistrationTestCase):
+
+    def setUp(self):
+        super().setUp()
+        email = self.random_username()
+        self.assertRegistration(
+            email=email,
+            password=self.random_password(),
+            REMOTE_ADDR="1.3.3.7",
+        )
+        self.user = models.User.objects.get(email=email)
 
     def test_registration_successful(self):
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.7")
+        self.assertEqual(self.user.registration_remote_ip, "1.3.3.7")
+        self.assertIsNone(self.user.locked)
 
-    def test_multiple_registration_locked_same_ip_short_time(self):
-        outboxlen = len(mail.outbox)
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(),
-                'password': utils.generateRandomString(size=12), 'dyn': True}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertIsNone(user.locked)
-
-        self.assertEqual(len(mail.outbox), outboxlen)
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(),
-                'password': utils.generateRandomString(size=12), 'dyn': True}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertIsNotNone(user.locked)
-
-        self.assertEqual(len(mail.outbox), outboxlen + 1)
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(),
-                'password': utils.generateRandomString(size=12), 'dyn': True}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.7")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.7")
-        self.assertIsNotNone(user.locked)
-
-        self.assertEqual(len(mail.outbox), outboxlen + 2)
-
-    def test_multiple_registration_not_locked_different_ip(self):
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.8")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.8")
-        self.assertIsNone(user.locked)
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.9")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.9")
-        self.assertIsNone(user.locked)
-
-    def test_multiple_registration_not_locked_same_ip_long_time(self):
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.10")
-        self.assertIsNone(user.locked)
-
-        #fake registration time
-        user.created = timezone.now() - timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
-        user.save()
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(), 'password': utils.generateRandomString(size=12)}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertEqual(user.registration_remote_ip, "1.3.3.10")
-        self.assertIsNone(user.locked)
+    def test_token_email(self):
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(self.user.get_or_create_first_token() in mail.outbox[-1].body)
 
     def test_send_captcha_email_manually(self):
-        outboxlen = len(mail.outbox)
-
-        url = reverse('v1:register')
-        data = {'email': utils.generateUsername(),
-                'password': utils.generateRandomString(size=12), 'dyn': True}
-        response = self.client.post(url, data, REMOTE_ADDR="1.3.3.10")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
+        # TODO see if this can be replaced by a method of self.client
         r = RequestFactory().request(HTTP_HOST=settings.ALLOWED_HOSTS[0])
         r.version = 'v1'
         r.versioning_scheme = NamespaceVersioning()
-        send_account_lock_email(r, user)
+        # end TODO
 
-        self.assertEqual(len(mail.outbox), outboxlen+1)
+        mail.outbox = []
+        send_account_lock_email(r, self.user)
+        self.assertEqual(len(mail.outbox), 1)
 
-    def test_multiple_registration_locked_same_email_host(self):
-        outboxlen = len(mail.outbox)
 
-        url = reverse('v1:register')
-        for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
-            data = {
-                'email': utils.generateRandomString() + '@test-same-email.desec.io',
-                'password': utils.generateRandomString(size=12),
-                'dyn': True,
-            }
-            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            user = models.User.objects.get(email=data['email'])
-            self.assertEqual(user.email, data['email'])
-            self.assertIsNone(user.locked)
+class MultipleRegistrationTestCase(RegistrationTestCase):
 
-        self.assertEqual(len(mail.outbox), outboxlen)
+    def _registrations(self):
+        pass
 
-        url = reverse('v1:register')
-        data = {
-            'email': utils.generateRandomString() + '@test-same-email.desec.io',
-            'password': utils.generateRandomString(size=12),
-            'dyn': True,
-        }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertIsNotNone(user.locked)
-
-        self.assertEqual(len(mail.outbox), outboxlen + 1)
-
-    def test_multiple_registration_not_locked_same_email_host_long_time(self):
-        outboxlen = len(mail.outbox)
-
-        url = reverse('v1:register')
-        for i in range(settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT):
-            data = {
-                'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
-                'password': utils.generateRandomString(size=12),
-                'dyn': True,
-            }
-            response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            user = models.User.objects.get(email=data['email'])
-            self.assertEqual(user.email, data['email'])
-            self.assertIsNone(user.locked)
-
-            #fake registration time
-            user = models.User.objects.get(email=data['email'])
-            user.created = timezone.now() - timedelta(hours=settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS+1)
+    def setUp(self):
+        super().setUp()
+        self.users = []
+        for (ip, hours_ago, email_host) in self._registrations():
+            email = self.random_username(email_host)
+            ip = ip or self.random_ip()
+            self.assertRegistration(
+                email=email,
+                password=self.random_password(),
+                dyn=True,
+                REMOTE_ADDR=ip,
+            )
+            user = models.User.objects.get(email=email)
+            self.assertEqual(user.registration_remote_ip, ip)
+            user.created = timezone.now() - timedelta(hours=hours_ago)
             user.save()
+            self.users.append(user)
 
-        self.assertEqual(len(mail.outbox), outboxlen)
 
-        url = reverse('v1:register')
-        data = {
-            'email': utils.generateRandomString() + '@test-same-email-1.desec.io',
-            'password': utils.generateRandomString(size=12),
-            'dyn': True,
-        }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = models.User.objects.get(email=data['email'])
-        self.assertEqual(user.email, data['email'])
-        self.assertIsNone(user.locked)
+class MultipleRegistrationSameIPShortTime(MultipleRegistrationTestCase):
 
-        self.assertEqual(len(mail.outbox), outboxlen)
+    NUM_REGISTRATIONS = 3
 
-    def test_token_email(self):
-        outboxlen = len(mail.outbox)
+    def _registrations(self):
+        return [('1.3.3.7', 0, None) for _ in range(self.NUM_REGISTRATIONS)]
 
-        url = reverse('v1:register')
-        data = {
-            'email': utils.generateRandomString() + '@test-same-email.desec.io',
-            'password': utils.generateRandomString(size=12),
-            'dyn': False,
-        }
-        response = self.client.post(url, data, REMOTE_ADDR=utils.generateRandomIPv4Address())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    def test_is_locked(self):
+        self.assertIsNone(self.users[0].locked)
+        for i in range(1, self.NUM_REGISTRATIONS):
+            self.assertIsNotNone(self.users[i].locked)
 
-        self.assertEqual(len(mail.outbox), outboxlen + 1)
 
-        user = models.User.objects.get(email=data['email'])
-        self.assertTrue(user.get_or_create_first_token() in mail.outbox[-1].body)
+class MultipleRegistrationDifferentIPShortTime(MultipleRegistrationTestCase):
+
+    NUM_REGISTRATIONS = 10
+
+    def _registrations(self):
+        return [('1.3.3.%s' % i, 0, None) for i in range(self.NUM_REGISTRATIONS)]
+
+    def test_is_not_locked(self):
+        for user in self.users:
+            self.assertIsNone(user.locked)
+
+
+class MultipleRegistrationSameIPLongTime(MultipleRegistrationTestCase):
+
+    NUM_REGISTRATIONS = 10
+
+    def _registrations(self):
+        return [
+            ('1.3.3.7', settings.ABUSE_BY_REMOTE_IP_PERIOD_HRS, None)
+            for _ in range(self.NUM_REGISTRATIONS)
+        ]
+
+    def test_is_not_locked(self):
+        for user in self.users:
+            self.assertIsNone(user.locked)
+
+
+class MultipleRegistrationSameEmailHostShortTime(MultipleRegistrationTestCase):
+
+    NUM_REGISTRATIONS = settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT + 3
+
+    def _registrations(self):
+        host = self.random_domain_name()
+        return [
+            (None, 0, host)
+            for _ in range(self.NUM_REGISTRATIONS)
+        ]
+
+    def test_is_locked(self):
+        self.assertIsNone(self.users[0].locked)
+        for i in range(self.NUM_REGISTRATIONS):
+            if i < settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT:
+                self.assertIsNone(self.users[i].locked)
+            else:
+                self.assertIsNotNone(self.users[i].locked)
+
+
+class MultipleRegistrationsSameEmailHostLongTime(MultipleRegistrationTestCase):
+
+    NUM_REGISTRATIONS = settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT + 3
+
+    def _registrations(self):
+        host = self.random_domain_name()
+        return [
+            (self.random_ip(), settings.ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS + 1, host)
+            for _ in range(self.NUM_REGISTRATIONS)
+        ]
+
+    def test_is_not_locked(self):
+        for user in self.users:
+            self.assertIsNone(user.locked)

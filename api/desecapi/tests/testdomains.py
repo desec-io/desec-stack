@@ -1,384 +1,147 @@
-from rest_framework.reverse import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
-from desecapi.tests.utils import utils
-from desecapi.models import Domain
-from django.core import mail
-import httpretty
-from django.conf import settings
+import random
 import json
-from django.utils import timezone
+
+from django.core import mail
+from django.conf import settings
+from rest_framework import status
+
 from desecapi.exceptions import PdnsException
+from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, LockedDomainOwnerTestCase
+from desecapi.models import Domain
 
 
-class UnauthenticatedDomainTests(APITestCase):
-    def testExpectUnauthorizedOnGet(self):
-        url = reverse('v1:domain-list')
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+class UnauthenticatedDomainTests(DesecTestCase):
 
-    def testExpectUnauthorizedOnPost(self):
-        url = reverse('v1:domain-list')
-        response = self.client.post(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def testExpectUnauthorizedOnPut(self):
-        url = reverse('v1:domain-detail', args=('example.com',))
-        response = self.client.put(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def testExpectUnauthorizedOnDelete(self):
-        url = reverse('v1:domain-detail', args=('example.com',))
-        response = self.client.delete(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_unauthorized_access(self):
+        for url in [
+            self.reverse('v1:domain-list'),
+            self.reverse('v1:domain-detail', name='example.com.')
+        ]:
+            for method in [self.client.put, self.client.delete]:
+                self.assertEqual(method(url).status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedDomainTests(APITestCase):
-    def setUp(self):
-        if not hasattr(self, 'owner'):
-            self.owner = utils.createUser()
-            self.ownedDomains = [utils.createDomain(self.owner), utils.createDomain(self.owner)]
-            self.otherDomains = [utils.createDomain(), utils.createDomain()]
-            self.token = utils.createToken(user=self.owner)
-            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+class DomainOwnerTestCase1(DomainOwnerTestCase):
 
-    def tearDown(self):
-        httpretty.reset()
-        httpretty.disable()
-
-    def testExpectOnlyOwnedDomains(self):
-        url = reverse('v1:domain-list')
-        response = self.client.get(url, format='json')
+    def test_list_domains(self):
+        with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
+            response = self.client.get(self.reverse('v1:domain-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]['name'], self.ownedDomains[0].name)
-        self.assertEqual(response.data[1]['name'], self.ownedDomains[1].name)
+        self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
+        for i in range(self.NUM_OWNED_DOMAINS):
+            self.assertEqual(response.data[i]['name'], self.my_domains[i].name)
 
-    def testCanDeleteOwnedDomain(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+    def test_delete_my_domain(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
 
-        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
-        response = self.client.delete(url)
+        with self.assertPdnsRequests(self.requests_desec_domain_deletion()):
+            response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(httpretty.last_request().method, 'DELETE')
-        self.assertEqual(httpretty.last_request().headers['Host'], 'nsmaster:8081')
-
-        httpretty.reset()
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
+        self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
 
-    def testCantDeleteOtherDomains(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.reset()
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
-
-        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
+    def test_delete_other_domain(self):
+        url = self.reverse('v1:domain-detail', name=self.other_domain.name)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
-        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
+        self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
 
-    def testCanGetOwnedDomains(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-
-        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
-        response = self.client.get(url)
+    def test_retrieve_my_domain(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
+        with self.assertPdnsRequests(
+            self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)
+        ):
+            response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], self.ownedDomains[1].name)
+        self.assertEqual(response.data['name'], self.my_domain.name)
         self.assertTrue(isinstance(response.data['keys'], list))
 
-    def testCantGetOtherDomains(self):
-        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_retrieve_other_domains(self):
+        for domain in self.other_domains:
+            response = self.client.get(self.reverse('v1:domain-detail', name=domain.name))
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def testCantChangeDomainName(self):
-        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
-        response = self.client.get(url)
-        newname = utils.generateDomainname()
-        response.data['name'] = newname
+    def test_update_my_domain_name(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
+        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
+            response = self.client.get(url)
+
+        response.data['name'] = self.random_domain_name()
         response = self.client.put(url, json.dumps(response.data), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], self.ownedDomains[1].name)
 
-    def testCantPutOtherDomains(self):
-        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
+        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], self.my_domain.name)
+
+    def test_update_other_domains(self):
+        url = self.reverse('v1:domain-detail', name=self.other_domain.name)
         response = self.client.put(url, json.dumps({}), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def testCanPostDomains(self):
-        url = reverse('v1:domain-list')
-        data = {'name': utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(mail.outbox), 0)
+    def test_create_domains(self):
+        for name in [
+            '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa',
+            'very.long.domain.name.' + self.random_domain_name(),
+            self.random_domain_name()
+        ]:
+            with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+                response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(len(mail.outbox), 0)
 
-    def testCanPostReverseDomains(self):
-        name = '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa'
+    def test_create_api_known_domain(self):
+        url = self.reverse('v1:domain-list')
 
-        utils.httpretty_for_pdns_domain_creation(name)
+        for name in [
+            self.random_domain_name(),
+            'www.' + self.my_domain.name,
+        ]:
+            with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+                response = self.client.post(url, {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            response = self.client.post(url, {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-        url = reverse('v1:domain-list')
-        data = {'name': name}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(mail.outbox), 0)
-
-    def testCantPostDomainAlreadyTakenInAPI(self):
-        url = reverse('v1:domain-list')
-
-        data = {'name': utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self.client.post(url, data)
+    def test_create_pdns_known_domain(self):
+        url = self.reverse('v1:domain-list')
+        name = self.random_domain_name()
+        with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])):
+            response = self.client.post(url, {'name': name})
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-        data = {'name': 'www.' + self.ownedDomains[0].name}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data = {'name': 'www.' + self.otherDomains[0].name}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-
-    def testCantPostDomainAlreadyTakenInPdns(self):
-        name = utils.generateDomainname()
-
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones',
-                               body='{"error": "Domain \'' + name + '.\' already exists"}', status=422)
-
-        url = reverse('v1:domain-list')
-        data = {'name': name}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-
-    def testCantPostDomainsViolatingPolicy(self):
-        url = reverse('v1:domain-list')
-
-        data = {'name': '*.' + utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
+    def test_create_domain_policy(self):
+        name = '*.' + self.random_domain_name()
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("does not match the required pattern." in response.data['name'][0])
 
-    def testCantPostDomainsWhenAccountIsLocked(self):
-        # Lock user
-        self.owner.locked = timezone.now()
-        self.owner.save()
-
-        url = reverse('v1:domain-list')
-        data = {'name': utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def testCantModifyDomainsWhenAccountIsLocked(self):
-        name = utils.generateDomainname()
-        data = {'name': name}
-        url = reverse('v1:domain-list')
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        self.client.post(url, data)
-
-        # Lock user
-        self.owner.locked = timezone.now()
-        self.owner.save()
-
-        url = reverse('v1:domain-detail', args=(name,))
-        data = {'name': 'test.de'}
-
-        # PATCH
-        response = self.client.patch(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # PUT
-        response = self.client.put(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        # DELETE
-        response = self.client.put(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def testCanPostComplicatedDomains(self):
-        url = reverse('v1:domain-list')
-        data = {'name': 'very.long.domain.name.' + utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def testPostingCausesPdnsAPICalls(self):
-        name = utils.generateDomainname()
-
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
-                               body='{"rrsets": []}',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
-
-        url = reverse('v1:domain-list')
-        self.client.post(url, {'name': name})
-
-        self.assertEqual(httpretty.httpretty.latest_requests[-4].method, 'POST')
-        self.assertTrue(name in httpretty.httpretty.latest_requests[-4].parsed_body)
-        self.assertTrue('ns1.desec.io' in httpretty.httpretty.latest_requests[-4].parsed_body)
-        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'PUT')
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'GET')
-        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + name + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
-
-    def testDomainDetailURL(self):
-        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
-        self.assertTrue("/" + self.ownedDomains[1].name in url)
-
-    def testRollback(self):
-        name = utils.generateDomainname()
-
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones', body="some error", status=500)
-
-        url = reverse('v1:domain-list')
-        data = {'name': name}
-        self.client.post(url, data)
-
+    def test_create_domain_atomicity(self):
+        name = self.random_domain_name()
+        with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
+            self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertFalse(Domain.objects.filter(name=name).exists())
 
+    def test_create_domain_punycode(self):
+        names = ['公司.cn', 'aéroport.ci']
+        for name in names:
+            self.assertEqual(
+                self.client.post(self.reverse('v1:domain-list'), {'name': name}).status_code,
+                status.HTTP_400_BAD_REQUEST
+            )
 
-class AuthenticatedDynDomainTests(APITestCase):
-    def setUp(self):
-        if not hasattr(self, 'owner'):
-            self.owner = utils.createUser(dyn=True)
-            self.ownedDomains = [utils.createDomain(self.owner, dyn=True), utils.createDomain(self.owner, dyn=True)]
-            self.otherDomains = [utils.createDomain(), utils.createDomain()]
-            self.token = utils.createToken(user=self.owner)
-            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        for name in [n.encode('idna').decode('ascii') for n in names]:
+            with self.assertPdnsRequests(self.requests_desec_domain_creation(name=name)):
+                self.assertEqual(
+                    self.client.post(self.reverse('v1:domain-list'), {'name': name}).status_code,
+                    status.HTTP_201_CREATED
+                )
 
-    def tearDown(self):
-        httpretty.reset()
-        httpretty.disable()
-
-    def testCanDeleteOwnedDynDomain(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
-
-        url = reverse('v1:domain-detail', args=(self.ownedDomains[1].name,))
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        # FIXME In this testing scenario, the parent domain dedyn.io does not
-        # have the proper NS and DS records set up, so we cannot test their
-        # deletion.
-
-        httpretty.reset()
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.ownedDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.ownedDomains[1].name+ '.')
-
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
-
-    def testCantDeleteOtherDynDomains(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.reset()
-        httpretty.register_uri(httpretty.DELETE, settings.NSLORD_PDNS_API + '/zones/' + self.otherDomains[1].name + '.')
-        httpretty.register_uri(httpretty.DELETE, settings.NSMASTER_PDNS_API + '/zones/' + self.otherDomains[1].name+ '.')
-
-        url = reverse('v1:domain-detail', args=(self.otherDomains[1].name,))
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertTrue(isinstance(httpretty.last_request(), httpretty.core.HTTPrettyRequestEmpty))
-        self.assertTrue(Domain.objects.filter(pk=self.otherDomains[1].pk).exists())
-
-    def testCanPostDynDomains(self):
-        url = reverse('v1:domain-list')
-        data = {'name': utils.generateDynDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        email = str(mail.outbox[0].message())
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertTrue(data['name'] in email)
-        self.assertTrue(self.token in email)
-
-        # FIXME We also need to test that proper NS and DS records are set up
-        # in the parent zone dedyn.io.  Because this relies on the cron hook,
-        # it is currently not covered.
-
-    def testCantPostNonDynDomains(self):
-        url = reverse('v1:domain-list')
-
-        data = {'name': utils.generateDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data['code'], 'domain-illformed')
-
-        data = {'name': 'very.long.domain.' + utils.generateDynDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data['code'], 'domain-illformed')
-
-
-    def testLimitDynDomains(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
-
-        outboxlen = len(mail.outbox)
-
-        url = reverse('v1:domain-list')
-        for i in range(settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2):
-            name = utils.generateDynDomainname()
-
-            httpretty.register_uri(httpretty.GET,
-                                   settings.NSLORD_PDNS_API + '/zones/' + name + '.',
-                                   body='{"rrsets": []}',
-                                   content_type="application/json")
-            httpretty.register_uri(httpretty.GET,
-                                   settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
-                                   body='[]',
-                                   content_type="application/json")
-            httpretty.register_uri(httpretty.PUT,
-                                   settings.NSLORD_PDNS_API + '/zones/' + name + './notify',
-                                   status=200)
-
-            response = self.client.post(url, {'name': name})
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(len(mail.outbox), outboxlen+i+1)
-
-        data = {'name': utils.generateDynDomainname()}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(len(mail.outbox), outboxlen + settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT-2)
-
-    def testCantUseInvalidCharactersInDomainNamePDNS(self):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
-
-        outboxlen = len(mail.outbox)
-        invalidnames = [
+    def test_create_domain_name_validation(self):
+        for name in [
             'with space.dedyn.io',
             'another space.de',
             ' spaceatthebeginning.com',
@@ -390,60 +153,135 @@ class AuthenticatedDynDomainTests(APITestCase):
             'backslash\\inthemiddle.at',
             '@atsign.com',
             'at@sign.com',
-        ]
-
-        url = reverse('v1:domain-list')
-        for domainname in invalidnames:
-            data = {'name': domainname}
-            utils.httpretty_for_pdns_domain_creation(data['name'])
-            response = self.client.post(url, data)
+        ]:
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertEqual(len(mail.outbox), outboxlen)
+            self.assertEqual(len(mail.outbox), 0)
 
-    def testDomainCreationUponUnlockingLockedAccount(self):
-        # Lock user
-        self.owner.locked = timezone.now()
-        self.owner.save()
 
-        newdomain = utils.generateDynDomainname()
-        data = {'name': newdomain}
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        httpretty.enable(allow_net_connect=False)
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
+class LockedDomainOwnerTestCase1(LockedDomainOwnerTestCase):
 
-        url = reverse('v1:domain-list')
+    def test_create_domains(self):
+        self.assertEqual(
+            self.client.post(self.reverse('v1:domain-list'), {'name': self.random_domain_name()}).status_code,
+            status.HTTP_403_FORBIDDEN
+        )
 
-        # Dyn users should be able to create domains under dedyn.io even when locked
-        response = self.client.post(url, data)
+    def test_update_domains(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
+        data = {'name': self.random_domain_name()}
+
+        for method in [self.client.patch, self.client.put]:
+            response = method(url, data)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_rr_sets(self):
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        response = self.client.post_rr_set(self.my_domain.name, **data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_rr_sets(self):
+        type_ = 'A'
+        for subname in ['', '*', 'asdf', 'asdf.adsf.asdf']:
+            data = {'records': ['1.2.3.4'], 'ttl': 60}
+            response = self.client.put_rr_set(self.my_domain.name, subname, type_, **data)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            for patch_request in [
+                {'records': ['1.2.3.4'], 'ttl': 60},
+                {'records': [], 'ttl': 60},
+                {'records': []},
+                {'ttl': 60},
+                {},
+            ]:
+                response = self.client.patch_rr_set(self.my_domain.name, subname, type_, **patch_request)
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            # Try DELETE
+            response = self.client.delete_rr_set(self.my_domain.name, subname, type_)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
+    DYN = True
+
+    def test_delete_my_domain(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
+        with self.assertPdnsRequests(
+            self.requests_desec_domain_deletion_auto_delegation(name=self.my_domain.name)
+        ):
+            response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_other_domains(self):
+        url = self.reverse('v1:domain-detail', name=self.other_domain.name)
+        with self.assertPdnsRequests():
+            response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
+
+    def test_create_auto_delegated_domains(self):
+        for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
+            name = self.random_domain_name(suffix)
+            with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name=name)):
+                response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(len(mail.outbox), i + 1)
+            email = str(mail.outbox[0].message())
+            self.assertTrue(name in email)
+            self.assertTrue(self.token.key in email)
+            self.assertFalse(self.user.plain_password in email)
+
+    def test_create_regular_domains(self):
+        for name in [
+            self.random_domain_name(),
+            'very.long.domain.' + self.random_domain_name()
+        ]:
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+            self.assertEqual(response.data['code'], 'domain-illformed')
+
+    def test_domain_limit(self):
+        url = self.reverse('v1:domain-list')
+        user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
+
+        for i in range(user_quota):
+            name = self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))
+            with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
+                response = self.client.post(url, {'name': name})
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self.assertEqual(len(mail.outbox), i + 1)
+
+        response = self.client.post(url, {'name': self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(len(mail.outbox), user_quota)
+
+
+class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
+    DYN = True
+
+    def test_unlock_user(self):
+        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS[0])
+
+        # Users should be able to create domains under auto delegated domains even when locked
+        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=name)):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # See what happens upon unlock if pdns knows this domain already
-        httpretty.register_uri(httpretty.POST,
-                               settings.NSLORD_PDNS_API + '/zones',
-                               body='{"error": "Domain \'' + newdomain + '.\' already exists"}',
-                               status=422)
-
-        with self.assertRaises(PdnsException) as cm:
+        with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])),\
+             self.assertRaises(PdnsException) as cm:
             self.owner.unlock()
 
-        self.assertEqual(str(cm.exception),
-                         "Domain '" + newdomain + ".' already exists")
+        self.assertEqual(str(cm.exception), "Domain '" + name + ".' already exists")
 
         # See what happens upon unlock if this domain is new to pdns
-        httpretty.register_uri(httpretty.POST,
-                               settings.NSLORD_PDNS_API + '/zones')
-
-        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.')
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + newdomain + '.',
-                               body='{"rrsets": [{"comments": [], "name": "%s.", "records": [ { "content": "ns1.desec.io.", "disabled": false }, { "content": "ns2.desec.io.", "disabled": false } ], "ttl": 60, "type": "NS"}]}' % newdomain,
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + newdomain + './notify', status=200)
-
-        self.owner.unlock()
-
-        self.assertEqual(httpretty.httpretty.latest_requests[-3].method, 'POST')
-        self.assertTrue((settings.NSLORD_PDNS_API + '/zones').endswith(httpretty.httpretty.latest_requests[-3].path))
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation_auto_delegation(name=name)[:-1]  # No crypto keys retrieved
+        ):
+            self.owner.unlock()

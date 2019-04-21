@@ -1,250 +1,152 @@
-from rest_framework.reverse import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
-from desecapi.tests.utils import utils
-import base64
-import httpretty
-from django.conf import settings
-import json
+
+from desecapi.tests.base import DynDomainOwnerTestCase
 
 
-class DynDNS12UpdateTest(APITestCase):
-    owner = None
-    token = None
-    username = None
-    password = None
+class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
-    def setUp(self):
-        self.owner = utils.createUser()
-        self.token = utils.createToken(user=self.owner)
-        self.domain = utils.generateDynDomainname()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+    def assertRRSet(self, name, subname, type_, content):
+        response = self.client_token_authorized.get(self.reverse('v1:rrset', name=name, subname=subname, type=type_))
 
-        url = reverse('v1:domain-list')
-        data = {'name': self.domain}
-        utils.httpretty_for_pdns_domain_creation(data['name'])
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        self.username = response.data['name']
-        self.password = self.token
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
-
-        httpretty.enable(allow_net_connect=False)
-        httpretty.HTTPretty.allow_net_connect = False
-        self.httpretty_reset_uris()
-
-    def httpretty_reset_uris(self):
-        httpretty.reset()
-        httpretty.register_uri(httpretty.POST, settings.NSLORD_PDNS_API + '/zones')
-        httpretty.register_uri(httpretty.PATCH, settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.')
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.',
-                               body='{"rrsets": []}',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + self.domain + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + self.domain + './notify')
-
-    def tearDown(self):
-        httpretty.reset()
-        httpretty.disable()
+        if content:
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['records'][0], content)
+            self.assertEqual(response.data['ttl'], 60)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def assertIP(self, ipv4=None, ipv6=None, name=None):
-        old_credentials = self.client._credentials['HTTP_AUTHORIZATION']
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.password)
-        name = name or self.username
+        name = name or self.my_domain.name
+        self.assertRRSet(name, '', 'A', ipv4)
+        self.assertRRSet(name, '', 'AAAA', ipv6)
 
-        def verify_response(type_, ip):
-            url = reverse('v1:rrset', args=(name, '', type_,))
-            response = self.client.get(url)
+    def test_identification_by_domain_name(self):
+        self._set_credentials_basic_auth(self.client, self.my_domain.name + '.invalid', self.token.key)
+        response = self.assertDynDNS12NoUpdate(mock_remote_addr='10.5.5.6')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-            if ip is not None:
-                self.assertEqual(response.data['records'][0], ip)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertEqual(response.data['ttl'], 60)
-            else:
-                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_identification_by_query_params(self):
+        # /update?username=foobar.dedyn.io&password=secret
+        self._set_credentials_basic_auth(self.client, None, None)
+        response = self.assertDynDNS12Update(username=self.my_domain.name, password=self.token.key)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='127.0.0.1')
 
-        verify_response('A', ipv4)
-        verify_response('AAAA', ipv6)
+    def test_deviant_ttl(self):
+        """
+        The dynamic update will try to set the TTL to 60. Here, we create
+        a record with a different TTL beforehand and then make sure that
+        updates still work properly.
+        """
+        with self.assertPdnsRequests(
+            self.request_pdns_zone_update(self.my_domain.name),
+            self.request_pdns_zone_notify(self.my_domain.name),
+        ):
+            response = self.client_token_authorized.patch_rr_set(self.my_domain.name, subname='', type_='A', ttl=3600)
+            self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
 
-        self.client.credentials(HTTP_AUTHORIZATION=old_credentials)
+        response = self.assertDynDNS12Update(self.my_domain.name)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='127.0.0.1')
 
-    def testDynDNS1UpdateDDClientSuccess(self):
+    def test_ddclient_dyndns1_v4_success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myip=10.1.2.3
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url,
-                                   {
-                                       'action': 'edit',
-                                       'started': 1,
-                                       'hostname': 'YES',
-                                       'host_id': self.username,
-                                       'myip': '10.1.2.3'
-                                   })
+        with self.assertPdnsRequests(
+                self.request_pdns_zone_update(self.my_domain.name),
+                self.request_pdns_zone_notify(self.my_domain.name),
+        ):
+            response = self.client.get(
+                self.reverse('v1:dyndns12update'),
+                {
+                    'action': 'edit',
+                    'started': 1,
+                    'hostname': 'YES',
+                    'host_id': self.my_domain.name,
+                    'myip': '10.1.2.3'
+                }
+            )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.1.2.3')
 
-    def testDynDNS1UpdateDDClientIPv6Success(self):
+    def test_ddclient_dyndns1_v6_success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myipv6=::1337
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url,
-                                   {
-                                       'action': 'edit',
-                                       'started': 1,
-                                       'hostname': 'YES',
-                                       'host_id': self.username,
-                                       'myipv6': '::1337'
-                                   })
+        response = self.assertDynDNS12Update(
+            domain_name=self.my_domain.name,
+            action='edit',
+            started=1,
+            hostname='YES',
+            host_id=self.my_domain.name,
+            myipv6='::1337'
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1', ipv6='::1337')
 
-    def testDynDNS2UpdateDDClientIPv4Success(self):
-        #/nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url,
-                                   {
-                                       'system': 'dyndns',
-                                       'hostname': self.username,
-                                       'myip': '10.2.3.4'
-                                   })
+    def test_ddclient_dyndns2_v4_success(self):
+        # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
+        response = self.assertDynDNS12Update(
+            domain_name=self.my_domain.name,
+            system='dyndns',
+            hostname=self.my_domain.name,
+            myip='10.2.3.4',
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.2.3.4')
 
-    def testDynDNS2UpdateDDClientIPv6Success(self):
-        #/nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url,
-                                   {
-                                       'system': 'dyndns',
-                                       'hostname': self.username,
-                                       'myipv6': '::1338'
-                                   })
+    def test_ddclient_dyndns2_v6_success(self):
+        # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338
+        response = self.assertDynDNS12Update(
+            domain_name=self.my_domain.name,
+            system='dyndns',
+            hostname=self.my_domain.name,
+            myipv6='::666',
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
-        self.assertIP(ipv4='127.0.0.1', ipv6='::1338')
+        self.assertIP(ipv4='127.0.0.1', ipv6='::666')
 
-    def testFritzBox(self):
-        #/
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url)
+    def test_fritz_box(self):
+        # /
+        response = self.assertDynDNS12Update(self.my_domain.name)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
-    def testUnsetIP(self):
-        url = reverse('v1:dyndns12update')
-
-        def testVariant(params, **kwargs):
-            response = self.client.get(url, params)
+    def test_unset_ip(self):
+        for (v4, v6) in [
+            ('127.0.0.1', '::1'),
+            ('127.0.0.1', ''),
+            ('', '::1'),
+            ('', ''),
+        ]:
+            response = self.assertDynDNS12Update(self.my_domain.name, ip=v4, ipv6=v6)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(response.data, 'good')
-            self.assertIP(**kwargs)
+            self.assertIP(ipv4=v4, ipv6=v6)
 
-        testVariant({'ipv6': '::1337'}, ipv4='127.0.0.1', ipv6='::1337')
-        testVariant({'ipv6': '::1337', 'myip': ''}, ipv4=None, ipv6='::1337')
-        testVariant({'ipv6': '', 'ip': '1.2.3.4'}, ipv4='1.2.3.4', ipv6=None)
-        testVariant({'ipv6': '', 'myipv4': ''}, ipv4=None, ipv6=None)
 
-    def testIdentificationByUsernameDomainname(self):
-        # To force identification by the provided username (which is the domain name)
-        # we add a second domain for the current user.
+class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
+    NUM_OWNED_DOMAINS = 1
 
-        name = 'second-' + self.domain
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
-                               body='{"rrsets": []}',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
-
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('v1:domain-list')
-        response = self.client.post(url, {'name': name})
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 'good')
-        self.assertIP(ipv4='10.5.5.5')
-
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + '.invalid:' + self.password).encode()).decode())
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url, REMOTE_ADDR='10.5.5.5')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def testIdentificationByTokenWithEmptyUser(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((':' + self.password).encode()).decode())
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url, REMOTE_ADDR='10.5.5.6')
+    def test_identification_by_token(self):
+        self._set_credentials_basic_auth(self.client, '', self.token.key)
+        response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.5.5.6')
 
-        # Now make sure we get a conflict when the user has multiple domains. Thus,
-        # we add a second domain for the current user.
 
-        name = 'second-' + self.domain
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + '.',
-                               body='{"rrsets": []}',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.GET,
-                               settings.NSLORD_PDNS_API + '/zones/' + name + './cryptokeys',
-                               body='[]',
-                               content_type="application/json")
-        httpretty.register_uri(httpretty.PUT, settings.NSLORD_PDNS_API + '/zones/' + name + './notify', status=200)
+class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
+    NUM_OWNED_DOMAINS = 4
 
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        url = reverse('v1:domain-list')
-        response = self.client.post(url, {'name': name})
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url, REMOTE_ADDR='10.5.5.7')
+    def test_identification_by_token(self):
+        """
+        Test if the conflict of having multiple domains, but not specifying which to update is correctly recognized.
+        """
+        self._set_credentials_basic_auth(self.client, '', self.token.key)
+        response = self.client.get(self.reverse('v1:dyndns12update'), REMOTE_ADDR='10.5.5.7')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-
-    def testManual(self):
-        #/update?username=foobar.dedyn.io&password=secret
-        self.client.credentials(HTTP_AUTHORIZATION='')
-        url = reverse('v1:dyndns12update')
-        response = self.client.get(url,
-                                   {
-                                       'username': self.username,
-                                       'password': self.token,
-                                   })
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 'good')
-        self.assertIP(ipv4='127.0.0.1')
-
-    def testDeviantTTL(self):
-        # The dynamic update will try to set the TTL to 60. Here, we create
-        # a record with a different TTL beforehand and then make sure that
-        # updates still work properly.
-        url = reverse('v1:rrsets', args=(self.domain,))
-        data = {'records': ['127.0.0.1'], 'ttl': 3600, 'type': 'A'}
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
-        response = self.client.post(url, json.dumps(data),
-                                    content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        self.httpretty_reset_uris()
-
-        url = reverse('v1:dyndns12update')
-        self.client.credentials(HTTP_AUTHORIZATION='Basic ' + base64.b64encode((self.username + ':' + self.password).encode()).decode())
-        response = self.client.get(url)
-        self.assertEqual(httpretty.httpretty.latest_requests[-2].method, 'PATCH')
-        self.assertTrue((settings.NSLORD_PDNS_API + '/zones/' + self.domain + '.').endswith(httpretty.httpretty.latest_requests[-2].path))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 'good')
-        self.assertIP(ipv4='127.0.0.1')
