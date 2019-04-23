@@ -96,15 +96,10 @@ def get_keys(domain):
     """
     Retrieves a dict representation of the DNSSEC key information
     """
-    try:
-        r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
-        return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
-                for key in r.json()
-                if key['active'] and key['keytype'] in ['csk', 'ksk']]
-    except PdnsException as e:
-        if e.status_code in [400, 404]:
-            return []
-        raise e
+    r = _pdns_get('/zones/%s/cryptokeys' % domain.pdns_id)
+    return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
+            for key in r.json()
+            if key['active'] and key['keytype'] in ['csk', 'ksk']]
 
 
 def get_zone(domain):

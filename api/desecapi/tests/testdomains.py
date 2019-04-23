@@ -270,8 +270,7 @@ class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
         name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS[0])
 
         # Users should be able to create domains under auto delegated domains even when locked
-        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=name)):
-            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])),\

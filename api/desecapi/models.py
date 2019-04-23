@@ -156,7 +156,7 @@ class Domain(models.Model, mixins.SetterMixin):
 
     @property
     def keys(self):
-        return pdns.get_keys(self)
+        return pdns.get_keys(self) if self.published else None
 
     @property
     def pdns_id(self):
