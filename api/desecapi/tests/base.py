@@ -15,6 +15,26 @@ from desecapi.models import User, Domain, Token, RRset, RR
 
 class DesecAPIClient(APIClient):
 
+    @staticmethod
+    def _http_header_base64_conversion(content):
+        return base64.b64encode(content.encode()).decode()
+
+    def set_credentials(self, authorization):
+        self.credentials(HTTP_AUTHORIZATION=authorization)
+
+    def set_credentials_basic_auth(self, part_1, part_2=None):
+        if not part_1 and not part_2:
+            self.set_credentials('')
+        else:
+            s = part_1 if not part_2 else '%s:%s' % (part_1, part_2)
+            self.set_credentials('Basic ' + self._http_header_base64_conversion(s))
+
+    def set_credentials_token_auth(self, token):
+        if token is None:
+            self.set_credentials('')
+        else:
+            self.set_credentials('Token ' + token)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.reverse = DesecTestCase.reverse
@@ -620,31 +640,6 @@ class LockedDomainOwnerTestCase(DomainOwnerTestCase):
 class DynDomainOwnerTestCase(DomainOwnerTestCase):
     DYN = True
 
-    @staticmethod
-    def _http_header_base64_conversion(content):
-        return base64.b64encode(content.encode()).decode()
-
-    @staticmethod
-    def _set_credentials(client, authorization):
-        client.credentials(HTTP_AUTHORIZATION=authorization)
-
-    @classmethod
-    def _set_credentials_basic_auth(cls, client, user_name, token):
-        if not user_name and not token:
-            cls._set_credentials(client, '')
-        else:
-            cls._set_credentials(client, 'Basic ' + DynDomainOwnerTestCase._http_header_base64_conversion(
-                    user_name + ':' + token
-                )
-            )
-
-    @classmethod
-    def _set_credentials_token_auth(cls, client, token):
-        if token is None:
-            cls._set_credentials(client, '')
-        else:
-            cls._set_credentials(client, 'Token ' + token)
-
     def _assertDynDNS12Update(self, requests, mock_remote_addr='', **kwargs):
         with self.assertPdnsRequests(requests):
             if mock_remote_addr:
@@ -665,5 +660,5 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def setUp(self):
         super().setUp()
         self.client_token_authorized = self.client_class()
-        self._set_credentials_basic_auth(self.client, self.my_domain.name, self.token.key)
-        self._set_credentials_token_auth(self.client_token_authorized, self.token.key)
+        self.client.set_credentials_basic_auth(self.my_domain.name, self.token.key)
+        self.client_token_authorized.set_credentials_token_auth(self.token.key)

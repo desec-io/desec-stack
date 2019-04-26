@@ -21,13 +21,13 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertRRSet(name, '', 'AAAA', ipv6)
 
     def test_identification_by_domain_name(self):
-        self._set_credentials_basic_auth(self.client, self.my_domain.name + '.invalid', self.token.key)
+        self.client.set_credentials_basic_auth(self.my_domain.name + '.invalid', self.token.key)
         response = self.assertDynDNS12NoUpdate(mock_remote_addr='10.5.5.6')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_identification_by_query_params(self):
         # /update?username=foobar.dedyn.io&password=secret
-        self._set_credentials_basic_auth(self.client, None, None)
+        self.client.set_credentials_basic_auth(None, None)
         response = self.assertDynDNS12Update(username=self.my_domain.name, password=self.token.key)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
@@ -133,7 +133,7 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 1
 
     def test_identification_by_token(self):
-        self._set_credentials_basic_auth(self.client, '', self.token.key)
+        self.client.set_credentials_basic_auth('', self.token.key)
         response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
@@ -147,6 +147,6 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         """
         Test if the conflict of having multiple domains, but not specifying which to update is correctly recognized.
         """
-        self._set_credentials_basic_auth(self.client, '', self.token.key)
+        self.client.set_credentials_basic_auth('', self.token.key)
         response = self.client.get(self.reverse('v1:dyndns12update'), REMOTE_ADDR='10.5.5.7')
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
