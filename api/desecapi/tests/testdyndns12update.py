@@ -27,8 +27,9 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_identification_by_query_params(self):
         # /update?username=foobar.dedyn.io&password=secret
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         self.client.set_credentials_basic_auth(None, None)
-        response = self.assertDynDNS12Update(username=self.my_domain.name, password=self.token.key)
+        response = self.assertDynDNS12Update(username=name, password=self.token.key)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
@@ -57,13 +58,14 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
                 self.request_pdns_zone_update(self.my_domain.name),
                 self.request_pdns_zone_notify(self.my_domain.name),
         ):
+            name = self.my_domain.name.replace('dedyn', 'DEDYN')
             response = self.client.get(
                 self.reverse('v1:dyndns12update'),
                 {
                     'action': 'edit',
                     'started': 1,
                     'hostname': 'YES',
-                    'host_id': self.my_domain.name,
+                    'host_id': name,
                     'myip': '10.1.2.3'
                 }
             )
@@ -73,12 +75,13 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_ddclient_dyndns1_v6_success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myipv6=::1337
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         response = self.assertDynDNS12Update(
             domain_name=self.my_domain.name,
             action='edit',
             started=1,
             hostname='YES',
-            host_id=self.my_domain.name,
+            host_id=name,
             myipv6='::1337'
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -87,10 +90,11 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_ddclient_dyndns2_v4_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         response = self.assertDynDNS12Update(
             domain_name=self.my_domain.name,
             system='dyndns',
-            hostname=self.my_domain.name,
+            hostname=name,
             myip='10.2.3.4',
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -99,10 +103,11 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_ddclient_dyndns2_v6_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         response = self.assertDynDNS12Update(
             domain_name=self.my_domain.name,
             system='dyndns',
-            hostname=self.my_domain.name,
+            hostname=name,
             myipv6='::666',
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -111,19 +116,21 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_fritz_box(self):
         # /
-        response = self.assertDynDNS12Update(self.my_domain.name)
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
+        response = self.assertDynDNS12Update(name)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
     def test_unset_ip(self):
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         for (v4, v6) in [
             ('127.0.0.1', '::1'),
             ('127.0.0.1', ''),
             ('', '::1'),
             ('', ''),
         ]:
-            response = self.assertDynDNS12Update(self.my_domain.name, ip=v4, ipv6=v6)
+            response = self.assertDynDNS12Update(name, ip=v4, ipv6=v6)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(response.data, 'good')
             self.assertIP(ipv4=v4, ipv6=v6)
@@ -133,8 +140,9 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 1
 
     def test_identification_by_token(self):
+        name = self.my_domain.name.replace('dedyn', 'DEDYN')
         self.client.set_credentials_basic_auth('', self.token.key)
-        response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
+        response = self.assertDynDNS12Update(name, mock_remote_addr='10.5.5.6')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.5.5.6')

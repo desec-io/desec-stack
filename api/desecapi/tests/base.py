@@ -652,8 +652,9 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
                 return self.client.get(self.reverse('v1:dyndns12update'), kwargs)
 
     def assertDynDNS12Update(self, domain_name=None, mock_remote_addr='', **kwargs):
+        pdns_name = None if domain_name is None else domain_name.lower()
         return self._assertDynDNS12Update(
-            [self.request_pdns_zone_update(name=domain_name), self.request_pdns_zone_notify(name=domain_name)],
+            [self.request_pdns_zone_update(name=pdns_name), self.request_pdns_zone_notify(name=pdns_name)],
             mock_remote_addr,
             **kwargs
         )

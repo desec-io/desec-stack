@@ -128,7 +128,6 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         name = 'something.' + self.other_domain.name
         response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        print(response.__dict__)
         self.assertTrue("domain name is unavailable." in response.data['detail'])
 
     def test_create_domain_atomicity(self):
