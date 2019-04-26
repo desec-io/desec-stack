@@ -28,36 +28,31 @@ class DesecAPIClient(APIClient):
         )
 
     def get_rr_sets(self, domain_name, **kwargs):
-        # FIXME add 'v1:rrset@', there seems to be a bug with that
         return self.get(
             self.reverse('v1:rrsets', name=domain_name),
             kwargs
         )
 
     def get_rr_set(self, domain_name, subname, type_):
-        # FIXME add 'v1:rrset@', there seems to be a bug with that
         return self.get(
-            self.reverse('v1:rrset', name=domain_name, subname=subname, type=type_)
+            self.reverse('v1:rrset@', name=domain_name, subname=subname, type=type_)
         )
 
     def put_rr_set(self, domain_name, subname, type_, **kwargs):
-        # FIXME add 'v1:rrset@', there seems to be a bug with that
         return self.put(
-            self.reverse('v1:rrset', name=domain_name, subname=subname, type=type_),
+            self.reverse('v1:rrset@', name=domain_name, subname=subname, type=type_),
             kwargs
         )
 
     def patch_rr_set(self, domain_name, subname, type_, **kwargs):
-        # FIXME add 'v1:rrset@', there seems to be a bug with that
         return self.patch(
-            self.reverse('v1:rrset', name=domain_name, subname=subname, type=type_),
+            self.reverse('v1:rrset@', name=domain_name, subname=subname, type=type_),
             kwargs
         )
 
     def delete_rr_set(self, domain_name, subname, type_):
-        # FIXME add 'v1:rrset@', there seems to be a bug with that
         return self.delete(
-            self.reverse('v1:rrset', name=domain_name, subname=subname, type=type_)
+            self.reverse('v1:rrset@', name=domain_name, subname=subname, type=type_)
         )
 
     # TODO add and use {post,get,delete,...}_domain
