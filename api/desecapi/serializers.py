@@ -34,6 +34,8 @@ class RRSerializer(serializers.ModelSerializer):
 
 
 class RRsetBulkListSerializer(BulkListSerializer):
+    default_error_messages = {'not_a_list': 'Invalid input, expected a list of RRsets.'}
+
     @transaction.atomic
     def update(self, queryset, validated_data):
         q = models.Q(pk__isnull=True)

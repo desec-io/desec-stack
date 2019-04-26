@@ -217,7 +217,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         if not isinstance(request.data, dict):
             raise ValidationError({
-                api_settings.NON_FIELD_ERRORS_KEY: ['Invalid data. Expected a JSON object.']
+                api_settings.NON_FIELD_ERRORS_KEY: ['Invalid input, expected a JSON object.']
             }, code='invalid')
 
         if request.data.get('records') == []:
