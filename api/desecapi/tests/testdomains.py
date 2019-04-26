@@ -124,6 +124,13 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("does not match the required pattern." in response.data['name'][0])
 
+    def test_create_domain_other_parent(self):
+        name = 'something.' + self.other_domain.name
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        print(response.__dict__)
+        self.assertTrue("domain name is unavailable." in response.data['detail'])
+
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
