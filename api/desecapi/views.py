@@ -40,8 +40,8 @@ from rest_framework import mixins
 from rest_framework.settings import api_settings
 
 
-patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
-patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
+patternDyn = re.compile(r'^[a-z-][a-z0-9_-]*\.dedyn\.io$')
+patternNonDyn = re.compile(r'^([a-z0-9-][a-z0-9_-]*\.)+[a-z]+$')
 
 
 def get_client_ip(request):

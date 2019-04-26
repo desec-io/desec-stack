@@ -82,8 +82,8 @@ Field details:
 
     Subdomain string which, together with ``domain``, defines the RRset name.
     Typical examples are ``www`` or ``_443._tcp``.  In general, a subname
-    consists of alphanumeric characters as well as hyphens ``-``, underscores
-    ``_``, dots ``.``, and slashes ``/``.  Wildcard name components are
+    consists of lowercase alphanumeric characters as well as hyphens ``-``,
+    underscores ``_``, and dots ``.``.  Wildcard name components are
     denoted by ``*``; this is allowed only once at the beginning of the name
     (see RFC 4592 for details).  The maximum length is 178.  Further
     restrictions may apply on a per-user basis.

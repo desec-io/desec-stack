@@ -37,7 +37,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
                      'NAPTR', 'NS', 'NSEC', 'NSEC3', 'OPENPGPKEY', 'PTR', 'RP', 'SPF', 'SSHFP', 'SRV', 'TKEY', 'TSIG',
                      'TLSA', 'SMIMEA', 'TXT', 'URI']
 
-    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar']
+    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar', '_']
 
     @classmethod
     def _test_rr_sets(cls, subname=None, type_=None, records=None, ttl=None):
@@ -128,12 +128,11 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
                 kwargs, rr_sets
             ))
 
-    def test_uniqueness(self):
-        RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
+    def test_subname_validity(self):
         with self.assertRaises(ValidationError):
             RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
-        RRset(domain=self.my_domain, subname='AEROPORT', ttl=60, type='A').save()
-        RRset(domain=self.my_domain, subname='aéroport', ttl=100, type='A').save()
+            RRset(domain=self.my_domain, subname='AEROPORT', ttl=60, type='A').save()
+            RRset(domain=self.my_domain, subname='aéroport', ttl=100, type='A').save()
 
     def test_retrieve_my_rr_sets(self):
         for response in [
@@ -240,6 +239,12 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             ):
                 response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=60, type=_type)
                 self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def test_create_my_rr_sets_uppercase_subname(self):
+        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A', 'subname': 'uppERcase'}
+        response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("not lowercase" in response.data['subname'][0])
 
     def test_retrieve_my_rr_sets_apex(self):
         response = self.client.get_rr_set(self.my_rr_set_domain.name, subname='', type_='A')

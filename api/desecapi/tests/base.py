@@ -233,7 +233,7 @@ class MockPDNSTestCase(APITestCase):
         if not isinstance(arg, list):
             return cls._normalize_name([arg])[0]
         else:
-            return [x if x.endswith('.') else x + '.' for x in arg]
+            return [x.rstrip('.') + '.' for x in arg]
 
     @classmethod
     def request_pdns_zone_create(cls):
@@ -470,6 +470,10 @@ class DesecTestCase(MockPDNSTestCase):
         cls.user = cls.create_user()
 
     @classmethod
+    def random_lower_digits(cls, length=6, chars=string.ascii_lowercase + string.digits):
+        return ''.join(random.choice(chars) for _ in range(length))
+
+    @classmethod
     def random_string(cls, length=6, chars=string.ascii_letters + string.digits):
         return ''.join(random.choice(chars) for _ in range(length))
 
@@ -500,7 +504,7 @@ class DesecTestCase(MockPDNSTestCase):
     def random_domain_name(cls, suffix=None):
         if not suffix:
             suffix = random.choice(cls.PUBLIC_SUFFIXES)
-        return random.choice(string.ascii_lowercase) + cls.random_string() + '--test' + '.' + suffix
+        return random.choice(string.ascii_lowercase) + cls.random_lower_digits() + '--test' + '.' + suffix
 
     @classmethod
     def create_token(cls, user):

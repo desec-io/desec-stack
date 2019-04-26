@@ -85,13 +85,18 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
     def test_create_domains(self):
         for name in [
             '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa',
-            'very.long.domain.name.' + self.random_domain_name(),
+            'very.long.domain.name.with_underscore.' + self.random_domain_name(),
             self.random_domain_name()
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             self.assertEqual(len(mail.outbox), 0)
+
+        with self.assertPdnsNoRequestsBut([]):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': 'uuPPERcase.com'})
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertTrue("does not match the required pattern." in response.data['name'][0])
 
     def test_create_api_known_domain(self):
         url = self.reverse('v1:domain-list')
