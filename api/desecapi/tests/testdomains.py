@@ -123,6 +123,12 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("does not match the required pattern." in response.data['name'][0])
 
+    def test_create_domain_other_parent(self):
+        name = 'something.' + self.other_domain.name
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+        self.assertStatus(response, status.HTTP_409_CONFLICT)
+        self.assertIn('domain name is unavailable.', response.data['detail'])
+
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
