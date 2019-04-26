@@ -164,7 +164,7 @@ class Domain(models.Model, mixins.SetterMixin):
             raise SuspiciousOperation('Invalid hostname ' + self.name)
 
         # See also pdns code, apiZoneNameToId() in ws-api.cc
-        name = self.name.translate(str.maketrans({'_': '=5F'}))
+        name = self.name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
 
         if not name.endswith('.'):
             name += '.'
