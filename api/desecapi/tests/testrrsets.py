@@ -2,9 +2,11 @@ import operator
 from functools import reduce
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
+from desecapi.models import RRset
 from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase
 
 
@@ -125,6 +127,13 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             self.fail('Expected to find RR set with %s, but only found %s.' % (
                 kwargs, rr_sets
             ))
+
+    def test_uniqueness(self):
+        RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
+        with self.assertRaises(ValidationError):
+            RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
+        RRset(domain=self.my_domain, subname='AEROPORT', ttl=60, type='A').save()
+        RRset(domain=self.my_domain, subname='aéroport', ttl=100, type='A').save()
 
     def test_retrieve_my_rr_sets(self):
         for response in [
