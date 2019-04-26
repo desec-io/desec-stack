@@ -300,13 +300,13 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
 
     def test_partially_update_other_rr_sets(self):
         for subname in self.SUBNAMES:
-            response = self.client.patch_rr_set(self.other_rr_set_domain.name, subname='',
+            response = self.client.patch_rr_set(self.other_rr_set_domain.name, subname=subname,
                                                 type_='A', records=['3.2.3.4'], ttl=334)
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_other_rr_sets(self):
         for subname in self.SUBNAMES:
-            response = self.client.patch_rr_set(self.other_rr_set_domain.name, subname='', type_='A', ttl=305)
+            response = self.client.patch_rr_set(self.other_rr_set_domain.name, subname=subname, type_='A', ttl=305)
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_essential_properties(self):
