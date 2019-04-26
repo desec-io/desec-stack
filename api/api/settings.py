@@ -66,6 +66,7 @@ DATABASES = {
         },
         'TEST': {
             'CHARSET': 'utf8mb4',
+            'COLLATION': 'utf8mb4_bin',
         },
     },
 

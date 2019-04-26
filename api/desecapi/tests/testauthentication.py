@@ -39,3 +39,20 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             '💩💩:💩💩',
         ]:
             self.assertDynDNS12Status(authorization=authorization, status=HTTP_401_UNAUTHORIZED)
+
+
+class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
+
+    def _get_domains(self):
+        with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
+            return self.client.get(self.reverse('v1:domain-list'))
+
+    def assertAuthenticationStatus(self, status=HTTP_200_OK, token=''):
+        self._set_credentials_token_auth(self.client, token)
+        response = self._get_domains()
+        self.assertEqual(response.status_code, status, response)
+
+    def test_token_case_sensitive(self):
+        self.assertAuthenticationStatus(HTTP_200_OK, self.token.key)
+        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.key.upper())
+        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.key.lower())
