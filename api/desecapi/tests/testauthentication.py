@@ -12,13 +12,13 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
 
     def assertDynDNS12Status(self, status=HTTP_200_OK, authorization=None):
         if authorization:
-            self._set_credentials(self.client, 'Basic ' + self._http_header_base64_conversion(authorization))
+            self.client.set_credentials_basic_auth(authorization)
         request = self._get_dyndns12()
         self.assertEqual(request.status_code, status, request)
 
     def assertDynDNS12AuthenticationStatus(self, username, token, status):
         # Note that this overwrites self.client's credentials, which may be unexpected
-        self._set_credentials_basic_auth(self.client, username, token)
+        self.client.set_credentials_basic_auth(username, token)
         self.assertDynDNS12Status(status)
 
     def test_username_password(self):
@@ -48,7 +48,7 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
             return self.client.get(self.reverse('v1:domain-list'))
 
     def assertAuthenticationStatus(self, status=HTTP_200_OK, token=''):
-        self._set_credentials_token_auth(self.client, token)
+        self.client.set_credentials_token_auth(token)
         response = self._get_domains()
         self.assertEqual(response.status_code, status, response)
 
