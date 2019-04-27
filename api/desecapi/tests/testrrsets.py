@@ -37,7 +37,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
                      'NAPTR', 'NS', 'NSEC', 'NSEC3', 'OPENPGPKEY', 'PTR', 'RP', 'SPF', 'SSHFP', 'SRV', 'TKEY', 'TSIG',
                      'TLSA', 'SMIMEA', 'TXT', 'URI']
 
-    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar', '_', '-foo.test', '_bar']
+    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar', '_', '-foo.test', '_bar', 'upPer.CasE.tESt']
 
     @classmethod
     def _test_rr_sets(cls, subname=None, type_=None, records=None, ttl=None):
@@ -115,6 +115,8 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
         ]
 
     def assertRRSetCount(self, rr_sets, count, **kwargs):
+        if kwargs.get('subname', None):
+            kwargs['subname'] = kwargs['subname'].lower()
         filtered_rr_sets = self._filter_rr_sets(rr_sets, **kwargs)
         if len(filtered_rr_sets) != count:
             self.fail('Expected to find %i RR set(s) with %s, but only found %i in %s.' % (
@@ -378,7 +380,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
             # Make sure it actually is still there
-            self.assertGreater(len(self.other_rr_set_domain.rrset_set.filter(subname=subname, type='A')), 0)
+            self.assertGreater(len(self.other_rr_set_domain.rrset_set.filter(subname=subname.lower(), type='A')), 0)
 
     def test_import_rr_sets(self):
         with self.assertPdnsRequests(self.request_pdns_zone_retrieve(name=self.my_domain.name)):

@@ -576,6 +576,8 @@ class DesecTestCase(MockPDNSTestCase):
         if isinstance(domain, str):
             domain = Domain.objects.get_or_create(name=domain)
             domain.save()
+        if kwargs.get('subname'):
+            kwargs['subname'] = kwargs.get('subname').lower()
         rr_set = RRset(domain=domain, **kwargs)
         rr_set.save()
         for r in records:

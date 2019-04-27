@@ -193,7 +193,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
-        domain_name = self.kwargs['name']
+        domain_name = self.kwargs['name'].lower()
 
         try:
             return self.request.user.domains.get(name=domain_name).rrset_set
@@ -208,7 +208,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
         if rrset_type in RRset.RESTRICTED_TYPES:
             raise PermissionDenied("You cannot tinker with the %s RRset." % rrset_type)
 
-        obj = get_object_or_404(queryset, type=rrset_type, subname=self.kwargs['subname'])
+        obj = get_object_or_404(queryset, type=rrset_type, subname=self.kwargs['subname'].lower())
 
         self.check_object_permissions(self.request, obj)
 
@@ -243,20 +243,21 @@ class RRsetList(ListBulkCreateUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def get_queryset(self):
-        name = self.kwargs['name']
+        name = self.kwargs['name'].lower()
         try:
             rrsets = self.request.user.domains.get(name=name).rrset_set
         except Domain.DoesNotExist:
             raise Http404
 
-        for filter_field in ('subname', 'type'):
-            value = self.request.query_params.get(filter_field)
+        subname = self.request.query_params.get('subname')
+        if subname:
+            rrsets = rrsets.filter(subname=subname.lower())
 
-            if value is not None:
-                if filter_field == 'type' and value in RRset.RESTRICTED_TYPES:
-                    raise PermissionDenied("You cannot tinker with the %s RRset." % value)
-
-                rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
+        type_ = self.request.query_params.get('type')
+        if type_ in RRset.RESTRICTED_TYPES:  # TODO move to appropriate place for permission check
+            raise PermissionDenied("You cannot tinker with the %s RR set." % type_)
+        if type_:
+            rrsets = rrsets.filter(type=type_)
 
         return rrsets
 
