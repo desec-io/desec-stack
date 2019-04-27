@@ -411,14 +411,19 @@ class MockPDNSTestCase(APITestCase):
 
     def assertStatus(self, response, status):
         if response.status_code != status:
-            self.fail('Expected a response with status %i, but saw response with status %i. '
-                      'The response was %s.\n'
-                      'The response body was\n\n%s' % (
-                          status,
-                          response.status_code,
-                          response,
-                          response.data,
-                      ))
+            self.fail((
+                'Expected a response with status %i, but saw response with status %i. ' +
+                (
+                    '\n@@@@@ THE REQUEST CAUSING THIS RESPONSE WAS UNEXPECTED BY THE TEST @@@@@\n'
+                    if response.status_code == 599 else ''
+                ) +
+                'The response was %s.\n'
+                'The response body was\n\n%s') % (
+                      status,
+                      response.status_code,
+                      response,
+                      str(response.data).replace('\\n', '\n'),
+                ))
 
     @classmethod
     def setUpTestData(cls):
@@ -450,8 +455,37 @@ class MockPDNSTestCase(APITestCase):
         httpretty.disable()
 
     def setUp(self):
+        def request_callback(r, _, response_headers):
+            return [
+                599,
+                response_headers,
+                json.dumps(
+                    {
+                        'MockPDNSTestCase': 'This response was sent to an expected request.',
+                        'request': str(r),
+                        'method': str(r.method),
+                        'requestline': str(r.raw_requestline),
+                        'host': str(r.headers['Host']) if 'Host' in r.headers else None,
+                        'headers': {str(key): str(value) for key, value in r.headers.items()},
+                    },
+                    indent=4
+                )
+            ]
+
         super().setUp()
         httpretty.reset()
+        for method in [
+            httpretty.GET, httpretty.PUT, httpretty.POST, httpretty.DELETE, httpretty.HEAD, httpretty.PATCH,
+            httpretty.OPTIONS, httpretty.CONNECT
+        ]:
+            for ns in ['LORD', 'MASTER']:
+                httpretty.register_uri(
+                    method,
+                    self.get_full_pdns_url('.*', ns),
+                    body=request_callback,
+                    status=599,
+                    priority=-100,
+                )
 
 
 class DesecTestCase(MockPDNSTestCase):
