@@ -88,6 +88,9 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
     )
     records = SlugRRField(many=True)
 
+    def validate_subname(self, value):
+        return value.lower()
+
     class Meta:
         model = RRset
         fields = ('id', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
@@ -216,6 +219,9 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
 class DomainSerializer(serializers.ModelSerializer):
     name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', max_length=191, trim_whitespace=False)
+
+    def validate_name(self, value):
+        return value.lower()
 
     class Meta:
         model = Domain

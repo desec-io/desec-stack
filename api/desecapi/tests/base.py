@@ -233,7 +233,7 @@ class MockPDNSTestCase(APITestCase):
         if not isinstance(arg, list):
             return cls._normalize_name([arg])[0]
         else:
-            return [x.rstrip('.') + '.' for x in arg]
+            return [x.rstrip('.').lower() + '.' for x in arg]
 
     @classmethod
     def request_pdns_zone_create(cls):
@@ -566,7 +566,7 @@ class DesecTestCase(MockPDNSTestCase):
     @classmethod
     def create_domain(cls, suffix=None, **kwargs):
         kwargs.setdefault('owner', cls.create_user())
-        kwargs.setdefault('name', cls.random_domain_name(suffix=suffix))
+        kwargs.setdefault('name', cls.random_domain_name(suffix=suffix).lower())
         domain = Domain(**kwargs)
         domain.save()
         return domain

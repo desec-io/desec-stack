@@ -86,7 +86,9 @@ Field details:
     ``_``, and dots ``.``.  Wildcard name components are
     denoted by ``*``; this is allowed only once at the beginning of the name
     (see RFC 4592 for details).  The maximum length is 178.  Further
-    restrictions may apply on a per-user basis.
+    restrictions may apply on a per-user basis. All subnames
+    provided to the API will be normalized to lower case. Output of all
+    subnames is in lower case.
 
 ``ttl``
     :Access mode: read, write

@@ -68,7 +68,9 @@ Field details:
     Domain name.  Restrictions on what is a valid domain name apply on a
     per-user basis.  In general, a domain name consists of alphanumeric
     characters as well as hyphens ``-`` and underscores ``_`` (except at the
-    beginning of the name).  The maximum length is 191.
+    beginning of the name).  The maximum length is 191. All domain names
+    provided to the API will be normalized to lower case. Output of all
+    domain names is in lower case.
 
 ``published``
     :Access mode: read-only

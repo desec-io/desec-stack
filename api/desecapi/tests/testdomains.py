@@ -244,7 +244,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
                 self.assertStatus(response, status.HTTP_201_CREATED)
                 self.assertEqual(len(mail.outbox), i + 1)
                 email = str(mail.outbox[0].message())
-                self.assertTrue(name in email)
+                self.assertTrue(name.lower() in email)
                 self.assertTrue(self.token.key in email)
                 self.assertFalse(self.user.plain_password in email)
 
@@ -288,7 +288,7 @@ class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
         ), self.assertRaises(PdnsException) as cm:
             self.owner.unlock()
 
-        self.assertEqual(str(cm.exception), "Domain '" + name + ".' already exists")
+        self.assertEqual(str(cm.exception), "Domain '" + name.lower() + ".' already exists")
 
         # See what happens upon unlock if this domain is new to pdns
         with self.assertPdnsRequests(
