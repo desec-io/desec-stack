@@ -9,11 +9,11 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         response = self.client_token_authorized.get(self.reverse('v1:rrset', name=name, subname=subname, type=type_))
 
         if content:
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data['records'][0], content)
             self.assertEqual(response.data['ttl'], 60)
         else:
-            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def assertIP(self, ipv4=None, ipv6=None, name=None):
         name = name or self.my_domain.name
@@ -23,13 +23,13 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
     def test_identification_by_domain_name(self):
         self.client.set_credentials_basic_auth(self.my_domain.name + '.invalid', self.token.key)
         response = self.assertDynDNS12NoUpdate(mock_remote_addr='10.5.5.6')
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_identification_by_query_params(self):
         # /update?username=foobar.dedyn.io&password=secret
         self.client.set_credentials_basic_auth(None, None)
         response = self.assertDynDNS12Update(username=self.my_domain.name, password=self.token.key)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
@@ -44,10 +44,10 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.request_pdns_zone_notify(self.my_domain.name),
         ):
             response = self.client_token_authorized.patch_rr_set(self.my_domain.name, subname='', type_='A', ttl=3600)
-            self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+            self.assertStatus(response, status.HTTP_200_OK)
 
         response = self.assertDynDNS12Update(self.my_domain.name)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
@@ -67,7 +67,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
                     'myip': '10.1.2.3'
                 }
             )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.1.2.3')
 
@@ -81,7 +81,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             host_id=self.my_domain.name,
             myipv6='::1337'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1', ipv6='::1337')
 
@@ -93,7 +93,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             hostname=self.my_domain.name,
             myip='10.2.3.4',
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.2.3.4')
 
@@ -105,14 +105,14 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             hostname=self.my_domain.name,
             myipv6='::666',
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1', ipv6='::666')
 
     def test_fritz_box(self):
         # /
         response = self.assertDynDNS12Update(self.my_domain.name)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
 
@@ -124,7 +124,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             ('', ''),
         ]:
             response = self.assertDynDNS12Update(self.my_domain.name, ip=v4, ipv6=v6)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data, 'good')
             self.assertIP(ipv4=v4, ipv6=v6)
 
@@ -135,7 +135,7 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     def test_identification_by_token(self):
         self.client.set_credentials_basic_auth('', self.token.key)
         response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='10.5.5.6')
 
@@ -149,4 +149,4 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         """
         self.client.set_credentials_basic_auth('', self.token.key)
         response = self.client.get(self.reverse('v1:dyndns12update'), REMOTE_ADDR='10.5.5.7')
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertStatus(response, status.HTTP_409_CONFLICT)

@@ -409,6 +409,17 @@ class MockPDNSTestCase(APITestCase):
             ],
         )
 
+    def assertStatus(self, response, status):
+        if response.status_code != status:
+            self.fail('Expected a response with status %i, but saw response with status %i. '
+                      'The response was %s.\n'
+                      'The response body was\n\n%s' % (
+                          status,
+                          response.status_code,
+                          response,
+                          response.data,
+                      ))
+
     @classmethod
     def setUpTestData(cls):
         httpretty.enable(allow_net_connect=False)

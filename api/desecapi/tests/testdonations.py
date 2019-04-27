@@ -1,15 +1,16 @@
 from rest_framework.reverse import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 from django.core import mail
 
+from desecapi.tests.base import DesecTestCase
 
-class DonationTests(APITestCase):
+
+class DonationTests(DesecTestCase):
 
     def test_unauthorized_access(self):
         for method in [self.client.get, self.client.put, self.client.delete]:
             response = method(reverse('v1:donation'))
-            self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+            self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_create_donation(self):
         url = reverse('v1:donation')
@@ -26,7 +27,7 @@ class DonationTests(APITestCase):
         self.assertTrue(mail.outbox)
         email_internal = str(mail.outbox[0].message())
         direct_debit = str(mail.outbox[0].attachments[0][1])
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(response.data['iban'], 'DE8937xxx')
         self.assertTrue('Komplizierter Vornamu' in direct_debit)

@@ -20,7 +20,7 @@ class RegistrationTestCase(DesecTestCase):
         if REMOTE_ADDR:
             post_kwargs['REMOTE_ADDR'] = REMOTE_ADDR
         response = self.client.post(url, kwargs, **post_kwargs)
-        self.assertEqual(response.status_code, status, kwargs)
+        self.assertStatus(response, status)
         return response
 
 
