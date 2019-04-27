@@ -233,7 +233,7 @@ class MockPDNSTestCase(APITestCase):
         if not isinstance(arg, list):
             return cls._normalize_name([arg])[0]
         else:
-            return [x if x.endswith('.') else x + '.' for x in arg]
+            return [x.rstrip('.') + '.' for x in arg]
 
     @classmethod
     def request_pdns_zone_create(cls):
