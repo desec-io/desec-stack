@@ -26,18 +26,18 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
     def test_list_domains(self):
         with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
             response = self.client.get(self.reverse('v1:domain-list'))
-        self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
-        for i in range(self.NUM_OWNED_DOMAINS):
-            self.assertEqual(response.data[i]['name'], self.my_domains[i].name)
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
+            for i in range(self.NUM_OWNED_DOMAINS):
+                self.assertEqual(response.data[i]['name'], self.my_domains[i].name)
 
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
 
         with self.assertPdnsRequests(self.requests_desec_domain_deletion()):
             response = self.client.delete(url)
-        self.assertStatus(response, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
@@ -54,9 +54,9 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)
         ):
             response = self.client.get(url)
-        self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], self.my_domain.name)
-        self.assertTrue(isinstance(response.data['keys'], list))
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data['name'], self.my_domain.name)
+            self.assertTrue(isinstance(response.data['keys'], list))
 
     def test_retrieve_other_domains(self):
         for domain in self.other_domains:
@@ -67,6 +67,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
         with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
             response = self.client.get(url)
+            self.assertStatus(response, status.HTTP_200_OK)
 
         response.data['name'] = self.random_domain_name()
         response = self.client.put(url, json.dumps(response.data), content_type='application/json')
@@ -74,8 +75,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
         with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
             response = self.client.get(url)
-        self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], self.my_domain.name)
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data['name'], self.my_domain.name)
 
     def test_update_other_domains(self):
         url = self.reverse('v1:domain-detail', name=self.other_domain.name)
@@ -90,8 +91,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-            self.assertStatus(response, status.HTTP_201_CREATED)
-            self.assertEqual(len(mail.outbox), 0)
+                self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertEqual(len(mail.outbox), 0)
 
     def test_create_api_known_domain(self):
         url = self.reverse('v1:domain-list')
@@ -102,7 +103,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(url, {'name': name})
-            self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertStatus(response, status.HTTP_201_CREATED)
             response = self.client.post(url, {'name': name})
             self.assertStatus(response, status.HTTP_409_CONFLICT)
 
@@ -111,7 +112,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])):
             response = self.client.post(url, {'name': name})
-        self.assertStatus(response, status.HTTP_409_CONFLICT)
+            self.assertStatus(response, status.HTTP_409_CONFLICT)
 
     def test_create_domain_policy(self):
         name = '*.' + self.random_domain_name()
@@ -123,7 +124,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
             self.client.post(self.reverse('v1:domain-list'), {'name': name})
-        self.assertFalse(Domain.objects.filter(name=name).exists())
+            self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_punycode(self):
         names = ['公司.cn', 'aéroport.ci']
@@ -214,7 +215,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.requests_desec_domain_deletion_auto_delegation(name=self.my_domain.name)
         ):
             response = self.client.delete(url)
-        self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
@@ -223,20 +224,20 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         url = self.reverse('v1:domain-detail', name=self.other_domain.name)
         with self.assertPdnsRequests():
             response = self.client.delete(url)
-        self.assertStatus(response, status.HTTP_204_NO_CONTENT)
-        self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
 
     def test_create_auto_delegated_domains(self):
         for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
             name = self.random_domain_name(suffix)
             with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name=name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-            self.assertStatus(response, status.HTTP_201_CREATED)
-            self.assertEqual(len(mail.outbox), i + 1)
-            email = str(mail.outbox[0].message())
-            self.assertTrue(name in email)
-            self.assertTrue(self.token.key in email)
-            self.assertFalse(self.user.plain_password in email)
+                self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertEqual(len(mail.outbox), i + 1)
+                email = str(mail.outbox[0].message())
+                self.assertTrue(name in email)
+                self.assertTrue(self.token.key in email)
+                self.assertFalse(self.user.plain_password in email)
 
     def test_create_regular_domains(self):
         for name in [
@@ -255,8 +256,8 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             name = self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))
             with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
                 response = self.client.post(url, {'name': name})
-            self.assertStatus(response, status.HTTP_201_CREATED)
-            self.assertEqual(len(mail.outbox), i + 1)
+                self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertEqual(len(mail.outbox), i + 1)
 
         response = self.client.post(url, {'name': self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))})
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)
@@ -273,8 +274,9 @@ class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
         response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertStatus(response, status.HTTP_201_CREATED)
 
-        with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])),\
-             self.assertRaises(PdnsException) as cm:
+        with self.assertPdnsRequests(
+                self.request_pdns_zone_create_already_exists(existing_domains=[name])
+        ), self.assertRaises(PdnsException) as cm:
             self.owner.unlock()
 
         self.assertEqual(str(cm.exception), "Domain '" + name + ".' already exists")
