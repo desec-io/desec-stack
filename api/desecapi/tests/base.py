@@ -221,9 +221,9 @@ class MockPDNSTestCase(APITestCase):
         if not name:
             return None
 
-        name = name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
+        name = cls._normalize_name(name)
 
-        return cls._normalize_name(name)
+        return name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))  # make sure =5F is not lower-cased
 
     @classmethod
     def _normalize_name(cls, arg):

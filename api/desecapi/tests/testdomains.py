@@ -84,10 +84,13 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_create_domains(self):
+        self.owner.limit_domains = 100
+        self.owner.save()
         for name in [
             '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa',
             'very.long.domain.name.' + self.random_domain_name(),
-            self.random_domain_name()
+            self.random_domain_name(),
+            'very.long.domain.name.with_underscore.' + self.random_domain_name(),
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
