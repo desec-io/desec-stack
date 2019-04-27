@@ -474,6 +474,7 @@ class MockPDNSTestCase(APITestCase):
 
         super().setUp()
         httpretty.reset()
+        hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
         for method in [
             httpretty.GET, httpretty.PUT, httpretty.POST, httpretty.DELETE, httpretty.HEAD, httpretty.PATCH,
             httpretty.OPTIONS, httpretty.CONNECT
