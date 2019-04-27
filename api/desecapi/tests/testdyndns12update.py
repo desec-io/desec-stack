@@ -1,3 +1,5 @@
+import random
+
 from rest_framework import status
 
 from desecapi.tests.base import DynDomainOwnerTestCase
@@ -16,7 +18,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def assertIP(self, ipv4=None, ipv6=None, name=None):
-        name = name or self.my_domain.name
+        name = name or self.my_domain.name.lower()
         self.assertRRSet(name, '', 'A', ipv4)
         self.assertRRSet(name, '', 'AAAA', ipv6)
 
@@ -43,7 +45,8 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.request_pdns_zone_update(self.my_domain.name),
             self.request_pdns_zone_notify(self.my_domain.name),
         ):
-            response = self.client_token_authorized.patch_rr_set(self.my_domain.name, subname='', type_='A', ttl=3600)
+            response = self.client_token_authorized.patch_rr_set(
+                self.my_domain.name.lower(), subname='', type_='A', ttl=3600)
             self.assertStatus(response, status.HTTP_200_OK)
 
         response = self.assertDynDNS12Update(self.my_domain.name)
@@ -150,3 +153,21 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         self.client.set_credentials_basic_auth('', self.token.key)
         response = self.client.get(self.reverse('v1:dyndns12update'), REMOTE_ADDR='10.5.5.7')
         self.assertStatus(response, status.HTTP_409_CONFLICT)
+
+
+class MixedCaseDynDNS12UpdateTestCase(DynDNS12UpdateTest):
+
+    @staticmethod
+    def random_casing(s):
+        return ''.join([c.lower() if random.choice([True, False]) else c.upper() for c in s])
+
+    def setUp(self):
+        super().setUp()
+        self.my_domain.name = self.random_casing(self.my_domain.name)
+
+
+class UppercaseDynDNS12UpdateTestCase(DynDNS12UpdateTest):
+
+    def setUp(self):
+        super().setUp()
+        self.my_domain.name = self.my_domain.name.upper()

@@ -399,7 +399,7 @@ class DynDNS12Update(APIView):
 
             return None
 
-        name = findDomainname(request)
+        name = findDomainname(request).lower()
 
         try:
             return self.request.user.domains.get(name=name)
