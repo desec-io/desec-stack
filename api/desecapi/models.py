@@ -5,12 +5,26 @@ from django.utils import timezone
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from desecapi import pdns, mixins
 import datetime, uuid
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from collections import OrderedDict
 import rest_framework.authtoken.models
 import time, random
 from os import urandom
 from base64 import b64encode
+
+
+def validate_lower(value):
+    if value != value.lower():
+        raise ValidationError('Invalid value (not lowercase): %(value)s',
+                              code='invalid',
+                              params={'value': value})
+
+
+def validate_upper(value):
+    if value != value.upper():
+        raise ValidationError('Invalid value (not uppercase): %(value)s',
+                              code='invalid',
+                              params={'value': value})
 
 
 class MyUserManager(BaseUserManager):
@@ -139,9 +153,15 @@ class User(AbstractBaseUser):
 
 class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=191, unique=True)
+    name = models.CharField(max_length=191,
+                            unique=True,
+                            validators=[validate_lower,
+                                        RegexValidator(regex=r'^[a-z0-9_.-]+$',
+                                                       message='Domain name malformed.',
+                                                       code='invalid_domain_name')
+                                        ])
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='domains')
-    published = models.DateTimeField(null=True)
+    published = models.DateTimeField(null=True, blank=True)
     _dirtyName = False
 
     def setter_name(self, val):
@@ -364,6 +384,7 @@ class Domain(models.Model, mixins.SetterMixin):
     def save(self, *args, **kwargs):
         new = self.pk is None
         self.clean()
+        self.clean_fields()
         super().save(*args, **kwargs)
 
         if new and not self.owner.locked:
@@ -411,20 +432,26 @@ class Donation(models.Model):
         ordering = ('created',)
 
 
-def validate_upper(value):
-    if value != value.upper():
-        raise ValidationError('Invalid value (not uppercase): %(value)s',
-                              code='invalid',
-                              params={'value': value})
-
-
 class RRset(models.Model, mixins.SetterMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
-    subname = models.CharField(max_length=178, blank=True)
-    type = models.CharField(max_length=10, validators=[validate_upper])
+    subname = models.CharField(max_length=178,
+                               blank=True,
+                               validators=[validate_lower,
+                                           RegexValidator(regex=r'^[*]?[a-z0-9_.-]*$',
+                                                          message='Subname malformed.',
+                                                          code='invalid_subname')
+                                           ]
+                               )
+    type = models.CharField(max_length=10,
+                            validators=[validate_upper,
+                                        RegexValidator(regex=r'^[A-Z][A-Z0-9]*$',
+                                                       message='Type malformed.',
+                                                       code='invalid_type')
+                                        ]
+                            )
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     _dirty = False

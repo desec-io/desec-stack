@@ -546,7 +546,7 @@ class DesecTestCase(MockPDNSTestCase):
     def random_domain_name(cls, suffix=None):
         if not suffix:
             suffix = random.choice(cls.PUBLIC_SUFFIXES)
-        return random.choice(string.ascii_lowercase) + cls.random_string() + '--test' + '.' + suffix
+        return (random.choice(string.ascii_letters) + cls.random_string() + '--test' + '.' + suffix).lower()
 
     @classmethod
     def create_token(cls, user):
