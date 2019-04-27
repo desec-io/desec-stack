@@ -3,6 +3,7 @@ import json
 
 from django.core import mail
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from rest_framework import status
 
 from desecapi.exceptions import PdnsException
@@ -22,6 +23,26 @@ class UnauthenticatedDomainTests(DesecTestCase):
 
 
 class DomainOwnerTestCase1(DomainOwnerTestCase):
+
+    def test_name_validity(self):
+        for name in [
+            'FOO.BAR.com',
+            'tEst.dedyn.io',
+            'ORG',
+            '--BLAH.example.com',
+            '_ASDF.jp',
+        ]:
+            with self.assertRaises(ValidationError):
+                Domain(owner=self.owner, name=name).save()
+        for name in [
+            '_example.com', '_.example.com',
+            '-dedyn.io', '--dedyn.io', '-.dedyn123.io',
+            'foobar.io', 'exam_ple.com',
+        ]:
+            with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name=name)[:-1]  # no serializer, no cryptokeys API call
+            ):
+                Domain(owner=self.owner, name=name).save()
 
     def test_list_domains(self):
         with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):

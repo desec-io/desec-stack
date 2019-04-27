@@ -77,14 +77,20 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
     subname = serializers.CharField(
         allow_blank=True,
         required=False,
-        validators=[
-            RegexValidator(regex=r'^\*?[a-zA-Z\.\-_0-9]*$', message='Subname malformed.', code='invalid_subname'),
-        ]
+        validators=[RegexValidator(
+            regex=r'^\*?[a-z\.\-_0-9]*$',
+            message='Subname can only use (lowercase) a-z, 0-9, ., -, and _.',
+            code='invalid_subname'
+        )]
     )
     type = RequiredOnPartialUpdateCharField(
         allow_blank=False,
         required=True,
-        validators=[RegexValidator(regex=r'^[A-Z][A-Z0-9]*$', message='Type malformed.', code='invalid_type')]
+        validators=[RegexValidator(
+            regex=r'^[A-Z][A-Z0-9]*$',
+            message='Type must be uppercase alphanumeric and start with a letter.',
+            code='invalid_type'
+        )]
     )
     records = SlugRRField(many=True)
 
@@ -215,7 +221,7 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
 
 
 class DomainSerializer(serializers.ModelSerializer):
-    name = serializers.RegexField(regex=r'^[A-Za-z0-9_.-]+$', max_length=191, trim_whitespace=False)
+    name = serializers.RegexField(regex=r'^[a-z0-9_.-]+$', max_length=191, trim_whitespace=False)
 
     class Meta:
         model = Domain

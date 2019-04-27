@@ -128,12 +128,15 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
                 kwargs, rr_sets
             ))
 
-    def test_uniqueness(self):
+    def test_subname_validity(self):
+        for subname in [
+            'aEroport',
+            'AEROPORT',
+            'aéroport'
+        ]:
+            with self.assertRaises(ValidationError):
+                RRset(domain=self.my_domain, subname=subname, ttl=60, type='A').save()
         RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
-        with self.assertRaises(ValidationError):
-            RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
-        RRset(domain=self.my_domain, subname='AEROPORT', ttl=60, type='A').save()
-        RRset(domain=self.my_domain, subname='aéroport', ttl=100, type='A').save()
 
     def test_retrieve_my_rr_sets(self):
         for response in [
@@ -230,6 +233,13 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
         data['records'][0] = ['3.2.2.1']
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
         self.assertStatus(response, status.HTTP_409_CONFLICT)
+
+    def test_create_my_rr_sets_upper_case(self):
+        for subname in ['asdF', 'cAse', 'asdf.FOO', '--F', 'ALLCAPS']:
+            data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A', 'subname': subname}
+            response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertIn('Subname can only use (lowercase)', str(response.data))
 
     def test_create_my_rr_sets_unknown_type(self):
         for _type in ['AA', 'ASDF']:
