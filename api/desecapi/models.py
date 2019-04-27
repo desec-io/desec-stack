@@ -397,15 +397,15 @@ class Donation(models.Model):
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
     bic = models.CharField(max_length=11)
-    amount = models.DecimalField(max_digits=8,decimal_places=2)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
     message = models.CharField(max_length=255, blank=True)
     due = models.DateTimeField(default=get_default_value_due)
-    mref = models.CharField(max_length=32,default=get_default_value_mref)
+    mref = models.CharField(max_length=32, default=get_default_value_mref)
     email = models.EmailField(max_length=255, blank=True)
 
     def save(self, *args, **kwargs):
-        self.iban = self.iban[:6] + "xxx" # do NOT save account details
-        super().save(*args, **kwargs) # Call the "real" save() method.
+        self.iban = self.iban[:6] + "xxx"  # do NOT save account details
+        super().save(*args, **kwargs)  # Call the "real" save() method.
 
     class Meta:
         ordering = ('created',)
