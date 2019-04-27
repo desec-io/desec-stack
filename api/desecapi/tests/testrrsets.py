@@ -37,7 +37,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
                      'NAPTR', 'NS', 'NSEC', 'NSEC3', 'OPENPGPKEY', 'PTR', 'RP', 'SPF', 'SSHFP', 'SRV', 'TKEY', 'TSIG',
                      'TLSA', 'SMIMEA', 'TXT', 'URI']
 
-    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar']
+    SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar', '_', '-foo.test', '_bar']
 
     @classmethod
     def _test_rr_sets(cls, subname=None, type_=None, records=None, ttl=None):
