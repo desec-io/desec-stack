@@ -110,7 +110,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
     @staticmethod
     def _filter_rr_sets(rr_sets, **kwargs):
         return [
-            rr_sets for rr_set in rr_sets
+            rr_set for rr_set in rr_sets
             if reduce(operator.and_, [rr_set.get(key, None) == value for key, value in kwargs.items()])
         ]
 
