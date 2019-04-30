@@ -460,7 +460,7 @@ class MockPDNSTestCase(APITestCase):
                 response_headers,
                 json.dumps(
                     {
-                        'MockPDNSTestCase': 'This response was sent upon an unexpected request.',
+                        'MockPDNSTestCase': 'This response was generated upon an unexpected request.',
                         'request': str(r),
                         'method': str(r.method),
                         'requestline': str(r.raw_requestline),
