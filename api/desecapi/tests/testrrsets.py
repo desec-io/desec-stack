@@ -58,15 +58,15 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             ('test', 'A', ['2.2.3.4'], 120),
             ('test', 'TXT', ['"foobar"'], 120),
         ] + [
-            (subname, 'TXT', ['"hey ho, let\'s go!"'], 134)
-            for subname in cls.SUBNAMES
+            (subname_, 'TXT', ['"hey ho, let\'s go!"'], 134)
+            for subname_ in cls.SUBNAMES
         ] + [
-            (subname, type_, ['"10 mx1.example.com."'], 101)
-            for subname in cls.SUBNAMES
+            (subname_, type_, ['"10 mx1.example.com."'], 101)
+            for subname_ in cls.SUBNAMES
             for type_ in ['MX', 'SPF']
         ] + [
-            (subname, 'A', ['"1.2.3.4"'], 187)
-            for subname in cls.SUBNAMES
+            (subname_, 'A', ['"1.2.3.4"'], 187)
+            for subname_ in cls.SUBNAMES
         ]
 
         if subname or type_ or records or ttl:
