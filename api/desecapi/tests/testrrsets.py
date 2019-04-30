@@ -61,11 +61,11 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             (subname_, 'TXT', ['"hey ho, let\'s go!"'], 134)
             for subname_ in cls.SUBNAMES
         ] + [
-            (subname_, type_, ['"10 mx1.example.com."'], 101)
+            (subname_, type_, ['10 mx1.example.com.'], 101)
             for subname_ in cls.SUBNAMES
             for type_ in ['MX', 'SPF']
         ] + [
-            (subname_, 'A', ['"1.2.3.4"'], 187)
+            (subname_, 'A', ['1.2.3.4'], 187)
             for subname_ in cls.SUBNAMES
         ]
 
