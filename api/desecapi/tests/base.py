@@ -41,6 +41,24 @@ class DesecAPIClient(APIClient):
         super().__init__(*args, **kwargs)
         self.reverse = DesecTestCase.reverse
 
+    def bulk_patch_rr_sets(self, domain_name, payload):
+        return self.patch(
+            self.reverse('v1:rrsets', name=domain_name),
+            payload,
+        )
+
+    def bulk_post_rr_sets(self, domain_name, payload):
+        return self.post(
+            self.reverse('v1:rrsets', name=domain_name),
+            payload,
+        )
+
+    def bulk_put_rr_sets(self, domain_name, payload):
+        return self.put(
+            self.reverse('v1:rrsets', name=domain_name),
+            payload,
+        )
+
     def post_rr_set(self, domain_name, **kwargs):
         kwargs.setdefault('subname', '')
         kwargs.setdefault('ttl', 60)
