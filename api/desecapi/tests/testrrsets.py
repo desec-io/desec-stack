@@ -230,7 +230,7 @@ class AuthenticatedRRSetTestCase(DomainOwnerTestCase):
             response = self.client.post_rr_set(self.my_empty_domain.name, **data)
             self.assertStatus(response, status.HTTP_201_CREATED)
 
-        data['records'][0] = ['3.2.2.1']
+        data['records'][0] = '3.2.2.1'
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
         self.assertStatus(response, status.HTTP_409_CONFLICT)
 
