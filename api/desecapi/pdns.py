@@ -17,11 +17,13 @@ headers_nsmaster = {
 }
 
 
-def _pdns_delete(url):
+def _pdns_delete_zone(domain):
+    path = '/zones/' + domain.pdns_id
+
     # We first delete the zone from nslord, the main authoritative source of our DNS data.
     # However, we do not want to wait for the zone to expire on the slave ("nsmaster").
     # We thus issue a second delete request on nsmaster to delete the zone there immediately.
-    r1 = requests.delete(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
+    r1 = requests.delete(settings.NSLORD_PDNS_API + path, headers=headers_nslord)
     if r1.status_code < 200 or r1.status_code >= 300:
         # Deletion technically does not fail if the zone didn't exist in the first place
         if r1.status_code == 422 and 'Could not find domain' in r1.text:
@@ -30,7 +32,7 @@ def _pdns_delete(url):
             raise PdnsException(r1)
 
     # Delete from nsmaster as well
-    r2 = requests.delete(settings.NSMASTER_PDNS_API + url, headers=headers_nsmaster)
+    r2 = requests.delete(settings.NSMASTER_PDNS_API + path, headers=headers_nsmaster)
     if r2.status_code < 200 or r2.status_code >= 300:
         # Deletion technically does not fail if the zone didn't exist in the first place
         if r2.status_code == 422 and 'Could not find domain' in r2.text:
@@ -41,32 +43,29 @@ def _pdns_delete(url):
     return (r1, r2)
 
 
-def _pdns_post(url, body):
-    r = requests.post(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 300:
+def _pdns_request(method, path, body=None, acceptable_range=range(200, 300)):
+    data = json.dumps(body) if body else None
+    r = requests.request(method, settings.NSLORD_PDNS_API + path, data=data, headers=headers_nslord)
+    if r.status_code not in acceptable_range:
         raise PdnsException(r)
+
     return r
 
 
-def _pdns_patch(url, body):
-    r = requests.patch(settings.NSLORD_PDNS_API + url, data=json.dumps(body), headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 300:
-        raise PdnsException(r)
-    return r
+def _pdns_post(path, body):
+    return _pdns_request('post', path, body)
 
 
-def _pdns_get(url):
-    r = requests.get(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 400:
-        raise PdnsException(r)
-    return r
+def _pdns_patch(path, body):
+    return _pdns_request('patch', path, body)
 
 
-def _pdns_put(url):
-    r = requests.put(settings.NSLORD_PDNS_API + url, headers=headers_nslord)
-    if r.status_code < 200 or r.status_code >= 500:
-        raise PdnsException(r)
-    return r
+def _pdns_get(path):
+    return _pdns_request('get', path, acceptable_range=range(200, 400))
+
+
+def _pdns_put(path):
+    return _pdns_request('put', path, acceptable_range=range(200, 500))
 
 
 def create_zone(domain, nameservers):
@@ -89,7 +88,7 @@ def delete_zone(domain):
     """
     Commands pdns to delete a zone with the given name.
     """
-    _pdns_delete('/zones/' + domain.pdns_id)
+    return _pdns_delete_zone(domain)
 
 
 def get_keys(domain):
