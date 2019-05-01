@@ -108,10 +108,12 @@ class AssertRequestsContextManager:
         self.expected_requests = list(self._flatten_nested_lists(expected_requests))
         self.single_expectation_single_request = single_expectation_single_request
         self.expect_order = expect_order
+        self.old_httpretty_entries = None
 
     def __enter__(self):
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
         self.expected_requests = self.expected_requests
+        self.old_httpretty_entries = httpretty._entries.copy()  # FIXME accessing private properties of httpretty
         for request in self.expected_requests:
             httpretty.register_uri(**request)
 
@@ -128,6 +130,8 @@ class AssertRequestsContextManager:
             (r.command, 'http://%s%s' % (r.headers['Host'], r.path)) for r in httpretty.latest_requests
         ]
         httpretty.reset()
+        hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
+        httpretty._entries = self.old_httpretty_entries
         unmatched_requests = seen_requests[:]
 
         # go through expected requests one by one
