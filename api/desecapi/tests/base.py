@@ -179,8 +179,8 @@ class MockPDNSTestCase(APITestCase):
     This test case provides a "mocked Internet" environment with a mock pdns API interface. All internet connections,
     HTTP or otherwise, that this test case is unaware of will result in an exception.
 
-    By default, requests are intercepted but unexpected and result in a failed test. To set pdns API request
-    expectations, use the `with MockPDNSTestCase.assertPdns*` functions.
+    By default, requests are intercepted but unexpected will result in a failed test. To set pdns API request
+    expectations, use the `with MockPDNSTestCase.assertPdns*` context managers.
 
     Subclasses may not touch httpretty.enable() or httpretty.disable(). For 'local' usage, httpretty.register_uri()
     and httpretty.reset() may be used.
