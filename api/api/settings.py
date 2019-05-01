@@ -146,6 +146,10 @@ NSLORD_PDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 NSMASTER_PDNS_API = 'http://nsmaster:8081/api/v1/servers/localhost'
 NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 
+# pdns accepts request payloads of this size.
+# This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550
+PDNS_MAX_BODY_SIZE = 2 * 1024 * 1024
+
 # SEPA direct debit settings
 SEPA = {
     'CREDITOR_ID': os.environ['DESECSTACK_API_SEPA_CREDITOR_ID'],

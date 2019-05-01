@@ -45,6 +45,9 @@ def _pdns_delete_zone(domain):
 
 def _pdns_request(method, path, body=None, acceptable_range=range(200, 300)):
     data = json.dumps(body) if body else None
+    if data is not None and len(data) > settings.PDNS_MAX_BODY_SIZE:
+        raise PdnsException(detail='Payload too large', status=413)
+
     r = requests.request(method, settings.NSLORD_PDNS_API + path, data=data, headers=headers_nslord)
     if r.status_code not in acceptable_range:
         raise PdnsException(r)
