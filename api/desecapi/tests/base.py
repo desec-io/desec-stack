@@ -404,8 +404,8 @@ class MockPDNSTestCase(APITestCase):
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
-                self.request_pdns_zone_delete(ns='LORD', name=None),
-                self.request_pdns_zone_delete(ns='MASTER', name=None),
+                self.request_pdns_zone_delete(ns='LORD', name=name),
+                self.request_pdns_zone_delete(ns='MASTER', name=name),
             ],
         )
 
