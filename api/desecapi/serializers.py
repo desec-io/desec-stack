@@ -125,18 +125,15 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
                 rrset.type = data.get('type', rrset.type)
                 rrset.ttl = data.get('ttl', rrset.ttl)
             else:
-                # No known instance (creation or meaningless request)
+                # No known instance (creation)
+                rrset_errors = {}
                 if 'ttl' not in data:
-                    if records:
-                        # If we have records, this is a creation request, so we
-                        # need a TTL.
-                        errors.append({'ttl': ['This field is required for new RRsets.']})
-                        continue
-                    else:
-                        # If this request is meaningless, we still want it to
-                        # be processed by pdns for type validation. In this
-                        # case, we need some dummy TTL.
-                        data['ttl'] = data.get('ttl', 1)
+                    rrset_errors['ttl'] = ['This field is required for new RRsets.']
+                if records is None:
+                    rrset_errors['records'] = ['This field is required for new RRsets.']
+                if rrset_errors:
+                    errors.append(rrset_errors)
+                    continue
                 data.pop('id', None)
                 data['domain'] = domain
                 rrset = RRset(**data)

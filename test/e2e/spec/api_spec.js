@@ -1025,46 +1025,6 @@ describe("API v1", function () {
                             return expect(response).to.have.status(404);
                         });
                     });
-
-                    describe("accepts missing fields for no-op requests via bulk-patch", function () {
-                        var response;
-
-                        before(function () {
-                            response = chakram.patch(
-                                '/domains/' + domain + '/rrsets/',
-                                [
-                                    {'subname': 'a.2', 'type': 'A', 'records': ['6.6.6.6']}, // existing RRset; TTL not needed
-                                    {'subname': 'b.2', 'type': 'A', 'ttl': 40}, // existing RRset; records not needed
-                                    {'subname': 'x.2', 'type': 'A', 'records': []}, // non-existent, no-op
-                                    {'subname': 'x.2', 'type': 'AAAA'}, // non-existent, no-op
-                                    {'subname': 'x.2', 'type': 'TXT', 'ttl': 32}, // non-existent, no-op
-                                ]
-                            );
-                            return expect(response).to.have.status(200);
-                        });
-
-                        it("gives the right response", function () {
-                            var response = chakram.get('/domains/' + domain + '/rrsets/b.2.../A/');
-                            expect(response).to.have.status(200);
-                            expect(response).to.have.json('ttl', 40);
-                            return chakram.wait();
-                        });
-                    });
-
-                    describe("catches invalid type for no-op request via bulk-patch", function () {
-                        it("gives the right response", function () {
-                            return chakram.patch(
-                                '/domains/' + domain + '/rrsets/',
-                                [
-                                    {'subname': 'x.2', 'type': 'AAA'}, // non-existent, no-op, but invalid type
-                                ]
-                            ).then(function (respObj) {
-                                expect(respObj).to.have.status(422);
-                                expect(respObj.body.detail).to.match(/IN AAA: unknown type given$/);
-                                return chakram.wait();
-                            });
-                        });
-                    });
                 });
 
                 describe("cannot bulk-patch with invalid input", function () {
