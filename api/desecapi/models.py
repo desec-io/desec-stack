@@ -62,29 +62,6 @@ class MyUserManager(BaseUserManager):
         return user
 
 
-class Token(rest_framework.authtoken.models.Token):
-    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
-    # relation to user is a ForeignKey, so each user can have more than one token
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_tokens',
-        on_delete=models.CASCADE, verbose_name="User"
-    )
-    name = models.CharField("Name", max_length=64, default="")
-    user_specific_id = models.BigIntegerField("User-Specific ID")
-
-    def save(self, *args, **kwargs):
-        if not self.user_specific_id:
-            self.user_specific_id = random.randrange(16 ** 8)
-        super().save(*args, **kwargs)  # Call the "real" save() method.
-
-    def generate_key(self):
-        return b64encode(urandom(21)).decode('utf-8').replace('/', '-').replace('=', '_').replace('+', '.')
-
-    class Meta:
-        abstract = False
-        unique_together = (('user', 'user_specific_id'),)
-
-
 class User(AbstractBaseUser):
     email = models.EmailField(
         verbose_name='email address',
@@ -155,6 +132,29 @@ class User(AbstractBaseUser):
         self.save()
 
 
+class Token(rest_framework.authtoken.models.Token):
+    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
+    # relation to user is a ForeignKey, so each user can have more than one token
+    user = models.ForeignKey(
+        User, related_name='auth_tokens',
+        on_delete=models.CASCADE, verbose_name="User"
+    )
+    name = models.CharField("Name", max_length=64, default="")
+    user_specific_id = models.BigIntegerField("User-Specific ID")
+
+    def save(self, *args, **kwargs):
+        if not self.user_specific_id:
+            self.user_specific_id = random.randrange(16 ** 8)
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+
+    def generate_key(self):
+        return b64encode(urandom(21)).decode('utf-8').replace('/', '-').replace('=', '_').replace('+', '.')
+
+    class Meta:
+        abstract = False
+        unique_together = (('user', 'user_specific_id'),)
+
+
 class Domain(models.Model, mixins.SetterMixin):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
@@ -164,7 +164,7 @@ class Domain(models.Model, mixins.SetterMixin):
                                                        message='Domain name malformed.',
                                                        code='invalid_domain_name')
                                         ])
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='domains')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     _dirtyName = False
 
