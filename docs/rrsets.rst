@@ -307,8 +307,9 @@ just one), like this::
             '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},' \
             '...]'
 
-``subname`` and ``type`` must be specified for each given RRset.  For ``ttl``
-and ``records``, the usual rules apply.
+Each given RRset is uniquely identified by its ``subname`` and ``type`` (with
+``subname``  defaulting to the empty string if omitted). For ``ttl`` and
+``records``, the usual validation rules apply.
 
 For details about input validation and return status codes, please refer to
 `Bulk Operations`_.
