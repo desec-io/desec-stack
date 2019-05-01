@@ -23,6 +23,7 @@ from rest_framework import status
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.settings import api_settings
@@ -35,7 +36,7 @@ from api import settings
 from desecapi.emails import send_account_lock_email, send_token_email
 from desecapi.forms import UnlockForm
 from desecapi.models import Domain, User, RRset, Token
-from desecapi.permissions import *
+from desecapi.permissions import IsOwner, IsUnlockedOrDyn, IsUnlocked, IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer
 
@@ -77,7 +78,7 @@ class TokenViewSet(mixins.CreateModelMixin,
                    mixins.ListModelMixin,
                    GenericViewSet):
     serializer_class = TokenSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    permission_classes = (IsAuthenticated, )
     lookup_field = 'user_specific_id'
 
     def get_queryset(self):
@@ -96,7 +97,7 @@ class TokenViewSet(mixins.CreateModelMixin,
 
 class DomainList(generics.ListCreateAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwner, IsUnlockedOrDyn,)
+    permission_classes = (IsAuthenticated, IsOwner, IsUnlockedOrDyn,)
 
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
@@ -170,7 +171,7 @@ class DomainList(generics.ListCreateAPIView):
 
 class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwner, IsUnlocked,)
+    permission_classes = (IsAuthenticated, IsOwner, IsUnlocked,)
     lookup_field = 'name'
 
     def delete(self, request, *args, **kwargs):
@@ -192,7 +193,7 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RRsetSerializer
-    permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
+    permission_classes = (IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -250,7 +251,7 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class RRsetList(ListBulkCreateUpdateAPIView):
     serializer_class = RRsetSerializer
-    permission_classes = (permissions.IsAuthenticated, IsDomainOwner, IsUnlocked,)
+    permission_classes = (IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def get_queryset(self):
         name = self.kwargs['name']
