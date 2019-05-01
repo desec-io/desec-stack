@@ -1,5 +1,3 @@
-from __future__ import unicode_literals  # TODO remove!
-
 import base64
 import binascii
 import ipaddress
