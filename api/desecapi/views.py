@@ -44,10 +44,6 @@ patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
 
 
-def get_client_ip(request):
-    return request.META.get('REMOTE_ADDR')
-
-
 class TokenCreateView(djoser.views.TokenCreateView):
 
     def _action(self, serializer):
@@ -443,7 +439,7 @@ class DynDNS12Update(APIView):
                     return request.query_params[p]
 
         # Check remote IP address
-        client_ip = get_client_ip(request)
+        client_ip = request.META.get('REMOTE_ADDR')
         if look_for in client_ip:
             return client_ip
 
@@ -526,11 +522,12 @@ class UserCreateView(views.UserCreateView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, get_client_ip(request))
+        self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer, remote_ip):
+    def perform_create(self, serializer):
+        remote_ip = self.request.META.get('REMOTE_ADDR')
         lock = (
                 ipaddress.ip_address(remote_ip) not in ipaddress.IPv6Network(os.environ['DESECSTACK_IPV6_SUBNET'])
                 and (
