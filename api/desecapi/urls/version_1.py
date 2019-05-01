@@ -4,7 +4,6 @@ from rest_framework.routers import SimpleRouter
 
 from desecapi import views
 
-
 tokens_router = SimpleRouter()
 tokens_router.register(r'', views.TokenViewSet, base_name='token')
 
@@ -38,7 +37,7 @@ api_urls = [
     path('domains/<name>/rrsets/', views.RRsetList.as_view(), name='rrsets'),
     path('domains/<name>/rrsets/.../<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
     re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)\.\.\./(?P<type>[^/]+)/',
-                views.RRsetDetail.as_view(), name='rrset'),
+            views.RRsetDetail.as_view(), name='rrset'),
     path('domains/<name>/rrsets/@/<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
     re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)@/(?P<type>[^/]+)/',
             views.RRsetDetail.as_view(), name='rrset@'),

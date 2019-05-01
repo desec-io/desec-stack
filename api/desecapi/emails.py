@@ -2,6 +2,7 @@ from django.template.loader import get_template
 from django.core.mail import EmailMessage
 from rest_framework.reverse import reverse
 
+
 def send_account_lock_email(request, user):
     content_tmpl = get_template('emails/captcha/content.txt')
     subject_tmpl = get_template('emails/captcha/subject.txt')
@@ -15,6 +16,7 @@ def send_account_lock_email(request, user):
                          from_tmpl.render(context),
                          [user.email])
     email.send()
+
 
 def send_token_email(context, user):
     content_tmpl = get_template('emails/user-token/content.txt')

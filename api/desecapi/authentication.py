@@ -48,7 +48,7 @@ class BasicTokenAuthentication(BaseAuthentication):
         try:
             user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
             token = self.model.objects.get(key=key)
-        except:
+        except Exception:
             raise exceptions.AuthenticationFailed(invalid_token_message)
 
         if not token.user.is_active:
@@ -72,16 +72,16 @@ class URLParamAuthentication(BaseAuthentication):
         using URL parameters.  Otherwise returns `None`.
         """
 
-        if not 'username' in request.query_params:
+        if 'username' not in request.query_params:
             msg = 'No username URL parameter provided.'
             raise exceptions.AuthenticationFailed(msg)
-        if not 'password' in request.query_params:
+        if 'password' not in request.query_params:
             msg = 'No password URL parameter provided.'
             raise exceptions.AuthenticationFailed(msg)
 
         return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
 
-    def authenticate_credentials(self, userid, key):
+    def authenticate_credentials(self, _, key):
         try:
             token = self.model.objects.get(key=key)
         except self.model.DoesNotExist:

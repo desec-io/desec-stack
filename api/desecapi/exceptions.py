@@ -1,5 +1,7 @@
-from rest_framework.exceptions import APIException
 import json
+from json import JSONDecodeError
+
+from rest_framework.exceptions import APIException
 
 
 class PdnsException(APIException):
@@ -11,5 +13,5 @@ class PdnsException(APIException):
         else:
             try:
                 self.detail = json.loads(response.text)['error']
-            except:
+            except (JSONDecodeError, KeyError):
                 self.detail = response.text

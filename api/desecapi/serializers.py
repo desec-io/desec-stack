@@ -1,14 +1,16 @@
+import re
+
+import django.core.exceptions
 from django.core.validators import RegexValidator
+from django.db import models, transaction
+from djoser import serializers as djoser_serializers
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from desecapi.models import Domain, Donation, User, RR, RRset, Token
-from djoser import serializers as djoserSerializers
-from django.db import models, transaction
-import django.core.exceptions
-from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
-import re
 from rest_framework.fields import empty
 from rest_framework.settings import api_settings
+from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
+
+from desecapi.models import Domain, Donation, User, RR, RRset, Token
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -44,10 +46,12 @@ class RRsetBulkListSerializer(BulkListSerializer):
         rrsets = {(obj.subname, obj.type): obj for obj in queryset.filter(q)}
         instance = [rrsets.get((data.get('subname', ''), data['type']), None)
                     for data in validated_data]
+        # noinspection PyUnresolvedReferences,PyProtectedMember
         return self.child._save(instance, validated_data)
 
     @transaction.atomic
     def create(self, validated_data):
+        # noinspection PyUnresolvedReferences,PyProtectedMember
         return self.child._save([None] * len(validated_data), validated_data)
 
 
@@ -122,7 +126,7 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
                 rrset.ttl = data.get('ttl', rrset.ttl)
             else:
                 # No known instance (creation or meaningless request)
-                if not 'ttl' in data:
+                if 'ttl' not in data:
                     if records:
                         # If we have records, this is a creation request, so we
                         # need a TTL.
@@ -202,7 +206,8 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         return self._save(None, validated_data)
 
-    def validate_type(self, value):
+    @staticmethod
+    def validate_type(value):
         if value in RRset.DEAD_TYPES:
             raise serializers.ValidationError(
                 "The %s RRset type is currently unsupported." % value)
@@ -234,17 +239,19 @@ class DonationSerializer(serializers.ModelSerializer):
         model = Donation
         fields = ('name', 'iban', 'bic', 'amount', 'message', 'email')
 
-    def validate_bic(self, value):
+    @staticmethod
+    def validate_bic(value):
         return re.sub(r'[\s]', '', value)
 
-    def validate_iban(self, value):
+    @staticmethod
+    def validate_iban(value):
         return re.sub(r'[\s]', '', value)
 
 
-class UserSerializer(djoserSerializers.UserSerializer):
+class UserSerializer(djoser_serializers.UserSerializer):
     locked = serializers.SerializerMethodField()
 
-    class Meta(djoserSerializers.UserSerializer.Meta):
+    class Meta(djoser_serializers.UserSerializer.Meta):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
             'dyn',
@@ -253,13 +260,14 @@ class UserSerializer(djoserSerializers.UserSerializer):
         )
         read_only_fields = ('dyn', 'limit_domains', 'locked',)
 
-    def get_locked(self, obj):
+    @staticmethod
+    def get_locked(obj):
         return bool(obj.locked)
 
 
-class UserCreateSerializer(djoserSerializers.UserCreateSerializer):
+class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
 
-    class Meta(djoserSerializers.UserCreateSerializer.Meta):
+    class Meta(djoser_serializers.UserCreateSerializer.Meta):
         fields = tuple(User.REQUIRED_FIELDS) + (
             User.USERNAME_FIELD,
             'password',

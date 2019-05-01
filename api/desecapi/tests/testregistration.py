@@ -1,24 +1,24 @@
 from datetime import timedelta
 
+from django.core import mail
 from django.test import RequestFactory
 from django.utils import timezone
-from django.core import mail
 from rest_framework.reverse import reverse
 from rest_framework.versioning import NamespaceVersioning
 
-from desecapi.tests.base import DesecTestCase
+from api import settings
 from desecapi import models
 from desecapi.emails import send_account_lock_email
-from api import settings
+from desecapi.tests.base import DesecTestCase
 
 
 class RegistrationTestCase(DesecTestCase):
 
-    def assertRegistration(self, REMOTE_ADDR='', status=201, **kwargs):
+    def assertRegistration(self, remote_addr='', status=201, **kwargs):
         url = reverse('v1:register')
         post_kwargs = {}
-        if REMOTE_ADDR:
-            post_kwargs['REMOTE_ADDR'] = REMOTE_ADDR
+        if remote_addr:
+            post_kwargs['REMOTE_ADDR'] = remote_addr
         response = self.client.post(url, kwargs, **post_kwargs)
         self.assertStatus(response, status)
         return response
@@ -32,7 +32,7 @@ class SingleRegistrationTestCase(RegistrationTestCase):
         self.assertRegistration(
             email=email,
             password=self.random_password(),
-            REMOTE_ADDR="1.3.3.7",
+            remote_addr="1.3.3.7",
         )
         self.user = models.User.objects.get(email=email)
 
@@ -59,7 +59,7 @@ class SingleRegistrationTestCase(RegistrationTestCase):
 class MultipleRegistrationTestCase(RegistrationTestCase):
 
     def _registrations(self):
-        pass
+        return []
 
     def setUp(self):
         super().setUp()
@@ -71,7 +71,7 @@ class MultipleRegistrationTestCase(RegistrationTestCase):
                 email=email,
                 password=self.random_password(),
                 dyn=True,
-                REMOTE_ADDR=ip,
+                remote_addr=ip,
             )
             user = models.User.objects.get(email=email)
             self.assertEqual(user.registration_remote_ip, ip)

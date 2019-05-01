@@ -1,4 +1,5 @@
 from django.core.management import BaseCommand, CommandError
+
 from desecapi.models import Domain
 
 
@@ -6,7 +7,8 @@ class Command(BaseCommand):
     help = 'Import authoritative data from pdns, making the local database consistent with pdns.'
 
     def add_arguments(self, parser):
-        parser.add_argument('domain-name', nargs='*', help='Domain name to import. If omitted, will import all domains that are known locally.')
+        parser.add_argument('domain-name', nargs='*',
+                            help='Domain name to import. If omitted, will import all domains that are known locally.')
 
     def handle(self, *args, **options):
         domains = Domain.objects.all()

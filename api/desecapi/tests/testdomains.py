@@ -1,14 +1,14 @@
-import random
 import json
+import random
 
-from django.core import mail
 from django.conf import settings
+from django.core import mail
 from django.core.exceptions import ValidationError
 from rest_framework import status
 
 from desecapi.exceptions import PdnsException
-from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, LockedDomainOwnerTestCase
 from desecapi.models import Domain
+from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, LockedDomainOwnerTestCase
 
 
 class UnauthenticatedDomainTests(DesecTestCase):

@@ -1,8 +1,10 @@
-from django.core.management import BaseCommand
-from desecapi.models import User
-from api import settings
-from django.utils import timezone
 from datetime import timedelta
+
+from django.core.management import BaseCommand
+from django.utils import timezone
+
+from api import settings
+from desecapi.models import User
 
 
 class Command(BaseCommand):

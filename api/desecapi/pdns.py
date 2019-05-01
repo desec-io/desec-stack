@@ -1,9 +1,10 @@
-import requests
 import json
 import random
+
+import requests
+
 from api import settings
 from desecapi.exceptions import PdnsException
-
 
 headers_nslord = {
     'Accept': 'application/json',
@@ -40,7 +41,7 @@ def _pdns_delete_zone(domain):
         else:
             raise PdnsException(r2)
 
-    return (r1, r2)
+    return r1, r2
 
 
 def _pdns_request(method, path, body=None, acceptable_range=range(200, 300)):
@@ -126,13 +127,19 @@ def get_rrset_datas(domain):
 
 
 def set_rrsets(domain, rrsets, notify=True):
-    data = {'rrsets':
-        [{'name': rrset.name, 'type': rrset.type, 'ttl': rrset.ttl,
-          'changetype': 'REPLACE',
-          'records': [{'content': record.content, 'disabled': False}
-                      for record in rrset.records.all()]
-          }
-         for rrset in rrsets]
+    data = {
+        'rrsets':
+        [
+            {
+                'name': rrset.name, 'type': rrset.type, 'ttl': rrset.ttl,
+                'changetype': 'REPLACE',
+                'records': [
+                    {'content': record.content, 'disabled': False}
+                    for record in rrset.records.all()
+                ]
+            }
+            for rrset in rrsets
+        ]
     }
     _pdns_patch('/zones/' + domain.pdns_id, data)
 

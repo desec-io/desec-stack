@@ -301,7 +301,6 @@ class MockPDNSTestCase(APITestCase):
         request.pop('status')
         return request
 
-
     @classmethod
     def request_pdns_zone_retrieve(cls, name=None):
         return {
@@ -645,6 +644,13 @@ class DomainOwnerTestCase(DesecTestCase):
     DYN = False
     NUM_OWNED_DOMAINS = 2
     NUM_OTHER_DOMAINS = 20
+
+    owner = None
+    my_domains = None
+    other_domains = None
+    my_domain = None
+    other_domain = None
+    token = None
 
     @classmethod
     def setUpTestDataWithPdns(cls):

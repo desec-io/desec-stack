@@ -1,5 +1,6 @@
 from api.settings import *
 
+# noinspection PyUnresolvedReferences
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

@@ -1,16 +1,20 @@
-from django.conf import settings
-from django.db import models, transaction
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-from django.utils import timezone
-from django.core.exceptions import SuspiciousOperation, ValidationError
-from desecapi import pdns, mixins
-import datetime, uuid
-from django.core.validators import MinValueValidator, RegexValidator
-from collections import OrderedDict
-import rest_framework.authtoken.models
-import time, random
-from os import urandom
+import datetime
+import random
+import time
+import uuid
 from base64 import b64encode
+from collections import OrderedDict
+from os import urandom
+
+import rest_framework.authtoken.models
+from django.conf import settings
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.validators import MinValueValidator, RegexValidator
+from django.db import models, transaction
+from django.utils import timezone
+
+from desecapi import pdns, mixins
 
 
 def validate_lower(value):
@@ -52,9 +56,7 @@ class MyUserManager(BaseUserManager):
         Creates and saves a superuser with the given email, date of
         birth and password.
         """
-        user = self.create_user(email,
-                                password=password
-        )
+        user = self.create_user(email, password=password)
         user.is_admin = True
         user.save(using=self._db)
         return user
@@ -72,8 +74,8 @@ class Token(rest_framework.authtoken.models.Token):
 
     def save(self, *args, **kwargs):
         if not self.user_specific_id:
-            self.user_specific_id = random.randrange(16**8)
-        super().save(*args, **kwargs) # Call the "real" save() method.
+            self.user_specific_id = random.randrange(16 ** 8)
+        super().save(*args, **kwargs)  # Call the "real" save() method.
 
     def generate_key(self):
         return b64encode(urandom(21)).decode('utf-8').replace('/', '-').replace('=', '_').replace('+', '.')
@@ -92,9 +94,9 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     registration_remote_ip = models.CharField(max_length=1024, blank=True)
-    locked = models.DateTimeField(null=True,blank=True)
+    locked = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
-    limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT,null=True,blank=True)
+    limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT, null=True, blank=True)
     dyn = models.BooleanField(default=False)
 
     objects = MyUserManager()
@@ -118,19 +120,21 @@ class User(AbstractBaseUser):
     def __str__(self):
         return self.email
 
-    def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
+    # noinspection PyMethodMayBeStatic
+    def has_perm(self, *_):
+        """Does the user have a specific permission?"""
         # Simplest possible answer: Yes, always
         return True
 
-    def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app `app_label`?"
+    # noinspection PyMethodMayBeStatic
+    def has_module_perms(self, *_):
+        """Does the user have permissions to view the app `app_label`?"""
         # Simplest possible answer: Yes, always
         return True
 
     @property
     def is_staff(self):
-        "Is the user a member of staff?"
+        """Is the user a member of staff?"""
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
@@ -222,7 +226,7 @@ class Domain(models.Model, mixins.SetterMixin):
             except Domain.DoesNotExist:
                 pass
             else:
-                rrsets = RRset.plain_to_RRsets([
+                rrsets = RRset.plain_to_rrsets([
                     {'subname': subname, 'type': 'NS', 'ttl': 3600,
                      'contents': settings.DEFAULT_NS},
                     {'subname': subname, 'type': 'DS', 'ttl': 60,
@@ -458,9 +462,8 @@ class RRset(models.Model, mixins.SetterMixin):
     DEAD_TYPES = ('ALIAS', 'DNAME')
     RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT')
 
-
     class Meta:
-        unique_together = (("domain","subname","type"),)
+        unique_together = (("domain", "subname", "type"),)
 
     def __init__(self, *args, **kwargs):
         self._dirties = set()
@@ -526,7 +529,7 @@ class RRset(models.Model, mixins.SetterMixin):
             self._dirties = {}
 
     @staticmethod
-    def plain_to_RRsets(datas, *, domain):
+    def plain_to_rrsets(datas, *, domain):
         rrsets = {}
         for data in datas:
             rrset = RRset(domain=domain, subname=data['subname'],

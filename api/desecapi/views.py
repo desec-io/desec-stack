@@ -1,44 +1,45 @@
-from __future__ import unicode_literals
-from django.core.mail import EmailMessage
-from rest_framework.generics import get_object_or_404
+from __future__ import unicode_literals  # TODO remove!
 
-from desecapi.models import Domain, User, RRset, Token
-from desecapi.serializers import (
-    DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer)
-from rest_framework import generics
-from desecapi.permissions import *
-from rest_framework import permissions
+import base64
+import binascii
+import ipaddress
+import os
+import re
+from datetime import timedelta
+
+import django.core.exceptions
+import djoser.views
+from django.contrib.auth import user_logged_in, user_logged_out
+from django.core.mail import EmailMessage
+from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
-from rest_framework.views import APIView
+from django.shortcuts import render
+from django.template.loader import get_template
+from django.utils import timezone
+from djoser import views, signals
+from djoser.serializers import TokenSerializer as DjoserTokenSerializer
+from dns import resolver
+from rest_framework import generics
+from rest_framework import mixins
+from rest_framework import status
+from rest_framework.authentication import get_authorization_header
+from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.authentication import get_authorization_header
-from desecapi.renderers import PlainTextRenderer
-from dns import resolver
-from django.template.loader import get_template
-import desecapi.authentication as auth
-import base64, binascii
-from api import settings
-from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
-import django.core.exceptions
-from djoser import views, signals
-from rest_framework import status
-from datetime import timedelta
-from django.utils import timezone
-from desecapi.forms import UnlockForm
-from django.shortcuts import render
-from django.db.models import Q
-from desecapi.emails import send_account_lock_email, send_token_email
-import re
-import ipaddress, os
-from rest_framework_bulk import ListBulkCreateUpdateAPIView
-from django.contrib.auth import user_logged_in, user_logged_out
-import djoser.views
-from djoser.serializers import TokenSerializer as DjoserTokenSerializer
-from rest_framework.viewsets import GenericViewSet
-from rest_framework import mixins
 from rest_framework.settings import api_settings
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_bulk import ListBulkCreateUpdateAPIView
 
+import desecapi.authentication as auth
+from api import settings
+from desecapi.emails import send_account_lock_email, send_token_email
+from desecapi.forms import UnlockForm
+from desecapi.models import Domain, User, RRset, Token
+from desecapi.permissions import *
+from desecapi.renderers import PlainTextRenderer
+from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
@@ -105,7 +106,10 @@ class DomainList(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         pattern = patternDyn if self.request.user.dyn else patternNonDyn
         if pattern.match(serializer.validated_data['name']) is None:
-            ex = ValidationError(detail={"detail": "This domain name is not well-formed, by policy.", "code": "domain-illformed"})
+            ex = ValidationError(detail={
+                "detail": "This domain name is not well-formed, by policy.",
+                "code": "domain-illformed"}
+            )
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
@@ -124,8 +128,12 @@ class DomainList(generics.ListCreateAPIView):
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
-        if self.request.user.limit_domains is not None and self.request.user.domains.count() >= self.request.user.limit_domains:
-            ex = ValidationError(detail={"detail": "You reached the maximum number of domains allowed for your account.", "code": "domain-limit"})
+        if (self.request.user.limit_domains is not None and
+                self.request.user.domains.count() >= self.request.user.limit_domains):
+            ex = ValidationError(detail={
+                "detail": "You reached the maximum number of domains allowed for your account.",
+                "code": "domain-limit"
+            })
             ex.status_code = status.HTTP_403_FORBIDDEN
             raise ex
 
@@ -133,13 +141,16 @@ class DomainList(generics.ListCreateAPIView):
             obj = serializer.save(owner=self.request.user)
         except Exception as e:
             if str(e).endswith(' already exists'):
-                ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
+                ex = ValidationError(detail={
+                    "detail": "This domain name is unavailable.",
+                    "code": "domain-unavailable"}
+                )
                 ex.status_code = status.HTTP_409_CONFLICT
                 raise ex
             else:
                 raise e
 
-        def sendDynDnsEmail(domain):
+        def send_dyn_dns_email(domain):
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
             from_tmpl = get_template('emails/from.txt')
@@ -156,7 +167,7 @@ class DomainList(generics.ListCreateAPIView):
             email.send()
 
         if obj.name.endswith('.dedyn.io'):
-            sendDynDnsEmail(obj)
+            send_dyn_dns_email(obj)
 
 
 class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -220,7 +231,8 @@ class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
                 api_settings.NON_FIELD_ERRORS_KEY: ['Invalid input, expected a JSON object.']
             }, code='invalid')
 
-        if request.data.get('records') == []:
+        records = request.data.get('records')
+        if records is not None and len(records) == 0:
             return self.delete(request, *args, **kwargs)
 
         # Attach URL parameters (self.kwargs) to the request body object (request.data),
@@ -278,8 +290,10 @@ class RRsetList(ListBulkCreateUpdateAPIView):
         # default='' in the serializer field definition so that during PUT, the
         # subname value is retained if omitted.
         if isinstance(self.request.data, list):
-            serializer._validated_data = [{**{'subname': ''}, **data}
-                                         for data in serializer.validated_data]
+            serializer._validated_data = [
+                {**{'subname': ''}, **data}
+                for data in serializer.validated_data
+            ]
         else:
             serializer._validated_data = {**{'subname': ''}, **serializer.validated_data}
 
@@ -297,7 +311,7 @@ class RRsetList(ListBulkCreateUpdateAPIView):
 
 
 class Root(APIView):
-    def get(self, request, format=None):
+    def get(self, request, *_):
         if self.request.user and self.request.user.is_authenticated:
             return Response({
                 'domains': reverse('domain-list', request=request),
@@ -312,19 +326,21 @@ class Root(APIView):
 
 
 class DnsQuery(APIView):
-    def get(self, request, format=None):
-        desecio = resolver.Resolver()
 
-        if not 'domain' in request.GET:
+    @staticmethod
+    def get(request, *_):
+        dns_resolver = resolver.Resolver()
+
+        if 'domain' not in request.GET:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         domain = str(request.GET['domain'])
 
-        def getRecords(domain, type_):
+        def get_records(domain_name, type_):
             records = []
             try:
-                for ip in desecio.query(domain, type_):
-                    records.append(str(ip))
+                for address in dns_resolver.query(domain_name, type_):
+                    records.append(str(address))
             except resolver.NoAnswer:
                 return []
             except resolver.NoNameservers:
@@ -334,24 +350,24 @@ class DnsQuery(APIView):
             return records
 
         # find currently active NS records
-        nsrecords = getRecords(domain, 'NS')
+        ns_records = get_records(domain, 'NS')
 
-        # find desec.io nameserver IP address with standard nameserver
-        ips = desecio.query('ns2.desec.io')
-        desecio.nameservers = []
+        # find desec.io name server IP address with standard name server
+        ips = dns_resolver.query('ns2.desec.io')
+        dns_resolver.nameservers = []
         for ip in ips:
-            desecio.nameservers.append(str(ip))
+            dns_resolver.nameservers.append(str(ip))
 
-        # query desec.io nameserver for A and AAAA records
-        arecords = getRecords(domain, 'A')
-        aaaarecords = getRecords(domain, 'AAAA')
+        # query desec.io name server for A and AAAA records
+        a_records = get_records(domain, 'A')
+        aaaa_records = get_records(domain, 'AAAA')
 
         return Response({
             'domain': domain,
-            'ns': nsrecords,
-            'a': arecords,
-            'aaaa': aaaarecords,
-            '_nameserver': desecio.nameservers
+            'ns': ns_records,
+            'a': a_records,
+            'aaaa': aaaa_records,
+            '_nameserver': dns_resolver.nameservers
         })
 
 
@@ -359,25 +375,26 @@ class DynDNS12Update(APIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [PlainTextRenderer]
 
-    def findDomain(self, request):
+    def _find_domain(self, request):
         if self.request.user.locked:
             # Error code from https://help.dyn.com/remote-access-api/return-codes/
             raise PermissionDenied('abuse')
 
-        def findDomainname(request):
+        def find_domain_name(r):
             # 1. hostname parameter
-            if 'hostname' in request.query_params and request.query_params['hostname'] != 'YES':
-                return request.query_params['hostname']
+            if 'hostname' in r.query_params and r.query_params['hostname'] != 'YES':
+                return r.query_params['hostname']
 
             # 2. host_id parameter
-            if 'host_id' in request.query_params:
-                return request.query_params['host_id']
+            if 'host_id' in r.query_params:
+                return r.query_params['host_id']
 
             # 3. http basic auth username
             try:
-                domainname = base64.b64decode(get_authorization_header(request).decode().split(' ')[1].encode()).decode().split(':')[0]
-                if domainname:
-                    return domainname
+                domain_name = base64.b64decode(
+                    get_authorization_header(r).decode().split(' ')[1].encode()).decode().split(':')[0]
+                if domain_name:
+                    return domain_name
             except IndexError:
                 pass
             except UnicodeDecodeError:
@@ -386,31 +403,35 @@ class DynDNS12Update(APIView):
                 pass
 
             # 4. username parameter
-            if 'username' in request.query_params:
-                return request.query_params['username']
+            if 'username' in r.query_params:
+                return r.query_params['username']
 
             # 5. only domain associated with this user account
-            if len(request.user.domains.all()) == 1:
-                return request.user.domains.all()[0].name
-            if len(request.user.domains.all()) > 1:
-                ex = ValidationError(detail={"detail": "Request does not specify domain unambiguously.", "code": "domain-ambiguous"})
+            if len(r.user.domains.all()) == 1:
+                return r.user.domains.all()[0].name
+            if len(r.user.domains.all()) > 1:
+                ex = ValidationError(detail={
+                    "detail": "Request does not specify domain unambiguously.",
+                    "code": "domain-ambiguous"
+                })
                 ex.status_code = status.HTTP_409_CONFLICT
                 raise ex
 
             return None
 
-        name = findDomainname(request).lower()
+        name = find_domain_name(request).lower()
 
         try:
             return self.request.user.domains.get(name=name)
         except Domain.DoesNotExist:
             return None
 
-    def findIP(self, request, params, version=4):
+    @staticmethod
+    def find_ip(request, params, version=4):
         if version == 4:
-            lookfor = '.'
+            look_for = '.'
         elif version == 6:
-            lookfor = ':'
+            look_for = ':'
         else:
             raise Exception
 
@@ -419,31 +440,31 @@ class DynDNS12Update(APIView):
             if p in request.query_params:
                 if not len(request.query_params[p]):
                     return None
-                if lookfor in request.query_params[p]:
+                if look_for in request.query_params[p]:
                     return request.query_params[p]
 
         # Check remote IP address
         client_ip = get_client_ip(request)
-        if lookfor in client_ip:
+        if look_for in client_ip:
             return client_ip
 
         # give up
         return None
 
-    def findIPv4(self, request):
-        return self.findIP(request, ['myip', 'myipv4', 'ip'])
+    def _find_ip_v4(self, request):
+        return self.find_ip(request, ['myip', 'myipv4', 'ip'])
 
-    def findIPv6(self, request):
-        return self.findIP(request, ['myipv6', 'ipv6', 'myip', 'ip'], version=6)
+    def _find_ip_v6(self, request):
+        return self.find_ip(request, ['myipv6', 'ipv6', 'myip', 'ip'], version=6)
 
-    def get(self, request, format=None):
-        domain = self.findDomain(request)
+    def get(self, request, *_):
+        domain = self._find_domain(request)
 
         if domain is None:
             raise NotFound('nohost')
 
-        datas = {'A': self.findIPv4(request), 'AAAA': self.findIPv6(request)}
-        rrsets = RRset.plain_to_RRsets(
+        datas = {'A': self._find_ip_v4(request), 'AAAA': self._find_ip_v6(request)}
+        rrsets = RRset.plain_to_rrsets(
             [{'subname': '', 'type': type_, 'ttl': 60,
               'contents': [ip] if ip is not None else []}
              for type_, ip in datas.items()],
@@ -452,6 +473,7 @@ class DynDNS12Update(APIView):
 
         return Response('good', content_type='text/plain')
 
+
 class DonationList(generics.CreateAPIView):
     serializer_class = DonationSerializer
 
@@ -459,7 +481,7 @@ class DonationList(generics.CreateAPIView):
         iban = serializer.validated_data['iban']
         obj = serializer.save()
 
-        def sendDonationEmails(donation):
+        def send_donation_emails(donation):
             context = {
                 'donation': donation,
                 'creditoridentifier': settings.SEPA['CREDITOR_ID'],
@@ -493,9 +515,8 @@ class DonationList(generics.CreateAPIView):
                                      [donation.email])
                 email.send()
 
-
         # send emails
-        sendDonationEmails(obj)
+        send_donation_emails(obj)
 
 
 class UserCreateView(views.UserCreateView):
