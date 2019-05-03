@@ -404,13 +404,35 @@ describe("API v1", function () {
                     itShowsUpInPdnsAs('test.foobar', domain, 'AAAA', ['::1', 'bade::affe'], 60);
                 });
 
+                describe("cannot create RRsets with duplicate record content", function () {
+                    it("rejects exact duplicates", function () {
+                        return expect(chakram.post(
+                            '/domains/' + domain + '/rrsets/',
+                            {
+                                'subname': 'duplicate-contents', 'type': 'AAAA',
+                                'records': ['::1', '::1'], 'ttl': 60
+                            }
+                        )).to.have.status(422);
+                    });
+
+                    it("rejects semantic duplicates", function () {
+                        return expect(chakram.post(
+                            '/domains/' + domain + '/rrsets/',
+                            {
+                                'subname': 'duplicate-contents', 'type': 'AAAA',
+                                'records': ['::1', '::0001'], 'ttl': 60
+                            }
+                        )).to.have.status(422);
+                    });
+                });
+
                 describe("can bulk-post an AAAA and an MX record", function () {
                     before(function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
                                 { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { /* implied: 'subname': '', */ 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
                             ]
                         );
                         expect(response).to.have.status(201);
@@ -433,7 +455,7 @@ describe("API v1", function () {
                         // Set an RRset that we'll try to overwrite
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}]
+                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
                         );
                         expect(response).to.have.status(201);
 
@@ -454,7 +476,7 @@ describe("API v1", function () {
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
                             { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
-                            {},
+                            { subname: [ 'This field is required.' ] },
                             { ttl: [ 'This field is required.' ] },
                             { records: [ 'This field is required.' ] },
                             { type: [ 'You cannot tinker with the SOA RRset.' ] },
@@ -528,8 +550,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             expect(response).to.have.json([
-                                { '__all__': [ 'R rset with this Domain, Subname and Type already exists.' ] },
-                                { '__all__': [ 'RRset repeated with same subname and type.' ] },
+                                {"__all__": ["Same subname and type as in position(s) 1, but must be unique."]},
+                                {"__all__": ["Same subname and type as in position(s) 0, but must be unique."]}
                             ]);
                             return chakram.wait();
                         });
@@ -562,7 +584,7 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             return expect(response).to.have.json([
-                                { '__all__': [ 'R rset with this Domain, Subname and Type already exists.' ] },
+                                {'records': ['This field must not be empty when using POST.']},
                             ]);
                         });
                     });
@@ -632,7 +654,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [
                                 { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { /* implied: 'subname': '', */ 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
                             ]
                         );
                         expect(response).to.have.status(200);
@@ -653,11 +675,11 @@ describe("API v1", function () {
                 describe("cannot bulk-put with missing or invalid fields", function () {
                     before(function () {
                         // Set an RRset that we'll try to overwrite
-                        var response = chakram.put(
+                        var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}]
+                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
                         );
-                        expect(response).to.have.status(200);
+                        expect(response).to.have.status(201);
 
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
@@ -673,7 +695,7 @@ describe("API v1", function () {
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
                             { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
-                            {},
+                            { subname: [ 'This field is required.' ] },
                             { ttl: [ 'This field is required.' ] },
                             { records: [ 'This field is required.' ] },
                         ]);
@@ -759,8 +781,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             return expect(response).to.have.json([
-                                { },
-                                { '__all__': [ 'RRset repeated with same subname and type.' ] },
+                                { '__all__': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
+                                { '__all__': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
                             ]);
                         });
 
@@ -861,7 +883,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [
                                 { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { /* implied: 'subname': '', */ 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
                             ]
                         );
                         expect(response).to.have.status(200);
@@ -884,7 +906,7 @@ describe("API v1", function () {
                         // Set an RRset that we'll try to overwrite
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}]
+                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
                         );
                         expect(response).to.have.status(201);
 
@@ -902,9 +924,9 @@ describe("API v1", function () {
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
                             { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
-                            {},
-                            {},
-                            {},
+                            { subname: [ 'This field is required.' ] },
+                            { ttl: ['This field is required.']} ,
+                            { records: ['This field is required.']} ,
                         ]);
 
                         return chakram.wait();
@@ -1000,8 +1022,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             return expect(response).to.have.json([
-                                {},
-                                { '__all__': [ 'RRset repeated with same subname and type.' ] },
+                                { '__all__': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
+                                { '__all__': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
                             ]);
                         });
 

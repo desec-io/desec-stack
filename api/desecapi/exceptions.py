@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from rest_framework.exceptions import APIException
 
 
-class PdnsException(APIException):
+class PDNSException(APIException):
 
     def __init__(self, response=None, detail=None, status=None):
         self.status_code = status or response.status_code

@@ -3,6 +3,7 @@ import binascii
 import ipaddress
 import os
 import re
+from copy import deepcopy
 from datetime import timedelta
 
 import django.core.exceptions
@@ -10,7 +11,6 @@ import djoser.views
 import psl_dns
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.mail import EmailMessage
-from django.db import IntegrityError
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
@@ -24,27 +24,49 @@ from rest_framework import mixins
 from rest_framework import status
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_bulk import ListBulkCreateUpdateAPIView
 
 import desecapi.authentication as auth
 from api import settings
 from desecapi.emails import send_account_lock_email, send_token_email
 from desecapi.forms import UnlockForm
 from desecapi.models import Domain, User, RRset, Token
-from desecapi.permissions import IsOwner, IsUnlockedOrDyn, IsUnlocked, IsDomainOwner
-from desecapi.pdns import PdnsException
+from desecapi.pdns import PDNSException
+from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.permissions import IsOwner, IsUnlocked, IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
 patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)*[A-Za-z]+$')
+
+
+class IdempotentDestroy:
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            # noinspection PyUnresolvedReferences
+            super().destroy(request, *args, **kwargs)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DomainView:
+
+    def initial(self, request, *args, **kwargs):
+        # noinspection PyUnresolvedReferences
+        super().initial(request, *args, **kwargs)
+        try:
+            # noinspection PyAttributeOutsideInit, PyUnresolvedReferences
+            self.domain = self.request.user.domains.get(name=self.kwargs['name'])
+        except Domain.DoesNotExist:
+            raise Http404
 
 
 class TokenCreateView(djoser.views.TokenCreateView):
@@ -72,7 +94,8 @@ class TokenDestroyView(djoser.views.TokenDestroyView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TokenViewSet(mixins.CreateModelMixin,
+class TokenViewSet(IdempotentDestroy,
+                   mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
                    mixins.ListModelMixin,
                    GenericViewSet):
@@ -83,20 +106,13 @@ class TokenViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         return self.request.user.auth_tokens.all()
 
-    def destroy(self, request, *args, **kwargs):
-        try:
-            super().destroy(request, *args, **kwargs)
-        except Http404:
-            pass
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
 
-class DomainList(generics.ListCreateAPIView):
+class DomainList(ListCreateAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (IsAuthenticated, IsOwner, IsUnlockedOrDyn,)
+    permission_classes = (IsAuthenticated, IsOwner,)
     psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
 
     def get_queryset(self):
@@ -154,25 +170,33 @@ class DomainList(generics.ListCreateAPIView):
             raise ex
 
         try:
-            obj = serializer.save(owner=self.request.user)
-        except (IntegrityError, PdnsException) as e:
-            if isinstance(e, PdnsException) and not str(e).endswith(' already exists'):
+            with PDNSChangeTracker():
+                domain = serializer.save(owner=self.request.user)
+            parent_domain_name = domain.partition_name()[1]
+            if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
+                parent_domain = Domain.objects.get(name=parent_domain_name)
+                # NOTE we need two change trackers here, as the first transaction must be committed to
+                # pdns in order to have keys available for the delegation
+                with PDNSChangeTracker():
+                    parent_domain.update_delegation(domain)
+        except PDNSException as e:
+            if not str(e).endswith(' already exists'):
                 raise e
             ex = ValidationError(detail={
                 "detail": "This domain name is unavailable.",
                 "code": "domain-unavailable"}
             )
-            ex.status_code = status.HTTP_409_CONFLICT
+            ex.status_code = status.HTTP_400_BAD_REQUEST
             raise ex
 
-        def send_dyn_dns_email(domain):
+        def send_dyn_dns_email():
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
             from_tmpl = get_template('emails/from.txt')
             context = {
-                'domain': domain.name,
+                'domain': domain_name,
                 'url': 'https://update.dedyn.io/',
-                'username': domain.name,
+                'username': domain_name,
                 'password': self.request.auth.key
             }
             email = EmailMessage(subject_tmpl.render(context),
@@ -181,21 +205,23 @@ class DomainList(generics.ListCreateAPIView):
                                  [self.request.user.email])
             email.send()
 
-        if obj.name.endswith('.dedyn.io'):
-            send_dyn_dns_email(obj)
+        if domain.name.endswith('.dedyn.io'):
+            send_dyn_dns_email()
 
 
-class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
+class DomainDetail(IdempotentDestroy, RetrieveUpdateDestroyAPIView):
     serializer_class = DomainSerializer
-    permission_classes = (IsAuthenticated, IsOwner, IsUnlocked,)
+    permission_classes = (IsAuthenticated, IsOwner,)
     lookup_field = 'name'
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            super().delete(request, *args, **kwargs)
-        except Http404:
-            pass
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def perform_destroy(self, instance: Domain):
+        with PDNSChangeTracker():
+            instance.delete()
+        parent_domain_name = instance.partition_name()[1]
+        if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
+            parent_domain = Domain.objects.get(name=parent_domain_name)
+            with PDNSChangeTracker():
+                parent_domain.update_delegation(instance)
 
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
@@ -207,79 +233,68 @@ class DomainDetail(generics.RetrieveUpdateDestroyAPIView):
             raise ValidationError(detail={"detail": e.message})
 
 
-class RRsetDetail(generics.RetrieveUpdateDestroyAPIView):
+class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            super().delete(request, *args, **kwargs)
-        except Http404:
-            pass
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     def get_queryset(self):
-        domain_name = self.kwargs['name']
+        return self.domain.rrset_set
 
-        try:
-            return self.request.user.domains.get(name=domain_name).rrset_set
-        except Domain.DoesNotExist:
-            raise Http404()
-
-    def get_object(self):
+    def get_object(self, raise_exception=True):
         queryset = self.filter_queryset(self.get_queryset())
+        result = queryset.filter(type=self.kwargs['type'], subname=self.kwargs['subname'])
+        if result:
+            self.check_object_permissions(self.request, result[0])
+            return result[0]
+        else:
+            if raise_exception:
+                raise Http404
+            else:
+                return None
 
-        rrset_type = self.kwargs['type']
-
-        if rrset_type in RRset.RESTRICTED_TYPES:
-            raise PermissionDenied("You cannot tinker with the %s RRset." % rrset_type)
-
-        obj = get_object_or_404(queryset, type=rrset_type, subname=self.kwargs['subname'])
-
-        self.check_object_permissions(self.request, obj)
-
-        return obj
+    def get_serializer(self, *args, **kwargs):
+        kwargs['domain'] = self.domain
+        return super().get_serializer(*args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        if not isinstance(request.data, dict):
-            raise ValidationError({
-                api_settings.NON_FIELD_ERRORS_KEY: ['Invalid input, expected a JSON object.']
-            }, code='invalid')
-
-        records = request.data.get('records')
-        if records is not None and len(records) == 0:
-            return self.delete(request, *args, **kwargs)
-
-        # Attach URL parameters (self.kwargs) to the request body object (request.data),
+        # Attach URL parameters (self.kwargs) to the data object (copied from request.body),
         # the latter having preference with both are given.
+        data = deepcopy(request.data)
         for k in ('type', 'subname'):
-            # This works because we exclusively use JSONParser which causes request.data to be
-            # a dict (and not an immutable QueryDict, as is the case for other parsers)
-            request.data[k] = request.data.pop(k, self.kwargs[k])
+            data[k] = request.data.pop(k, self.kwargs[k])
 
-        try:
-            return super().update(request, *args, **kwargs)
-        except django.core.exceptions.ValidationError as e:
-            ex = ValidationError(detail=e.message_dict)
-            ex.status_code = status.HTTP_409_CONFLICT
-            raise ex
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object(raise_exception=False)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_update(serializer)
+        response = Response(serializer.data)
+        if response.data is None:
+            response.status_code = 204
+        return response
+
+    def perform_update(self, serializer):
+        with PDNSChangeTracker():
+            super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        with PDNSChangeTracker():
+            super().perform_destroy(instance)
 
 
-class RRsetList(ListBulkCreateUpdateAPIView):
+class RRsetList(DomainView, ListCreateAPIView, UpdateAPIView):
     serializer_class = RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner, IsUnlocked,)
 
     def get_queryset(self):
-        name = self.kwargs['name']
-        try:
-            rrsets = self.request.user.domains.get(name=name).rrset_set
-        except Domain.DoesNotExist:
-            raise Http404
+        rrsets = RRset.objects.filter(domain=self.domain)
 
         for filter_field in ('subname', 'type'):
             value = self.request.query_params.get(filter_field)
 
             if value is not None:
+                # TODO consider moving this
                 if filter_field == 'type' and value in RRset.RESTRICTED_TYPES:
                     raise PermissionDenied("You cannot tinker with the %s RRset." % value)
 
@@ -287,42 +302,36 @@ class RRsetList(ListBulkCreateUpdateAPIView):
 
         return rrsets
 
+    def get_object(self):
+        # For this view, the object we're operating on is the queryset that one can also GET. Serializing a queryset
+        # is fine as per https://www.django-rest-framework.org/api-guide/serializers/#serializing-multiple-objects.
+        # We skip checking object permissions here to avoid evaluating the queryset. The user can access all his RRsets
+        # anyways.
+        return self.filter_queryset(self.get_queryset())
+
+    def get_serializer(self, *args, **kwargs):
+        data = kwargs.get('data')
+        if data and 'many' not in kwargs:
+            if self.request.method == 'POST':
+                kwargs['many'] = isinstance(data, list)
+            elif self.request.method in ['PATCH', 'PUT']:
+                kwargs['many'] = True
+        return super().get_serializer(domain=self.domain, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except Domain.DoesNotExist:
-            raise Http404
-        except ValidationError as e:
-            if isinstance(e.detail, dict):
-                detail = e.detail.get('__all__')
-                if isinstance(detail, list) \
-                        and any(m.endswith(' already exists.') for m in detail):
-                    e.status_code = status.HTTP_409_CONFLICT
-            raise e
+        response = super().create(request, *args, **kwargs)
+        if not response.data:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return response
 
     def perform_create(self, serializer):
-        # For new RRsets without a subname, set it empty. We don't use
-        # default='' in the serializer field definition so that during PUT, the
-        # subname value is retained if omitted.
-        if isinstance(self.request.data, list):
-            serializer._validated_data = [
-                {**{'subname': ''}, **data}
-                for data in serializer.validated_data
-            ]
-        else:
-            serializer._validated_data = {**{'subname': ''}, **serializer.validated_data}
+        with PDNSChangeTracker():
+            serializer.save(domain=self.domain)
 
-        # Associate RRset with proper domain
-        domain = self.request.user.domains.get(name=self.kwargs['name'])
-        serializer.save(domain=domain)
-
-    def get(self, request, *args, **kwargs):
-        name = self.kwargs['name']
-
-        if not Domain.objects.filter(name=name, owner=self.request.user.pk):
-            raise Http404
-
-        return super().get(request, *args, **kwargs)
+    def perform_update(self, serializer):
+        with PDNSChangeTracker():
+            serializer.save(domain=self.domain)
 
 
 class Root(APIView):
@@ -478,13 +487,23 @@ class DynDNS12Update(APIView):
         if domain is None:
             raise NotFound('nohost')
 
-        datas = {'A': self._find_ip_v4(request), 'AAAA': self._find_ip_v6(request)}
-        rrsets = RRset.plain_to_rrsets(
-            [{'subname': '', 'type': type_, 'ttl': 60,
-              'contents': [ip] if ip is not None else []}
-             for type_, ip in datas.items()],
-            domain=domain)
-        domain.write_rrsets(rrsets)
+        ipv4 = self._find_ip_v4(request)
+        ipv6 = self._find_ip_v6(request)
+
+        data = [
+            {'type': 'A', 'subname': '', 'ttl': 60, 'records': [ipv4] if ipv4 else []},
+            {'type': 'AAAA', 'subname': '', 'ttl': 60, 'records': [ipv6] if ipv6 else []},
+        ]
+
+        instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()
+        serializer = RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError as e:
+            raise e
+
+        with PDNSChangeTracker():
+            serializer.save(domain=domain)
 
         return Response('good', content_type='text/plain')
 
@@ -572,13 +591,7 @@ def unlock(request, email):
         form = UnlockForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-            try:
-                user = User.objects.get(email=email)
-                if user.locked:
-                    user.unlock()
-            except User.DoesNotExist:
-                # fail silently, so people can't probe registered addresses
-                pass
+            User.objects.filter(email=email).update(locked=None)
 
             return HttpResponseRedirect(reverse('v1:unlock/done', request=request))  # TODO remove dependency on v1
 

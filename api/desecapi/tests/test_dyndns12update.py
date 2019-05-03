@@ -7,20 +7,16 @@ from desecapi.tests.base import DynDomainOwnerTestCase
 
 class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
-    def assertRRSet(self, name, subname, type_, content):
-        response = self.client_token_authorized.get(self.reverse('v1:rrset', name=name, subname=subname, type=type_))
-
-        if content:
-            self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(response.data['records'][0], content)
-            self.assertEqual(response.data['ttl'], 60)
-        else:
-            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
-
     def assertIP(self, ipv4=None, ipv6=None, name=None):
         name = name or self.my_domain.name.lower()
-        self.assertRRSet(name, '', 'A', ipv4)
-        self.assertRRSet(name, '', 'AAAA', ipv6)
+        for type_, value in [('A', ipv4), ('AAAA', ipv6)]:
+            response = self.client_token_authorized.get(self.reverse('v1:rrset', name=name, subname='', type=type_))
+            if value:
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertEqual(response.data['records'][0], value)
+                self.assertEqual(response.data['ttl'], 60)
+            else:
+                self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_identification_by_domain_name(self):
         self.client.set_credentials_basic_auth(self.my_domain.name + '.invalid', self.token.key)

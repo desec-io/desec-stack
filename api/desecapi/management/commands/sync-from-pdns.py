@@ -1,6 +1,8 @@
 from django.core.management import BaseCommand, CommandError
+from django.db import transaction
 
-from desecapi.models import Domain
+from desecapi import pdns
+from desecapi.models import Domain, RRset, RR
 
 
 class Command(BaseCommand):
@@ -24,7 +26,7 @@ class Command(BaseCommand):
         for domain in domains:
             self.stdout.write('%s ...' % domain.name, ending='')
             try:
-                domain.sync_from_pdns()
+                self._sync_domain(domain)
                 self.stdout.write(' synced')
             except Exception as e:
                 if str(e).startswith('Could not find domain ') \
@@ -34,3 +36,19 @@ class Command(BaseCommand):
                     self.stdout.write(' failed')
                     msg = 'Error while processing {}: {}'.format(domain.name, e)
                     raise CommandError(msg)
+
+    @staticmethod
+    @transaction.atomic
+    def _sync_domain(domain):
+        domain.rrset_set.all().delete()
+        rrsets = []
+        rrs = []
+        for rrset_data in pdns.get_rrset_datas(domain):
+            if rrset_data['type'] in RRset.RESTRICTED_TYPES:
+                continue
+            records = rrset_data.pop('records')
+            rrset = RRset(**rrset_data)
+            rrsets.append(rrset)
+            rrs.extend([RR(rrset=rrset, content=record) for record in records])
+        RRset.objects.bulk_create(rrsets)
+        RR.objects.bulk_create(rrs)

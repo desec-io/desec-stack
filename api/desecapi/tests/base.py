@@ -5,6 +5,7 @@ import re
 import string
 from contextlib import nullcontext
 from functools import partial, reduce
+from json import JSONDecodeError
 from typing import Union, List, Dict
 from unittest import mock
 
@@ -65,7 +66,6 @@ class DesecAPIClient(APIClient):
         )
 
     def post_rr_set(self, domain_name, **kwargs):
-        kwargs.setdefault('subname', '')
         kwargs.setdefault('ttl', 60)
         return self.post(
             self.reverse('v1:rrsets', name=domain_name),
@@ -103,14 +103,14 @@ class DesecAPIClient(APIClient):
     # TODO add and use {post,get,delete,...}_domain
 
 
-class ReadUncommitted:
+class SQLiteReadUncommitted:
 
     def __init__(self):
         self.read_uncommitted = None
 
     def __enter__(self):
         with connection.cursor() as cursor:
-            cursor.execute('PRAGMA read_uncommitted;')  # FIXME this is probably sqlite only?
+            cursor.execute('PRAGMA read_uncommitted;')
             self.read_uncommitted = True if cursor.fetchone()[0] else False
             cursor.execute('PRAGMA read_uncommitted = true;')
 
@@ -296,6 +296,24 @@ class MockPDNSTestCase(APITestCase):
             'body': None,
         }
 
+    def request_pdns_zone_create_assert_name(self, ns, name):
+        def request_callback(r, _, response_headers):
+            body = json.loads(r.parsed_body)
+            self.failIf('name' not in body.keys(),
+                        'pdns domain creation request malformed: did not contain a domain name.')
+
+            try:  # if an assertion fails, an exception is raised. We want to send a reply anyway!
+                self.assertEqual(name, body['name'], 'Expected to see a domain creation request with name %s, '
+                                                     'but name %s was sent.' % (name, body['name']))
+            finally:
+                return [201, response_headers, '']
+
+        request = self.request_pdns_zone_create(ns)
+        request.pop('status')
+        # noinspection PyTypeChecker
+        request['body'] = request_callback
+        return request
+
     @classmethod
     def request_pdns_zone_create_422(cls):
         request = cls.request_pdns_zone_create(ns='LORD')
@@ -368,44 +386,46 @@ class MockPDNSTestCase(APITestCase):
             self.failIf('rrsets' not in body.keys(),
                         'pdns zone update request malformed: did not contain a list of RR sets.')
 
-            with ReadUncommitted():  # tests are wrapped in uncommitted transactions, so we need to see inside
-                # convert updated_rr_sets into a plain data type, if Django models were given
-                if isinstance(updated_rr_sets, list):
-                    updated_rr_sets_dict = {}
-                    for rr_set in updated_rr_sets:
-                        updated_rr_sets_dict[(rr_set.type, rr_set.subname, rr_set.ttl)] = rrs = []
-                        for rr in rr_set.records.all():
-                            rrs.append(rr.content)
-                elif isinstance(updated_rr_sets, dict):
-                    updated_rr_sets_dict = updated_rr_sets
-                else:
-                    raise ValueError('updated_rr_sets must be a list of RRSets or a dict.')
-
-                # check expectations
-                self.assertEqual(len(updated_rr_sets_dict), len(body['rrsets']),
-                                 'Saw an unexpected number of RR set updates: expected %i, intercepted %i.' %
-                                 (len(updated_rr_sets_dict), len(body['rrsets'])))
-                for (expected_type, expected_subname, expected_ttl), expected_records in updated_rr_sets_dict.items():
-                    expected_name = '.'.join(filter(None, [expected_subname, name])) + '.'
-                    for seen_rr_set in body['rrsets']:
-                        if (expected_name == seen_rr_set['name'] and
-                                expected_type == seen_rr_set['type']):
-                            # TODO replace the following asserts by assertTTL, assertRecords, ... or similar
-                            if len(expected_records):
-                                self.assertEqual(expected_ttl, seen_rr_set['ttl'])
-                            self.assertEqual(
-                                set(expected_records),
-                                set([rr['content'] for rr in seen_rr_set['records']]),
-                            )
-                            break
+            try:  # if an assertion fails, an exception is raised. We want to send a reply anyway!
+                with SQLiteReadUncommitted():  # tests are wrapped in uncommitted transactions, so we need to see inside
+                    # convert updated_rr_sets into a plain data type, if Django models were given
+                    if isinstance(updated_rr_sets, list):
+                        updated_rr_sets_dict = {}
+                        for rr_set in updated_rr_sets:
+                            updated_rr_sets_dict[(rr_set.type, rr_set.subname, rr_set.ttl)] = rrs = []
+                            for rr in rr_set.records.all():
+                                rrs.append(rr.content)
+                    elif isinstance(updated_rr_sets, dict):
+                        updated_rr_sets_dict = updated_rr_sets
                     else:
-                        # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
-                        self.fail('Expected to see an pdns zone update request for RR set of domain `%s` with name '
-                                  '`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:'
-                                  '\n\n%s'
-                                  % (name, expected_name, expected_type, request['uri'],
-                                     json.dumps(body['rrsets'], indent=4)))
-            return [200, response_headers, '']
+                        raise ValueError('updated_rr_sets must be a list of RRSets or a dict.')
+
+                    # check expectations
+                    self.assertEqual(len(updated_rr_sets_dict), len(body['rrsets']),
+                                     'Saw an unexpected number of RR set updates: expected %i, intercepted %i.' %
+                                     (len(updated_rr_sets_dict), len(body['rrsets'])))
+                    for (exp_type, exp_subname, exp_ttl), exp_records in updated_rr_sets_dict.items():
+                        expected_name = '.'.join(filter(None, [exp_subname, name])) + '.'
+                        for seen_rr_set in body['rrsets']:
+                            if (expected_name == seen_rr_set['name'] and
+                                    exp_type == seen_rr_set['type']):
+                                # TODO replace the following asserts by assertTTL, assertRecords, ... or similar
+                                if len(exp_records):
+                                    self.assertEqual(exp_ttl, seen_rr_set['ttl'])
+                                self.assertEqual(
+                                    set(exp_records),
+                                    set([rr['content'] for rr in seen_rr_set['records']]),
+                                )
+                                break
+                        else:
+                            # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
+                            self.fail('Expected to see an pdns zone update request for RR set of domain `%s` with name '
+                                      '`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:'
+                                      '\n\n%s'
+                                      % (name, expected_name, exp_type, request['uri'],
+                                         json.dumps(body['rrsets'], indent=4)))
+            finally:
+                return [200, response_headers, '']
 
         request = self.request_pdns_zone_update(name)
         request.pop('status')
@@ -537,6 +557,12 @@ class MockPDNSTestCase(APITestCase):
                       str(response.data).replace('\\n', '\n') if hasattr(response, 'data') else '',
                 ))
 
+    def assertResponse(self, response, code=None, body=None):
+        if code:
+            self.assertStatus(response, code)
+        if body:
+            self.assertJSONEqual(response.content, body)
+
     @classmethod
     def setUpTestData(cls):
         httpretty.enable(allow_net_connect=False)
@@ -569,13 +595,18 @@ class MockPDNSTestCase(APITestCase):
 
     def setUp(self):
         def request_callback(r, _, response_headers):
+            try:
+                request = json.loads(r.parsed_body)
+            except JSONDecodeError:
+                request = r.parsed_body
+
             return [
                 599,
                 response_headers,
                 json.dumps(
                     {
                         'MockPDNSTestCase': 'This response was generated upon an unexpected request.',
-                        'request': str(r),
+                        'request': request,
                         'method': str(r.method),
                         'requestline': str(r.raw_requestline),
                         'host': str(r.headers['Host']) if 'Host' in r.headers else None,
@@ -617,6 +648,10 @@ class DesecTestCase(MockPDNSTestCase):
     PUBLIC_SUFFIXES = {'de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no',
                        'kota.aichi.jp', 's3.amazonaws.com', 'wildcard.ck'}
 
+    admin = None
+    auto_delegation_domains = None
+    user = None
+
     @classmethod
     def reverse(cls, view_name, **kwargs):
         return reverse(view_name, kwargs=kwargs)
@@ -626,7 +661,7 @@ class DesecTestCase(MockPDNSTestCase):
         super().setUpTestDataWithPdns()
         random.seed(0xde5ec)
         cls.admin = cls.create_user(is_admin=True)
-        cls.add_domains = [cls.create_domain(name=name) for name in cls.AUTO_DELEGATION_DOMAINS]
+        cls.auto_delegation_domains = [cls.create_domain(name=name) for name in cls.AUTO_DELEGATION_DOMAINS]
         cls.user = cls.create_user()
 
     @classmethod
@@ -716,7 +751,6 @@ class DesecTestCase(MockPDNSTestCase):
             cls.request_pdns_zone_create(ns='LORD'),
             cls.request_pdns_zone_create(ns='MASTER'),
             cls.request_pdns_zone_axfr(name=name),
-            cls.request_pdns_zone_retrieve(name=name),
             cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
 
@@ -740,10 +774,10 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_domain_deletion_auto_delegation(cls, name=None):
         delegate_at = cls._find_auto_delegation_zone(name)
         return [
-            cls.request_pdns_zone_update(name=delegate_at),
-            cls.request_pdns_zone_axfr(name=delegate_at),
             cls.request_pdns_zone_delete(name=name, ns='LORD'),
             cls.request_pdns_zone_delete(name=name, ns='MASTER'),
+            cls.request_pdns_zone_update(name=delegate_at),
+            cls.request_pdns_zone_axfr(name=delegate_at),
         ]
 
     @classmethod
@@ -752,6 +786,50 @@ class DesecTestCase(MockPDNSTestCase):
             cls.request_pdns_zone_update(name=name),
             cls.request_pdns_zone_axfr(name=name),
         ]
+
+    def assertRRSet(self, response_rr, domain=None, subname=None, records=None, type_=None, **kwargs):
+        kwargs['domain'] = domain
+        kwargs['subname'] = subname
+        kwargs['records'] = records
+        kwargs['type'] = type_
+
+        for key, value in kwargs.items():
+            if value is not None:
+                self.assertEqual(
+                    response_rr[key], value,
+                    'RR set did not have the expected %s: Expected "%s" but was "%s" in %s' % (
+                        key, value, response_rr[key], response_rr
+                    )
+                )
+
+    @staticmethod
+    def _count_occurrences_by_mask(rr_sets, masks):
+        def _cmp(key, a, b):
+            if key == 'records':
+                a = sorted(a)
+                b = sorted(b)
+            return a == b
+
+        def _filter_rr_sets_by_mask(rr_sets_, mask):
+            return [
+                rr_set for rr_set in rr_sets_
+                if reduce(operator.and_, [_cmp(key, rr_set.get(key, None), value) for key, value in mask.items()])
+            ]
+
+        return [len(_filter_rr_sets_by_mask(rr_sets, mask)) for mask in masks]
+
+    def assertRRSetsCount(self, rr_sets, masks, count=1):
+        actual_counts = self._count_occurrences_by_mask(rr_sets, masks)
+        if not all([actual_count == count for actual_count in actual_counts]):
+            self.fail('Expected to find %i RR set(s) for each of %s, but distribution is %s in %s.' % (
+                count, masks, actual_counts, rr_sets
+            ))
+
+    def assertContainsRRSets(self, rr_sets_haystack, rr_sets_needle):
+        if not all(self._count_occurrences_by_mask(rr_sets_haystack, rr_sets_needle)):
+            self.fail('Expected to find RR sets with %s, but only got %s.' % (
+                rr_sets_needle, rr_sets_haystack
+            ))
 
 
 class DomainOwnerTestCase(DesecTestCase):
@@ -815,6 +893,12 @@ class DomainOwnerTestCase(DesecTestCase):
             cls.create_domain(suffix=cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None)
             for _ in range(cls.NUM_OTHER_DOMAINS)
         ]
+
+        if cls.DYN:
+            for domain in cls.my_domains + cls.other_domains:
+                parent_domain_name = domain.partition_name()[1]
+                parent_domain = Domain.objects.get(name=parent_domain_name)
+                parent_domain.update_delegation(domain)
 
         cls.my_domain = cls.my_domains[0]
         cls.other_domain = cls.other_domains[0]
@@ -942,46 +1026,3 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
         for domain in [cls.my_rr_set_domain, cls.other_rr_set_domain]:
             for (subname, type_, records, ttl) in cls._test_rr_sets():
                 cls.create_rr_set(domain, subname=subname, type=type_, records=records, ttl=ttl)
-
-    def assertRRSet(self, response_rr, domain=None, subname=None, records=None, type_=None, **kwargs):
-        kwargs['domain'] = domain
-        kwargs['subname'] = subname
-        kwargs['records'] = records
-        kwargs['type'] = type_
-
-        for key, value in kwargs.items():
-            if value is not None:
-                self.assertEqual(
-                    response_rr[key], value,
-                    'RR set did not have the expected %s: Expected "%s" but was "%s" in %s' % (
-                        key, value, response_rr[key], response_rr
-                    )
-                )
-
-    @staticmethod
-    def _count_occurrences_by_mask(rr_sets, masks):
-        def _cmp(key, a, b):
-            if key == 'records':
-                a = sorted(a)
-                b = sorted(b)
-            return a == b
-
-        def _filter_rr_sets_by_mask(rr_sets_, mask):
-            return [rr_set for rr_set in rr_sets_
-                    if reduce(operator.and_, [_cmp(key, rr_set.get(key, None), value) for key, value in mask.items()])
-            ]
-
-        return [len(_filter_rr_sets_by_mask(rr_sets, mask)) for mask in masks]
-
-    def assertRRSetsCount(self, rr_sets, masks, count=1):
-        actual_counts = self._count_occurrences_by_mask(rr_sets, masks)
-        if not all([actual_count == count for actual_count in actual_counts]):
-            self.fail('Expected to find %i RR set(s) for each of %s, but distribution is %s in %s.' % (
-                count, masks, actual_counts, rr_sets
-            ))
-
-    def assertContainsRRSets(self, rr_sets_haystack, rr_sets_needle):
-        if not all(self._count_occurrences_by_mask(rr_sets_haystack, rr_sets_needle)):
-            self.fail('Expected to find RR sets with %s, but only got %s.' % (
-                rr_sets_needle, rr_sets_haystack
-            ))

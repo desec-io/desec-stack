@@ -40,8 +40,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.get_rr_sets(self.my_domain.name, subname=''),
         ]:
             self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(len(response.data), 2, response.data)
-            self.assertContainsRRSets(response.data, [dict(subname='', records=settings.DEFAULT_NS, type='NS')])
+            self.assertEqual(len(response.data), 1, response.data)
 
     def test_retrieve_other_rr_sets(self):
         self.assertStatus(self.client.get_rr_sets(self.other_domain.name), status.HTTP_404_NOT_FOUND)
@@ -51,7 +50,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_retrieve_my_rr_sets_filter(self):
         response = self.client.get_rr_sets(self.my_rr_set_domain.name)
         self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), len(self._test_rr_sets()) + 1)  # Don't forget about the NS type RR set
+        self.assertEqual(len(response.data), len(self._test_rr_sets()))
 
         for subname in self.SUBNAMES:
             response = self.client.get_rr_sets(self.my_rr_set_domain.name, subname=subname)
@@ -62,25 +61,32 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for type_ in self.ALLOWED_TYPES:
             response = self.client.get_rr_sets(self.my_rr_set_domain.name, type=type_)
             self.assertStatus(response, status.HTTP_200_OK)
-            if type_ != 'NS':  # count does not match for NS, that's okay
-                self.assertRRSetsCount(response.data, [dict(type=type_)],
-                                       count=len(self._test_rr_sets(type_=type_)))
 
     def test_create_my_rr_sets(self):
-        for subname in ['', 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:
+        for subname in [None, 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:
             for data in [
                 {'subname': subname, 'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'},
-                {'subname': subname, 'records': ['desec.io.'], 'ttl': 900, 'type': 'PTR'},
+                {'subname': '' if subname is None else subname, 'records': ['desec.io.'], 'ttl': 900, 'type': 'PTR'},
+                {'subname': '' if subname is None else subname, 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
             ]:
+                # Try POST with missing subname
+                if data['subname'] is None:
+                    data.pop('subname')
+
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
                     response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
                     self.assertStatus(response, status.HTTP_201_CREATED)
+
+                # Check for uniqueness on second attempt
+                response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
+                self.assertContains(response, 'Another RRset with the same subdomain and type exists for this domain.',
+                                    status_code=status.HTTP_400_BAD_REQUEST)
 
                 response = self.client.get_rr_sets(self.my_empty_domain.name)
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertRRSetsCount(response.data, [data])
 
-                response = self.client.get_rr_set(self.my_empty_domain.name, data['subname'], data['type'])
+                response = self.client.get_rr_set(self.my_empty_domain.name, data.get('subname', ''), data['type'])
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertRRSet(response.data, **data)
 
@@ -111,11 +117,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 {'subname': subname, 'ttl': 60, 'type': 'A'},
             ]:
                 response = self.client.post_rr_set(self.my_empty_domain.name, **data)
-                self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+                self.assertStatus(
+                    response,
+                    status.HTTP_400_BAD_REQUEST
+                )
 
                 response = self.client.get_rr_sets(self.my_empty_domain.name)
                 self.assertStatus(response, status.HTTP_200_OK)
-                self.assertRRSetsCount(response.data, [data], count=0)
+                self.assertRRSetsCount(response.data, [], count=0)
 
     def test_create_other_rr_sets(self):
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
@@ -130,7 +139,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
         data['records'][0] = '3.2.2.1'
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
-        self.assertStatus(response, status.HTTP_409_CONFLICT)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_upper_case(self):
         for subname in ['asdF', 'cAse', 'asdf.FOO', '--F', 'ALLCAPS']:
@@ -183,20 +192,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             for data in [
                 {'records': ['2.2.3.4'], 'ttl': 30},
                 {'records': ['3.2.3.4']},
+                {'records': ['3.2.3.4', '9.8.8.7']},
                 {'ttl': 37},
             ]:
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
                     response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', **data)
                     self.assertStatus(response, status.HTTP_200_OK)
-    
+
                 response = self.client.get_rr_set(self.my_rr_set_domain.name, subname, 'A')
                 self.assertStatus(response, status.HTTP_200_OK)
                 current_rr_set.update(data)
                 self.assertEqual(response.data['records'], current_rr_set['records'])
                 self.assertEqual(response.data['ttl'], current_rr_set['ttl'])
 
-            data = {}
-            response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', **data)
+            response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A')
             self.assertStatus(response, status.HTTP_200_OK)
 
     def test_partially_update_other_rr_sets(self):
@@ -253,6 +262,9 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A', records=[])
                 self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
+            response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A', records=[])
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+
             response = self.client.get_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
@@ -269,11 +281,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for subname in self.SUBNAMES:
             # Try PATCH empty
             response = self.client.patch_rr_set(self.other_rr_set_domain.name, subname=subname, type_='A', records=[])
-            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
             # Try DELETE
             response = self.client.delete_rr_set(self.other_rr_set_domain.name, subname=subname, type_='A')
-            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
             # Make sure it actually is still there
             self.assertGreater(len(self.other_rr_set_domain.rrset_set.filter(subname=subname, type='A')), 0)

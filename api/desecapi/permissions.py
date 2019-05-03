@@ -30,17 +30,3 @@ class IsUnlocked(permissions.BasePermission):
             request.method in permissions.SAFE_METHODS or
             not request.user.locked
         )
-
-
-class IsUnlockedOrDyn(permissions.BasePermission):
-    """
-    Allow non-safe methods only for unlocked or dynDNS users.
-    """
-    message = IsUnlocked.message
-
-    def has_permission(self, request, view):
-        return bool(
-            request.method in permissions.SAFE_METHODS or
-            request.user.dyn or
-            not request.user.locked
-        )

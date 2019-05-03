@@ -13,11 +13,14 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
         cls.data = [
             {'subname': 'my-bulk', 'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'},
-            {'subname': 'my-bulk', 'records': ['desec.io.'], 'ttl': 60, 'type': 'PTR'},
+            {'subname': 'my-bulk', 'records': ['desec.io.', 'foobar.example.'], 'ttl': 60, 'type': 'PTR'},
         ]
 
         cls.data_no_records = copy.deepcopy(cls.data)
         cls.data_no_records[1].pop('records')
+
+        cls.data_empty_records = copy.deepcopy(cls.data)
+        cls.data_empty_records[1]['records'] = []
 
         cls.data_no_subname = copy.deepcopy(cls.data)
         cls.data_no_subname[0].pop('subname')
@@ -30,6 +33,9 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
         cls.data_no_records_no_ttl = copy.deepcopy(cls.data_no_records)
         cls.data_no_records_no_ttl[1].pop('ttl')
+
+        cls.data_no_subname_empty_records = copy.deepcopy(cls.data_no_subname)
+        cls.data_no_subname_empty_records[0]['records'] = []
 
         cls.bulk_domain = cls.create_domain(owner=cls.owner)
         for data in cls.data:
@@ -44,31 +50,123 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertRRSetsCount(response.data, self.data)
 
+        # Check subname requirement on bulk endpoint (and uniqueness at the same time)
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_no_subname),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'subname': ['This field is required.']},
+                {'non_field_errors': ['Another RRset with the same subdomain and type exists for this domain.']}
+            ]
+        )
+
+    def test_bulk_post_rr_sets_empty_records(self):
+        expected_response_data = [copy.deepcopy(self.data_empty_records[0]), None]
+        expected_response_data[0]['domain'] = self.my_empty_domain.name
+        expected_response_data[0]['name'] = '%s.%s.' % (self.data_empty_records[0]['subname'],
+                                                        self.my_empty_domain.name)
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_empty_records),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {},
+                {'records': ['This field must not be empty when using POST.']}
+            ]
+        )
+
+    def test_bulk_post_existing_rrsets(self):
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(
+                domain_name=self.bulk_domain,
+                payload=self.data,
+            ),
+            status.HTTP_400_BAD_REQUEST,
+            2 * [{
+                'non_field_errors': ['Another RRset with the same subdomain and type exists for this domain.']
+            }]
+        )
+
+    def test_bulk_post_duplicates(self):
+        data = 2 * [self.data[0]] + [self.data[1]]
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=data),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'__all__': ['Same subname and type as in position(s) 1, but must be unique.']},
+                {'__all__': ['Same subname and type as in position(s) 0, but must be unique.']},
+                {},
+            ]
+        )
+
+        data = 2 * [self.data[0]] + [self.data[1]] + [self.data[0]]
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=data),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'__all__': ['Same subname and type as in position(s) 1, 3, but must be unique.']},
+                {'__all__': ['Same subname and type as in position(s) 0, 3, but must be unique.']},
+                {},
+                {'__all__': ['Same subname and type as in position(s) 0, 1, but must be unique.']},
+            ]
+        )
+
+    def test_bulk_post_missing_fields(self):
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
+                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'subname': '', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'SOA',
+                     'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'OPT', 'records': ['9999']},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
+                ]
+            ),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'type': ['This field is required.']},
+                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'subname': ['This field is required.']},
+                {},
+                {'ttl': ['This field is required.']},
+                {'records': ['This field is required.']},
+                {'type': ['You cannot tinker with the SOA RRset.']},
+                {'type': ['You cannot tinker with the OPT RRset.']},
+                {'type': ['Generic type format is not supported.']},
+            ]
+        )
+
     def test_bulk_patch_fresh_rrsets_need_records(self):
-        response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_no_records)
+        response = self.client.bulk_patch_rr_sets(self.my_empty_domain.name, payload=self.data_no_records)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, [{}, {'records': ['This field is required for new RRsets.']}])
+        self.assertEqual(response.data, [{}, {'records': ['This field is required.']}])
 
-    def test_bulk_patch_fresh_rrsets_dont_need_subname(self):
-        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
-            response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name,
-                                                      payload=self.data_no_subname)
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+            response = self.client.bulk_patch_rr_sets(self.my_empty_domain.name, payload=self.data_empty_records)
             self.assertStatus(response, status.HTTP_200_OK)
 
-            # Check that RRsets have been created
-            response = self.client.get_rr_sets(self.my_empty_domain.name)
-            self.assertStatus(response, status.HTTP_200_OK)
-            self.assertRRSetsCount(response.data, self.data_no_subname)
+    def test_bulk_patch_fresh_rrsets_need_subname(self):
+        response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_no_subname)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_bulk_patch_fresh_rrsets_need_ttl(self):
         response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_no_ttl)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, [{'ttl': ['This field is required for new RRsets.']}, {}])
+        self.assertEqual(response.data, [{'ttl': ['This field is required.']}, {}])
 
     def test_bulk_patch_fresh_rrsets_need_type(self):
         response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data_no_type)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, [{}, {'type': ['This field is required.']}])
+
+    def test_bulk_patch_does_not_accept_single_objects(self):
+        response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data[0])
+        self.assertContains(response, 'expected a list of RRsets.', status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_bulk_patch_full_on_empty_domain(self):
         # Full patch always works
@@ -103,8 +201,84 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertRRSetsCount(response.data, data_no_records)
 
+    def test_bulk_patch_does_not_need_ttl(self):
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(domain_name=self.bulk_domain.name, payload=self.data_no_ttl),
+            status.HTTP_200_OK,
+        )
+
+    def test_bulk_patch_delete_non_existing_rr_sets(self):
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': 'a', 'type': 'A', 'records': [], 'ttl': 22},
+                    {'subname': 'b', 'type': 'AAAA', 'records': []},
+                ]),
+            status.HTTP_200_OK,
+            [],
+        )
+
+    def test_bulk_patch_missing_invalid_fields_1(self):
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+            self.client.bulk_post_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': '', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
+                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA', 'ttl': 3},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
+                ]
+            )
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
+                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                ]),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'type': ['This field is required.']},
+                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'subname': ['This field is required.']},
+                {},
+                {},
+            ]
+        )
+
+    def test_bulk_patch_missing_invalid_fields_2(self):
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+            self.client.bulk_post_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': '', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
+                ]
+            )
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
+                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                ]),
+            status.HTTP_400_BAD_REQUEST,
+            [
+                {'type': ['This field is required.']},
+                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'subname': ['This field is required.']},
+                {'ttl': ['This field is required.']},
+                {'records': ['This field is required.']},
+            ]
+        )
+
     def test_bulk_put_partial(self):
-        # Need TTL and type and records
+        # Need all fields
         for domain in [self.my_empty_domain, self.bulk_domain]:
             response = self.client.bulk_put_rr_sets(domain_name=domain.name, payload=self.data_no_records)
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
@@ -120,9 +294,21 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
                                              {'ttl': ['This field is required.'],
                                               'records': ['This field is required.']}])
 
+            response = self.client.bulk_put_rr_sets(domain_name=domain.name, payload=self.data_no_subname)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data, [{'subname': ['This field is required.']}, {}])
+
+            response = self.client.bulk_put_rr_sets(domain_name=domain.name, payload=self.data_no_subname_empty_records)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data, [{'subname': ['This field is required.']}, {}])
+
             response = self.client.bulk_put_rr_sets(domain_name=domain.name, payload=self.data_no_type)
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(response.data, [{}, {'type': ['This field is required.']}])
+
+    def test_bulk_put_does_not_accept_single_objects(self):
+        response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data[0])
+        self.assertContains(response, 'expected a list of RRsets.', status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_bulk_put_full(self):
         # Full PUT always works
@@ -139,6 +325,29 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.bulk_put_rr_sets(domain_name=self.bulk_domain.name, payload=self.data)
         self.assertStatus(response, status.HTTP_200_OK)
 
+    def test_bulk_put_invalid_records(self):
+        for records in [
+            'asfd',
+            ['1.1.1.1', '2.2.2.2', 123],
+            ['1.2.3.4', None],
+            [True, '1.1.1.1'],
+            dict(foobar='foobar', asdf='asdf'),
+        ]:
+            s = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=[
+                    {'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': records}
+                ])
+            self.assertStatus(
+                s,
+                status.HTTP_400_BAD_REQUEST
+            )
+
+    def test_bulk_put_empty_records(self):
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.bulk_domain.name)):
+            self.assertStatus(
+                self.client.bulk_put_rr_sets(domain_name=self.bulk_domain.name, payload=self.data_empty_records),
+                status.HTTP_200_OK
+            )
+
     def test_bulk_duplicate_rrset(self):
         data = self.data + self.data
         for bulk_request_rr_sets in [
@@ -148,3 +357,8 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         ]:
             response = bulk_request_rr_sets(domain_name=self.my_empty_domain.name, payload=data)
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+    def test_bulk_patch_or_post_failure_with_single_rrset(self):
+        for method in [self.client.bulk_patch_rr_sets, self.client.bulk_put_rr_sets]:
+            response = method(domain_name=self.my_empty_domain.name, payload=self.data[0])
+            self.assertContains(response, 'Invalid input, expected a list of RRsets.', status_code=400)

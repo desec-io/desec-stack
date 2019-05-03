@@ -1,20 +1,23 @@
+from __future__ import annotations
+
 import datetime
 import random
 import time
 import uuid
 from base64 import b64encode
-from collections import OrderedDict
 from os import urandom
 
 import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, RegexValidator
-from django.db import models, transaction
+from django.db import models
+from django.db.models import Manager
 from django.utils import timezone
+from rest_framework.exceptions import APIException
 
-from desecapi import pdns, mixins
+from desecapi import pdns
 
 
 def validate_lower(value):
@@ -115,22 +118,6 @@ class User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
-    def unlock(self):
-        if self.locked is None:
-            return
-
-        # Create domains on pdns that were created after the account was locked.
-        # Those are obtained using created__gt=self.locked.
-        # Using published=None gives the same result at the time of writing this
-        # comment, but it is not semantically the same. If there ever will be
-        # unpublished domains that are older than the lock, they are not created.
-        for domain in self.domains.filter(created__gt=self.locked):
-            domain.create_on_pdns()
-
-        # Unlock
-        self.locked = None
-        self.save()
-
 
 class Token(rest_framework.authtoken.models.Token):
     key = models.CharField("Key", max_length=40, db_index=True, unique=True)
@@ -155,249 +142,51 @@ class Token(rest_framework.authtoken.models.Token):
         unique_together = (('user', 'user_specific_id'),)
 
 
-class Domain(models.Model, mixins.SetterMixin):
+class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
                             unique=True,
                             validators=[validate_lower,
-                                        RegexValidator(regex=r'^[a-z0-9_.-]+$',
+                                        RegexValidator(regex=r'^[a-z0-9_.-]*[a-z]$',
                                                        message='Domain name malformed.',
                                                        code='invalid_domain_name')
                                         ])
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
-    _dirtyName = False
-
-    def setter_name(self, val):
-        if val != self.name:
-            self._dirtyName = True
-
-        return val
-
-    def clean(self):
-        if self._dirtyName:
-            raise ValidationError('You must not change the domain name.')
 
     @property
     def keys(self):
-        return pdns.get_keys(self) if self.published else None
+        return pdns.get_keys(self)
 
-    @property
-    def pdns_id(self):
-        if '/' in self.name or '?' in self.name:
-            raise SuspiciousOperation('Invalid hostname ' + self.name)
+    def partition_name(self):
+        subname, _, parent_name = self.name.partition('.')
+        return subname, parent_name or None
 
-        # See also pdns code, apiZoneNameToId() in ws-api.cc
-        name = self.name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
-
-        if not name.endswith('.'):
-            name += '.'
-
-        return name
-
-    # This method does not use @transaction.atomic as this could lead to
-    # orphaned zones on pdns.
-    def create_on_pdns(self):
-        """
-        Create zone on pdns
-
-        This method should only be called for new domains when they are created,
-        or when the domain was created with a locked account and not yet propagated.
-        """
-
-        # Throws exception if pdns already knows this zone for some reason
-        # which means that it is not ours and we should not mess with it.
-        # We escalate the exception to let the next level deal with the
-        # response.
-        pdns.create_zone(self, settings.DEFAULT_NS)
-
-        # Update published timestamp on domain
-        self.published = timezone.now()
-        self.save()
-
-        # Make our RRsets consistent with pdns (specifically, NS may exist)
-        self.sync_from_pdns()
-
-        # For domains under our registry, propagate NS and DS delegation RRsets
-        subname, parent_domain = self.name.split('.', 1)
-        if parent_domain in settings.LOCAL_PUBLIC_SUFFIXES:
-            try:
-                parent = Domain.objects.get(name=parent_domain)
-            except Domain.DoesNotExist:
-                pass
-            else:
-                rrsets = RRset.plain_to_rrsets([
-                    {'subname': subname, 'type': 'NS', 'ttl': 3600,
-                     'contents': settings.DEFAULT_NS},
-                    {'subname': subname, 'type': 'DS', 'ttl': 60,
-                     'contents': [ds for k in self.keys for ds in k['ds']]}
-                ], domain=parent)
-                parent.write_rrsets(rrsets)
-
-    @transaction.atomic
-    def sync_from_pdns(self):
-        self.rrset_set.all().delete()
-        rrsets = []
-        rrs = []
-        for rrset_data in pdns.get_rrset_datas(self):
-            if rrset_data['type'] in RRset.RESTRICTED_TYPES:
-                continue
-            records = rrset_data.pop('records')
-            rrset = RRset(**rrset_data)
-            rrsets.append(rrset)
-            rrs.extend([RR(rrset=rrset, content=record) for record in records])
-        RRset.objects.bulk_create(rrsets)
-        RR.objects.bulk_create(rrs)
-
-    @transaction.atomic
-    def write_rrsets(self, rrsets):
-        # Base queryset for all RRsets of the current domain
-        rrset_qs = RRset.objects.filter(domain=self)
-
-        # Set to check RRset uniqueness
-        rrsets_seen = set()
-
-        # We want to return all new, changed, and unchanged RRsets (but not
-        # deleted ones). We store them here, indexed by (subname, type).
-        rrsets_to_return = OrderedDict()
-
-        # Record contents to send to pdns, indexed by their RRset
-        rrsets_for_pdns = {}
-
-        # Always-false Q object: https://stackoverflow.com/a/35894246/6867099
-        q_meaty = models.Q(pk__isnull=True)
-        q_empty = models.Q(pk__isnull=True)
-
-        # Determine which RRsets need to be updated or deleted
-        for rrset, rrs in rrsets.items():
-            if rrset.domain != self:
-                raise ValueError('RRset has wrong domain')
-            if (rrset.subname, rrset.type) in rrsets_seen:
-                raise ValueError('RRset repeated with same subname and type')
-            if rrs is not None and not all(rr.rrset is rrset for rr in rrs):
-                raise ValueError('RR has wrong parent RRset')
-
-            rrsets_seen.add((rrset.subname, rrset.type))
-
-            q = models.Q(subname=rrset.subname, type=rrset.type)
-            if rrs or rrs is None:
-                rrsets_to_return[(rrset.subname, rrset.type)] = rrset
-                q_meaty |= q
-            else:
-                # Set TTL so that pdns does not get confused if missing
-                rrset.ttl = 1
-                rrsets_for_pdns[rrset] = []
-                q_empty |= q
-
-        # Construct querysets representing RRsets that do (not) have RR
-        # contents and lock them
-        qs_meaty = rrset_qs.filter(q_meaty).select_for_update()
-        qs_empty = rrset_qs.filter(q_empty).select_for_update()
-
-        # For existing RRsets, execute TTL updates and/or mark for RR update.
-        # First, let's create a to-do dict; we'll need it later for new RRsets.
-        rrsets_with_new_rrs = []
-        rrsets_meaty_todo = dict(rrsets_to_return)
-        for rrset in qs_meaty.all():
-            rrsets_to_return[(rrset.subname, rrset.type)] = rrset
-
-            rrset_temp = rrsets_meaty_todo.pop((rrset.subname, rrset.type))
-            rrs = {rr.content for rr in rrset.records.all()}
-
-            partial = rrsets[rrset_temp] is None
-            if partial:
-                rrs_temp = rrs
-            else:
-                rrs_temp = {rr.content for rr in rrsets[rrset_temp]}
-
-            # Take current TTL if none was given
-            rrset_temp.ttl = rrset_temp.ttl or rrset.ttl
-
-            changed_ttl = (rrset_temp.ttl != rrset.ttl)
-            changed_rrs = not partial and (rrs_temp != rrs)
-
-            if changed_ttl:
-                rrset.ttl = rrset_temp.ttl
-                rrset.save()
-            if changed_rrs:
-                rrsets_with_new_rrs.append(rrset)
-            if changed_ttl or changed_rrs:
-                rrsets_for_pdns[rrset] = [RR(rrset=rrset, content=rr_content)
-                                          for rr_content in rrs_temp]
-
-        # At this point, rrsets_meaty_todo contains new RRsets only, with
-        # a list of RRs or with None associated.
-        for key, rrset in list(rrsets_meaty_todo.items()):
-            if rrsets[rrset] is None:
-                # None means "don't change RRs". In the context of a new RRset,
-                # this really is no-op, and we do not need to return the RRset.
-                rrsets_to_return.pop((rrset.subname, rrset.type))
-            else:
-                # If there are associated RRs, let's save the RRset. This does
-                # not save the RRs yet.
-                rrsets_with_new_rrs.append(rrset)
-                rrset.save()
-
-            # In either case, send a request to pdns so that we can take
-            # advantage of pdns' type validation check (even if no RRs given).
-            rrsets_for_pdns[rrset] = rrsets[rrset]
-
-        # Repeat lock to make sure new RRsets are also locked
-        rrset_qs.filter(q_meaty).select_for_update()
-
-        # Delete empty RRsets
-        qs_empty.delete()
-
-        # Update contents of modified RRsets
-        RR.objects.filter(rrset__in=rrsets_with_new_rrs).delete()
-        RR.objects.bulk_create([rr
-                                for (rrset, rrs) in rrsets_for_pdns.items()
-                                if rrs and rrset in rrsets_with_new_rrs
-                                for rr in rrs])
-
-        # Update published timestamp on domain
-        self.published = timezone.now()
-        self.save()
-
-        # Send RRsets to pdns
-        if rrsets_for_pdns:
-            pdns.set_rrsets(self, rrsets_for_pdns)
-
-        # Return RRsets
-        return list(rrsets_to_return.values())
-
-    @transaction.atomic
-    def delete(self, *args, **kwargs):
-        # Delete delegation if domain is under our registry
-        subname, parent_domain = self.name.split('.', 1)
-        if parent_domain in settings.LOCAL_PUBLIC_SUFFIXES:
-            try:
-                parent = Domain.objects.get(name=parent_domain)
-            except Domain.DoesNotExist:
-                pass
-            else:
-                rrsets = parent.rrset_set.filter(subname=subname,
-                                                 type__in=['NS', 'DS']).all()
-                parent.write_rrsets({rrset: [] for rrset in rrsets})
-
-        # Delete domain
-        super().delete(*args, **kwargs)
-        pdns.delete_zone(self)
-
-    @transaction.atomic
     def save(self, *args, **kwargs):
-        new = self.pk is None
-        self.clean()
-        self.clean_fields()
+        self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 
-        if new and not self.owner.locked:
-            self.create_on_pdns()
+    def update_delegation(self, child_domain: Domain):
+        child_subname, child_domain_name = child_domain.partition_name()
+        if self.name != child_domain_name:
+            raise ValueError('Cannot update delegation of %s as it is not an immediate child domain of %s.' %
+                             (child_domain.name, self.name))
+
+        if child_domain.pk:
+            # Domain real: set delegation
+            child_keys = child_domain.keys
+            if not child_keys:
+                raise APIException('Cannot delegate %s, as it currently has no keys.' % child_domain.name)
+
+            RRset.objects.create(domain=self, subname=child_subname, type='NS', ttl=3600, contents=settings.DEFAULT_NS)
+            RRset.objects.create(domain=self, subname=child_subname, type='DS', ttl=300,
+                                 contents=[ds for k in child_keys for ds in k['ds']])
+        else:
+            # Domain not real: remove delegation
+            for rrset in self.rrset_set.filter(subname=child_subname, type__in=['NS', 'DS']):
+                rrset.delete()
 
     def __str__(self):
-        """
-        Return domain name.
-        """
         return self.name
 
     class Meta:
@@ -429,113 +218,86 @@ class Donation(models.Model):
 
     def save(self, *args, **kwargs):
         self.iban = self.iban[:6] + "xxx"  # do NOT save account details
-        super().save(*args, **kwargs)  # Call the "real" save() method.
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ('created',)
 
 
-class RRset(models.Model, mixins.SetterMixin):
+class RRsetManager(Manager):
+    def create(self, contents=None, **kwargs):
+        rrset = super().create(**kwargs)
+        for content in contents or []:
+            RR.objects.create(rrset=rrset, content=content)
+        return rrset
+
+
+class RRset(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
-    subname = models.CharField(max_length=178,
-                               blank=True,
-                               validators=[validate_lower,
-                                           RegexValidator(regex=r'^[*]?[a-z0-9_.-]*$',
-                                                          message='Subname malformed.',
-                                                          code='invalid_subname')
-                                           ]
-                               )
-    type = models.CharField(max_length=10,
-                            validators=[validate_upper,
-                                        RegexValidator(regex=r'^[A-Z][A-Z0-9]*$',
-                                                       message='Type malformed.',
-                                                       code='invalid_type')
-                                        ]
-                            )
+    subname = models.CharField(
+        max_length=178,
+        blank=True,
+        validators=[
+            validate_lower,
+            RegexValidator(
+                regex=r'^([*]|(([*][.])?[a-z0-9_.-]*))$',
+                message='Subname can only use (lowercase) a-z, 0-9, ., -, and _, '
+                        'may start with a \'*.\', or just be \'*\'.',
+                code='invalid_subname'
+            )
+        ]
+    )
+    type = models.CharField(
+        max_length=10,
+        validators=[
+            validate_upper,
+            RegexValidator(
+                regex=r'^[A-Z][A-Z0-9]*$',
+                message='Type must be uppercase alphanumeric and start with a letter.',
+                code='invalid_type'
+            )
+        ]
+    )
     ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
-    _dirty = False
+    objects = RRsetManager()
+
     DEAD_TYPES = ('ALIAS', 'DNAME')
     RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT')
 
     class Meta:
         unique_together = (("domain", "subname", "type"),)
 
-    def __init__(self, *args, **kwargs):
-        self._dirties = set()
-        super().__init__(*args, **kwargs)
-
-    def setter_domain(self, val):
-        if val != self.domain:
-            self._dirties.add('domain')
-
-        return val
-
-    def setter_subname(self, val):
-        # On PUT, RRsetSerializer sends None, denoting the unchanged value
-        if val is None:
-            return self.subname
-
-        if val != self.subname:
-            self._dirties.add('subname')
-
-        return val
-
-    def setter_type(self, val):
-        if val != self.type:
-            self._dirties.add('type')
-
-        return val
-
-    def setter_ttl(self, val):
-        if val != self.ttl:
-            self._dirties.add('ttl')
-
-        return val
-
-    def clean(self):
-        errors = {}
-        for field in (self._dirties & {'domain', 'subname', 'type'}):
-            errors[field] = ValidationError(
-                'You cannot change the `%s` field.' % field)
-
-        if errors:
-            raise ValidationError(errors)
-
-    def get_dirties(self):
-        return self._dirties
+    @staticmethod
+    def construct_name(subname, domain_name):
+        return '.'.join(filter(None, [subname, domain_name])) + '.'
 
     @property
     def name(self):
-        return '.'.join(filter(None, [self.subname, self.domain.name])) + '.'
-
-    @transaction.atomic
-    def delete(self, *args, **kwargs):
-        self.domain.write_rrsets({self: []})
-        self._dirties = {}
+        return self.construct_name(self.subname, self.domain.name)
 
     def save(self, *args, **kwargs):
-        # If not new, the only thing that can change is the TTL
-        if self.created is None or 'ttl' in self.get_dirties():
-            self.updated = timezone.now()
-            self.full_clean()
-            # Tell Django to not attempt an update, although the pk is not None
-            kwargs['force_insert'] = (self.created is None)
-            super().save(*args, **kwargs)
-            self._dirties = {}
+        self.updated = timezone.now()
+        self.full_clean(validate_unique=False)
+        super().save(*args, **kwargs)
 
-    @staticmethod
-    def plain_to_rrsets(datas, *, domain):
-        rrsets = {}
-        for data in datas:
-            rrset = RRset(domain=domain, subname=data['subname'],
-                          type=data['type'], ttl=data['ttl'])
-            rrsets[rrset] = [RR(rrset=rrset, content=content)
-                             for content in data['contents']]
-        return rrsets
+    def __str__(self):
+        return '<RRSet domain=%s type=%s subname=%s>' % (self.domain.name, self.type, self.subname)
+
+
+class RRManager(Manager):
+    def bulk_create(self, rrs, **kwargs):
+        ret = super().bulk_create(rrs, **kwargs)
+
+        # For each rrset, save once to update published timestamp and trigger signal for post-save processing
+        rrsets = {rr.rrset for rr in rrs}
+        for rrset in rrsets:
+            rrset.save()
+
+        return ret
 
 
 class RR(models.Model):
@@ -544,3 +306,8 @@ class RR(models.Model):
     # max_length is determined based on the calculation in
     # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
     content = models.CharField(max_length=4092)
+
+    objects = RRManager()
+
+    def __str__(self):
+        return '<RR %s>' % self.content

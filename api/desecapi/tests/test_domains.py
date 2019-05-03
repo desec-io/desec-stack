@@ -6,8 +6,8 @@ from django.core.exceptions import ValidationError
 from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 
-from desecapi.exceptions import PdnsException
 from desecapi.models import Domain
+from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, LockedDomainOwnerTestCase
 
 
@@ -41,7 +41,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         ]:
             with self.assertPdnsRequests(
                 self.requests_desec_domain_creation(name=name)[:-1]  # no serializer, no cryptokeys API call
-            ):
+            ), PDNSChangeTracker():
                 Domain(owner=self.owner, name=name).save()
 
     def test_list_domains(self):
@@ -118,6 +118,15 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 self.assertStatus(response, status.HTTP_201_CREATED)
                 self.assertEqual(len(mail.outbox), 0)
 
+            with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name)):
+                self.assertStatus(
+                    self.client.get(self.reverse('v1:domain-detail', name=name), {'name': name}),
+                    status.HTTP_200_OK
+                )
+                response = self.client.get_rr_sets(name, type='NS', subname='')
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertContainsRRSets(response.data, [dict(subname='', records=settings.DEFAULT_NS, type='NS')])
+
     def test_create_api_known_domain(self):
         url = self.reverse('v1:domain-list')
 
@@ -129,14 +138,25 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 response = self.client.post(url, {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
             response = self.client.post(url, {'name': name})
-            self.assertStatus(response, status.HTTP_409_CONFLICT)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_pdns_known_domain(self):
         url = self.reverse('v1:domain-list')
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])):
             response = self.client.post(url, {'name': name})
-            self.assertStatus(response, status.HTTP_409_CONFLICT)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_domain_with_whitespace(self):
+        for name in [
+            ' ' + self.random_domain_name(),
+            self.random_domain_name() + '  ',
+        ]:
+            self.assertResponse(
+                self.client.post(self.reverse('v1:domain-list'), {'name': name}),
+                status.HTTP_400_BAD_REQUEST,
+                {'name': ['Domain name malformed.']},
+            )
 
     def test_create_public_suffixes(self):
         for name in self.PUBLIC_SUFFIXES:
@@ -146,7 +166,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = 'amazonaws.com'
-        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)[:-1]):
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)[:-1]), PDNSChangeTracker():
             Domain(owner=self.create_user(), name=name).save()
             self.assertTrue(Domain.objects.filter(name=name).exists())
 
@@ -176,7 +196,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         name = '*.' + self.random_domain_name()
         response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("does not match the required pattern." in response.data['name'][0])
+        self.assertTrue("Domain name malformed." in response.data['name'][0])
 
     def test_create_domain_other_parent(self):
         name = 'something.' + self.other_domain.name
@@ -227,21 +247,25 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 class LockedDomainOwnerTestCase1(LockedDomainOwnerTestCase):
 
     def test_create_domains(self):
-        self.assertStatus(
-            self.client.post(self.reverse('v1:domain-list'), {'name': self.random_domain_name()}),
-            status.HTTP_403_FORBIDDEN
-        )
+        name = self.random_domain_name()
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+            self.assertStatus(
+                self.client.post(self.reverse('v1:domain-list'), {'name': name}),
+                status.HTTP_201_CREATED
+            )
 
     def test_update_domains(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
-        data = {'name': self.random_domain_name()}
+        name = self.random_domain_name()
 
         for method in [self.client.patch, self.client.put]:
-            response = method(url, data)
-            self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+            with PDNSChangeTracker():
+                response = method(url, {'name': name})
+                self.assertStatus(response, status.HTTP_400_BAD_REQUEST)  # TODO fix docs, consider to change code
 
-        response = self.client.delete(url)
-        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        with self.assertPdnsRequests(self.requests_desec_domain_deletion(name=self.my_domain.name)):
+            response = self.client.delete(url)
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
     def test_create_rr_sets(self):
         data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
@@ -331,22 +355,16 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
     DYN = True
 
-    def test_unlock_user(self):
-        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
+    def test_create_domain(self):
+        name = self.random_domain_name(suffix=self.AUTO_DELEGATION_DOMAINS)
+        with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
+            self.assertStatus(
+                self.client.post(self.reverse('v1:domain-list'), {'name': name}),
+                status.HTTP_201_CREATED
+            )
 
-        # Users should be able to create domains under auto delegated domains even when locked
-        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-        self.assertStatus(response, status.HTTP_201_CREATED)
-
-        with self.assertPdnsRequests(
-                self.request_pdns_zone_create_already_exists(existing_domains=[name])
-        ), self.assertRaises(PdnsException) as cm:
-            self.owner.unlock()
-
-        self.assertEqual(str(cm.exception), "Domain '" + name + ".' already exists")
-
-        # See what happens upon unlock if this domain is new to pdns
-        with self.assertPdnsRequests(
-                self.requests_desec_domain_creation_auto_delegation(name=name)[:-1]  # No crypto keys retrieved
-        ):
-            self.owner.unlock()
+    def test_create_rrset(self):
+        self.assertStatus(
+            self.client.post_rr_set(self.my_domain.name, type='A', records=['1.1.1.1']),
+            status.HTTP_403_FORBIDDEN
+        )

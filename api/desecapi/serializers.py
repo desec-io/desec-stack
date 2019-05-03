@@ -1,16 +1,14 @@
 import re
 
-import django.core.exceptions
-from django.core.validators import RegexValidator
-from django.db import models, transaction
+from django.db.models import Model, Q
 from djoser import serializers as djoser_serializers
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.fields import empty
+from rest_framework.fields import empty, SkipField, ListField, CharField
+from rest_framework.serializers import ListSerializer
 from rest_framework.settings import api_settings
-from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
+from rest_framework.validators import UniqueTogetherValidator
 
-from desecapi.models import Domain, Donation, User, RR, RRset, Token
+from desecapi.models import Domain, Donation, User, RRset, Token, RR
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -24,37 +22,6 @@ class TokenSerializer(serializers.ModelSerializer):
         read_only_fields = ('created', 'value', 'id')
 
 
-class RRSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RR
-        fields = ('content',)
-
-    def to_internal_value(self, data):
-        if not isinstance(data, dict):
-            data = {'content': data}
-        return super().to_internal_value(data)
-
-
-class RRsetBulkListSerializer(BulkListSerializer):
-    default_error_messages = {'not_a_list': 'Invalid input, expected a list of RRsets.'}
-
-    @transaction.atomic
-    def update(self, queryset, validated_data):
-        q = models.Q(pk__isnull=True)
-        for data in validated_data:
-            q |= models.Q(subname=data.get('subname', ''), type=data['type'])
-        rrsets = {(obj.subname, obj.type): obj for obj in queryset.filter(q)}
-        instance = [rrsets.get((data.get('subname', ''), data['type']), None)
-                    for data in validated_data]
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        return self.child._save(instance, validated_data)
-
-    @transaction.atomic
-    def create(self, validated_data):
-        # noinspection PyUnresolvedReferences,PyProtectedMember
-        return self.child._save([None] * len(validated_data), validated_data)
-
-
 class RequiredOnPartialUpdateCharField(serializers.CharField):
     """
     This field is always required, even for partial updates (e.g. using PATCH).
@@ -66,142 +33,171 @@ class RequiredOnPartialUpdateCharField(serializers.CharField):
         return super().validate_empty_values(data)
 
 
-class SlugRRField(serializers.SlugRelatedField):
-    def __init__(self, *args, **kwargs):
-        kwargs['slug_field'] = 'content'
-        kwargs['queryset'] = RR.objects.all()
-        super().__init__(*args, **kwargs)
+class Validator:
+
+    message = 'This field did not pass validation.'
+
+    def __init__(self, message=None):
+        self.field_name = None
+        self.message = message or self.message
+        self.instance = None
+
+    def __call__(self, value):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return '<%s>' % self.__class__.__name__
+
+
+class ReadOnlyOnUpdateValidator(Validator):
+
+    message = 'Can only be written on create.'
+
+    def set_context(self, serializer_field):
+        """
+        This hook is called by the serializer instance,
+        prior to the validation call being made.
+        """
+        self.field_name = serializer_field.source_attrs[-1]
+        self.instance = getattr(serializer_field.parent, 'instance', None)
+
+    def __call__(self, value):
+        if isinstance(self.instance, Model) and value != getattr(self.instance, self.field_name):
+            raise serializers.ValidationError(self.message, code='read-only-on-update')
+
+
+class StringField(CharField):
 
     def to_internal_value(self, data):
-        return RR(**{self.slug_field: data})
+        return data
+
+    def run_validation(self, data=empty):
+        data = super().run_validation(data)
+        if not isinstance(data, str):
+            raise serializers.ValidationError('Must be a string.', code='must-be-a-string')
+        return data
 
 
-class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
+class RRsField(ListField):
+
+    def __init__(self, **kwargs):
+        super().__init__(child=StringField(), **kwargs)
+
+    def to_representation(self, data):
+        return [rr.content for rr in data.all()]
+
+
+class ConditionalExistenceModelSerializer(serializers.ModelSerializer):
+    """
+    Only considers data with certain condition as existing data.
+    If the existence condition does not hold, given instances are deleted, and no new instances are created,
+    respectively. Also, to_representation and data will return None.
+    Contrary, if the existence condition holds, the behavior is the same as DRF's ModelSerializer.
+    """
+
+    def exists(self, arg):
+        """
+        Determine if arg is to be considered existing.
+        :param arg: Either a model instance or (possibly invalid!) data object.
+        :return: Whether we treat this as non-existing instance.
+        """
+        raise NotImplementedError
+
+    def to_representation(self, instance):
+        return None if not self.exists(instance) else super().to_representation(instance)
+
+    @property
+    def data(self):
+        try:
+            return super().data
+        except TypeError:
+            return None
+
+    def save(self, **kwargs):
+        validated_data = {}
+        validated_data.update(self.validated_data)
+        validated_data.update(kwargs)
+
+        known_instance = self.instance is not None
+        data_exists = self.exists(validated_data)
+
+        if known_instance and data_exists:
+            self.instance = self.update(self.instance, validated_data)
+        elif known_instance and not data_exists:
+            self.delete()
+        elif not known_instance and data_exists:
+            self.instance = self.create(validated_data)
+        elif not known_instance and not data_exists:
+            pass  # nothing to do
+
+        return self.instance
+
+    def delete(self):
+        self.instance.delete()
+
+
+class NonBulkOnlyDefault:
+    """
+    This class may be used to provide default values that are only used
+    for non-bulk operations, but that do not return any value for bulk
+    operations.
+    Implementation inspired by CreateOnlyDefault.
+    """
+    def __init__(self, default):
+        self.default = default
+
+    def set_context(self, serializer_field):
+        # noinspection PyAttributeOutsideInit
+        self.is_many = getattr(serializer_field.root, 'many', False)
+        if callable(self.default) and hasattr(self.default, 'set_context') and not self.is_many:
+            # noinspection PyUnresolvedReferences
+            self.default.set_context(serializer_field)
+
+    def __call__(self):
+        if self.is_many:
+            raise SkipField()
+        if callable(self.default):
+            return self.default()
+        return self.default
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, repr(self.default))
+
+
+class RRsetSerializer(ConditionalExistenceModelSerializer):
     domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    subname = serializers.CharField(
-        allow_blank=True,
-        required=False,
-        validators=[RegexValidator(
-            regex=r'^\*?[a-z\.\-_0-9]*$',
-            message='Subname can only use (lowercase) a-z, 0-9, ., -, and _.',
-            code='invalid_subname'
-        )]
-    )
-    type = RequiredOnPartialUpdateCharField(
-        allow_blank=False,
-        required=True,
-        validators=[RegexValidator(
-            regex=r'^[A-Z][A-Z0-9]*$',
-            message='Type must be uppercase alphanumeric and start with a letter.',
-            code='invalid_type'
-        )]
-    )
-    records = SlugRRField(many=True)
+    records = RRsField(allow_empty=True)
 
     class Meta:
         model = RRset
-        fields = ('id', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
-        list_serializer_class = RRsetBulkListSerializer
+        fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
+        extra_kwargs = {
+            'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
+        }
 
-    def _save(self, instance, validated_data):
-        bulk = isinstance(instance, list)
-        if not bulk:
-            instance = [instance]
-            validated_data = [validated_data]
+    def __init__(self, instance=None, data=empty, domain=None, **kwargs):
+        if domain is None:
+            raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
+        self.domain = domain
+        super().__init__(instance, data, **kwargs)
 
-        name = self.context['view'].kwargs['name']
-        domain = self.context['request'].user.domains.get(name=name)
-        method = self.context['request'].method
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        domain = kwargs.pop('domain')
+        kwargs['child'] = cls(domain=domain)
+        return RRsetListSerializer(*args, **kwargs)
 
-        errors = []
-        rrsets = {}
-        rrsets_seen = set()
-        for rrset, data in zip(instance, validated_data):
-            # Construct RRset
-            records = data.pop('records', None)
-            if rrset:
-                # We have a known instance (update). Update fields if given.
-                rrset.subname = data.get('subname', rrset.subname)
-                rrset.type = data.get('type', rrset.type)
-                rrset.ttl = data.get('ttl', rrset.ttl)
-            else:
-                # No known instance (creation)
-                rrset_errors = {}
-                if 'ttl' not in data:
-                    rrset_errors['ttl'] = ['This field is required for new RRsets.']
-                if records is None:
-                    rrset_errors['records'] = ['This field is required for new RRsets.']
-                if rrset_errors:
-                    errors.append(rrset_errors)
-                    continue
-                data.pop('id', None)
-                data['domain'] = domain
-                rrset = RRset(**data)
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['subname'].validators.append(ReadOnlyOnUpdateValidator())
+        fields['type'].validators.append(ReadOnlyOnUpdateValidator())
+        return fields
 
-            # Verify that we have not seen this RRset before
-            if (rrset.subname, rrset.type) in rrsets_seen:
-                errors.append({'__all__': ['RRset repeated with same subname and type.']})
-                continue
-            rrsets_seen.add((rrset.subname, rrset.type))
-
-            # Validate RRset. Raises error if type or subname have been changed
-            # or if new RRset is not unique.
-            validate_unique = (method == 'POST')
-            try:
-                rrset.full_clean(exclude=['updated'],
-                                 validate_unique=validate_unique)
-            except django.core.exceptions.ValidationError as e:
-                errors.append(e.message_dict)
-                continue
-
-            # Construct dictionary of RR lists to write, indexed by their RRset
-            if records is None:
-                rrsets[rrset] = None
-            else:
-                rr_data = [{'content': x.content} for x in records]
-
-                # Use RRSerializer to validate records inputs
-                allow_empty = (method in ('PATCH', 'PUT'))
-                rr_serializer = RRSerializer(data=rr_data, many=True,
-                                             allow_empty=allow_empty)
-
-                if not rr_serializer.is_valid():
-                    error = rr_serializer.errors
-                    if api_settings.NON_FIELD_ERRORS_KEY in error:
-                        error['records'] = error.pop(api_settings.NON_FIELD_ERRORS_KEY)
-                    errors.append(error)
-                    continue
-
-                # Blessings have been given, so add RRset to the to-write dict
-                rrsets[rrset] = [RR(rrset=rrset, **rr_validated_data)
-                                 for rr_validated_data in rr_serializer.validated_data]
-
-            errors.append({})
-
-        if any(errors):
-            raise ValidationError(errors if bulk else errors[0])
-
-        # Now try to save RRsets
-        try:
-            rrsets = domain.write_rrsets(rrsets)
-        except django.core.exceptions.ValidationError as e:
-            for attr in ['errors', 'error_dict', 'message']:
-                detail = getattr(e, attr, None)
-                if detail:
-                    raise ValidationError(detail)
-            raise ValidationError(str(e))
-        except ValueError as e:
-            raise ValidationError({'__all__': str(e)})
-
-        return rrsets if bulk else rrsets[0]
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        return self._save(instance, validated_data)
-
-    @transaction.atomic
-    def create(self, validated_data):
-        return self._save(None, validated_data)
+    def get_validators(self):
+        return [UniqueTogetherValidator(
+            self.domain.rrset_set, ('subname', 'type'),
+            message='Another RRset with the same subdomain and type exists for this domain.'
+        )]
 
     @staticmethod
     def validate_type(value):
@@ -216,18 +212,221 @@ class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
                 "Generic type format is not supported.")
         return value
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.pop('id')
-        return data
+    def validate_records(self, value):
+        # `records` is usually allowed to be empty (for idempotent delete), except for POST requests which are intended
+        # for RRset creation only. We use the fact that DRF generic views pass the request in the serializer context.
+        request = self.context.get('request')
+        if request and request.method == 'POST' and not value:
+            raise serializers.ValidationError('This field must not be empty when using POST.')
+        return value
+
+    def exists(self, arg):
+        if isinstance(arg, RRset):
+            return arg.records.exists()
+        else:
+            return bool(arg.get('records')) if 'records' in arg.keys() else True
+
+    def create(self, validated_data):
+        rrs_data = validated_data.pop('records')
+        rrset = RRset.objects.create(**validated_data)
+        self._set_all_record_contents(rrset, rrs_data)
+        return rrset
+
+    def update(self, instance: RRset, validated_data):
+        rrs_data = validated_data.pop('records', None)
+        if rrs_data is not None:
+            self._set_all_record_contents(instance, rrs_data)
+
+        ttl = validated_data.pop('ttl', None)
+        if ttl and instance.ttl != ttl:
+            instance.ttl = ttl
+            instance.save()
+
+        return instance
+
+    @staticmethod
+    def _set_all_record_contents(rrset: RRset, record_contents):
+        """
+        Updates this RR set's resource records, discarding any old values.
+
+        To do so, two large select queries and one query per changed (added or removed) resource record are needed.
+
+        Changes are saved to the database immediately.
+
+        :param rrset: the RRset at which we overwrite all RRs
+        :param record_contents: set of strings
+        """
+        # Remove RRs that we didn't see in the new list
+        removed_rrs = rrset.records.exclude(content__in=record_contents)  # one SELECT
+        for rr in removed_rrs:
+            rr.delete()  # one DELETE query
+
+        # Figure out which entries in record_contents have not changed
+        unchanged_rrs = rrset.records.filter(content__in=record_contents)  # one SELECT
+        unchanged_content = [unchanged_rr.content for unchanged_rr in unchanged_rrs]
+        added_content = filter(lambda c: c not in unchanged_content, record_contents)
+
+        rrs = [RR(rrset=rrset, content=content) for content in added_content]
+        RR.objects.bulk_create(rrs)  # One INSERT
+
+
+class RRsetListSerializer(ListSerializer):
+    default_error_messages = {'not_a_list': 'Invalid input, expected a list of RRsets.'}
+
+    @staticmethod
+    def _key(data_item):
+        return data_item.get('subname', None), data_item.get('type', None)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, list):
+            message = self.error_messages['not_a_list'].format(input_type=type(data).__name__)
+            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: [message]}, code='not_a_list')
+
+        if not self.allow_empty and len(data) == 0:
+            if self.parent and self.partial:
+                raise SkipField()
+            else:
+                self.fail('empty')
+
+        ret = []
+        errors = []
+        partial = self.partial
+
+        # build look-up objects for instances and data, so we can look them up with their keys
+        try:
+            known_instances = {(x.subname, x.type): x for x in self.instance}
+        except TypeError:  # in case self.instance is None (as during POST)
+            known_instances = {}
+        indices_by_key = {}
+        for idx, item in enumerate(data):
+            items = indices_by_key.setdefault(self._key(item), set())
+            items.add(idx)
+
+        # Iterate over all rows in the data given
+        for idx, item in enumerate(data):
+            try:
+                # see if other rows have the same key
+                if len(indices_by_key[self._key(item)]) > 1:
+                    raise serializers.ValidationError({
+                        '__all__': [
+                            'Same subname and type as in position(s) %s, but must be unique.' %
+                            ', '.join(map(str, indices_by_key[self._key(item)] - {idx}))
+                        ]
+                    })
+
+                # determine if this is a partial update (i.e. PATCH):
+                # we allow partial update if a partial update method (i.e. PATCH) is used, as indicated by self.partial,
+                # and if this is not actually a create request because it is unknown and nonempty
+                unknown = self._key(item) not in known_instances.keys()
+                nonempty = item.get('records', None) != []
+                self.partial = partial and not (unknown and nonempty)
+                self.child.instance = known_instances.get(self._key(item), None)
+
+                # with partial value and instance in place, let the validation begin!
+                validated = self.child.run_validation(item)
+            except serializers.ValidationError as exc:
+                errors.append(exc.detail)
+            else:
+                ret.append(validated)
+                errors.append({})
+
+        self.partial = partial
+
+        if any(errors):
+            raise serializers.ValidationError(errors)
+
+        return ret
+
+    def update(self, instance, validated_data):
+        """
+        Creates, updates and deletes RRsets according to the validated_data given. Relevant instances must be passed as
+        a queryset in the `instance` argument.
+
+        RRsets that appear in `instance` are considered "known", other RRsets are considered "unknown". RRsets that
+        appear in `validated_data` with records == [] are considered empty, otherwise non-empty.
+
+        The update proceeds as follows:
+        1. All unknown, non-empty RRsets are created.
+        2. All known, non-empty RRsets are updated.
+        3. All known, empty RRsets are deleted.
+        4. Unknown, empty RRsets will not cause any action.
+
+        Rationale:
+        As both "known"/"unknown" and "empty"/"non-empty" are binary partitions on `everything`, the combination of
+        both partitions `everything` in four disjoint subsets. Hence, every RRset in `everything` is taken care of.
+
+                   empty   |  non-empty
+        ------- | -------- | -----------
+        known   |  delete  |   update
+        unknown |  no-op   |   create
+
+        :param instance: QuerySet of relevant RRset objects, i.e. the Django.Model subclass instances. Relevant are all
+        instances that are referenced in `validated_data`. If a referenced RRset is missing from instances, it will be
+        considered unknown and hence be created. This may cause a database integrity error. If an RRset is given, but
+        not relevant (i.e. not referred to by `validated_data`), a ValueError will be raised.
+        :param validated_data: List of RRset data objects, i.e. dictionaries.
+        :return: List of RRset objects (Django.Model subclass) that have been created or updated.
+        """
+        def is_empty(data_item):
+            return data_item.get('records', None) == []
+
+        query = Q()
+        for item in validated_data:
+            query |= Q(type=item['type'], subname=item['subname'])  # validation has ensured these fields exist
+        instance = instance.filter(query)
+
+        instance_index = {(rrset.subname, rrset.type): rrset for rrset in instance}
+        data_index = {self._key(data): data for data in validated_data}
+
+        if data_index.keys() | instance_index.keys() != data_index.keys():
+            raise ValueError('Given set of known RRsets (`instance`) is not a subset of RRsets referred to in'
+                             '`validated_data`. While this would produce a correct result, this is illegal due to its'
+                             ' inefficiency.')
+
+        everything = instance_index.keys() | data_index.keys()
+        known = instance_index.keys()
+        unknown = everything - known
+        # noinspection PyShadowingNames
+        empty = {self._key(data) for data in validated_data if is_empty(data)}
+        nonempty = everything - empty
+
+        # noinspection PyUnusedLocal
+        noop = unknown & empty
+        created = unknown & nonempty
+        updated = known & nonempty
+        deleted = known & empty
+
+        ret = []
+        for subname, type_ in created:
+            ret.append(self.child.create(
+                validated_data=data_index[(subname, type_)]
+            ))
+
+        for subname, type_ in updated:
+            ret.append(self.child.update(
+                instance=instance_index[(subname, type_)],
+                validated_data=data_index[(subname, type_)]
+            ))
+
+        for subname, type_ in deleted:
+            instance_index[(subname, type_)].delete()
+
+        return ret
 
 
 class DomainSerializer(serializers.ModelSerializer):
-    name = serializers.RegexField(regex=r'^[a-z0-9_.-]+$', max_length=191, trim_whitespace=False)
 
     class Meta:
         model = Domain
         fields = ('created', 'published', 'name', 'keys')
+        extra_kwargs = {
+            'name': {'trim_whitespace': False}
+        }
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['name'].validators.append(ReadOnlyOnUpdateValidator())
+        return fields
 
 
 class DonationSerializer(serializers.ModelSerializer):
