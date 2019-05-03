@@ -83,7 +83,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_bulk_patch_change_records(self):
         data_no_ttl = copy.deepcopy(self.data_no_ttl)
-        data_no_ttl[0]['records'] = ['4.3.2.1']
+        data_no_ttl[0]['records'] = ['4.3.2.1', '8.8.1.2']
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.bulk_domain.name)):
             response = self.client.bulk_patch_rr_sets(domain_name=self.bulk_domain.name, payload=data_no_ttl)
             self.assertStatus(response, status.HTTP_200_OK)

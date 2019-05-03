@@ -834,9 +834,15 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
 
     @staticmethod
     def _count_occurrences_by_mask(rr_sets, masks):
+        def _cmp(key, a, b):
+            if key == 'records':
+                a = sorted(a)
+                b = sorted(b)
+            return a == b
+
         def _filter_rr_sets_by_mask(rr_sets_, mask):
             return [rr_set for rr_set in rr_sets_
-                    if reduce(operator.and_, [rr_set.get(key, None) == value for key, value in mask.items()])
+                    if reduce(operator.and_, [_cmp(key, rr_set.get(key, None), value) for key, value in mask.items()])
             ]
 
         return [len(_filter_rr_sets_by_mask(rr_sets, mask)) for mask in masks]
