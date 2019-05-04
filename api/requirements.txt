@@ -1,6 +1,6 @@
 Django~=2.2.0
 mysqlclient~=1.4.0
-djangorestframework~=3.7.0  # djangorestframework-bulk 0.2.0 stops us from upgrading to 3.8
+djangorestframework~=3.9.3
 djoser~=1.5.1
 dnspython~=1.16.0
 httpretty~=0.9.0
