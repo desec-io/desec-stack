@@ -9,6 +9,7 @@ import django.core.exceptions
 import djoser.views
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.mail import EmailMessage
+from django.db import IntegrityError
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
@@ -37,6 +38,7 @@ from desecapi.emails import send_account_lock_email, send_token_email
 from desecapi.forms import UnlockForm
 from desecapi.models import Domain, User, RRset, Token
 from desecapi.permissions import IsOwner, IsUnlockedOrDyn, IsUnlocked, IsDomainOwner
+from desecapi.pdns import PdnsException
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer
 
@@ -133,16 +135,15 @@ class DomainList(generics.ListCreateAPIView):
 
         try:
             obj = serializer.save(owner=self.request.user)
-        except Exception as e:
-            if str(e).endswith(' already exists'):
-                ex = ValidationError(detail={
-                    "detail": "This domain name is unavailable.",
-                    "code": "domain-unavailable"}
-                )
-                ex.status_code = status.HTTP_409_CONFLICT
-                raise ex
-            else:
+        except (IntegrityError, PdnsException) as e:
+            if isinstance(e, PdnsException) and not str(e).endswith(' already exists'):
                 raise e
+            ex = ValidationError(detail={
+                "detail": "This domain name is unavailable.",
+                "code": "domain-unavailable"}
+            )
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
 
         def send_dyn_dns_email(domain):
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
