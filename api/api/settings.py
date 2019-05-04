@@ -140,6 +140,9 @@ AUTH_USER_MODEL = 'desecapi.User'
 # default NS records
 DEFAULT_NS = ['ns1.desec.io.', 'ns2.desec.io.']
 
+# Public Suffix settings
+LOCAL_PUBLIC_SUFFIXES = {'dedyn.io'}
+
 # PowerDNS API access
 NSLORD_PDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
 NSLORD_PDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']

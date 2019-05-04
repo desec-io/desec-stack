@@ -218,11 +218,11 @@ class Domain(models.Model, mixins.SetterMixin):
         # Make our RRsets consistent with pdns (specifically, NS may exist)
         self.sync_from_pdns()
 
-        # For dedyn.io domains, propagate NS and DS delegation RRsets
-        subname, parent_pdns_id = self.pdns_id.split('.', 1)
-        if parent_pdns_id == 'dedyn.io.':
+        # For domains under our registry, propagate NS and DS delegation RRsets
+        subname, parent_domain = self.name.split('.', 1)
+        if parent_domain in settings.LOCAL_PUBLIC_SUFFIXES:
             try:
-                parent = Domain.objects.get(name='dedyn.io')
+                parent = Domain.objects.get(name=parent_domain)
             except Domain.DoesNotExist:
                 pass
             else:
@@ -368,11 +368,11 @@ class Domain(models.Model, mixins.SetterMixin):
 
     @transaction.atomic
     def delete(self, *args, **kwargs):
-        # Delete delegation for dynDNS domains (direct child of dedyn.io)
-        subname, parent_pdns_id = self.pdns_id.split('.', 1)
-        if parent_pdns_id == 'dedyn.io.':
+        # Delete delegation if domain is under our registry
+        subname, parent_domain = self.name.split('.', 1)
+        if parent_domain in settings.LOCAL_PUBLIC_SUFFIXES:
             try:
-                parent = Domain.objects.get(name='dedyn.io')
+                parent = Domain.objects.get(name=parent_domain)
             except Domain.DoesNotExist:
                 pass
             else:

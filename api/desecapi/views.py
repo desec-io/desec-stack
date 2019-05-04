@@ -114,8 +114,7 @@ class DomainList(generics.ListCreateAPIView):
         domain_list = {'.'.join(domain_parts[i:]) for i in range(1, len(domain_parts))}
 
         # Remove public suffixes and then use this list to control registration
-        public_suffixes = {'dedyn.io'}
-        domain_list = domain_list - public_suffixes
+        domain_list -= settings.LOCAL_PUBLIC_SUFFIXES
 
         queryset = Domain.objects.filter(Q(name=domain_name) | (Q(name__in=domain_list) & ~Q(owner=self.request.user)))
         if queryset.exists():

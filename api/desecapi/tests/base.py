@@ -525,7 +525,7 @@ class DesecTestCase(MockPDNSTestCase):
     """
     client_class = DesecAPIClient
 
-    AUTO_DELEGATION_DOMAINS = ['dedyn.io']  # TODO replace with project wide settings
+    AUTO_DELEGATION_DOMAINS = list(settings.LOCAL_PUBLIC_SUFFIXES)
     PUBLIC_SUFFIXES = ['de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no', 'kota.aichi.jp']
 
     @classmethod
