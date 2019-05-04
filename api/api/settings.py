@@ -141,6 +141,7 @@ AUTH_USER_MODEL = 'desecapi.User'
 DEFAULT_NS = ['ns1.desec.io.', 'ns2.desec.io.']
 
 # Public Suffix settings
+PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
 LOCAL_PUBLIC_SUFFIXES = {'dedyn.io'}
 
 # PowerDNS API access

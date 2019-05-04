@@ -1,8 +1,10 @@
+import logging
+
 from django.db.utils import OperationalError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
-import logging
+from psl_dns.exceptions import UnsupportedRule
 
 
 def exception_handler(exc, context):
@@ -38,5 +40,8 @@ def exception_handler(exc, context):
     # Catch it and log an extra error for additional context.
     if isinstance(exc, OSError):
         return _perform_handling('OSError')
+
+    if isinstance(exc, UnsupportedRule):
+        return _perform_handling('UnsupportedRule')
 
     return drf_exception_handler(exc, context)

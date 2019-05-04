@@ -1,9 +1,11 @@
 import base64
-from functools import reduce
+from contextlib import nullcontext
+from functools import partial, reduce
 import operator
 import random
 import re
 import string
+from unittest import mock
 
 from django.utils import timezone
 from httpretty import httpretty, core as hr_core
@@ -13,6 +15,7 @@ from rest_framework.utils import json
 
 from api import settings
 from desecapi.models import User, Domain, Token, RRset, RR
+from desecapi.views import DomainList
 
 
 class DesecAPIClient(APIClient):
@@ -525,8 +528,9 @@ class DesecTestCase(MockPDNSTestCase):
     """
     client_class = DesecAPIClient
 
-    AUTO_DELEGATION_DOMAINS = list(settings.LOCAL_PUBLIC_SUFFIXES)
-    PUBLIC_SUFFIXES = ['de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no', 'kota.aichi.jp']
+    AUTO_DELEGATION_DOMAINS = settings.LOCAL_PUBLIC_SUFFIXES
+    PUBLIC_SUFFIXES = {'de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no',
+                       'kota.aichi.jp', 's3.amazonaws.com', 'wildcard.ck'}
 
     @classmethod
     def reverse(cls, view_name, **kwargs):
@@ -564,13 +568,15 @@ class DesecTestCase(MockPDNSTestCase):
 
     @classmethod
     def random_username(cls, host=None):
-        host = host or cls.random_domain_name(suffix=random.choice(cls.PUBLIC_SUFFIXES))
+        host = host or cls.random_domain_name(cls.PUBLIC_SUFFIXES)
         return cls.random_string() + '+test@' + host.lower()
 
     @classmethod
     def random_domain_name(cls, suffix=None):
         if not suffix:
-            suffix = random.choice(cls.PUBLIC_SUFFIXES)
+            suffix = cls.PUBLIC_SUFFIXES
+        if isinstance(suffix, set):
+            suffix = random.sample(suffix, 1)[0]
         return (random.choice(string.ascii_letters) + cls.random_string() + '--test' + '.' + suffix).lower()
 
     @classmethod
@@ -591,7 +597,7 @@ class DesecTestCase(MockPDNSTestCase):
     @classmethod
     def create_domain(cls, suffix=None, **kwargs):
         kwargs.setdefault('owner', cls.create_user())
-        kwargs.setdefault('name', cls.random_domain_name(suffix=suffix))
+        kwargs.setdefault('name', cls.random_domain_name(suffix))
         domain = Domain(**kwargs)
         domain.save()
         return domain
@@ -679,6 +685,37 @@ class DomainOwnerTestCase(DesecTestCase):
     other_domain = None
     token = None
 
+    def _mock_get_public_suffix(self, domain_name, public_suffixes=None):
+        if public_suffixes is None:
+            public_suffixes = settings.LOCAL_PUBLIC_SUFFIXES | self.PUBLIC_SUFFIXES
+        # Poor man's PSL interpreter. First, find all known suffixes covering the domain.
+        suffixes = [suffix for suffix in public_suffixes
+                    if '.{}'.format(domain_name).endswith('.{}'.format(suffix))]
+        # Also, consider TLD.
+        suffixes += [domain_name.rsplit('.')[-1]]
+        # Select the candidate with the most labels.
+        return max(suffixes, key=lambda suffix: suffix.count('.'))
+
+    @staticmethod
+    def _mock_is_public_suffix(name):
+        return name == DomainList.psl.get_public_suffix(name)
+
+    def get_psl_context_manager(self, side_effect_parameter):
+        if side_effect_parameter is None:
+            return nullcontext()
+
+        if callable(side_effect_parameter):
+            side_effect = side_effect_parameter
+        else:
+            side_effect = partial(self._mock_get_public_suffix, public_suffixes=[side_effect_parameter])
+
+        return mock.patch.object(DomainList.psl, 'get_public_suffix', side_effect=side_effect)
+
+    def setUpMockPatch(self):
+        mock.patch.object(DomainList.psl, 'get_public_suffix', side_effect=self._mock_get_public_suffix).start()
+        mock.patch.object(DomainList.psl, 'is_public_suffix', side_effect=self._mock_is_public_suffix).start()
+        self.addCleanup(mock.patch.stopall)
+
     @classmethod
     def setUpTestDataWithPdns(cls):
         super().setUpTestDataWithPdns()
@@ -686,11 +723,11 @@ class DomainOwnerTestCase(DesecTestCase):
         cls.owner = cls.create_user(dyn=cls.DYN)
 
         cls.my_domains = [
-            cls.create_domain(suffix=random.choice(cls.AUTO_DELEGATION_DOMAINS) if cls.DYN else None, owner=cls.owner)
+            cls.create_domain(suffix=cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None, owner=cls.owner)
             for _ in range(cls.NUM_OWNED_DOMAINS)
         ]
         cls.other_domains = [
-            cls.create_domain(suffix=random.choice(cls.AUTO_DELEGATION_DOMAINS) if cls.DYN else None)
+            cls.create_domain(suffix=cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None)
             for _ in range(cls.NUM_OTHER_DOMAINS)
         ]
 
@@ -705,6 +742,7 @@ class DomainOwnerTestCase(DesecTestCase):
     def setUp(self):
         super().setUp()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.setUpMockPatch()
 
 
 class LockedDomainOwnerTestCase(DomainOwnerTestCase):

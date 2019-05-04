@@ -7,6 +7,7 @@ from datetime import timedelta
 
 import django.core.exceptions
 import djoser.views
+import psl_dns
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.mail import EmailMessage
 from django.db import IntegrityError
@@ -43,7 +44,7 @@ from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer, RRsetSerializer, DonationSerializer, TokenSerializer
 
 patternDyn = re.compile(r'^[A-Za-z-][A-Za-z0-9_-]*\.dedyn\.io$')
-patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)+[A-Za-z]+$')
+patternNonDyn = re.compile(r'^([A-Za-z0-9-][A-Za-z0-9_-]*\.)*[A-Za-z]+$')
 
 
 class TokenCreateView(djoser.views.TokenCreateView):
@@ -96,13 +97,16 @@ class TokenViewSet(mixins.CreateModelMixin,
 class DomainList(generics.ListCreateAPIView):
     serializer_class = DomainSerializer
     permission_classes = (IsAuthenticated, IsOwner, IsUnlockedOrDyn,)
+    psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
 
     def get_queryset(self):
         return Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
+        domain_name = serializer.validated_data['name']
+
         pattern = patternDyn if self.request.user.dyn else patternNonDyn
-        if pattern.match(serializer.validated_data['name']) is None:
+        if pattern.match(domain_name) is None:
             ex = ValidationError(detail={
                 "detail": "This domain name is not well-formed, by policy.",
                 "code": "domain-illformed"}
@@ -110,16 +114,32 @@ class DomainList(generics.ListCreateAPIView):
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
-        # Generate a list containing this and all higher-level domain names
-        domain_name = serializer.validated_data['name']
-        domain_parts = domain_name.split('.')
-        domain_list = {'.'.join(domain_parts[i:]) for i in range(1, len(domain_parts))}
+        # Check if domain is a public suffix
+        try:
+            public_suffix = self.psl.get_public_suffix(domain_name)
+            is_public_suffix = self.psl.is_public_suffix(domain_name)
+        except psl_dns.exceptions.UnsupportedRule as e:
+            # It would probably be fine to just create the domain (with the TLD acting as the
+            # public suffix and setting both public_suffix and is_public_suffix accordingly).
+            # However, in order to allow to investigate the situation, it's better not catch
+            # this exception. Our error handler turns it into a 503 error and makes sure
+            # admins are notified.
+            raise e
 
-        # Remove public suffixes and then use this list to control registration
-        domain_list -= settings.LOCAL_PUBLIC_SUFFIXES
+        is_restricted_suffix = is_public_suffix and domain_name not in settings.LOCAL_PUBLIC_SUFFIXES
 
-        queryset = Domain.objects.filter(Q(name=domain_name) | (Q(name__in=domain_list) & ~Q(owner=self.request.user)))
-        if queryset.exists():
+        # Generate a list of all domains connecting this one and its public suffix.
+        # If another user owns a zone with one of these names, then the requested
+        # domain is unavailable because it is part of the other user's zone.
+        private_components = domain_name.rsplit(public_suffix, 1)[0].rstrip('.')
+        private_components = private_components.split('.') if private_components else []
+        private_components += [public_suffix]
+        private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components) - 1)]
+        assert is_public_suffix or domain_name == private_domains[0]
+
+        # Deny registration for non-local public suffixes and for domains covered by other users' zones
+        queryset = Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=self.request.user))
+        if is_restricted_suffix or queryset.exists():
             ex = ValidationError(detail={"detail": "This domain name is unavailable.", "code": "domain-unavailable"})
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex

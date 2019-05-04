@@ -9,3 +9,4 @@ uwsgi~=2.0.0
 django-nocaptcha-recaptcha==0.0.20  # updated manually
 djangorestframework-bulk~=0.2.0
 coverage~=4.5.3
+psl-dns~=1.0rc2

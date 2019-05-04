@@ -103,9 +103,20 @@ and with ``409 Conflict`` otherwise.  This can happen, for example, if there
 already is a domain with the same name or if the domain name is considered
 invalid for policy reasons.
 
-Restrictions on what is a valid domain name apply on a per-user basis.  The
-response body *may* provide further, human-readable information on the policy
-violation that occurred.
+The response body *may* provide further, human-readable information on the
+policy violation that occurred.
+
+Restrictions on what is a valid domain name apply.  In particular, domains
+listed on the `Public Suffix List`_ cannot be registered.  (If you operate a
+public suffix and would like to host it with deSEC, that's certainly possible;
+please contact our support.)
+
+.. _Public Suffix List: https://publicsuffix.org/
+
+Furthermore, restrictions on a per-user basis may apply.  In particular, the
+number of domains a user can create is limited.  If you find yourself affected
+by this limit although you have a legitimate use case, please contact our
+support.
 
 
 Listing Domains

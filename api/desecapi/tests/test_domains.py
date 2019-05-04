@@ -1,9 +1,9 @@
 import json
-import random
 
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
+from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 
 from desecapi.exceptions import PdnsException
@@ -137,6 +137,40 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         with self.assertPdnsRequests(self.request_pdns_zone_create_already_exists(existing_domains=[name])):
             response = self.client.post(url, {'name': name})
             self.assertStatus(response, status.HTTP_409_CONFLICT)
+
+    def test_create_public_suffixes(self):
+        for name in self.PUBLIC_SUFFIXES:
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertStatus(response, status.HTTP_409_CONFLICT)
+            self.assertEqual(response.data['code'], 'domain-unavailable')
+
+    def test_create_domain_under_public_suffix_with_private_parent(self):
+        name = 'amazonaws.com'
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)[:-1]):
+            Domain(owner=self.create_user(), name=name).save()
+            self.assertTrue(Domain.objects.filter(name=name).exists())
+
+        # If amazonaws.com is owned by another user, we cannot register test.s4.amazonaws.com
+        name = 'test.s4.amazonaws.com'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+        self.assertStatus(response, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'domain-unavailable')
+
+        # s3.amazonaws.com is a public suffix. Therefore, test.s3.amazonaws.com can be
+        # registered even if the parent zone amazonaws.com is owned by another user
+        name = 'test.s3.amazonaws.com'
+        psl_cm = self.get_psl_context_manager('s3.amazonaws.com')
+        with psl_cm, self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertStatus(response, status.HTTP_201_CREATED)
+
+    def test_create_domain_under_unsupported_public_suffix_rule(self):
+        # Show lenience if the PSL library produces an UnsupportedRule exception
+        name = 'unsupported.wildcard.test'
+        psl_cm = self.get_psl_context_manager(UnsupportedRule)
+        with psl_cm, self.assertPdnsRequests():
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertStatus(response, status.HTTP_503_SERVICE_UNAVAILABLE)
 
     def test_create_domain_policy(self):
         name = '*.' + self.random_domain_name()
@@ -283,13 +317,13 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
 
         for i in range(user_quota):
-            name = self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))
+            name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
             with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
                 response = self.client.post(url, {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
                 self.assertEqual(len(mail.outbox), i + 1)
 
-        response = self.client.post(url, {'name': self.random_domain_name(random.choice(self.AUTO_DELEGATION_DOMAINS))})
+        response = self.client.post(url, {'name': self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)})
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(mail.outbox), user_quota)
 
@@ -298,7 +332,7 @@ class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):
     DYN = True
 
     def test_unlock_user(self):
-        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS[0])
+        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
 
         # Users should be able to create domains under auto delegated domains even when locked
         response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
