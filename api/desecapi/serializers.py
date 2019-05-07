@@ -77,7 +77,7 @@ class SlugRRField(serializers.SlugRelatedField):
 
 
 class RRsetSerializer(BulkSerializerMixin, serializers.ModelSerializer):
-    domain = serializers.StringRelatedField()
+    domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
     subname = serializers.CharField(
         allow_blank=True,
         required=False,

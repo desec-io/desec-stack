@@ -396,8 +396,7 @@ class Domain(models.Model, mixins.SetterMixin):
 
     def __str__(self):
         """
-        Return domain name.  Needed for serialization via StringRelatedField.
-        (Must be unique.)
+        Return domain name.
         """
         return self.name
 
