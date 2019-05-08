@@ -88,7 +88,7 @@ REST_FRAMEWORK = {
         'desecapi.authentication.TokenAuthentication',
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
-    'EXCEPTION_HANDLER': 'desecapi.exception_handlers.handle_db_unavailable',
+    'EXCEPTION_HANDLER': 'desecapi.exception_handlers.exception_handler',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'ALLOWED_VERSIONS': ['v1', 'v2'],
 }
