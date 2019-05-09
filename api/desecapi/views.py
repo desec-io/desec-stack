@@ -519,13 +519,6 @@ class UserCreateView(views.UserCreateView):
     Extends the djoser UserCreateView to record the remote IP address of any registration.
     """
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
     def perform_create(self, serializer):
         remote_ip = self.request.META.get('REMOTE_ADDR')
         lock = (
