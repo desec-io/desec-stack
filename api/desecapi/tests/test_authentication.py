@@ -15,18 +15,18 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             self.client.set_credentials_basic_auth(authorization)
         self.assertStatus(self._get_dyndns12(), status)
 
-    def assertDynDNS12AuthenticationStatus(self, username, token, status):
-        # Note that this overwrites self.client's credentials, which may be unexpected
-        self.client.set_credentials_basic_auth(username, token)
-        self.assertDynDNS12Status(status)
-
     def test_username_password(self):
-        # FIXME the following test fails
-        # self.assertDyndns12AuthenticationStatus(self.user.get_username(), self.token.key, HTTP_200_OK)
-        self.assertDynDNS12AuthenticationStatus('', self.token.key, HTTP_200_OK)
-        self.assertDynDNS12AuthenticationStatus('wrong', self.token.key, HTTP_404_NOT_FOUND)
-        self.assertDynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
-        self.assertDynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
+        def _test_DynDNS12AuthenticationStatus(username, token, status):
+            self.client.set_credentials_basic_auth(username, token)
+            self.assertDynDNS12Status(status)
+
+        _test_DynDNS12AuthenticationStatus('', self.token.key, HTTP_200_OK)
+        _test_DynDNS12AuthenticationStatus(self.owner.get_username(), self.token.key, HTTP_200_OK)
+        _test_DynDNS12AuthenticationStatus(self.my_domain.name, self.token.key, HTTP_200_OK)
+        _test_DynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token.key, HTTP_401_UNAUTHORIZED)
+        _test_DynDNS12AuthenticationStatus('wrong', self.token.key, HTTP_401_UNAUTHORIZED)
+        _test_DynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
+        _test_DynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
 
     def test_malformed_basic_auth(self):
         for authorization in [

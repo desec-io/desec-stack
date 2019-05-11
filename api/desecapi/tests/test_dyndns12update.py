@@ -25,7 +25,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
     def test_identification_by_domain_name(self):
         self.client.set_credentials_basic_auth(self.my_domain.name + '.invalid', self.token.key)
         response = self.assertDynDNS12NoUpdate(mock_remote_addr='10.5.5.6')
-        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+        self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
 
     def test_identification_by_query_params(self):
         # /update?username=foobar.dedyn.io&password=secret
@@ -137,6 +137,13 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
 
     def test_identification_by_token(self):
         self.client.set_credentials_basic_auth('', self.token.key)
+        response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='10.5.5.6')
+
+    def test_identification_by_email(self):
+        self.client.set_credentials_basic_auth(self.owner.email, self.token.key)
         response = self.assertDynDNS12Update(self.my_domain.name, mock_remote_addr='10.5.5.6')
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')

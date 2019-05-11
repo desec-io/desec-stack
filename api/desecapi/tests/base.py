@@ -748,7 +748,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def setUp(self):
         super().setUp()
         self.client_token_authorized = self.client_class()
-        self.client.set_credentials_basic_auth(self.my_domain.name, self.token.key)
+        self.client.set_credentials_basic_auth(self.my_domain.name.lower(), self.token.key)
         self.client_token_authorized.set_credentials_token_auth(self.token.key)
 
 

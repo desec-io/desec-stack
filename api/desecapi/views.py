@@ -388,7 +388,7 @@ class DynDNS12Update(APIView):
             try:
                 domain_name = base64.b64decode(
                     get_authorization_header(r).decode().split(' ')[1].encode()).decode().split(':')[0]
-                if domain_name:
+                if domain_name and '@' not in domain_name:
                     return domain_name
             except IndexError:
                 pass
