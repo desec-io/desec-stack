@@ -43,7 +43,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         """
         with self.assertPdnsRequests(
             self.request_pdns_zone_update(self.my_domain.name),
-            self.request_pdns_zone_notify(self.my_domain.name),
+            self.request_pdns_zone_axfr(self.my_domain.name),
         ):
             response = self.client_token_authorized.patch_rr_set(
                 self.my_domain.name.lower(), subname='', type_='A', ttl=3600)
@@ -58,7 +58,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myip=10.1.2.3
         with self.assertPdnsRequests(
                 self.request_pdns_zone_update(self.my_domain.name),
-                self.request_pdns_zone_notify(self.my_domain.name),
+                self.request_pdns_zone_axfr(self.my_domain.name),
         ):
             response = self.client.get(
                 self.reverse('v1:dyndns12update'),

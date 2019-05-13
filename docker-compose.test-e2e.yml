@@ -17,6 +17,10 @@ services:
     logging:
       driver: "json-file"
 
+  nsmaster:
+    logging:
+      driver: "json-file"
+
   static:
     build: test/e2e/mock-static # build a mock static to save time executing tests
     logging:
@@ -34,6 +38,7 @@ services:
     depends_on:
     - www
     - nslord
+    - nsmaster
     networks:
       front:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.127

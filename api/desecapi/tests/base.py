@@ -213,7 +213,7 @@ class MockPDNSTestCase(APITestCase):
     PDNS_ZONES = r'/zones'
     PDNS_ZONE_CRYPTO_KEYS = r'/zones/(?P<id>[^/]+)/cryptokeys'
     PDNS_ZONE = r'/zones/(?P<id>[^/]+)'
-    PDNS_ZONE_NOTIFY = r'/zones/(?P<id>[^/]+)/notify'
+    PDNS_ZONE_AXFR = r'/zones/(?P<id>[^/]+)/axfr-retrieve'
 
     @classmethod
     def get_full_pdns_url(cls, path_regex, ns='LORD', **kwargs):
@@ -260,17 +260,17 @@ class MockPDNSTestCase(APITestCase):
             return [x.rstrip('.') + '.' for x in arg]
 
     @classmethod
-    def request_pdns_zone_create(cls):
+    def request_pdns_zone_create(cls, ns):
         return {
             'method': 'POST',
-            'uri': cls.get_full_pdns_url(cls.PDNS_ZONES),
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
             'status': 201,
             'body': None,
         }
 
     @classmethod
     def request_pdns_zone_create_422(cls):
-        request = cls.request_pdns_zone_create()
+        request = cls.request_pdns_zone_create(ns='LORD')
         request['status'] = 422
         return request
 
@@ -371,10 +371,10 @@ class MockPDNSTestCase(APITestCase):
         }
 
     @classmethod
-    def request_pdns_zone_notify(cls, name=None):
+    def request_pdns_zone_axfr(cls, name=None):
         return {
             'method': 'PUT',
-            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE_NOTIFY, id=cls._pdns_zone_id_heuristic(name)),
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE_AXFR, ns='MASTER', id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
             'body': None,
         }
@@ -414,7 +414,8 @@ class MockPDNSTestCase(APITestCase):
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
-                self.request_pdns_zone_create()
+                self.request_pdns_zone_create(ns='LORD'),
+                self.request_pdns_zone_create(ns='MASTER')
             ],
         )
 
@@ -454,8 +455,9 @@ class MockPDNSTestCase(APITestCase):
         httpretty.reset()
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME static dependency on settings variable
         for request in [
-            cls.request_pdns_zone_create(),
-            cls.request_pdns_zone_notify(),
+            cls.request_pdns_zone_create(ns='LORD'),
+            cls.request_pdns_zone_create(ns='MASTER'),
+            cls.request_pdns_zone_axfr(),
             cls.request_pdns_zone_update(),
             cls.request_pdns_zone_retrieve_crypto_keys(),
             cls.request_pdns_zone_retrieve()
@@ -620,8 +622,9 @@ class DesecTestCase(MockPDNSTestCase):
     @classmethod
     def requests_desec_domain_creation(cls, name=None):
         return [
-            cls.request_pdns_zone_create(),
-            cls.request_pdns_zone_notify(name=name),
+            cls.request_pdns_zone_create(ns='LORD'),
+            cls.request_pdns_zone_create(ns='MASTER'),
+            cls.request_pdns_zone_axfr(name=name),
             cls.request_pdns_zone_retrieve(name=name),
             cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
@@ -638,7 +641,7 @@ class DesecTestCase(MockPDNSTestCase):
         delegate_at = cls._find_auto_delegation_zone(name)
         return cls.requests_desec_domain_creation(name=name) + [
             cls.request_pdns_zone_update(name=delegate_at),
-            cls.request_pdns_zone_notify(name=delegate_at),
+            cls.request_pdns_zone_axfr(name=delegate_at),
             cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
 
@@ -647,7 +650,7 @@ class DesecTestCase(MockPDNSTestCase):
         delegate_at = cls._find_auto_delegation_zone(name)
         return [
             cls.request_pdns_zone_update(name=delegate_at),
-            cls.request_pdns_zone_notify(name=delegate_at),
+            cls.request_pdns_zone_axfr(name=delegate_at),
             cls.request_pdns_zone_delete(name=name, ns='LORD'),
             cls.request_pdns_zone_delete(name=name, ns='MASTER'),
         ]
@@ -656,7 +659,7 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_rr_sets_update(cls, name=None):
         return [
             cls.request_pdns_zone_update(name=name),
-            cls.request_pdns_zone_notify(name=name),
+            cls.request_pdns_zone_axfr(name=name),
         ]
 
 
@@ -717,8 +720,8 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     DYN = True
 
     @classmethod
-    def request_pdns_zone_notify(cls, name=None):
-        return super().request_pdns_zone_notify(name.lower() if name else None)
+    def request_pdns_zone_axfr(cls, name=None):
+        return super().request_pdns_zone_axfr(name.lower() if name else None)
 
     @classmethod
     def request_pdns_zone_update(cls, name=None):
@@ -734,7 +737,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def assertDynDNS12Update(self, domain_name=None, mock_remote_addr='', **kwargs):
         pdns_name = self._normalize_name(domain_name).lower() if domain_name else None
         return self._assertDynDNS12Update(
-            [self.request_pdns_zone_update(name=pdns_name), self.request_pdns_zone_notify(name=pdns_name)],
+            [self.request_pdns_zone_update(name=pdns_name), self.request_pdns_zone_axfr(name=pdns_name)],
             mock_remote_addr,
             **kwargs
         )

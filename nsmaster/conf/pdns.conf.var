@@ -1,5 +1,3 @@
-allow-unsigned-notify=yes
-allow-unsigned-supermaster=yes
 api=yes
 api-key=${DESECSTACK_NSMASTER_APIKEY}
 disable-axfr=yes
