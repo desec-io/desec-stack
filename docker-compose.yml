@@ -75,7 +75,7 @@ services:
     build: dbmaster
     image: desec/dedyn-dbmaster:latest
     ports:
-    - "3306:3306"
+    - "${DESECSTACK_DBMASTER_PORT:-3306}:3306"
     volumes:
     - ${DESECSTACK_DBMASTER_CERTS}:/etc/ssl/private:ro
     - dbmaster_mysql:/var/lib/mysql
