@@ -10,6 +10,7 @@ DOMAINS="\
     update6.dedyn.${DESECSTACK_DOMAIN} \
     update.dedyn.${DESECSTACK_DOMAIN} \
     www.dedyn.${DESECSTACK_DOMAIN} \
+    get.desec.${DESECSTACK_DOMAIN} \
     www.desec.${DESECSTACK_DOMAIN}"
 
 # list of files we expect at /etc/ssl/private/
