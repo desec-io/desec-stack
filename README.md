@@ -41,6 +41,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_API_EMAIL_HOST_PASSWORD`: password for sending email
       - `DESECSTACK_API_EMAIL_PORT`: port for sending email
       - `DESECSTACK_API_SECRETKEY`: Django secret
+      - `DESECSTACK_API_PSL_RESOLVER`: Resolver IP address to use for PSL lookups. If empty, the system's default resolver is used.
       - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
