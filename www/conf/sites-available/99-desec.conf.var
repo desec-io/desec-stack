@@ -5,7 +5,8 @@ server {
 	listen 80;
 	listen [::]:80;
 	server_name www.desec.$DESECSTACK_DOMAIN
-	            desec.$DESECSTACK_DOMAIN;
+	            desec.$DESECSTACK_DOMAIN
+	            get.desec.$DESECSTACK_DOMAIN;
 	
 	include global.conf;
 	
