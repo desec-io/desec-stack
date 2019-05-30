@@ -177,6 +177,9 @@ ABUSE_BY_EMAIL_HOSTNAME_LIMIT = 1
 ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS = 24
 LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5
 
+if DEBUG and not EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+
 if os.environ.get('DESECSTACK_E2E_TEST', "").upper() == "TRUE":
     DEBUG = True
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
