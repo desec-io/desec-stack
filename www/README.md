@@ -10,6 +10,7 @@ Certificate Setup
 Various SSL certificates for the external hostnames. For the following hostnames, put certificate and private key files into the certificate directory specified in your `.env` file. Name the files `${NAME}.cer` and `${NAME}.key` respectively, where `${NAME}` is one of:
    - `desec.${DESECSTACK_DOMAIN}` (e.g. desec.io)
    - `www.desec.${DESECSTACK_DOMAIN}`
+   - `get.desec.${DESECSTACK_DOMAIN}`
    - `checkip.dedyn.${DESECSTACK_DOMAIN}`
    - `checkipv4.dedyn.${DESECSTACK_DOMAIN}`
    - `checkipv6.dedyn.${DESECSTACK_DOMAIN}`
