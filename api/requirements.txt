@@ -1,12 +1,12 @@
+coverage~=4.5.3
 Django~=2.2.0
-mysqlclient~=1.4.0
+django-nocaptcha-recaptcha==0.0.20  # updated manually
 djangorestframework~=3.9.3
+djangorestframework-bulk~=0.2.0
 djoser~=1.5.1
 dnspython~=1.16.0
 httpretty~=0.9.0
+mysqlclient~=1.4.0
+psl-dns~=1.0rc2
 requests~=2.21.0
 uwsgi~=2.0.0
-django-nocaptcha-recaptcha==0.0.20  # updated manually
-djangorestframework-bulk~=0.2.0
-coverage~=4.5.3
-psl-dns~=1.0rc2
