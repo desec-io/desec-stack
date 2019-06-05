@@ -41,9 +41,11 @@ INSTALLED_APPS = (
     'rest_framework',
     'djoser',
     'desecapi',
+    'corsheaders',
 )
 
 MIDDLEWARE = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
 )
@@ -106,6 +108,10 @@ DJOSER = {
     },
     'TOKEN_MODEL': 'desecapi.models.Token',
 }
+
+# CORS
+# No need to add Authorization to CORS_ALLOW_HEADERS (included by default)
+CORS_ORIGIN_ALLOW_ALL=True
 
 TEMPLATES = [
     {
