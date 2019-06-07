@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 
 from django.core.exceptions import SuspiciousOperation
@@ -63,13 +64,11 @@ def _pdns_delete(server, path):
 
 
 def pdns_id(name):
-    # / is allowed by pdns, but we don't want it
-    if '/' in name or '?' in name:
+    # See also pdns code, apiZoneNameToId() in ws-api.cc (with the exception of forward slash)
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', name):
         raise SuspiciousOperation('Invalid hostname ' + name)
 
-    # See also pdns code, apiZoneNameToId() in ws-api.cc
     name = name.translate(str.maketrans({'/': '=2F', '_': '=5F'}))
-
     return name.rstrip('.') + '.'
 
 
