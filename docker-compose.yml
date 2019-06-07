@@ -1,9 +1,10 @@
-version: '2.1'
+version: '2.2'
 
 services:
   www:
     build: www
     image: desec/dedyn-www:latest
+    init: true
     ports:
     - "80:80"
     - "443:443"
@@ -31,6 +32,7 @@ services:
   static:
     build: static
     image: desec/dedyn-static:latest
+    init: true
     networks:
     - rearwww
     logging:
@@ -42,6 +44,7 @@ services:
   dbapi:
     build: dbapi
     image: desec/dedyn-dbapi:latest
+    init: true
     volumes:
     - dbapi_mysql:/var/lib/mysql
     environment:
@@ -58,6 +61,7 @@ services:
   dblord:
     build: dblord
     image: desec/dedyn-dblord:latest
+    init: true
     volumes:
     - dblord_mysql:/var/lib/mysql
     environment:
@@ -74,6 +78,7 @@ services:
   dbmaster:
     build: dbmaster
     image: desec/dedyn-dbmaster:latest
+    init: true
     ports:
     - "${DESECSTACK_DBMASTER_PORT:-3306}:3306"
     volumes:
@@ -97,6 +102,7 @@ services:
   api:
     build: api
     image: desec/dedyn-api:latest
+    init: true
     depends_on:
     - dbapi
     - nslord
@@ -131,6 +137,7 @@ services:
   nslord:
     build: nslord
     image: desec/dedyn-nslord:latest
+    init: true
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBLORD_PASSWORD_pdns
@@ -153,6 +160,7 @@ services:
   nsmaster:
     build: nsmaster
     image: desec/dedyn-nsmaster:latest
+    init: true
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBMASTER_PASSWORD_pdns
