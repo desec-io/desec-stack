@@ -1,6 +1,8 @@
-from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
+from rest_framework import status
+from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from desecapi.tests.base import DynDomainOwnerTestCase
+from desecapi.models import Token, User
+from desecapi.tests.base import DynDomainOwnerTestCase, DesecTestCase
 
 
 class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
@@ -38,6 +40,85 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             '💩💩:💩💩',
         ]:
             self.assertDynDNS12Status(authorization=authorization, status=HTTP_401_UNAUTHORIZED)
+
+
+class SignUpLoginTestCase(DesecTestCase):
+
+    EMAIL = None
+    PASSWORD = None
+
+    REGISTRATION_ENDPOINT = None
+    LOGIN_ENDPOINT = None
+
+    REGISTRATION_STATUS = status.HTTP_201_CREATED
+    LOGIN_STATUS = status.HTTP_200_OK
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.EMAIL = self.random_username()
+        self.PASSWORD = self.random_password()
+        if not self.REGISTRATION_ENDPOINT:
+            self.REGISTRATION_ENDPOINT = self.reverse('v1:register')
+        if not self.LOGIN_ENDPOINT:
+            self.LOGIN_ENDPOINT = self.reverse('v1:login')
+
+    def sign_up(self):
+        self.assertStatus(
+            self.client.post(self.REGISTRATION_ENDPOINT, {
+                'email': self.EMAIL,
+                'password': self.PASSWORD,
+            }),
+            self.REGISTRATION_STATUS
+        )
+
+    def log_in(self):
+        response = self.client.post(self.LOGIN_ENDPOINT, {
+            'email': self.EMAIL,
+            'password': self.PASSWORD,
+        })
+        self.assertContains(response, "auth_token", status_code=self.LOGIN_STATUS)
+
+    def test_sign_up(self):
+        self.sign_up()
+
+    def test_log_in(self):
+        self.sign_up()
+        self.log_in()
+
+    def test_log_in_twice(self):
+        self.sign_up()
+        self.log_in()
+        self.log_in()
+
+    def test_log_in_two_tokens(self):
+        self.sign_up()  # this may create a token
+        for _ in range(2):
+            Token.objects.create(user=User.objects.get(email=self.EMAIL))
+        self.log_in()
+
+
+class URLSignUpLoginTestCase(SignUpLoginTestCase):
+
+    REGISTRATION_ENDPOINT = '/api/v1/auth/users/'
+    LOGIN_ENDPOINT = '/api/v1/auth/token/login/'
+
+    LOGIN_STATUS = status.HTTP_201_CREATED
+
+
+class LegacyURLSignUpLoginTestCase(SignUpLoginTestCase):
+
+    REGISTRATION_ENDPOINT = '/api/v1/auth/users/create/'
+    LOGIN_ENDPOINT = '/api/v1/auth/token/create/'
+
+    LOGIN_STATUS = status.HTTP_201_CREATED
+
+
+class LegacyURLSignUpLoginTestCase2(SignUpLoginTestCase):
+
+    REGISTRATION_ENDPOINT = '/api/v1/auth/users/create/'
+    LOGIN_ENDPOINT = '/api/v1/auth/token/create'
+
+    LOGIN_STATUS = status.HTTP_200_OK
 
 
 class TokenAuthenticationTestCase(DynDomainOwnerTestCase):

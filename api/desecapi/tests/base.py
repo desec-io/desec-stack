@@ -1,10 +1,10 @@
 import base64
-from contextlib import nullcontext
-from functools import partial, reduce
 import operator
 import random
 import re
 import string
+from contextlib import nullcontext
+from functools import partial, reduce
 from unittest import mock
 
 from django.utils import timezone
@@ -449,7 +449,7 @@ class MockPDNSTestCase(APITestCase):
                       status,
                       response.status_code,
                       response,
-                      str(response.data).replace('\\n', '\n'),
+                      str(response.data).replace('\\n', '\n') if hasattr(response, 'data') else '',
                 ))
 
     @classmethod
