@@ -5,4 +5,4 @@ host=dblord; port=3306; n=120; i=0; while ! (echo > /dev/tcp/$host/$port) 2> /de
 # Manage credentials
 envsubst < /etc/powerdns/pdns.conf.var > /etc/powerdns/pdns.conf
 
-pdns_server --daemon=no
+exec pdns_server --daemon=no
