@@ -35,6 +35,8 @@ describe("API Versioning", function () {
 describe("API v1", function () {
     this.timeout(3000);
 
+    let publicSuffix = 'dedyn.io';  // TODO replace with env variable
+
     before(function () {
         chakram.setRequestDefaults({
             headers: {
@@ -43,6 +45,15 @@ describe("API v1", function () {
             followRedirect: false,
             baseUrl: 'https://www/api/v1',
         })
+
+        let credentials = {"email":"admin@e2etest.local", "password": "password"};
+        return chakram.post('/auth/users/', credentials).then(function() {
+            chakram.post('/auth/token/login/', credentials).then(function (response) {
+                let config = {headers: {'Authorization': 'Token ' + response.body.auth_token}}
+                chakram.post('/domains/', {name: publicSuffix}, config)
+                // TODO verify behavior for non-existent local public suffixes
+            });
+        });
     });
 
     it("provides an index page", function () {
@@ -283,7 +294,7 @@ describe("API v1", function () {
 
             describe("on domains/ endpoint", function () {
 
-                var domain = 'e2etest-' + require("uuid").v4() + '.dedyn.io';
+                var domain = 'e2etest-' + require("uuid").v4() + '.' + publicSuffix;
                 before(function () {
                     return expect(chakram.post('/domains/', {'name': domain})).to.have.status(201);
                 });
@@ -316,7 +327,7 @@ describe("API v1", function () {
 
             describe('POST rrsets/ with fresh domain', function () {
 
-                var domain = 'e2etest-' + require("uuid").v4() + '.dedyn.io';
+                var domain = 'e2etest-' + require("uuid").v4() + '.' + publicSuffix;
                 before(function () {
                     return expect(chakram.post('/domains/', {'name': domain})).to.have.status(201);
                 });
@@ -587,7 +598,7 @@ describe("API v1", function () {
 
             describe('PUT rrsets/ with fresh domain', function () {
 
-                var domain = 'e2etest-' + require("uuid").v4() + '.dedyn.io';
+                var domain = 'e2etest-' + require("uuid").v4() + '.' + publicSuffix;
                 before(function () {
                     return expect(chakram.post('/domains/', {'name': domain})).to.have.status(201);
                 });
@@ -816,7 +827,7 @@ describe("API v1", function () {
 
             describe('PATCH rrsets/ with fresh domain', function () {
 
-                var domain = 'e2etest-' + require("uuid").v4() + '.dedyn.io';
+                var domain = 'e2etest-' + require("uuid").v4() + '.' + publicSuffix;
                 before(function () {
                     return expect(chakram.post('/domains/', {'name': domain})).to.have.status(201);
                 });
