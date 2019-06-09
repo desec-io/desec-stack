@@ -97,8 +97,6 @@ REST_FRAMEWORK = {
 DJOSER = {
     'DOMAIN': 'desec.io',
     'SITE_NAME': 'deSEC',
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'LOGIN_AFTER_ACTIVATION': True,
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
