@@ -20,7 +20,6 @@ auth_urls = [
     # Token management
     path('token/login/', views.TokenCreateView.as_view(), name='login'),
     path('token/logout/', views.TokenDestroyView.as_view(), name='logout'),
-    path('', include('djoser.urls.authtoken')),  # note: this is partially overwritten by the two lines above
     path('tokens/', include(tokens_router.urls)),
 
     # User home

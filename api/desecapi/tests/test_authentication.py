@@ -51,7 +51,7 @@ class SignUpLoginTestCase(DesecTestCase):
     LOGIN_ENDPOINT = None
 
     REGISTRATION_STATUS = status.HTTP_201_CREATED
-    LOGIN_STATUS = status.HTTP_200_OK
+    LOGIN_STATUS = status.HTTP_201_CREATED
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -102,23 +102,11 @@ class URLSignUpLoginTestCase(SignUpLoginTestCase):
     REGISTRATION_ENDPOINT = '/api/v1/auth/users/'
     LOGIN_ENDPOINT = '/api/v1/auth/token/login/'
 
-    LOGIN_STATUS = status.HTTP_201_CREATED
-
 
 class LegacyURLSignUpLoginTestCase(SignUpLoginTestCase):
 
     REGISTRATION_ENDPOINT = '/api/v1/auth/users/create/'
     LOGIN_ENDPOINT = '/api/v1/auth/token/create/'
-
-    LOGIN_STATUS = status.HTTP_201_CREATED
-
-
-class LegacyURLSignUpLoginTestCase2(SignUpLoginTestCase):
-
-    REGISTRATION_ENDPOINT = '/api/v1/auth/users/create/'
-    LOGIN_ENDPOINT = '/api/v1/auth/token/create'
-
-    LOGIN_STATUS = status.HTTP_200_OK
 
 
 class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
