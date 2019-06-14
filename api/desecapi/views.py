@@ -576,9 +576,6 @@ def unlock(request, email):
                 user = User.objects.get(email=email)
                 if user.locked:
                     user.unlock()
-                    if not user.dyn:
-                        context = {'token': user.get_or_create_first_token()}
-                        send_token_email(context, user)
             except User.DoesNotExist:
                 # fail silently, so people can't probe registered addresses
                 pass
