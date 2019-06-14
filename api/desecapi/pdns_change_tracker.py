@@ -94,7 +94,7 @@ class PDNSChangeTracker:
             rr_set = RRset(
                 domain=Domain.objects.get(name=self.domain_name),
                 type='NS', subname='',
-                ttl=3600,  # TODO configure this via env settings
+                ttl=api_settings.DEFAULT_NS_TTL,
             )
             rr_set.save()
 

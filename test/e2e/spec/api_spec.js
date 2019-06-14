@@ -306,6 +306,8 @@ describe("API v1", function () {
                     return chakram.wait();
                 });
 
+                itShowsUpInPdnsAs('', domain, 'NS', process.env.DESECSTACK_NS.split(/\s+/),  process.env.DESECSTACK_NSLORD_DEFAULT_TTL);
+
                 describe("on rrsets/ endpoint", function () {
                     it("can retrieve RRsets", function () {
                         var response = chakram.get('/domains/' + domain + '/rrsets/');

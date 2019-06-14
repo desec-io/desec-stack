@@ -24,6 +24,7 @@ Although most configuration is contained in this repository, some external depen
 3.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
     - global
       - `DESECSTACK_DOMAIN`: domain name under which the entire system will be running. The API will be reachable at https://desec.$DESECSTACK_DOMAIN/api/. For development setup, we recommend using `yourname.dedyn.io`
+      - `DESECSTACK_NS`: the names of the authoritative name servers, i.e. names pointing to your slave name servers. Minimum 2.
     - network
       - `DESECSTACK_IPV4_REAR_PREFIX16`: IPv4 net, size /16, for assignment of internal container IPv4 addresses. **NOTE:** If you change this in an existing setup, you 
         need to manually update MySQL grant tables and the `nsmaster` supermaster table to update IP addresses! Better don't do it.
@@ -48,6 +49,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord
       - `DESECSTACK_NSLORD_CARBONSERVER`: pdns `carbon-server` setting on nslord (optional)
       - `DESECSTACK_NSLORD_CARBONOURNAME`: pdns `carbon-ourname` setting on nslord (optional)
+      - `DESECSTACK_NSLORD_DEFAULT_TTL`: TTL to use by default, including for default NS records
     - nsmaster-related
       - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
       - `DESECSTACK_DBMASTER_PASSWORD_ns1replication`: slave 1 replication password

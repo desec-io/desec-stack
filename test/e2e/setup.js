@@ -181,8 +181,9 @@ chakram.addProperty("dns", function(){});
 chakram.addMethod("ttl", function (respObj, expected) {
     this.assert(respObj.rcode === 'NOERROR', 'expected response to have rcode NOERROR');
     this.assert(respObj.answers.length > 0, 'expected response to have answers');
-    this.assert(respObj.answers.every(function(elem) { return elem.ttl === expected; }),
-        'TTL of at least one answer in the DNS packet didn\'t match expected value of ' + expected);
+    this.assert(respObj.answers.every(function(elem) { return elem.ttl === parseInt(expected); }),
+        'TTL of at least one answer in the DNS packet didn\'t match expected value of ' + expected + ': ' +
+        respObj.answers.map(x => x.ttl));
 });
 
 exports.chakram = chakram;

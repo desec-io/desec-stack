@@ -31,9 +31,11 @@ services:
     restart: "no"
     environment:
     - DESECSTACK_DOMAIN
+    - DESECSTACK_NS
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_IPV6_SUBNET
     - DESECSTACK_IPV6_ADDRESS
+    - DESECSTACK_NSLORD_DEFAULT_TTL
     mac_address: 06:42:ac:10:00:7f
     depends_on:
     - www

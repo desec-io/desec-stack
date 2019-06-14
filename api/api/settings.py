@@ -142,7 +142,8 @@ ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK
 AUTH_USER_MODEL = 'desecapi.User'
 
 # default NS records
-DEFAULT_NS = ['ns1.desec.io.', 'ns2.desec.io.']
+DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
+DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
 
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
