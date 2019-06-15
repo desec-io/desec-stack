@@ -31,13 +31,13 @@ settings = {
 }
 
 
-def _pdns_request(method, *, server, path, body=None, acceptable_range=range(200, 300)):
+def _pdns_request(method, *, server, path, body=None):
     data = json.dumps(body) if body else None
     if data is not None and len(data) > api_settings.PDNS_MAX_BODY_SIZE:
         raise PDNSException(detail='Payload too large', status=413)
 
     r = requests.request(method, settings[server]['base_url'] + path, data=data, headers=settings[server]['headers'])
-    if r.status_code not in acceptable_range:
+    if r.status_code not in range(200, 300):
         raise PDNSException(r)
 
     return r
@@ -52,11 +52,11 @@ def _pdns_patch(server, path, body):
 
 
 def _pdns_get(server, path):
-    return _pdns_request('get', server=server, path=path, acceptable_range=range(200, 400))  # FIXME range
+    return _pdns_request('get', server=server, path=path)
 
 
 def _pdns_put(server, path):
-    return _pdns_request('put', server=server, path=path, acceptable_range=range(200, 500))  # FIXME range
+    return _pdns_request('put', server=server, path=path)
 
 
 def _pdns_delete(server, path):
