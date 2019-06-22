@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 from api.settings import *
 
 # noinspection PyUnresolvedReferences

@@ -136,6 +136,7 @@ class AssertRequestsContextManager:
     def __enter__(self):
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
         self.expected_requests = self.expected_requests
+        # noinspection PyProtectedMember
         self.old_httpretty_entries = httpretty._entries.copy()  # FIXME accessing private properties of httpretty
         for request in self.expected_requests:
             httpretty.register_uri(**request)

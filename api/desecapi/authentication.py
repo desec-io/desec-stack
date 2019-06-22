@@ -49,7 +49,7 @@ class BasicTokenAuthentication(BaseAuthentication):
             user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
             token = self.model.objects.get(key=key)
             domain_names = token.user.domains.values_list('name', flat=True)
-            if not user in ['', token.user.email] and not user.lower() in domain_names:
+            if user not in ['', token.user.email] and not user.lower() in domain_names:
                 raise Exception
         except Exception:
             raise exceptions.AuthenticationFailed(invalid_token_message)

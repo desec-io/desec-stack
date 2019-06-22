@@ -12,23 +12,24 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
         with self.assertPdnsNoRequestsBut(self.requests_desec_rr_sets_update()):
             return self.client.get(self.reverse('v1:dyndns12update'))
 
-    def assertDynDNS12Status(self, status=HTTP_200_OK, authorization=None):
+    def assertDynDNS12Status(self, code=HTTP_200_OK, authorization=None):
         if authorization:
             self.client.set_credentials_basic_auth(authorization)
-        self.assertStatus(self._get_dyndns12(), status)
+        self.assertStatus(self._get_dyndns12(), code)
 
     def test_username_password(self):
-        def _test_DynDNS12AuthenticationStatus(username, token, status):
+        # noinspection PyPep8Naming
+        def assertDynDNS12AuthenticationStatus(username, token, code):
             self.client.set_credentials_basic_auth(username, token)
-            self.assertDynDNS12Status(status)
+            self.assertDynDNS12Status(code)
 
-        _test_DynDNS12AuthenticationStatus('', self.token.key, HTTP_200_OK)
-        _test_DynDNS12AuthenticationStatus(self.owner.get_username(), self.token.key, HTTP_200_OK)
-        _test_DynDNS12AuthenticationStatus(self.my_domain.name, self.token.key, HTTP_200_OK)
-        _test_DynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token.key, HTTP_401_UNAUTHORIZED)
-        _test_DynDNS12AuthenticationStatus('wrong', self.token.key, HTTP_401_UNAUTHORIZED)
-        _test_DynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
-        _test_DynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus('', self.token.key, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(self.owner.get_username(), self.token.key, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(self.my_domain.name, self.token.key, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token.key, HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus('wrong', self.token.key, HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
 
     def test_malformed_basic_auth(self):
         for authorization in [
@@ -39,7 +40,7 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             '💩💩💩💩',
             '💩💩:💩💩',
         ]:
-            self.assertDynDNS12Status(authorization=authorization, status=HTTP_401_UNAUTHORIZED)
+            self.assertDynDNS12Status(authorization=authorization, code=HTTP_401_UNAUTHORIZED)
 
 
 class SignUpLoginTestCase(DesecTestCase):
@@ -115,9 +116,9 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
             return self.client.get(self.reverse('v1:domain-list'))
 
-    def assertAuthenticationStatus(self, status=HTTP_200_OK, token=''):
+    def assertAuthenticationStatus(self, code=HTTP_200_OK, token=''):
         self.client.set_credentials_token_auth(token)
-        self.assertStatus(self._get_domains(), status)
+        self.assertStatus(self._get_domains(), code)
 
     def test_token_case_sensitive(self):
         self.assertAuthenticationStatus(HTTP_200_OK, self.token.key)

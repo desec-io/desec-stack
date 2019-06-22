@@ -111,7 +111,7 @@ DJOSER = {
 
 # CORS
 # No need to add Authorization to CORS_ALLOW_HEADERS (included by default)
-CORS_ORIGIN_ALLOW_ALL=True
+CORS_ORIGIN_ALLOW_ALL = True
 
 TEMPLATES = [
     {
