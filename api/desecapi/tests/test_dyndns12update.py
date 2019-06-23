@@ -70,6 +70,19 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.assertEqual(response.data, 'good')
             self.assertIP(ipv4='10.1.2.3')
 
+        # Repeat and make sure that no pdns request is made (not even for the empty AAAA record)
+        response = self.client.get(
+            self.reverse('v1:dyndns12update'),
+            {
+                'action': 'edit',
+                'started': 1,
+                'hostname': 'YES',
+                'host_id': self.my_domain.name,
+                'myip': '10.1.2.3'
+            }
+        )
+        self.assertStatus(response, status.HTTP_200_OK)
+
     def test_ddclient_dyndns1_v6_success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myipv6=::1337
         response = self.assertDynDNS12Update(
@@ -83,6 +96,20 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1', ipv6='::1337')
+
+        # Repeat and make sure that no pdns request is made (not even for the empty A record)
+        response = self.client.get(
+            self.reverse('v1:dyndns12update'),
+            {
+                'domain_name': self.my_domain.name,
+                'action': 'edit',
+                'started': 1,
+                'hostname': 'YES',
+                'host_id': self.my_domain.name,
+                'myipv6': '::1337'
+        }
+        )
+        self.assertStatus(response, status.HTTP_200_OK)
 
     def test_ddclient_dyndns2_v4_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4
