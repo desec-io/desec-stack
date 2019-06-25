@@ -1,4 +1,5 @@
-FROM nginx:stable-alpine
+ARG DOCKER_REGISTRY
+FROM ${DOCKER_REGISTRY}nginx:stable-alpine
 
 # Add dependencies for our scripts
 RUN apk add --no-cache bash openssl inotify-tools

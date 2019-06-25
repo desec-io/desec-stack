@@ -1,4 +1,5 @@
-FROM mariadb:10.3
+ARG DOCKER_REGISTRY
+FROM ${DOCKER_REGISTRY}mariadb:10.3
 
 # Use random throw-away root password. Our init scripts switch authentication to socket logins only
 ENV MYSQL_RANDOM_ROOT_PASSWORD=yes

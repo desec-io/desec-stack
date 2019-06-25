@@ -1,4 +1,5 @@
-FROM python:3.7
+ARG DOCKER_REGISTRY
+FROM ${DOCKER_REGISTRY}python:3.7
 
 RUN apt-get update && apt-get install -y \
 		gcc \

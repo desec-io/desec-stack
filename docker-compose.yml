@@ -3,7 +3,7 @@ version: '2.2'
 services:
   www:
     build: www
-    image: desec/dedyn-www:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-www:latest
     init: true
     ports:
     - "80:80"
@@ -31,7 +31,7 @@ services:
 
   static:
     build: static
-    image: desec/dedyn-static:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-static:latest
     init: true
     networks:
     - rearwww
@@ -43,7 +43,7 @@ services:
 
   dbapi:
     build: dbapi
-    image: desec/dedyn-dbapi:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-dbapi:latest
     init: true
     volumes:
     - dbapi_mysql:/var/lib/mysql
@@ -60,7 +60,7 @@ services:
 
   dblord:
     build: dblord
-    image: desec/dedyn-dblord:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-dblord:latest
     init: true
     volumes:
     - dblord_mysql:/var/lib/mysql
@@ -77,7 +77,7 @@ services:
 
   dbmaster:
     build: dbmaster
-    image: desec/dedyn-dbmaster:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-dbmaster:latest
     init: true
     ports:
     - "${DESECSTACK_DBMASTER_PORT:-3306}:3306"
@@ -101,7 +101,7 @@ services:
 
   api:
     build: api
-    image: desec/dedyn-api:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-api:latest
     init: true
     depends_on:
     - dbapi
@@ -138,7 +138,7 @@ services:
 
   nslord:
     build: nslord
-    image: desec/dedyn-nslord:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-nslord:latest
     init: true
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
@@ -162,7 +162,7 @@ services:
 
   nsmaster:
     build: nsmaster
-    image: desec/dedyn-nsmaster:latest
+    image: ${DOCKER_REGISTRY}desec/dedyn-nsmaster:latest
     init: true
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16

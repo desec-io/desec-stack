@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml build \
-	&& docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+trusted-compose -f docker-compose.yml -f docker-compose.dev.yml build \
+	&& trusted-compose -f docker-compose.yml -f docker-compose.dev.yml up

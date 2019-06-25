@@ -1,4 +1,5 @@
-FROM ubuntu:bionic
+ARG DOCKER_REGISTRY
+FROM ${DOCKER_REGISTRY}ubuntu:bionic
 
 RUN apt-get update && apt-get install -y \
 		dnsutils \
