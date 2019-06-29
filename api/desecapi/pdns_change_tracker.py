@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
 
+from desecapi.exceptions import PDNSValidationError
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id
 
@@ -108,6 +109,9 @@ class PDNSChangeTracker:
             rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
+        def __str__(self):
+            return 'Create Domain %s' % self.domain_name
+
     class DeleteDomain(PDNSChange):
         @property
         def axfr_required(self):
@@ -119,6 +123,9 @@ class PDNSChangeTracker:
 
         def api_do(self):
             pass
+
+        def __str__(self):
+            return 'Delete Domain %s' % self.domain_name
 
     class CreateUpdateDeleteRRSets(PDNSChange):
         def __init__(self, domain_name, additions, modifications, deletions):
@@ -167,6 +174,10 @@ class PDNSChangeTracker:
 
         def api_do(self):
             pass
+
+        def __str__(self):
+            return 'Update RRsets of %s: additions=%s, modifications=%s, deletions=%s' % \
+                   (self.domain_name, list(self._additions), list(self._modifications), list(self._deletions))
 
     def __init__(self):
         self._domain_additions = set()
@@ -226,11 +237,13 @@ class PDNSChangeTracker:
                 change.api_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
-            except Exception as e:
-                # TODO gather as much info as possible
-                #  see if pdns and api are possibly in an inconsistent state
+            except PDNSValidationError as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
                 raise e
+            except Exception as e:
+                self.transaction.__exit__(type(e), e, e.__traceback__)
+                exc = ValueError(f'For changes {list(map(str, changes))}, {type(e)} occured when applying {change}')
+                raise exc from e
 
         self.transaction.__exit__(None, None, None)
 

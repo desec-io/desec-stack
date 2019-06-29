@@ -399,7 +399,7 @@ class RRset(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return '<RRSet domain=%s type=%s subname=%s>' % (self.domain.name, self.type, self.subname)
+        return '<RRSet %s domain=%s type=%s subname=%s>' % (self.pk, self.domain.name, self.type, self.subname)
 
 
 class RRManager(Manager):
@@ -424,7 +424,7 @@ class RR(models.Model):
     objects = RRManager()
 
     def __str__(self):
-        return '<RR %s>' % self.content
+        return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)
 
 
 class AuthenticatedAction(models.Model):
