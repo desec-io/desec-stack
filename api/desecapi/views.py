@@ -495,15 +495,27 @@ class DynDNS12Update(APIView):
             {'type': 'AAAA', 'subname': '', 'ttl': 60, 'records': [ipv6] if ipv6 else []},
         ]
 
-        instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()
+        instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()  # TODO remove filter, all()
+        rrset_objects = list(instances)
+        rr_objects = {rrset.type: list(rrset.records.all()) for rrset in rrset_objects}
         serializer = RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
             raise e
 
-        with PDNSChangeTracker():
-            serializer.save(domain=domain)
+        try:
+            with PDNSChangeTracker():
+                serializer.save(domain=domain)
+        except ValueError as e:
+            raise ValueError(
+                "Got ValueError during dyndns12 update.\n\n"
+                "Error message: %s\n"
+                "RRset objects: %s\n"
+                "RR objects: %s\n"
+                "Data: %s\n" %
+                (e, rrset_objects, rr_objects, data)
+            )
 
         return Response('good', content_type='text/plain')
 
