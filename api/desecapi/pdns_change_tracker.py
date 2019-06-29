@@ -216,6 +216,7 @@ class PDNSChangeTracker:
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
             except RRset.DoesNotExist as e:
+                self.transaction.__exit__(type(e), e, e.__traceback__)
                 raise ValueError('For changes %s, could not find RRset when applying %s' %
                                  (list(map(str, changes)), change))
             except Exception as e:
