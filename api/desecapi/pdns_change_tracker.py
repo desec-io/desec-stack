@@ -101,6 +101,9 @@ class PDNSChangeTracker:
             rrs = [RR(rrset=rr_set, content=ns) for ns in api_settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
+        def __str__(self):
+            return 'Create Domain %s' % self.domain_name
+
     class DeleteDomain(PDNSChange):
         @property
         def axfr_required(self):
@@ -112,6 +115,9 @@ class PDNSChangeTracker:
 
         def api_do(self):
             pass
+
+        def __str__(self):
+            return 'Delete Domain %s' % self.domain_name
 
     class CreateUpdateDeleteRRSets(PDNSChange):
         def __init__(self, domain_name, additions, modifications, deletions):
@@ -160,6 +166,10 @@ class PDNSChangeTracker:
         def api_do(self):
             pass
 
+        def __str__(self):
+            return 'Update RRsets of %s: additions=%s, modifications=%s, deletions=%s' % \
+                   (self.domain_name, list(self._additions), list(self._modifications), list(self._deletions))
+
     def __init__(self):
         self._domain_additions = set()
         self._domain_deletions = set()
@@ -205,6 +215,9 @@ class PDNSChangeTracker:
                 change.api_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
+            except RRset.DoesNotExist as e:
+                raise ValueError('For changes %s, could not find RRset when applying %s' %
+                                 (list(map(str, changes)), change))
             except Exception as e:
                 # TODO gather as much info as possible
                 #  see if pdns and api are possibly in an inconsistent state

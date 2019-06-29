@@ -24,6 +24,12 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
             self.request_pdns_zone_axfr(name),
         ])
 
+    def test_rrset_does_not_exist_exception(self):
+        tracker = PDNSChangeTracker()
+        tracker._rr_set_updated(RRset(domain=self.empty_domain, subname='', type='A'))
+        with self.assertRaises(ValueError):
+            tracker.__exit__(None, None, None)
+
 
 class RRTestCase(PdnsChangeTrackerTestCase):
     """
