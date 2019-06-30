@@ -170,13 +170,14 @@ class PDNSChangeTracker:
             return 'Update RRsets of %s: additions=%s, modifications=%s, deletions=%s' % \
                    (self.domain_name, list(self._additions), list(self._modifications), list(self._deletions))
 
-    def __init__(self):
+    def __init__(self, owner: User):
         self._domain_additions = set()
         self._domain_deletions = set()
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
         self.transaction = None
+        self.owner = owner
 
     def _manage_signals(self, method):
         if method not in ['connect', 'disconnect']:
@@ -281,6 +282,9 @@ class PDNSChangeTracker:
         return changes
 
     def _rr_set_updated(self, rr_set: RRset, deleted=False, created=False):
+        if rr_set.domain.owner != self.owner:
+            return
+
         if self._rr_set_modifications.get(rr_set.domain.name, None) is None:
             self._rr_set_additions[rr_set.domain.name] = set()
             self._rr_set_modifications[rr_set.domain.name] = set()

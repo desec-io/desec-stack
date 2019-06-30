@@ -170,14 +170,14 @@ class DomainList(ListCreateAPIView):
             raise ex
 
         try:
-            with PDNSChangeTracker():
+            with PDNSChangeTracker(self.request.user):
                 domain = serializer.save(owner=self.request.user)
             parent_domain_name = domain.partition_name()[1]
             if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
                 parent_domain = Domain.objects.get(name=parent_domain_name)
                 # NOTE we need two change trackers here, as the first transaction must be committed to
                 # pdns in order to have keys available for the delegation
-                with PDNSChangeTracker():
+                with PDNSChangeTracker(self.request.user):
                     parent_domain.update_delegation(domain)
         except PDNSException as e:
             if not str(e).endswith(' already exists'):
@@ -215,12 +215,12 @@ class DomainDetail(IdempotentDestroy, RetrieveUpdateDestroyAPIView):
     lookup_field = 'name'
 
     def perform_destroy(self, instance: Domain):
-        with PDNSChangeTracker():
+        with PDNSChangeTracker(self.request.user):
             instance.delete()
         parent_domain_name = instance.partition_name()[1]
         if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
             parent_domain = Domain.objects.get(name=parent_domain_name)
-            with PDNSChangeTracker():
+            with PDNSChangeTracker(self.request.user):
                 parent_domain.update_delegation(instance)
 
     def get_queryset(self):
@@ -275,11 +275,11 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
         return response
 
     def perform_update(self, serializer):
-        with PDNSChangeTracker():
+        with PDNSChangeTracker(self.request.user):
             super().perform_update(serializer)
 
     def perform_destroy(self, instance):
-        with PDNSChangeTracker():
+        with PDNSChangeTracker(self.request.user):
             super().perform_destroy(instance)
 
 
@@ -326,11 +326,11 @@ class RRsetList(DomainView, ListCreateAPIView, UpdateAPIView):
             return response
 
     def perform_create(self, serializer):
-        with PDNSChangeTracker():
+        with PDNSChangeTracker(self.request.user):
             serializer.save(domain=self.domain)
 
     def perform_update(self, serializer):
-        with PDNSChangeTracker():
+        with PDNSChangeTracker(self.request.user):
             serializer.save(domain=self.domain)
 
 
@@ -505,7 +505,7 @@ class DynDNS12Update(APIView):
             raise e
 
         try:
-            with PDNSChangeTracker():
+            with PDNSChangeTracker(self.request.user):
                 serializer.save(domain=domain)
         except ValueError as e:
             raise ValueError(
