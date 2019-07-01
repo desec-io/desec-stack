@@ -6,7 +6,7 @@ from django.db.transaction import atomic
 from django.utils import timezone
 
 from api import settings as api_settings
-from desecapi.models import RRset, RR, Domain
+from desecapi.models import RRset, RR, Domain, User
 from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id
 
 
@@ -316,6 +316,9 @@ class PDNSChangeTracker:
             raise ValueError('An RR set cannot be created and deleted at the same time.')
 
     def _domain_updated(self, domain: Domain, created=False, deleted=False):
+        if domain.owner != self.owner:
+            return
+
         if not created and not deleted:
             # NOTE that the name must not be changed by API contract with models, hence here no-op for pdns.
             return
