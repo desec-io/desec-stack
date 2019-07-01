@@ -203,7 +203,7 @@ class DomainList(ListCreateAPIView):
                                  content_tmpl.render(context),
                                  from_tmpl.render(context),
                                  [self.request.user.email])
-            email.send()
+            #email.send()  # TODO revert
 
         if domain.name.endswith('.dedyn.io'):
             send_dyn_dns_email()
@@ -586,6 +586,8 @@ class UserCreateView(views.UserCreateView):
                     ).count() >= settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT
                 )
             )
+
+        lock = False  # TODO revert
 
         user = serializer.save(registration_remote_ip=remote_ip, lock=lock)
         if user.locked:

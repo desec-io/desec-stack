@@ -15,7 +15,7 @@ def send_account_lock_email(request, user):
                          content_tmpl.render(context),
                          from_tmpl.render(context),
                          [user.email])
-    email.send()
+    #email.send()  # TODO reverse change
 
 
 def send_token_email(context, user):
@@ -26,4 +26,4 @@ def send_token_email(context, user):
                          content_tmpl.render(context),
                          from_tmpl.render(context),
                          [user.email])
-    email.send()
+    #email.send()  # TODO reverse change
