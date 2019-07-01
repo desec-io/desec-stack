@@ -11,3 +11,5 @@ RUN chown -R mysql:mysql /docker-entrypoint-initdb.d/
 
 # mountable storage
 VOLUME /var/lib/mysql
+
+CMD ["mysqld", "--max-connections=256"]

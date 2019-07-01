@@ -27,6 +27,7 @@ def exception_handler(exc, context):
     if isinstance(exc, OperationalError):
         if isinstance(exc.args, (list, dict, tuple)) and exc.args and \
             exc.args[0] in (
+                1040,  # Too many connections
                 2002,  # Connection refused (Socket)
                 2003,  # Connection refused (TCP)
                 2005,  # Unresolved host name
