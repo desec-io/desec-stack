@@ -11,6 +11,7 @@ import djoser.views
 import psl_dns
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.mail import EmailMessage
+from django.db import IntegrityError, OperationalError
 from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
@@ -499,15 +500,30 @@ class DynDNS12Update(APIView):
         rrset_objects = list(instances)
         rr_objects = {rrset.type: list(rrset.records.all()) for rrset in rrset_objects}
         serializer = RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
-        try:
-            serializer.is_valid(raise_exception=True)
-        except ValidationError as e:
-            raise e
 
         try:
+            serializer.is_valid(raise_exception=True)
             with PDNSChangeTracker(self.request.user):
                 serializer.save(domain=domain)
+        except IntegrityError as e:
+            if ('desecapi_rrset_domain_id_subname_type' in str(e) or   # create after create
+                    ('desecapi_rr_rrset_id' in str(e) and 'fk_desecapi_rrset_id' and str(e))):  # create after delete
+                # TODO send an error email to the admins
+                return Response('abuse', status=status.HTTP_409_CONFLICT)
+            raise e
+        except ValidationError as e:
+            for detail in e.detail:
+                # TODO use setting for non_field_errors
+                if [d for d in detail.get('non_field_errors', []) if d.code == 'unique']:
+                    # TODO send an error email to the admins
+                    return Response('abuse', status=status.HTTP_409_CONFLICT)
+            raise e
+        except OperationalError as e:
+            if 'Deadlock found' in str(e):
+                # TODO send an error email to the admins
+                return Response('abuse', status=status.HTTP_409_CONFLICT)
         except ValueError as e:
+            # TODO this can also be caused by concurrent requests, e.g. by delete after delete
             raise ValueError(
                 "Got ValueError during dyndns12 update.\n\n"
                 "Error message: %s\n"
