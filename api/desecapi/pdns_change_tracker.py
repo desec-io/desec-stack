@@ -291,11 +291,11 @@ class PDNSChangeTracker:
         deletions = self._rr_set_deletions[rr_set.domain.name]
 
         item = (rr_set.type, rr_set.subname)
-        if created:
+        if created:  # TODO add "and not deleted"
             additions.add(item)
             assert item not in modifications
             deletions.discard(item)
-        elif deleted:
+        elif deleted:  # TODO add "and not created"
             if item in additions:
                 additions.remove(item)
                 modifications.discard(item)
