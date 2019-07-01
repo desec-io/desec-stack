@@ -216,15 +216,11 @@ class PDNSChangeTracker:
                 change.api_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
-            except RRset.DoesNotExist as e:
-                self.transaction.__exit__(type(e), e, e.__traceback__)
-                raise ValueError('For changes %s, could not find RRset when applying %s' %
-                                 (list(map(str, changes)), change))
             except Exception as e:
-                # TODO gather as much info as possible
-                #  see if pdns and api are possibly in an inconsistent state
                 self.transaction.__exit__(type(e), e, e.__traceback__)
-                raise e
+                exc = ValueError('For changes %s, %s occured when applying %s' %
+                                (list(map(str, changes)), type(e), change))
+                raise exc from e
 
         self.transaction.__exit__(None, None, None)
 
