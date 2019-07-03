@@ -517,6 +517,8 @@ describe("API v1", function () {
                                 {'subname': 'a.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
                                 {'subname': 'c.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
                                 {'subname': 'delete-test', 'ttl': 50, 'type': 'A', 'records': ['127.1.2.3']},
+                                {'subname': 'replace-test-1', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
+                                {'subname': 'replace-test-2', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
                             ]
                         );
                         return expect(response).to.have.status(201);
@@ -533,6 +535,48 @@ describe("API v1", function () {
                         ]);
 
                         itShowsUpInPdnsAs('delete-test', domain, 'A', []);
+                    });
+
+                    describe("can be replaced with a CNAME record", function () {
+                        before(function () {
+                            var response = chakram.put(
+                                '/domains/' + domain + '/rrsets/',
+                                [
+                                    {'subname': 'replace-test-1', 'ttl': 50, 'type': 'AAAA', 'records': []},
+                                    {'subname': 'replace-test-1', 'ttl': 1, 'type': 'CNAME', 'records': ['example.com.']},
+                                ]
+                            );
+                            return expect(response).to.have.status(200);
+                        });
+
+                        itPropagatesToTheApi([
+                            {subname: 'replace-test-1', domain: domain, type: 'AAAA', records: []},
+                            {subname: 'replace-test-1', domain: domain, type: 'CNAME', records: ["example.com."]},
+                        ]);
+
+                        itShowsUpInPdnsAs('replace-test-1', domain, 'AAAA', ["example.com"]);
+                        itShowsUpInPdnsAs('replace-test-1', domain, 'CNAME', ["example.com"]);
+                    });
+
+                    describe("cannot be replaced with a malformed CNAME record", function () {
+                        before(function () {
+                            var response = chakram.put(
+                                '/domains/' + domain + '/rrsets/',
+                                [
+                                    {'subname': 'replace-test-2', 'ttl': 50, 'type': 'AAAA', 'records': []},
+                                    {'subname': 'replace-test-2', 'ttl': 1, 'type': 'CNAME', 'records': ['no.trailing.dot']},
+                                ]
+                            );
+                            return expect(response).to.have.status(422);
+                        });
+
+                        itPropagatesToTheApi([
+                            {subname: 'replace-test-2', domain: domain, type: 'AAAA', records: ["::1", "::2"]},
+                            {subname: 'replace-test-2', domain: domain, type: 'CNAME', records: []},
+                        ]);
+
+                        itShowsUpInPdnsAs('replace-test-2', domain, 'AAAA', ["::1", "::2"]);
+                        itShowsUpInPdnsAs('replace-test-2', domain, 'CNAME', []);
                     });
 
                     describe("cannot bulk-post existing or duplicate RRsets", function () {
