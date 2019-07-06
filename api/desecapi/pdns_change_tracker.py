@@ -31,6 +31,11 @@ class PDNSChangeTracker:
     `modifications` and `deletions` are guaranteed to be disjoint.
     - If an item is in the set of deletions while being modified, an exception is raised.
     - If an item is in the set of modifications while being deleted, it is removed from `rr_set_modifications`.
+
+    Note every change tracker object will track all changes to the model across threading.
+    To avoid side-effects, it is recommended that in each Django process, only one change
+    tracker is run at a time, i.e. do not use them in parallel (e.g., in a multi-threading
+    scenario), do not use them nested.
     """
 
     _active_change_trackers = 0
