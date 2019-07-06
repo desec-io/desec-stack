@@ -379,6 +379,38 @@ describe("API v1", function () {
                             }
                         )).to.have.status(400);
                     });
+
+                    describe("even in subsequent requests", function () {
+                        before(function() {
+                            return expect(chakram.post(
+                                '/domains/' + domain + '/rrsets/',
+                                {
+                                    'subname': 'duplicate-contents', 'type': 'AAAA',
+                                    'records': ['::1'], 'ttl': 60
+                                }
+                            )).to.have.status(201);
+                        });
+
+                        it("still does not accept a semantic duplicate", function () {
+                            return expect(chakram.post(
+                                '/domains/' + domain + '/rrsets/',
+                                {
+                                    'subname': 'duplicate-contents', 'type': 'AAAA',
+                                    'records': ['::0001'], 'ttl': 60
+                                }
+                            )).to.have.status(400);
+                        });
+
+                        it("still does not accept a semantic duplicates", function () {
+                            return expect(chakram.post(
+                                '/domains/' + domain + '/rrsets/',
+                                {
+                                    'subname': 'duplicate-contents', 'type': 'AAAA',
+                                    'records': ['::1', '::0001'], 'ttl': 60
+                                }
+                            )).to.have.status(400);
+                        });
+                    })
                 });
 
                 describe("can bulk-post an AAAA and an MX record", function () {
