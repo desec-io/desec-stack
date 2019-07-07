@@ -271,7 +271,11 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
 
 class RRsetListSerializer(ListSerializer):
-    default_error_messages = {'not_a_list': 'Invalid input, expected a list of RRsets.'}
+    default_error_messages = {
+        **serializers.Serializer.default_error_messages,
+        **ListSerializer.default_error_messages,
+        **{'not_a_list': 'Expected a list of items but got {input_type}.'},
+    }
 
     @staticmethod
     def _key(data_item):
