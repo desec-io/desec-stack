@@ -91,7 +91,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_200_OK)
 
         response.data['name'] = self.random_domain_name()
-        response = self.client.put(url, json.dumps(response.data), content_type='application/json')
+        response = self.client.put(url, response.data, format='json')
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
         with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
@@ -101,7 +101,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_update_other_domains(self):
         url = self.reverse('v1:domain-detail', name=self.other_domain.name)
-        response = self.client.put(url, json.dumps({}), content_type='application/json')
+        response = self.client.put(url, {}, format='json')
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_create_domains(self):
@@ -276,7 +276,7 @@ class LockedDomainOwnerTestCase1(LockedDomainOwnerTestCase):
         type_ = 'A'
         for subname in ['', '*', 'asdf', 'asdf.adsf.asdf']:
             data = {'records': ['1.2.3.4'], 'ttl': 60}
-            response = self.client.put_rr_set(self.my_domain.name, subname, type_, **data)
+            response = self.client.put_rr_set(self.my_domain.name, subname, type_, data)
             self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
             for patch_request in [
@@ -286,7 +286,7 @@ class LockedDomainOwnerTestCase1(LockedDomainOwnerTestCase):
                 {'ttl': 60},
                 {},
             ]:
-                response = self.client.patch_rr_set(self.my_domain.name, subname, type_, **patch_request)
+                response = self.client.patch_rr_set(self.my_domain.name, subname, type_, patch_request)
                 self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
             # Try DELETE

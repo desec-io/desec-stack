@@ -41,8 +41,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.request_pdns_zone_update(self.my_domain.name),
             self.request_pdns_zone_axfr(self.my_domain.name),
         ):
-            response = self.client_token_authorized.patch_rr_set(
-                self.my_domain.name.lower(), subname='', type_='A', ttl=3600)
+            response = self.client_token_authorized.patch_rr_set(self.my_domain.name.lower(), '', 'A', {'ttl': 3600})
             self.assertStatus(response, status.HTTP_200_OK)
 
         response = self.assertDynDNS12Update(self.my_domain.name)
