@@ -24,7 +24,7 @@ from rest_framework import mixins
 from rest_framework import status
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -240,17 +240,16 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return self.domain.rrset_set
 
-    def get_object(self, raise_exception=True):
+    def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
-        result = queryset.filter(type=self.kwargs['type'], subname=self.kwargs['subname'])
-        if result:
-            self.check_object_permissions(self.request, result[0])
-            return result[0]
-        else:
-            if raise_exception:
-                raise Http404
-            else:
-                return None
+
+        filter_kwargs = {k: self.kwargs[k] for k in ['subname', 'type']}
+        obj = get_object_or_404(queryset, **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def get_serializer(self, *args, **kwargs):
         kwargs['domain'] = self.domain
@@ -264,7 +263,7 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
             data[k] = request.data.pop(k, self.kwargs[k])
 
         partial = kwargs.pop('partial', False)
-        instance = self.get_object(raise_exception=False)
+        instance = self.get_object()
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
 

@@ -256,14 +256,26 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertEqual(response.data['domain'], self.my_rr_set_domain.name)
         self.assertEqual(response.data['name'], 'test.' + self.my_rr_set_domain.name + '.')
 
+    def test_update_unknown_rrset(self):
+        url = self.reverse('v1:rrset', name=self.my_rr_set_domain.name, subname='doesnotexist', type='A')
+        data = {'records': ['3.2.3.4'], 'ttl': 120}
+
+        response = self.client.patch(url, data)
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+
+        response = self.client.put(url, data)
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+
     def test_delete_my_rr_sets_with_patch(self):
         for subname in self.SUBNAMES:
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
                 response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A', records=[])
                 self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
+            # Deletion is only idempotent via DELETE. For PATCH/PUT, the view raises 404 if the instance does not
+            # exist. By that time, the view has not parsed the payload yet and does not know it is a deletion.
             response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A', records=[])
-            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
             response = self.client.get_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
@@ -273,6 +285,9 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
                 response = self.client.delete_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
                 self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+
+            response = self.client.delete_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
             response = self.client.get_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
