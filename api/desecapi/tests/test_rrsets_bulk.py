@@ -310,6 +310,13 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data[0])
         self.assertContains(response, 'Expected a list of items but got dict.', status_code=status.HTTP_400_BAD_REQUEST)
 
+    def test_bulk_put_does_not_accept_list_of_crap(self):
+        response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=['bla'])
+        self.assertContains(response, 'Expected a dictionary, but got str.', status_code=status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=[42])
+        self.assertContains(response, 'Expected a dictionary, but got int.', status_code=status.HTTP_400_BAD_REQUEST)
+
     def test_bulk_put_full(self):
         # Full PUT always works
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):

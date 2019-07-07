@@ -303,6 +303,9 @@ class RRsetListSerializer(ListSerializer):
             known_instances = {}
         indices_by_key = {}
         for idx, item in enumerate(data):
+            # Validate item type before using anything from it
+            if not isinstance(item, dict):
+                self.fail('invalid', datatype=type(item).__name__)
             items = indices_by_key.setdefault(self._key(item), set())
             items.add(idx)
 
