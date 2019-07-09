@@ -51,9 +51,12 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSLORD_DEFAULT_TTL`: TTL to use by default, including for default NS records
     - nsmaster-related
       - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
+      - `DESECSTACK_DBMASTER_PASSWORD_replication_manager`: mysql password for `replication-master` user (sets up permissions for replication slaves)
       - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the slaves)
       - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
+    - replication-manager related
+      - `DESECSTACK_REPLICATION_MANAGER_CERTS`: a directory where `replication-manager` (to configure slave replication) will dump the slave's TLS key and certificate
 
 Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink.
 

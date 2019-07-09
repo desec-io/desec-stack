@@ -87,6 +87,7 @@ services:
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBMASTER_PASSWORD_pdns
+    - DESECSTACK_DBMASTER_PASSWORD_replication_manager
     networks:
     - rearmaster
     logging:

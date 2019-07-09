@@ -11,3 +11,4 @@ api/desecapi.sqlite
 
 # local certificates
 /certs/
+/replication-certs/
