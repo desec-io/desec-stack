@@ -14,7 +14,7 @@ user = 'replication-manager'
 
 
 def validate_name(value):
-    pattern = re.compile("^([a-z0-9.-]+\.[a-z0-9]+)$")
+    pattern = re.compile("^([a-z0-9._-]+[a-z0-9]+)$")
     if not pattern.match(value):
         raise ValueError(f'Name does not match pattern {pattern}')
 
