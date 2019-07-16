@@ -17,8 +17,8 @@ A few more hints:
 Once you created a domain and populated it with DNS records, they will
 be made publicly available on the following nameservers:
 
-  * ns1.desec.io (US)
-  * ns2.desec.io (DE)
+  * ns1.desec.io
+  * ns2.desec.org
 
 Note that no private key material is stored outside of Germany.
 
