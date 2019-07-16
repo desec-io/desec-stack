@@ -376,7 +376,7 @@ class DnsQuery(APIView):
         ns_records = get_records(domain, 'NS')
 
         # find desec.io name server IP address with standard name server
-        ips = dns_resolver.query('ns2.desec.io')
+        ips = dns_resolver.query('ns1.desec.io')
         dns_resolver.nameservers = []
         for ip in ips:
             dns_resolver.nameservers.append(str(ip))
