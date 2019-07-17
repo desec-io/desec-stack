@@ -6,12 +6,11 @@ Getting Started
 
 Access to the domain management API is granted to registered and logged in users only. User accounts
 can register free of charge through the API, providing an email address and a
-password. To register an user account, issue a request like this::
+password. To register an user account, issue a ``POST`` request like this::
 
-    http POST \
-        https://desec.io/api/v1/auth/users/ \
-        email:='"anemailaddress@example.com"' \
-        password:='"yourpassword"'
+    curl -X POST https://desec.io/api/v1/auth/users/ \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
 
 Your email address is required for account recovery, in case you forgot your
 password, for contacting support, etc. It is deSEC's policy to require users
@@ -27,10 +26,9 @@ done by asking the API for a token that can be used to authorize subsequent DNS
 management requests. To obtain such a token, send your email address and password to the
 ``/auth/token/login/`` endpoint::
 
-    http POST \
-        https://desec.io/api/v1/auth/token/login/ \
-        email:='"anemailaddress@example.com"' \
-        password:='"yourpassword"'
+    curl -X POST https://desec.io/api/v1/auth/token/login/ \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
 
 The API will reply with a token like::
 
@@ -103,10 +101,9 @@ of obtaining such a token is what we call log in.
 To obtain an authentication token, log in by sending your email address and
 password to the token create endpoint of the API::
 
-    http POST \
-        https://desec.io/api/v1/auth/token/login/ \
-        email:='"anemailaddress@example.com"' \
-        password:='"yourpassword"'
+    curl -X POST https://desec.io/api/v1/auth/token/login/ \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
 
 If email address and password match our records, the server will reply with
 ``201 Created`` and send you the token as part of the response body::
@@ -121,9 +118,8 @@ while old tokens *remain valid*.
 To authorize subsequent requests with the new token, set the HTTP ``Authorization``
 header to the token value, prefixed with ``Token``::
 
-    http POST \
-        http://desec.io/api/v1/ \
-        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+    curl -X GET https://desec.io/api/v1/ \
+        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
 
 Log Out
@@ -133,9 +129,8 @@ To invalidate an authentication token (log out), send a ``POST`` request to
 the token destroy endpoint, using the token in question in the ``Authorization``
 header::
 
-    http POST \
-        https://desec.io/api/v1/auth/token/logout/ \
-        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+    curl -X POST https://desec.io/api/v1/auth/token/logout/ \
+        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
 The server will delete the token and respond with ``204 No Content``.
 
@@ -187,9 +182,8 @@ Retrieve Account Information
 To request information about your account, send a ``GET`` request to the
 ``auth/me/`` endpoint::
 
-    http GET \
-        https://desec.io/api/v1/auth/me/ \
-        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+    curl -X GET https://desec.io/api/v1/auth/me/ \
+        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
 
 Change Email Address
@@ -198,10 +192,10 @@ Change Email Address
 You can change your account email address by sending a ``PUT`` request to the
 ``auth/me/`` endpoint::
 
-    http PUT \
-        https://desec.io/api/v1/auth/me/ \
-        Authorization:"Token i+T3b1h/OI+H9ab8tRS98stGtURe" \
-        email:='"new-email@example.com"'
+    curl -X PUT https://desec.io/api/v1/auth/me/ \
+        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"email": "new-email@example.com"}'
 
 Please note that our email support only acts upon requests that originate from
 the email address associated with the deSEC user in question.  It is therefore
@@ -228,9 +222,8 @@ Retrieving All Current Tokens
 
 To retrieve a list of currently valid tokens, issue a ``GET`` request::
 
-    http \
-        https://desec.io/api/v1/auth/tokens/ \
-        Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
+    curl -X GET https://desec.io/api/v1/auth/tokens/ \
+        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will respond with a list of token objects, each containing a
 timestamp when the token was created (note the ``Z`` indicating the UTC
@@ -263,10 +256,10 @@ Create Additional Tokens
 To create another token using the token management interface, issue a
 ``POST`` request to the same endpoint::
 
-    http POST \
-        https://desec.io/api/v1/auth/tokens/ \
-        Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond" \
-        name:='"my new token"'
+    curl -X POST https://desec.io/api/v1/auth/tokens/ \
+        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"name": "my new token"}'
 
 Note that the name is optional and will be empty if not specified. The server
 will reply with ``201 Created`` and the created token in the response body::
@@ -283,11 +276,11 @@ Delete Tokens
 `````````````
 
 To delete an existing token via the token management endpoints, issue a
-``DELETE`` request on the token's endpoint::
+``DELETE`` request on the token's endpoint, replacing ``:id`` with the
+token ``id`` value::
 
-    http DELETE \
-        https://desec.io/api/v1/auth/tokens/:id/ \
-        Authorization:"Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/:id/ \
+        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will reply with ``204 No Content``, even if the token was not found.
 

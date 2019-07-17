@@ -11,9 +11,5 @@ JSON-formatted user input in the body of the ``POST``, ``PATCH``, or ``PUT``
 request (see below).  The request is required to come with a ``Content-Type:
 application/json`` header field.
 
-For communication with the API, we recommend using `HTTPie`_ which takes care
-of JSON encoding and the content type header automatically.  Of course,
-``curl`` or any other decent HTTP client will work as well.
-
-.. _HTTPie: https://httpie.org/
-
+API functionality is demonstrated using the command line tool ``curl``.  To
+pretty-print JSON output, process the data through ``jq``:  ``curl ... | jq .``.

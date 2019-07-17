@@ -87,10 +87,10 @@ Creating a Domain
 To create a new domain, issue a ``POST`` request to the ``/api/v1/domains/``
 endpoint, like this::
 
-    http POST \
-        https://desec.io/api/v1/domains/ \
-        Authorization:"Token {token}" \
-        name:='"example.com"'
+    curl -X POST https://desec.io/api/v1/domains/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"name": "example.com"}'
 
 Only the ``name`` field is mandatory.
 
@@ -125,9 +125,8 @@ Listing Domains
 The ``/api/v1/domains/`` endpoint reponds to ``GET`` requests with an array of
 `domain object`_\ s. For example, you may issue the following command::
 
-    http GET \
-        https://desec.io/api/v1/domains/ \
-        Authorization:"Token {token}"
+    curl -X GET https://desec.io/api/v1/domains/ \
+        --header "Authorization: Token {token}"
 
 to retrieve an overview of the domains you own.
 
@@ -141,9 +140,8 @@ Retrieving a Specific Domain
 To retrieve a domain with a specific name, issue a ``GET`` request with the
 ``name`` appended to the ``domains/`` endpoint, like this::
 
-    http GET \
-        https://desec.io/api/v1/domains/{name}/ \
-        Authorization:"Token {token}"
+    curl -X GET https://desec.io/api/v1/domains/:name/ \
+        --header "Authorization: Token {token}"
 
 This will return only one domain (i.e., the response is not a JSON array).
 

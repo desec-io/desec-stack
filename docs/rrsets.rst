@@ -112,10 +112,10 @@ Creating an RRset
 To create a new RRset, simply issue a ``POST`` request to the
 ``/api/v1/domains/:name/rrsets/`` endpoint, like this::
 
-    http POST \
-        https://desec.io/api/v1/domains/:name/rrsets/ \
-        Authorization:"Token {token}" \
-        subname:='"www"' type:='"A"' records:='["127.0.0.1","127.0.0.2"]' ttl:=3600
+    curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"subname": "www", "type": "A", "ttl": 3600, "records": ["127.0.0.1", "127.0.0.2"]}'
 
 ``type``, ``records``, and ``ttl`` are mandatory, whereas the ``subname``
 field is optional.
@@ -143,11 +143,16 @@ A common use case is the creation of a ``TLSA`` RRset which carries information
 about the TLS certificate used by the server that the domain points to.  For
 example, to create a ``TLSA`` RRset for ``www.example.com``, you can run::
 
-    http POST \
-        https://desec.io/api/v1/domains/example.com/rrsets/ \
-        Authorization:"Token {token}" \
-        subname:='"_443._tcp.www"' type:='"TLSA"' ttl:=3600 \
-        records:='["3 1 1 11501875615d4.....dd122bbf9190"]'
+    curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "subname": "_443._tcp.www",
+          "type": "TLSA",
+          "ttl": 3600,
+          "records": ["3 1 1 11501875615d4.....dd122bbf9190"]
+        }
+    EOF
 
 **Note:** The ``subname`` is prefixed with ``_{port}._{transport_protocol}``.
 For a HTTPS server, this will usually be ``_443._tcp`` (for an otherwise empty
@@ -168,10 +173,14 @@ sending an array of RRset objects to the ``rrsets/`` endpoint (instead of just
 one), like this::
 
     curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
-        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},' \
-            '...]'
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        [
+          {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+          {"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},
+          ...
+        ]
+    EOF
 
 This is especially useful for bootstrapping a new domain.
 
@@ -186,9 +195,8 @@ The ``/api/v1/domains/:name/rrsets/`` endpoint reponds to ``GET`` requests
 with an array of `RRset object`_\ s. For example, you may issue the following
 command::
 
-    http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/ \
-        Authorization:"Token {token}"
+    curl -X GET https://desec.io/api/v1/domains/:name/rrsets/ \
+        --header "Authorization: Token {token}"
 
 to retrieve the contents of a zone that you own.
 
@@ -205,9 +213,8 @@ To retrieve an array of all RRsets from your zone that have a specific type
 ``GET`` request with a ``type`` query parameter carrying the desired RRset type
 like::
 
-    http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/?type=:type \
-        Authorization:"Token {token}"
+    curl https://desec.io/api/v1/domains/:name/rrsets/?type=:type \
+        --header "Authorization: Token {token}"
 
 
 Filtering by Subname
@@ -217,9 +224,8 @@ To filter the RRsets array by subname (e.g. to retrieve all records in the
 ``www`` subdomain, regardless of their type), use the ``subname`` query
 parameter, like this::
 
-    http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/?subname=:subname \
-        Authorization:"Token {token}"
+    curl https://desec.io/api/v1/domains/:name/rrsets/?subname=:subname \
+        --header "Authorization: Token {token}"
 
 This approach also allows to retrieve all records associated with the zone
 apex (i.e. ``example.com`` where ``subname`` is empty), by querying
@@ -234,9 +240,8 @@ To retrieve an RRset with a specific name and type from your zone (e.g. the
 ``subname`` information and the type appended to the ``rrsets/`` endpoint,
 like this::
 
-    http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
-        Authorization:"Token {token}"
+    curl https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
+        --header "Authorization: Token {token}"
 
 This will return only one RRset (i.e., the response is not a JSON array).  The
 response status code is ``200 OK`` if the requested RRset exists, and ``404
@@ -253,17 +258,20 @@ to normalization rules of the HTTP specification which cause the double-slash
 To access an RRset at the root of your domain, we reserved the special subname
 value ``@``.  This is a common placeholder for this use case (see RFC 1035).
 As an example, you can retrieve the IPv4 address(es) of your domain root by
-querying ``/api/v1/domains/:name/rrsets/@/A/``.
+running::
+
+    curl https://desec.io/api/v1/domains/:name/rrsets/@/A/ \
+        --header "Authorization: Token {token}"
 
 **Pro tip:** If you like to have the convenience of simple string expansion
 in the URL, you can add three dots after ``:subname``, like so::
 
-    http GET \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
-        Authorization:"Token {token}"
+    curl https://desec.io/api/v1/domains/:name/rrsets/:subname.../:type/ \
+        --header "Authorization: Token {token}"
 
-With this syntax, the above-mentioned normalization problem does not occur.
-You can think of the three dots as abbreviating the rest of the DNS name.
+With this syntax, the above-mentioned normalization problem does not occur,
+and no special treatment is needed for accessing the zone apex.  You can
+think of the three dots as abbreviating the rest of the DNS name.
 
 
 Modifying an RRset
@@ -276,13 +284,21 @@ need to be provided.  In contrast, if you use ``PUT``, the full resource must
 be specified (that is, all fields, including ``subname`` and ``type``).
 Examples::
 
-    http PUT \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
-        Authorization:"Token {token}" records:='["127.0.0.1"]' ttl:=3600
+    curl -X PUT https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "subname": ":subname",
+          "type": ":type",
+          "ttl": 3600,
+          "records": ["..."]
+        }
+    EOF
 
-    http PATCH \
-        https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
-        Authorization:"Token {token}" ttl:=86400
+    curl -X PATCH https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"ttl": 86400}'
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
 updated RRset in the reponse body.  If there is a syntactical error (e.g. not
@@ -303,10 +319,14 @@ by sending an array of RRset objects to the ``rrsets/`` endpoint (instead of
 just one), like this::
 
     curl -X PUT https://desec.io/api/v1/domains/:name/rrsets/ \
-        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},' \
-            '...]'
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        [
+          {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+          {"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},
+          ...
+        ]
+    EOF
 
 Each given RRset is uniquely identified by its ``subname`` and ``type`` (with
 ``subname``  defaulting to the empty string if omitted). For ``ttl`` and
@@ -329,15 +349,18 @@ status code is ``204 No Content``.
 Bulk Deletion of RRsets
 ```````````````````````
 
-It is sometimes desirable to delete RRsets as using a bulk request.  This is
-achieved by sending the RRset with an empty records list ``[]`` to the
-``rrsets/`` endpoint, using the ``PATCH`` or ``PUT`` method::
+It is sometimes desirable to delete an RRset while creating or modifying
+another one.  This is achieved by sending a bulk request with an RRset that
+has an empty records list ``[]``, using the ``PATCH`` or ``PUT`` method::
 
     curl -X PATCH https://desec.io/api/v1/domains/:name/rrsets/ \
-        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "records": []},' \
-            '...]'
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        [
+          {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+          {"subname": "www", "type": "AAAA", "records": []}
+        ]
+    EOF
 
 For details about input validation and return status codes, please refer to
 `Bulk Operations`_.
@@ -351,14 +374,19 @@ and ``PUT`` request methods. You can simply send an array of RRset objects
 (instead of just one), like this::
 
     curl -X PATCH https://desec.io/api/v1/domains/:name/rrsets/ \
-        -H "Content-Type: application/json" -H "Authorization: Token {token}" \
-        -d '[{"subname": "www", "type": "A",    "ttl": 3600, "records": ["1.2.3.4"]},' \
-            '{"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe", "c0ff::ee"]},' \
-            '{"subname": "backup", "type": "MX", "records": []},' \
-            '...]'
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<EOF
+        [
+          {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+          {"subname": "www", "type": "AAAA", "ttl": 3600, "records": ["c0::fefe"]},
+          {"subname": "backup", "type": "MX", "records": []},
+          ...
+        ]
+    EOF
 
-Note that ``@`` is not accepted here as an alias for the empty subname. For
-context, see `Accessing the Zone Apex`_.
+Note that the zone apex is referred to by an empty subname string,
+``"subname": ""``. (The special character ``@`` is not accepted as an alias.)
+For context, see `Accessing the Zone Apex`_.
 
 Atomicity
 `````````
@@ -540,7 +568,7 @@ Record types with priority field
     as required by the client you are using.  Here's an example of how to
     create a ``TXT`` RRset with HTTPie::
 
-        http POST \
-            https://desec.io/api/v1/domains/:name/rrsets/ \
-            Authorization:"Token {token}" \
-            type:='"TXT"' records:='["\"test value1\"","\"value2\""]' ttl:=3600
+    curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
+        --header "Authorization: Token {token}" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
