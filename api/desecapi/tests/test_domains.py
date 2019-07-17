@@ -99,6 +99,32 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data['name'], self.my_domain.name)
 
+    def test_update_my_domain_immutable(self):
+        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
+        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
+            response = self.client.get(url)
+            self.assertStatus(response, status.HTTP_200_OK)
+
+        created = response.data['created']
+        keys = response.data['keys']
+        published = response.data['published']
+
+        response.data['created'] = '2019-08-07T18:34:39.249227Z'
+        response.data['published'] = '2019-08-07T18:34:39.249227Z'
+        response.data['keys'] = [{'dnskey': '257 3 13 badefefe'}]
+
+        self.assertNotEqual(response.data['created'], created)
+        self.assertNotEqual(response.data['published'], published)
+        self.assertNotEqual(response.data['keys'], keys)
+
+        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
+            response = self.client.put(url, response.data, format='json')
+        self.assertStatus(response, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['created'], created)
+        self.assertEqual(response.data['published'], published)
+        self.assertEqual(response.data['keys'], keys)
+
     def test_update_other_domains(self):
         url = self.reverse('v1:domain-detail', name=self.other_domain.name)
         response = self.client.put(url, {}, format='json')

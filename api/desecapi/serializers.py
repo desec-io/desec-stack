@@ -420,7 +420,8 @@ class DomainSerializer(serializers.ModelSerializer):
         model = Domain
         fields = ('created', 'published', 'name', 'keys')
         extra_kwargs = {
-            'name': {'trim_whitespace': False}
+            'name': {'trim_whitespace': False},
+            'published': {'read_only': True},
         }
 
     def get_fields(self):
