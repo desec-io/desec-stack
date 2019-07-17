@@ -272,8 +272,9 @@ Modifying an RRset
 To modify an RRset, use the endpoint that you would also use to retrieve that
 specific RRset.  The API allows changing the values of ``records`` and
 ``ttl``.  When using the ``PATCH`` method, only fields you would like to modify
-need to be provided, where the ``PUT`` method requires specification of both
-fields.  Examples::
+need to be provided.  In contrast, if you use ``PUT``, the full resource must
+be specified (that is, all fields, including ``subname`` and ``type``).
+Examples::
 
     http PUT \
         https://desec.io/api/v1/domains/:name/rrsets/:subname/:type/ \

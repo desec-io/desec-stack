@@ -679,7 +679,7 @@ describe("API v1", function () {
                         ).then(function () {
                             return chakram.put(
                                 '/domains/' + domain + '/rrsets/single.../AAAA/',
-                                { 'records': ['fefe::bade'], 'ttl': 31 }
+                                { 'subname': 'single', 'type': 'AAAA', 'records': ['fefe::bade'], 'ttl': 31 }
                             );
                         });
                         expect(response).to.have.status(200);

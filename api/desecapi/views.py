@@ -3,7 +3,6 @@ import binascii
 import ipaddress
 import os
 import re
-from copy import deepcopy
 from datetime import timedelta
 
 import django.core.exceptions
@@ -256,19 +255,8 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
         return super().get_serializer(*args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        # Attach URL parameters (self.kwargs) to the data object (copied from request.body),
-        # the latter having preference with both are given.
-        data = deepcopy(request.data)
-        for k in ('type', 'subname'):
-            data[k] = request.data.pop(k, self.kwargs[k])
+        response = super().update(request, *args, **kwargs)
 
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        self.perform_update(serializer)
-        response = Response(serializer.data)
         if response.data is None:
             response.status_code = 204
         return response

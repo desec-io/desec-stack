@@ -172,7 +172,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_update_my_rr_sets(self):
         for subname in self.SUBNAMES:
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
-                data = {'records': ['2.2.3.4'], 'ttl': 30}
+                data = {'records': ['2.2.3.4'], 'ttl': 30, 'type': 'A', 'subname': subname}
                 response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', data)
                 self.assertStatus(response, status.HTTP_200_OK)
 
@@ -186,6 +186,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
             response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', {'ttl': 37})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_my_rr_set_with_invalid_payload_type(self):
+        for subname in self.SUBNAMES:
+            data = [{'records': ['2.2.3.4'], 'ttl': 30, 'type': 'A', 'subname': subname}]
+            response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', data)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEquals(response.data['non_field_errors'][0],
+                              'Invalid data. Expected a dictionary, but got list.')
+
+            data = 'foobar'
+            response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', data)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEquals(response.data['non_field_errors'][0],
+                              'Invalid data. Expected a dictionary, but got str.')
 
     def test_partially_update_my_rr_sets(self):
         for subname in self.SUBNAMES:
