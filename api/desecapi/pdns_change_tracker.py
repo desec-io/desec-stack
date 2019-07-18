@@ -33,6 +33,8 @@ class PDNSChangeTracker:
     - If an item is in the set of modifications while being deleted, it is removed from `rr_set_modifications`.
     """
 
+    _active_change_trackers = 0
+
     class PDNSChange:
         """
         A reversible, atomic operation against the powerdns API.
@@ -180,6 +182,8 @@ class PDNSChangeTracker:
         getattr(post_delete, method)(self._on_domain_post_delete, sender=Domain)
 
     def __enter__(self):
+        PDNSChangeTracker._active_change_trackers += 1
+        assert PDNSChangeTracker._active_change_trackers == 1, 'Nesting %s is not supported.' % self.__class__.__name__
         self._domain_additions = set()
         self._domain_deletions = set()
         self._rr_set_additions = {}
@@ -190,6 +194,7 @@ class PDNSChangeTracker:
         self.transaction.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        PDNSChangeTracker._active_change_trackers -= 1
         self._manage_signals('disconnect')
 
         if exc_type:
