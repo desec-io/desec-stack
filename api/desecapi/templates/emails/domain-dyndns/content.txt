@@ -28,7 +28,7 @@ bookmark this URL.
 
 You can use our website to see if everything works as expected:
 
-  https://desec.io/#!/en/tools/dyndns-check?domain={{ domain }}
+  https://dedyn.io/check?{{ domain }}#{{ password }}
 
 We know there is always room for improvement, so please shoot me
 an email if we can do anything better.
