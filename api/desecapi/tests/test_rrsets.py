@@ -99,7 +99,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 {'subname': subname, 'records': ['10 example.com.'], 'ttl': 60, 'type': type_}
                 for type_ in self.DEAD_TYPES
             ] + [
-                {'subname': subname, 'records': ['ns1.desec.io. peter.desec.io. 2584 10800 3600 604800 60'],
+                {'subname': subname, 'records': ['set.an.example. get.desec.io. 2584 10800 3600 604800 60'],
                  'ttl': 60, 'type': type_}
                 for type_ in self.RESTRICTED_TYPES
             ]:
