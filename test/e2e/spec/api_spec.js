@@ -433,8 +433,8 @@ describe("API v1", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 3622 },
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 3633 }
                             ]
                         );
                         expect(response).to.have.status(201);
@@ -443,13 +443,13 @@ describe("API v1", function () {
                     });
 
                     itPropagatesToTheApi([
-                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 22, records: ['dead::beef']},
-                        {subname: '', domain: domain, type: 'MX', ttl: 33, records: ['10 mail.example.com.', '20 mail.example.net.']},
+                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 3622, records: ['dead::beef']},
+                        {subname: '', domain: domain, type: 'MX', ttl: 3633, records: ['10 mail.example.com.', '20 mail.example.net.']},
                     ]);
 
-                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 22);
+                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 3622);
 
-                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 33);
+                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 3633);
                 });
 
                 describe("cannot bulk-post with missing or invalid fields", function () {
@@ -457,27 +457,27 @@ describe("API v1", function () {
                         // Set an RRset that we'll try to overwrite
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
+                            {'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']}
                         );
                         expect(response).to.have.status(201);
 
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                                 {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                                {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'SOA', 'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'OPT', 'records': ['9999']},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'SOA', 'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'OPT', 'records': ['9999']},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
                             ]
                         );
                         expect(response).to.have.status(400);
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
-                            { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
+                            { ttl: [ 'Ensure this value is greater than or equal to 60.' ] },
                             { subname: [ 'This field is required.' ] },
                             { ttl: [ 'This field is required.' ] },
                             { records: [ 'This field is required.' ] },
@@ -500,7 +500,7 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 }),
                             ]);
@@ -514,11 +514,11 @@ describe("API v1", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'c.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'delete-test', 'ttl': 50, 'type': 'A', 'records': ['127.1.2.3']},
-                                {'subname': 'replace-test-1', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
-                                {'subname': 'replace-test-2', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
+                                {'subname': 'a.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'c.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'delete-test', 'ttl': 3650, 'type': 'A', 'records': ['127.1.2.3']},
+                                {'subname': 'replace-test-1', 'ttl': 3650, 'type': 'AAAA', 'records': ['::1', '::2']},
+                                {'subname': 'replace-test-2', 'ttl': 3650, 'type': 'AAAA', 'records': ['::1', '::2']},
                             ]
                         );
                         return expect(response).to.have.status(201);
@@ -542,8 +542,8 @@ describe("API v1", function () {
                             var response = chakram.put(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'replace-test-1', 'ttl': 50, 'type': 'AAAA', 'records': []},
-                                    {'subname': 'replace-test-1', 'ttl': 1, 'type': 'CNAME', 'records': ['example.com.']},
+                                    {'subname': 'replace-test-1', 'ttl': 3650, 'type': 'AAAA', 'records': []},
+                                    {'subname': 'replace-test-1', 'ttl': 3601, 'type': 'CNAME', 'records': ['example.com.']},
                                 ]
                             );
                             return expect(response).to.have.status(200);
@@ -563,8 +563,8 @@ describe("API v1", function () {
                             var response = chakram.put(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'replace-test-2', 'ttl': 50, 'type': 'AAAA', 'records': []},
-                                    {'subname': 'replace-test-2', 'ttl': 1, 'type': 'CNAME', 'records': ['no.trailing.dot']},
+                                    {'subname': 'replace-test-2', 'ttl': 3650, 'type': 'AAAA', 'records': []},
+                                    {'subname': 'replace-test-2', 'ttl': 3601, 'type': 'CNAME', 'records': ['no.trailing.dot']},
                                 ]
                             );
                             return expect(response).to.have.status(422);
@@ -586,8 +586,8 @@ describe("API v1", function () {
                             response = chakram.post(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'a.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
-                                    {'subname': 'a.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'a.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'a.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 ]
                             );
                             expect(response).to.have.status(400);
@@ -607,12 +607,12 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/a.2.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 });
                         });
 
-                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"foo"'], 50);
+                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"foo"'], 3650);
                     });
 
                     describe("cannot delete RRsets via bulk-post", function () {
@@ -622,7 +622,7 @@ describe("API v1", function () {
                             response = chakram.post(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'c.2', 'ttl': 40, 'type': 'TXT', 'records': []},
+                                    {'subname': 'c.2', 'ttl': 3640, 'type': 'TXT', 'records': []},
                                 ]
                             );
                             return expect(response).to.have.status(400);
@@ -640,7 +640,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid type", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'INVALID', 'records': ['"foo"']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -648,7 +648,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid records", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -656,7 +656,7 @@ describe("API v1", function () {
                     it("gives the right response for records contents being null", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4', null]}]
                         );
                         return expect(response).to.have.status(400);
                     });
@@ -675,11 +675,11 @@ describe("API v1", function () {
                     before(function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            { 'subname': 'single', 'type': 'AAAA', 'records': ['bade::fefe'], 'ttl': 62 }
+                            { 'subname': 'single', 'type': 'AAAA', 'records': ['bade::fefe'], 'ttl': 3662 }
                         ).then(function () {
                             return chakram.put(
                                 '/domains/' + domain + '/rrsets/single.../AAAA/',
-                                { 'subname': 'single', 'type': 'AAAA', 'records': ['fefe::bade'], 'ttl': 31 }
+                                { 'subname': 'single', 'type': 'AAAA', 'records': ['fefe::bade'], 'ttl': 3631 }
                             );
                         });
                         expect(response).to.have.status(200);
@@ -688,10 +688,10 @@ describe("API v1", function () {
                     });
 
                     itPropagatesToTheApi([
-                        {subname: 'single', domain: domain, type: 'AAAA', ttl: 31, records: ['fefe::bade']},
+                        {subname: 'single', domain: domain, type: 'AAAA', ttl: 3631, records: ['fefe::bade']},
                     ]);
 
-                    itShowsUpInPdnsAs('single', domain, 'AAAA', ['fefe::bade'], 31);
+                    itShowsUpInPdnsAs('single', domain, 'AAAA', ['fefe::bade'], 3631);
                 });
 
                 describe("can bulk-put an AAAA and an MX record", function () {
@@ -699,8 +699,8 @@ describe("API v1", function () {
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 3622 },
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 3633 }
                             ]
                         );
                         expect(response).to.have.status(200);
@@ -709,13 +709,13 @@ describe("API v1", function () {
                     });
 
                     itPropagatesToTheApi([
-                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 22, records: ['dead::beef']},
-                        {subname: '', domain: domain, type: 'MX', ttl: 33, records: ['10 mail.example.com.', '20 mail.example.net.']},
+                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 3622, records: ['dead::beef']},
+                        {subname: '', domain: domain, type: 'MX', ttl: 3633, records: ['10 mail.example.com.', '20 mail.example.net.']},
                     ]);
 
-                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 22);
+                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 3622);
 
-                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 33);
+                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 3633);
                 });
 
                 describe("cannot bulk-put with missing or invalid fields", function () {
@@ -723,24 +723,24 @@ describe("API v1", function () {
                         // Set an RRset that we'll try to overwrite
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
+                            {'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']}
                         );
                         expect(response).to.have.status(201);
 
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                                 {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                                {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
                             ]
                         );
                         expect(response).to.have.status(400);
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
-                            { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
+                            { ttl: [ 'Ensure this value is greater than or equal to 60.' ] },
                             { subname: [ 'This field is required.' ] },
                             { ttl: [ 'This field is required.' ] },
                             { records: [ 'This field is required.' ] },
@@ -760,7 +760,7 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 }),
                             ]);
@@ -774,9 +774,9 @@ describe("API v1", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'b.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'c.2', 'ttl': 50, 'type': 'A', 'records': ['1.2.3.4']},
+                                {'subname': 'a.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'b.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'c.2', 'ttl': 3650, 'type': 'A', 'records': ['1.2.3.4']},
                             ]
                         );
                         expect(response).to.have.status(201);
@@ -790,7 +790,7 @@ describe("API v1", function () {
                             response = chakram.put(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'a.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'a.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 ]
                             );
                             expect(response).to.have.status(200);
@@ -803,12 +803,12 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/a.2.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 40);
+                                    expect(response).to.have.json('ttl', 3640);
                                     expect(response.body.records).to.have.members(['"bar"']);
                                 });
                         });
 
-                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"bar"'], 40);
+                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"bar"'], 3640);
                     });
 
                     describe("cannot bulk-put duplicate RRsets", function () {
@@ -818,8 +818,8 @@ describe("API v1", function () {
                             response = chakram.put(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'b.2', 'ttl': 60, 'type': 'TXT', 'records': ['"bar"']},
-                                    {'subname': 'b.2', 'ttl': 60, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'b.2', 'ttl': 3660, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'b.2', 'ttl': 3660, 'type': 'TXT', 'records': ['"bar"']},
                                 ]
                             );
                             return expect(response).to.have.status(400);
@@ -837,12 +837,12 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/b.2.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 });
                         });
 
-                        itShowsUpInPdnsAs('b.2', domain, 'TXT', ['"foo"'], 50);
+                        itShowsUpInPdnsAs('b.2', domain, 'TXT', ['"foo"'], 3650);
                     });
 
                     describe("can delete RRsets via bulk-put", function () {
@@ -852,7 +852,7 @@ describe("API v1", function () {
                             response = chakram.put(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'c.2', 'ttl': 40, 'type': 'A', 'records': []},
+                                    {'subname': 'c.2', 'ttl': 3640, 'type': 'A', 'records': []},
                                 ]
                             );
                             return expect(response).to.have.status(200);
@@ -869,7 +869,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid type", function () {
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'INVALID', 'records': ['"foo"']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -877,7 +877,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid records", function () {
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -885,7 +885,7 @@ describe("API v1", function () {
                     it("gives the right response for records contents being null", function () {
                         var response = chakram.put(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4', null]}]
                         );
                         return expect(response).to.have.status(400);
                     });
@@ -904,11 +904,11 @@ describe("API v1", function () {
                     before(function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            { 'subname': 'single', 'type': 'AAAA', 'records': ['bade::fefe'], 'ttl': 62 }
+                            { 'subname': 'single', 'type': 'AAAA', 'records': ['bade::fefe'], 'ttl': 3662 }
                         ).then(function () {
                             return chakram.patch(
                                 '/domains/' + domain + '/rrsets/single.../AAAA/',
-                                { 'records': ['fefe::bade'], 'ttl': 31 }
+                                { 'records': ['fefe::bade'], 'ttl': 3631 }
                             );
                         });
                         expect(response).to.have.status(200);
@@ -917,10 +917,10 @@ describe("API v1", function () {
                     });
 
                     itPropagatesToTheApi([
-                        {subname: 'single', domain: domain, type: 'AAAA', ttl: 31, records: ['fefe::bade']},
+                        {subname: 'single', domain: domain, type: 'AAAA', ttl: 3631, records: ['fefe::bade']},
                     ]);
 
-                    itShowsUpInPdnsAs('single', domain, 'AAAA', ['fefe::bade'], 31);
+                    itShowsUpInPdnsAs('single', domain, 'AAAA', ['fefe::bade'], 3631);
                 });
 
                 describe("can bulk-patch an AAAA and an MX record", function () {
@@ -928,8 +928,8 @@ describe("API v1", function () {
                         var response = chakram.patch(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 22 },
-                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 33 }
+                                { 'subname': 'ipv6', 'type': 'AAAA', 'records': ['dead::beef'], 'ttl': 3622 },
+                                { 'subname': '', 'type': 'MX', 'records': ['10 mail.example.com.', '20 mail.example.net.'], 'ttl': 3633 }
                             ]
                         );
                         expect(response).to.have.status(200);
@@ -938,13 +938,13 @@ describe("API v1", function () {
                     });
 
                     itPropagatesToTheApi([
-                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 22, records: ['dead::beef']},
-                        {subname: '', domain: domain, type: 'MX', ttl: 33, records: ['10 mail.example.com.', '20 mail.example.net.']},
+                        {subname: 'ipv6', domain: domain, type: 'AAAA', ttl: 3622, records: ['dead::beef']},
+                        {subname: '', domain: domain, type: 'MX', ttl: 3633, records: ['10 mail.example.com.', '20 mail.example.net.']},
                     ]);
 
-                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 22);
+                    itShowsUpInPdnsAs('ipv6', domain, 'AAAA', ['dead::beef'], 3622);
 
-                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 33);
+                    itShowsUpInPdnsAs('', domain, 'MX', ['10 mail.example.com.', '20 mail.example.net.'], 3633);
                 });
 
                 describe("cannot bulk-patch with missing or invalid fields", function () {
@@ -952,24 +952,24 @@ describe("API v1", function () {
                         // Set an RRset that we'll try to overwrite
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
-                            {'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
+                            {'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']}
                         );
                         expect(response).to.have.status(201);
 
                         var response = chakram.patch(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                                {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                                 {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                                {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                                {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                                {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
                             ]
                         );
                         expect(response).to.have.status(400);
                         expect(response).to.have.json([
                             { type: [ 'This field is required.' ] },
-                            { ttl: [ 'Ensure this value is greater than or equal to 1.' ] },
+                            { ttl: [ 'Ensure this value is greater than or equal to 60.' ] },
                             { subname: [ 'This field is required.' ] },
                             { ttl: ['This field is required.']} ,
                             { records: ['This field is required.']} ,
@@ -989,7 +989,7 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 }),
                             ]);
@@ -1003,12 +1003,12 @@ describe("API v1", function () {
                         var response = chakram.post(
                             '/domains/' + domain + '/rrsets/',
                             [
-                                {'subname': 'a.1', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'a.2', 'ttl': 50, 'type': 'A', 'records': ['4.3.2.1']},
-                                {'subname': 'a.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'b.2', 'ttl': 50, 'type': 'A', 'records': ['5.4.3.2']},
-                                {'subname': 'b.2', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                                {'subname': 'c.2', 'ttl': 50, 'type': 'A', 'records': ['1.2.3.4']},
+                                {'subname': 'a.1', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'a.2', 'ttl': 3650, 'type': 'A', 'records': ['4.3.2.1']},
+                                {'subname': 'a.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'b.2', 'ttl': 3650, 'type': 'A', 'records': ['5.4.3.2']},
+                                {'subname': 'b.2', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                                {'subname': 'c.2', 'ttl': 3650, 'type': 'A', 'records': ['1.2.3.4']},
                             ]
                         );
                         return expect(response).to.have.status(201);
@@ -1022,7 +1022,7 @@ describe("API v1", function () {
                                 '/domains/' + domain + '/rrsets/',
                                 [
                                     {'subname': 'a.1', 'type': 'TXT', 'records': ['"bar"']},
-                                    {'subname': 'a.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'a.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 ]
                             );
                             expect(response).to.have.status(200);
@@ -1036,20 +1036,20 @@ describe("API v1", function () {
                                     .get('/domains/' + domain + '/rrsets/a.1.../TXT/')
                                     .then(function (response) {
                                         expect(response).to.have.status(200);
-                                        expect(response).to.have.json('ttl', 50);
+                                        expect(response).to.have.json('ttl', 3650);
                                         expect(response.body.records).to.have.members(['"bar"']);
                                     }),
                                 chakram
                                     .get('/domains/' + domain + '/rrsets/a.2.../TXT/')
                                     .then(function (response) {
                                         expect(response).to.have.status(200);
-                                        expect(response).to.have.json('ttl', 40);
+                                        expect(response).to.have.json('ttl', 3640);
                                         expect(response.body.records).to.have.members(['"bar"']);
                                     }),
                             ]);
                         });
 
-                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"bar"'], 40);
+                        itShowsUpInPdnsAs('a.2', domain, 'TXT', ['"bar"'], 3640);
                     });
 
                     describe("cannot bulk-patch duplicate RRsets", function () {
@@ -1059,8 +1059,8 @@ describe("API v1", function () {
                             response = chakram.patch(
                                 '/domains/' + domain + '/rrsets/',
                                 [
-                                    {'subname': 'b.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
-                                    {'subname': 'b.2', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'b.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
+                                    {'subname': 'b.2', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                                 ]
                             );
                             return expect(response).to.have.status(400);
@@ -1078,12 +1078,12 @@ describe("API v1", function () {
                                 .get('/domains/' + domain + '/rrsets/b.2.../TXT/')
                                 .then(function (response) {
                                     expect(response).to.have.status(200);
-                                    expect(response).to.have.json('ttl', 50);
+                                    expect(response).to.have.json('ttl', 3650);
                                     expect(response.body.records).to.have.members(['"foo"']);
                                 });
                         });
 
-                        itShowsUpInPdnsAs('b.2', domain, 'TXT', ['"foo"'], 50);
+                        itShowsUpInPdnsAs('b.2', domain, 'TXT', ['"foo"'], 3650);
                     });
 
                     describe("can delete RRsets via bulk-patch", function () {
@@ -1110,7 +1110,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid type", function () {
                         var response = chakram.patch(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'INVALID', 'records': ['"foo"']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -1118,7 +1118,7 @@ describe("API v1", function () {
                     it("gives the right response for invalid records", function () {
                         var response = chakram.patch(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4']}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
                         return expect(response).to.have.status(422);
                     });
@@ -1126,7 +1126,7 @@ describe("API v1", function () {
                     it("gives the right response for records contents being null", function () {
                         var response = chakram.patch(
                             '/domains/' + domain + '/rrsets/',
-                            [{'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': ['1.2.3.4', null]}]
+                            [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4', null]}]
                         );
                         return expect(response).to.have.status(400);
                     });

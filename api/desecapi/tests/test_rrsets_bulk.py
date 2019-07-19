@@ -1,5 +1,6 @@
 import copy
 
+from django.conf import settings
 from rest_framework import status
 
 from desecapi.tests.base import AuthenticatedRRSetBaseTestCase
@@ -12,8 +13,8 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         super().setUpTestDataWithPdns()
 
         cls.data = [
-            {'subname': 'my-bulk', 'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'},
-            {'subname': 'my-bulk', 'records': ['desec.io.', 'foobar.example.'], 'ttl': 60, 'type': 'PTR'},
+            {'subname': 'my-bulk', 'records': ['1.2.3.4'], 'ttl': 3600, 'type': 'A'},
+            {'subname': 'my-bulk', 'records': ['desec.io.', 'foobar.example.'], 'ttl': 3600, 'type': 'PTR'},
         ]
 
         cls.data_no_records = copy.deepcopy(cls.data)
@@ -115,22 +116,22 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_post_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                     {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
-                    {'subname': '', 'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
+                    {'subname': '', 'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                     {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'SOA',
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'SOA',
                      'records': ['ns1.desec.io. peter.desec.io. 2018034419 10800 3600 604800 60']},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'OPT', 'records': ['9999']},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'OPT', 'records': ['9999']},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
                 ]
             ),
             status.HTTP_400_BAD_REQUEST,
             [
                 {'type': ['This field is required.']},
-                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'ttl': [f'Ensure this value is greater than or equal to {settings.MINIMUM_TTL_DEFAULT}.']},
                 {'subname': ['This field is required.']},
                 {},
                 {'ttl': ['This field is required.']},
@@ -192,7 +193,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_bulk_patch_change_ttl(self):
         data_no_records = copy.deepcopy(self.data_no_records)
-        data_no_records[1]['ttl'] = 911
+        data_no_records[1]['ttl'] = 3911
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.bulk_domain.name)):
             response = self.client.bulk_patch_rr_sets(domain_name=self.bulk_domain.name, payload=data_no_records)
             self.assertStatus(response, status.HTTP_200_OK)
@@ -212,7 +213,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_patch_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': 'a', 'type': 'A', 'records': [], 'ttl': 22},
+                    {'subname': 'a', 'type': 'A', 'records': [], 'ttl': 3622},
                     {'subname': 'b', 'type': 'AAAA', 'records': []},
                 ]),
             status.HTTP_200_OK,
@@ -224,25 +225,25 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_post_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': '', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
-                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA', 'ttl': 3},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA', 'records': ['::1', '::2']},
+                    {'subname': '', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                    {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA', 'ttl': 3603},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA', 'records': ['::1', '::2']},
                 ]
             )
         self.assertResponse(
             self.client.bulk_patch_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                     {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                     {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
                 ]),
             status.HTTP_400_BAD_REQUEST,
             [
                 {'type': ['This field is required.']},
-                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'ttl': [f'Ensure this value is greater than or equal to {settings.MINIMUM_TTL_DEFAULT}.']},
                 {'subname': ['This field is required.']},
                 {},
                 {},
@@ -254,23 +255,23 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_post_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': '', 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']}
+                    {'subname': '', 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']}
                 ]
             )
         self.assertResponse(
             self.client.bulk_patch_rr_sets(
                 domain_name=self.my_empty_domain.name,
                 payload=[
-                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 22},
+                    {'subname': 'a.1', 'records': ['dead::beef'], 'ttl': 3622},
                     {'subname': 'b.1', 'ttl': -50, 'type': 'AAAA', 'records': ['dead::beef']},
-                    {'ttl': 40, 'type': 'TXT', 'records': ['"bar"']},
+                    {'ttl': 3640, 'type': 'TXT', 'records': ['"bar"']},
                     {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
-                    {'subname': 'd.1', 'ttl': 50, 'type': 'AAAA'},
+                    {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
                 ]),
             status.HTTP_400_BAD_REQUEST,
             [
                 {'type': ['This field is required.']},
-                {'ttl': ['Ensure this value is greater than or equal to 1.']},
+                {'ttl': [f'Ensure this value is greater than or equal to {settings.MINIMUM_TTL_DEFAULT}.']},
                 {'subname': ['This field is required.']},
                 {'ttl': ['This field is required.']},
                 {'records': ['This field is required.']},

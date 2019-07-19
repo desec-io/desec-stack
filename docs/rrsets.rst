@@ -92,8 +92,8 @@ Field details:
     :Access mode: read, write
 
     TTL (time-to-live) value, which dictates for how long resolvers may cache
-    this RRset, measured in seconds.  Only positive integer values are allowed.
-    Additional restrictions may apply.
+    this RRset, measured in seconds.  The smallest acceptable value is given by
+    the domain's `minimum TTL`_ setting.  The maximum value is 604800 (one week).
 
 ``type``
     :Access mode: read, write-once (upon RRset creation)

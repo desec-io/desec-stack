@@ -65,9 +65,9 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_create_my_rr_sets(self):
         for subname in [None, 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:
             for data in [
-                {'subname': subname, 'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'},
-                {'subname': '' if subname is None else subname, 'records': ['desec.io.'], 'ttl': 900, 'type': 'PTR'},
-                {'subname': '' if subname is None else subname, 'ttl': 50, 'type': 'TXT', 'records': ['"foo"']},
+                {'subname': subname, 'records': ['1.2.3.4'], 'ttl': 3660, 'type': 'A'},
+                {'subname': '' if subname is None else subname, 'records': ['desec.io.'], 'ttl': 36900, 'type': 'PTR'},
+                {'subname': '' if subname is None else subname, 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
             ]:
                 # Try POST with missing subname
                 if data['subname'] is None:
@@ -132,7 +132,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_create_my_rr_sets_twice(self):
-        data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A'}
+        data = {'records': ['1.2.3.4'], 'ttl': 3660, 'type': 'A'}
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
             response = self.client.post_rr_set(self.my_empty_domain.name, **data)
             self.assertStatus(response, status.HTTP_201_CREATED)
@@ -153,8 +153,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             with self.assertPdnsRequests(
                     self.request_pdns_zone_update_unknown_type(name=self.my_domain.name, unknown_types=_type)
             ):
-                response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=60, type=_type)
+                response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=3660, type=_type)
                 self.assertStatus(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def test_create_my_rr_sets_insufficient_ttl(self):
+        ttl = settings.MINIMUM_TTL_DEFAULT - 1
+        response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.3.4'], ttl=ttl, type='A')
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        detail = f'Ensure this value is greater than or equal to {self.my_empty_domain.minimum_ttl}.'
+        self.assertEqual(response.data['ttl'][0], detail)
+
+        ttl += 1
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+            response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.23.4'], ttl=ttl, type='A')
+        self.assertStatus(response, status.HTTP_201_CREATED)
 
     def test_retrieve_my_rr_sets_apex(self):
         response = self.client.get_rr_set(self.my_rr_set_domain.name, subname='', type_='A')
@@ -172,19 +184,19 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_update_my_rr_sets(self):
         for subname in self.SUBNAMES:
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
-                data = {'records': ['2.2.3.4'], 'ttl': 30, 'type': 'A', 'subname': subname}
+                data = {'records': ['2.2.3.4'], 'ttl': 3630, 'type': 'A', 'subname': subname}
                 response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', data)
                 self.assertStatus(response, status.HTTP_200_OK)
 
             response = self.client.get_rr_set(self.my_rr_set_domain.name, subname, 'A')
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data['records'], ['2.2.3.4'])
-            self.assertEqual(response.data['ttl'], 30)
+            self.assertEqual(response.data['ttl'], 3630)
 
             response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', {'records': ['2.2.3.5']})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
-            response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', {'ttl': 37})
+            response = self.client.put_rr_set(self.my_rr_set_domain.name, subname, 'A', {'ttl': 3637})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_update_my_rr_set_with_invalid_payload_type(self):
@@ -205,10 +217,10 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for subname in self.SUBNAMES:
             current_rr_set = self.client.get_rr_set(self.my_rr_set_domain.name, subname, 'A').data
             for data in [
-                {'records': ['2.2.3.4'], 'ttl': 30},
+                {'records': ['2.2.3.4'], 'ttl': 3630},
                 {'records': ['3.2.3.4']},
                 {'records': ['3.2.3.4', '9.8.8.7']},
-                {'ttl': 37},
+                {'ttl': 3637},
             ]:
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
                     response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', data)

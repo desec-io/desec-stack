@@ -11,7 +11,7 @@ import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
@@ -153,13 +153,15 @@ class Domain(models.Model):
                                         ])
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
+    minimum_ttl = models.PositiveIntegerField(default=settings.MINIMUM_TTL_DEFAULT)
 
     @property
     def keys(self):
         return pdns.get_keys(self)
 
-    def partition_name(self):
-        subname, _, parent_name = self.name.partition('.')
+    def partition_name(domain):
+        name = domain.name if isinstance(domain, Domain) else domain
+        subname, _, parent_name = name.partition('.')
         return subname, parent_name or None
 
     def save(self, *args, **kwargs):
@@ -261,7 +263,7 @@ class RRset(models.Model):
             )
         ]
     )
-    ttl = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    ttl = models.PositiveIntegerField()
 
     objects = RRsetManager()
 

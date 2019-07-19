@@ -885,12 +885,15 @@ class DomainOwnerTestCase(DesecTestCase):
 
         cls.owner = cls.create_user(dyn=cls.DYN)
 
+        domain_kwargs = {'suffix': cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None}
+        if cls.DYN:
+            domain_kwargs['minimum_ttl'] = 60
         cls.my_domains = [
-            cls.create_domain(suffix=cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None, owner=cls.owner)
+            cls.create_domain(owner=cls.owner, **domain_kwargs)
             for _ in range(cls.NUM_OWNED_DOMAINS)
         ]
         cls.other_domains = [
-            cls.create_domain(suffix=cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None)
+            cls.create_domain(**domain_kwargs)
             for _ in range(cls.NUM_OTHER_DOMAINS)
         ]
 

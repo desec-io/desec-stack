@@ -1,5 +1,6 @@
 import re
 
+from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from djoser import serializers as djoser_serializers
 from rest_framework import serializers
@@ -167,6 +168,7 @@ class NonBulkOnlyDefault:
 class RRsetSerializer(ConditionalExistenceModelSerializer):
     domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
     records = RRsField(allow_empty=True)
+    ttl = serializers.IntegerField(max_value=604800)
 
     class Meta:
         model = RRset
@@ -191,6 +193,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         fields = super().get_fields()
         fields['subname'].validators.append(ReadOnlyOnUpdateValidator())
         fields['type'].validators.append(ReadOnlyOnUpdateValidator())
+        fields['ttl'].validators.append(MinValueValidator(limit_value=self.domain.minimum_ttl))
         return fields
 
     def get_validators(self):
@@ -425,10 +428,11 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = ('created', 'published', 'name', 'keys')
+        fields = ('created', 'published', 'name', 'keys', 'minimum_ttl',)
         extra_kwargs = {
             'name': {'trim_whitespace': False},
             'published': {'read_only': True},
+            'minimum_ttl': {'read_only': True},
         }
 
     def get_fields(self):

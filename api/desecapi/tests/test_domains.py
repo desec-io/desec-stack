@@ -269,6 +269,14 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(mail.outbox), 0)
 
+    def test_domain_minimum_ttl(self):
+        url = self.reverse('v1:domain-list')
+        name = self.random_domain_name()
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name=name)):
+            response = self.client.post(url, {'name': name})
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['minimum_ttl'], settings.MINIMUM_TTL_DEFAULT)
+
 
 class LockedDomainOwnerTestCase1(LockedDomainOwnerTestCase):
 
@@ -376,6 +384,14 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         response = self.client.post(url, {'name': self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)})
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(mail.outbox), user_quota)
+
+    def test_domain_minimum_ttl(self):
+        url = self.reverse('v1:domain-list')
+        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
+        with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
+            response = self.client.post(url, {'name': name})
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['minimum_ttl'], 60)
 
 
 class LockedAutoDelegationDomainOwnerTests(LockedDomainOwnerTestCase):

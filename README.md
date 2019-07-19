@@ -43,6 +43,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_API_SECRETKEY`: Django secret
       - `DESECSTACK_API_PSL_RESOLVER`: Resolver IP address to use for PSL lookups. If empty, the system's default resolver is used.
       - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
+      - `DESECSTACK_MINIMUM_TTL_DEFAULT`: minimum TTL users can set for RRsets. The setting is per domain, and the default defined here is used on domain creation.
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord

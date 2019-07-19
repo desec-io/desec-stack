@@ -16,7 +16,6 @@ A JSON object representing a domain has the following structure::
 
     {
         "created": "2018-09-18T16:36:16.510368Z",
-        "name": "example.com",
         "keys": [
             {
                 "dnskey": "257 3 13 WFRl60...",
@@ -31,6 +30,8 @@ A JSON object representing a domain has the following structure::
             },
             ...
         ],
+        "minimum_ttl": 3600,
+        "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z"
     }
 
@@ -61,6 +62,18 @@ Field details:
       endpoint, see https://doc.powerdns.com/md/httpapi/api_spec/#cryptokeys.
       We look at each active ``cryptokey_resource`` (``active`` is true) and
       then use the ``dnskey``, ``ds``, ``flags``, and ``keytype`` fields.
+
+.. _`minimum TTL`:
+
+``minimum_ttl``
+    :Access mode: read-only
+
+    Smallest TTL that can be used in an `RRset <RRset object_>`__. The value
+    is set automatically by the server.
+
+    If you would like to use lower TTL values, you can apply for an exception
+    by contacting support.  We reserve the right to reject applications at our
+    discretion.
 
 ``name``
     :Access mode: read, write-once (upon domain creation)

@@ -168,11 +168,15 @@ class DomainList(ListCreateAPIView):
             ex.status_code = status.HTTP_403_FORBIDDEN
             raise ex
 
+        parent_domain_name = Domain.partition_name(domain_name)[1]
+        domain_is_local = parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
         try:
             with PDNSChangeTracker():
-                domain = serializer.save(owner=self.request.user)
-            parent_domain_name = domain.partition_name()[1]
-            if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
+                domain_kwargs = {'owner': self.request.user}
+                if domain_is_local:
+                    domain_kwargs['minimum_ttl'] = 60
+                domain = serializer.save(**domain_kwargs)
+            if domain_is_local:
                 parent_domain = Domain.objects.get(name=parent_domain_name)
                 # NOTE we need two change trackers here, as the first transaction must be committed to
                 # pdns in order to have keys available for the delegation
