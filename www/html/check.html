@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>dynDNS Check</title>
+<style>
+body {
+    background: #F8F8F8;
+    font-family: sans-serif;
+}
+h1, h2 {
+    text-align: center;
+}
+#results > div {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 40em;
+    padding: 1em;
+}
+#footer {
+    font-style: italic;
+    text-align: center;
+}
+#footer a {
+    color: inherit;
+}
+
+.waiting {
+    background: #CCCCCC;
+}
+.success {
+    background: #AAFFAA;
+}
+.warning {
+    background: #FFDDAA;
+}
+.error {
+    background: #FFAAAA;
+}
+</style>
+</head>
+
+<body>
+<h1>dynDNS Check</h1>
+<h2 id="domain">Domain: </h2>
+<div id="results">
+    <div class="waiting" id="ipv4_records"><b>IPv4:</b> <span>checking ...<span></div>
+    <div class="waiting" id="ipv6_records"><b>IPv6:</b> <span>checking ...<span></div>
+</div>
+<p id="footer">dedyn.io is a dynDNS service provided by <a href="https://desec.io/">deSEC</a>.</pre>
+</body>
+
+<script>
+function getRecords(token, domain, type, callback) {
+    var req = new XMLHttpRequest();
+    req.addEventListener("load", callback);
+    req.open("GET", "https://desec.io/api/v1/domains/" + domain + "/rrsets/?subname=&type=" + type);
+    req.setRequestHeader("Authorization", "Token " + token);
+    req.send();
+}
+
+function setRecordsElement(elementId, status, data) {
+    className = "error";
+    if (status == 401) {
+        textContent = "(unauthorized)";
+    } else if (status == 404) {
+        textContent = "[Domain not found]";
+    } else if (status == 200) {
+        if (data.length) {
+            className = "success";
+            textContent = data[0]["records"].join(", ");
+        } else {
+            className = "warning";
+            textContent = "(none)";
+        }
+    } else {
+        textContent = "(check failed)";
+    }
+    element = document.getElementById(elementId)
+    element.className = className;
+    element.lastElementChild.textContent = textContent;
+}
+
+domain = location.search.substr(1)
+token = location.hash.substr(1);
+
+if (domain.length) {
+    document.getElementById("domain").textContent = "Domain: " + domain;
+} else {
+    document.getElementById("domain").textContent = "Domain: (none)";
+}
+
+if (!token.length || !domain.length) {
+    document.getElementById("ipv4_records").lastElementChild.textContent = "(unauthorized)";
+    document.getElementById("ipv6_records").lastElementChild.textContent = "(unauthorized)";
+} else {
+    getRecords(token, domain, "A", function() {
+        setRecordsElement("ipv4_records", this.status, JSON.parse(this.responseText));
+    });
+    getRecords(token, domain, "AAAA", function() {
+        setRecordsElement("ipv6_records", this.status, JSON.parse(this.responseText));
+    });
+}
+</script>
+
+</html>
