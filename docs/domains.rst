@@ -141,10 +141,15 @@ The ``/api/v1/domains/`` endpoint reponds to ``GET`` requests with an array of
     curl -X GET https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {token}"
 
-to retrieve an overview of the domains you own.
+to retrieve an overview of the domains you own.  Domains are returned in
+reverse chronological order of their creation.
 
-The response status code is ``200 OK``.  This is true also if you do not own
-any domains; in this case, the response body will be an empty JSON array.
+The response status code in case of success is ``200 OK``.  This is true also
+if you do not own any domains; in this case, the response body will be an empty
+JSON array.
+
+Up to 500 items are returned at a time.  If you have a larger number of
+domains configured, the use of `pagination`_ is required.
 
 
 Retrieving a Specific Domain

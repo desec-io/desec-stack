@@ -144,8 +144,10 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             response = self.client.get(self.reverse('v1:domain-list'))
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
-            for i in range(self.NUM_OWNED_DOMAINS):
-                self.assertEqual(response.data[i]['name'], self.my_domains[i].name)
+
+            response_set = {data['name'] for data in response.data}
+            expected_set = {domain.name for domain in self.my_domains}
+            self.assertEqual(response_set, expected_set)
 
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)

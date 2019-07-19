@@ -17,3 +17,5 @@ DATABASES = {
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
+
+REST_FRAMEWORK['PAGE_SIZE'] = 20

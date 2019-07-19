@@ -198,11 +198,32 @@ command::
     curl -X GET https://desec.io/api/v1/domains/:name/rrsets/ \
         --header "Authorization: Token {token}"
 
-to retrieve the contents of a zone that you own.
+to retrieve the contents of a zone that you own.  RRsets are returned in
+reverse chronological order of their creation.
 
-The response status code is ``200 OK``.  This is true also if there are no
-RRsets in the zone; in this case, the response body will be an empty JSON
-array.
+The response status code in case of success is ``200 OK``.  This is true also
+if there are no RRsets in the zone; in this case, the response body will be an
+empty JSON array.
+
+Pagination
+``````````
+Up to 500 items are returned at a time.  If more than 500 items would match the
+query, the use of the ``cursor`` query parameter is required.  The first page
+can be retrieved by sending an empty pagination parameter, ``cursor=``.
+
+Once in pagination mode, the URLs to retrieve the next (or previous) page are
+given in the ``Link:`` response header.  For example::
+
+    Link: <https://desec.io/api/v1/domains/:domain/rrsets/?cursor=>; rel="first",
+      <https://desec.io/api/v1/domains/:domain/rrsets/?cursor=:prev_cursor>; rel="prev",
+      <https://desec.io/api/v1/domains/:domain/rrsets/?cursor=:next_cursor>; rel="next"
+
+where ``:prev_cursor`` and ``:next_cursor`` are page identifiers that are to
+be treated opaque by clients.  On the first/last page, the ``Link:`` header
+will not contain a ``prev``/``next`` field, respectively.
+
+If no pagination parameter is given although pagination is required, the server
+will return ``400 Bad Request``, along with instructions for pagination.
 
 
 Filtering by Record Type
@@ -215,6 +236,8 @@ like::
 
     curl https://desec.io/api/v1/domains/:name/rrsets/?type=:type \
         --header "Authorization: Token {token}"
+
+Query parameters used for filtering are fully compatible with `pagination`_.
 
 
 Filtering by Subname
@@ -230,6 +253,8 @@ parameter, like this::
 This approach also allows to retrieve all records associated with the zone
 apex (i.e. ``example.com`` where ``subname`` is empty), by querying
 ``rrsets/?subname=``.
+
+Query parameters used for filtering are fully compatible with `pagination`_.
 
 
 Retrieving a Specific RRset

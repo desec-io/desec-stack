@@ -89,6 +89,8 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'desecapi.authentication.TokenAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'desecapi.pagination.LinkHeaderCursorPagination',
+    'PAGE_SIZE': 500,
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'EXCEPTION_HANDLER': 'desecapi.exception_handlers.exception_handler',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
