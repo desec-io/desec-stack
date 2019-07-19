@@ -42,10 +42,6 @@ api_urls = [
             views.RRsetDetail.as_view(), name='rrset@'),
     path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
 
-    # DNS query endpoint
-    # TODO remove?
-    path('dns', views.DnsQuery.as_view(), name='dns-query'),
-
     # DynDNS update endpoint
     path('dyndns/update', views.DynDNS12Update.as_view(), name='dyndns12update'),
 

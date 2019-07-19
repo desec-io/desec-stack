@@ -17,7 +17,6 @@ from django.template.loader import get_template
 from django.utils import timezone
 from djoser import views, signals
 from djoser.serializers import TokenSerializer as DjoserTokenSerializer
-from dns import resolver
 from rest_framework import generics
 from rest_framework import mixins
 from rest_framework import status
@@ -338,52 +337,6 @@ class Root(APIView):
                 'login': reverse('token-create', request=request),
                 'register': reverse('register', request=request),
             })
-
-
-class DnsQuery(APIView):
-
-    @staticmethod
-    def get(request, *_):
-        dns_resolver = resolver.Resolver()
-
-        if 'domain' not in request.GET:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        domain = str(request.GET['domain'])
-
-        def get_records(domain_name, type_):
-            records = []
-            try:
-                for address in dns_resolver.query(domain_name, type_):
-                    records.append(str(address))
-            except resolver.NoAnswer:
-                return []
-            except resolver.NoNameservers:
-                return []
-            except resolver.NXDOMAIN:
-                return []
-            return records
-
-        # find currently active NS records
-        ns_records = get_records(domain, 'NS')
-
-        # find desec.io name server IP address with standard name server
-        ips = dns_resolver.query('ns1.desec.io')
-        dns_resolver.nameservers = []
-        for ip in ips:
-            dns_resolver.nameservers.append(str(ip))
-
-        # query desec.io name server for A and AAAA records
-        a_records = get_records(domain, 'A')
-        aaaa_records = get_records(domain, 'AAAA')
-
-        return Response({
-            'domain': domain,
-            'ns': ns_records,
-            'a': a_records,
-            'aaaa': aaaa_records,
-            '_nameserver': dns_resolver.nameservers
-        })
 
 
 class DynDNS12Update(APIView):
