@@ -568,7 +568,7 @@ Record types with priority field
     as required by the client you are using.  Here's an example of how to
     create a ``TXT`` RRset with HTTPie::
 
-    curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
-        --header "Authorization: Token {token}" \
-        --header "Content-Type: application/json" --data @- <<< \
-        '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
+        curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
+            --header "Authorization: Token {token}" \
+            --header "Content-Type: application/json" --data @- <<< \
+            '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
