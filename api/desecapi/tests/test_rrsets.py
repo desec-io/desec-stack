@@ -172,7 +172,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.get_rr_set(self.my_rr_set_domain.name, subname='', type_='A')
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '1.2.3.4')
-        self.assertEqual(response.data['ttl'], 120)
+        self.assertEqual(response.data['ttl'], 3620)
 
     def test_retrieve_my_rr_sets_restricted_types(self):
         for type_ in self.RESTRICTED_TYPES:
@@ -250,24 +250,28 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_update_essential_properties(self):
         # Changing the subname is expected to cause an error
         url = self.reverse('v1:rrset', name=self.my_rr_set_domain.name, subname='test', type='A')
-        data = {'records': ['3.2.3.4'], 'ttl': 120, 'subname': 'test2'}
+        data = {'records': ['3.2.3.4'], 'ttl': 3620, 'subname': 'test2', 'type': 'A'}
         response = self.client.patch(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEquals(response.data['subname'][0].code, 'read-only-on-update')
         response = self.client.put(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEquals(response.data['subname'][0].code, 'read-only-on-update')
 
         # Changing the type is expected to cause an error
-        data = {'records': ['3.2.3.4'], 'ttl': 120, 'type': 'TXT'}
+        data = {'records': ['3.2.3.4'], 'ttl': 3620, 'subname': 'test', 'type': 'TXT'}
         response = self.client.patch(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEquals(response.data['type'][0].code, 'read-only-on-update')
         response = self.client.put(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEquals(response.data['type'][0].code, 'read-only-on-update')
 
         # Check that nothing changed
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data['records'][0], '2.2.3.4')
-        self.assertEqual(response.data['ttl'], 120)
+        self.assertEqual(response.data['ttl'], 3620)
         self.assertEqual(response.data['name'], 'test.' + self.my_rr_set_domain.name + '.')
         self.assertEqual(response.data['subname'], 'test')
         self.assertEqual(response.data['type'], 'A')
@@ -286,7 +290,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_update_unknown_rrset(self):
         url = self.reverse('v1:rrset', name=self.my_rr_set_domain.name, subname='doesnotexist', type='A')
-        data = {'records': ['3.2.3.4'], 'ttl': 120}
+        data = {'records': ['3.2.3.4'], 'ttl': 3620}
 
         response = self.client.patch(url, data)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)

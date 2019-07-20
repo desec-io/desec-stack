@@ -711,7 +711,7 @@ class DesecTestCase(MockPDNSTestCase):
     @classmethod
     def create_rr_set(cls, domain, records, **kwargs):
         if isinstance(domain, str):
-            domain = Domain.objects.get_or_create(name=domain)
+            domain = Domain.objects.get(name=domain)
             domain.save()
         rr_set = RRset(domain=domain, **kwargs)
         rr_set.save()
@@ -983,9 +983,9 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
         # TODO add more examples of cls.ALLOWED_TYPES
         # NOTE The validity of the RRset contents it *not* verified. We currently leave this task to pdns.
         rr_sets = [
-            ('', 'A', ['1.2.3.4'], 120),
-            ('test', 'A', ['2.2.3.4'], 120),
-            ('test', 'TXT', ['"foobar"'], 120),
+            ('', 'A', ['1.2.3.4'], 3620),
+            ('test', 'A', ['2.2.3.4'], 3620),
+            ('test', 'TXT', ['"foobar"'], 3620),
         ] + [
             (subname_, 'TXT', ['"hey ho, let\'s go!"'], 134)
             for subname_ in cls.SUBNAMES
