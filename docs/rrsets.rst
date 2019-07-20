@@ -32,6 +32,7 @@ RRset Field Reference
 A JSON object representing an RRset has the following structure::
 
     {
+        "created": "2019-09-18T16:32:16.510368Z",
         "domain": "example.com",
         "subname": "www",
         "name": "www.example.com.",
@@ -44,6 +45,12 @@ A JSON object representing an RRset has the following structure::
     }
 
 Field details:
+
+``created``
+    :Access mode: read-only
+
+    Timestamp of RRset creation, in ISO 8601 format (e.g.
+    ``2019-09-18T16:32:16.510368Z``).
 
 ``domain``
     :Access mode: read-only

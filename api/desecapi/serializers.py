@@ -204,7 +204,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     class Meta:
         model = models.RRset
-        fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
+        fields = ('created', 'domain', 'subname', 'name', 'records', 'ttl', 'type',)
         extra_kwargs = {
             'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
         }

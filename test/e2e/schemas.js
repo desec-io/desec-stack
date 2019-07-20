@@ -59,6 +59,10 @@ exports.domain = {
 
 exports.rrset = {
     properties: {
+        created: {
+            type: "string",
+            format: "date-time"
+        },
         domain: { type: "string" },
         subname: { type: "string" },
         name: { type: "string" },
@@ -73,7 +77,7 @@ exports.rrset = {
         },
         type: { type: "string" },
     },
-    required: ["domain", "subname", "name", "records", "ttl", "type"]
+    required: ["created", "domain", "subname", "name", "records", "ttl", "type"]
 };
 
 exports.rrsets = {

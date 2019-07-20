@@ -332,6 +332,16 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEquals(response.data['type'][0].code, 'read-only-on-update')
 
+        # Changing "created" is no-op
+        response = self.client.get(url)
+        data = response.data
+        created = data['created']
+        data['created'] = '2019-07-19T17:22:49.575717Z'
+        response = self.client.patch(url, data)
+        self.assertStatus(response, status.HTTP_200_OK)
+        response = self.client.put(url, data)
+        self.assertStatus(response, status.HTTP_200_OK)
+
         # Check that nothing changed
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_200_OK)
@@ -340,6 +350,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertEqual(response.data['name'], 'test.' + self.my_rr_set_domain.name + '.')
         self.assertEqual(response.data['subname'], 'test')
         self.assertEqual(response.data['type'], 'A')
+        self.assertEqual(response.data['created'], created)
 
         # This is expected to work, but the fields are ignored
         data = {'records': ['3.2.3.4'], 'name': 'example.com.', 'domain': 'example.com'}
