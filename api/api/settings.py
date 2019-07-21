@@ -140,6 +140,11 @@ NSLORD_PDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 NSMASTER_PDNS_API = 'http://nsmaster:8081/api/v1/servers/localhost'
 NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 
+# Celery
+CELERY_BROKER_URL = 'amqp://rabbitmq'
+CELERY_TASK_DEFAULT_RATE_LIMIT = '3/m'
+CELERY_TASK_TIME_LIMIT = 30
+
 # pdns accepts request payloads of this size.
 # This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550
 PDNS_MAX_BODY_SIZE = 2 * 1024 * 1024
