@@ -42,3 +42,7 @@ services:
      - "5321:53/udp"
     logging:
       driver: "json-file"
+
+  rabbitmq:
+    logging:
+      driver: "json-file"
