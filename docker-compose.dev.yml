@@ -46,3 +46,7 @@ services:
   rabbitmq:
     logging:
       driver: "json-file"
+
+  celery:
+    logging:
+      driver: "json-file"

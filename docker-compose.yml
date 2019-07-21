@@ -193,6 +193,44 @@ services:
         tag: "desec/rabbitmq"
     restart: unless-stopped
 
+  celery:
+    build: api
+    image: desec/dedyn-api:latest
+    init: true
+    command: celery -A api worker -l info
+    depends_on:
+    - api
+    - dbapi
+    - nslord
+    environment:
+    - DESECSTACK_DOMAIN
+    - DESECSTACK_NS
+    - DESECSTACK_API_ADMIN
+    - DESECSTACK_API_SEPA_CREDITOR_ID
+    - DESECSTACK_API_SEPA_CREDITOR_NAME
+    - DESECSTACK_API_EMAIL_HOST
+    - DESECSTACK_API_EMAIL_HOST_USER
+    - DESECSTACK_API_EMAIL_HOST_PASSWORD
+    - DESECSTACK_API_EMAIL_PORT
+    - DESECSTACK_API_SECRETKEY
+    - DESECSTACK_API_PSL_RESOLVER
+    - DESECSTACK_DBAPI_PASSWORD_desec
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_IPV6_SUBNET
+    - DESECSTACK_NSLORD_APIKEY
+    - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NSMASTER_APIKEY
+    - DESECSTACK_MINIMUM_TTL_DEFAULT
+    networks:
+    - rearapi_celery
+    - rearapi_dbapi
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/celery"
+    restart: unless-stopped
+
+
 volumes:
   dbapi_mysql:
   dblord_mysql:
