@@ -51,7 +51,7 @@ services:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBAPI_PASSWORD_desec
     networks:
-    - rearapi2
+    - rearapi_dbapi
     logging:
       driver: "syslog"
       options:
@@ -123,8 +123,8 @@ services:
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     networks:
-    - rearapi1
-    - rearapi2
+    - rearapi_dbapi
+    - rearapi_ns
     - rearwww
     logging:
       driver: "syslog"
@@ -147,7 +147,7 @@ services:
     depends_on:
     - dblord
     networks:
-      rearapi1:
+      rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.11
       rearlord:
     logging:
@@ -169,7 +169,7 @@ services:
     depends_on:
     - dbmaster
     networks:
-      rearapi1:
+      rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
       rearmaster:
     logging:
@@ -197,20 +197,20 @@ networks:
       - subnet: ${DESECSTACK_IPV6_SUBNET}
   # Make sure these come after the front network (lexical order). This is why we 
   # call it rear, not back. See https://github.com/docker/docker/issues/27101
-  rearapi1:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
-        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.1
-  rearapi2:
+  rearapi_dbapi:
     driver: bridge
     ipam:
       driver: default
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.1
+  rearapi_ns:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.1
   rearwww:
     driver: bridge
     ipam:
