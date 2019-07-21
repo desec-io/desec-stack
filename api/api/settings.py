@@ -42,6 +42,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'desecapi',
     'corsheaders',
+    'djcelery_email',
 )
 
 MIDDLEWARE = (
@@ -118,6 +119,7 @@ TEMPLATES = [
 ]
 
 # How and where to send mail
+EMAIL_BACKEND = 'djcelery_email.backends.CeleryEmailBackend'
 EMAIL_HOST = os.environ['DESECSTACK_API_EMAIL_HOST']
 EMAIL_HOST_USER = os.environ['DESECSTACK_API_EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['DESECSTACK_API_EMAIL_HOST_PASSWORD']
@@ -142,6 +144,11 @@ NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 
 # Celery
 CELERY_BROKER_URL = 'amqp://rabbitmq'
+CELERY_EMAIL_CHUNK_SIZE = 1
+CELERY_EMAIL_TASK_CONFIG = {
+    'queue' : 'celery',
+    'rate_limit' : '3/m',
+}
 CELERY_TASK_DEFAULT_RATE_LIMIT = '3/m'
 CELERY_TASK_TIME_LIMIT = 30
 
