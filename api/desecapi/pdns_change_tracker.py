@@ -171,6 +171,16 @@ class PDNSChangeTracker:
         self._rr_set_deletions = {}
         self.transaction = None
 
+    @classmethod
+    def track(cls, f):
+        """
+        Execute function f with the change tracker.
+        :param f: Function to be tracked for PDNS-relevant changes.
+        :return: Returns the return value of f.
+        """
+        with cls():
+            return f()
+
     def _manage_signals(self, method):
         if method not in ['connect', 'disconnect']:
             raise ValueError()
