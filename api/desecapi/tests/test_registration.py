@@ -38,10 +38,9 @@ class SingleRegistrationTestCase(RegistrationTestCase):
 
     def test_registration_successful(self):
         self.assertEqual(self.user.registration_remote_ip, "1.3.3.7")
-        self.assertIsNone(self.user.locked)
 
     def test_token_email(self):
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1 if not self.user.locked else 2)
         self.assertTrue(self.user.get_or_create_first_token() in mail.outbox[-1].body)
 
     def test_send_captcha_email_manually(self):
@@ -132,7 +131,6 @@ class MultipleRegistrationSameEmailHostShortTime(MultipleRegistrationTestCase):
         ]
 
     def test_is_locked(self):
-        self.assertIsNone(self.users[0].locked)
         for i in range(self.NUM_REGISTRATIONS):
             if i < settings.ABUSE_BY_EMAIL_HOSTNAME_LIMIT:
                 self.assertIsNone(self.users[i].locked)
