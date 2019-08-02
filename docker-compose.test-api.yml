@@ -3,6 +3,8 @@ version: '2.2'
 # mostly extending from main .yml
 services:
   api:
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings_quick_test
     logging:
       driver: "json-file"
     restart: "no"
