@@ -8,6 +8,7 @@ from datetime import timedelta
 import django.core.exceptions
 import djoser.views
 import psl_dns
+from django.conf import settings
 from django.contrib.auth import user_logged_in, user_logged_out
 from django.core.mail import EmailMessage
 from django.db.models import Q
@@ -30,7 +31,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 import desecapi.authentication as auth
-from api import settings
 from desecapi.emails import send_account_lock_email, send_token_email
 from desecapi.forms import UnlockForm
 from desecapi.models import Domain, User, RRset, Token

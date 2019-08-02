@@ -12,9 +12,9 @@ from django.urls import include, path
 # If there is no request object available, e.g. in commands, a mock object can be constructed
 # carrying all information that is necessary to construct a full URL:
 #
+#         from django.conf import settings
 #         from django.test import RequestFactory
 #         from rest_framework.versioning import NamespaceVersioning
-#         from api import settings
 #
 #         r = RequestFactory().request(HTTP_HOST=settings.ALLOWED_HOSTS[0])
 #         r.version = 'v1'

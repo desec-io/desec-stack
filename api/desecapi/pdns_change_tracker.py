@@ -1,11 +1,11 @@
 import random
 import socket
 
+from django.conf import settings
 from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
 
-from api import settings as api_settings
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id
 
@@ -77,7 +77,7 @@ class PDNSChangeTracker:
                     'kind': 'MASTER',
                     'dnssec': True,
                     'nsec3param': '1 0 127 %s' % salt,
-                    'nameservers': api_settings.DEFAULT_NS
+                    'nameservers': settings.DEFAULT_NS
                 }
             )
 
@@ -94,11 +94,11 @@ class PDNSChangeTracker:
             rr_set = RRset(
                 domain=Domain.objects.get(name=self.domain_name),
                 type='NS', subname='',
-                ttl=api_settings.DEFAULT_NS_TTL,
+                ttl=settings.DEFAULT_NS_TTL,
             )
             rr_set.save()
 
-            rrs = [RR(rrset=rr_set, content=ns) for ns in api_settings.DEFAULT_NS]
+            rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
     class DeleteDomain(PDNSChange):

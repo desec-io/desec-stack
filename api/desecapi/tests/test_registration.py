@@ -1,12 +1,12 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.core import mail
 from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework.reverse import reverse
 from rest_framework.versioning import NamespaceVersioning
 
-from api import settings
 from desecapi import models
 from desecapi.emails import send_account_lock_email
 from desecapi.tests.base import DesecTestCase

@@ -9,6 +9,7 @@ from json import JSONDecodeError
 from typing import Union, List, Dict
 from unittest import mock
 
+from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 from httpretty import httpretty, core as hr_core
@@ -16,7 +17,6 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
-from api import settings
 from desecapi.models import User, Domain, Token, RRset, RR
 from desecapi.views import DomainList
 

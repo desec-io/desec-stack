@@ -1,9 +1,9 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
 
-from api import settings
 from desecapi.models import User
 from desecapi.tests.base import DesecTestCase
 

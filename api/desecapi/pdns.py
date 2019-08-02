@@ -2,29 +2,29 @@ import json
 import re
 import requests
 
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 
-from api import settings as api_settings
 from desecapi.exceptions import PDNSException
 
 NSLORD = object()
 NSMASTER = object()
 
-settings = {
+_config = {
     NSLORD: {
-        'base_url': api_settings.NSLORD_PDNS_API,
+        'base_url': settings.NSLORD_PDNS_API,
         'headers': {
             'Accept': 'application/json',
             'User-Agent': 'desecapi',
-            'X-API-Key': api_settings.NSLORD_PDNS_API_TOKEN,
+            'X-API-Key': settings.NSLORD_PDNS_API_TOKEN,
         }
     },
     NSMASTER: {
-        'base_url': api_settings.NSMASTER_PDNS_API,
+        'base_url': settings.NSMASTER_PDNS_API,
         'headers': {
             'Accept': 'application/json',
             'User-Agent': 'desecapi',
-            'X-API-Key': api_settings.NSMASTER_PDNS_API_TOKEN,
+            'X-API-Key': settings.NSMASTER_PDNS_API_TOKEN,
         }
     }
 
@@ -33,10 +33,10 @@ settings = {
 
 def _pdns_request(method, *, server, path, body=None):
     data = json.dumps(body) if body else None
-    if data is not None and len(data) > api_settings.PDNS_MAX_BODY_SIZE:
+    if data is not None and len(data) > settings.PDNS_MAX_BODY_SIZE:
         raise PDNSException(detail='Payload too large', status=413)
 
-    r = requests.request(method, settings[server]['base_url'] + path, data=data, headers=settings[server]['headers'])
+    r = requests.request(method, _config[server]['base_url'] + path, data=data, headers=_config[server]['headers'])
     if r.status_code not in range(200, 300):
         raise PDNSException(r)
 
