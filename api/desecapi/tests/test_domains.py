@@ -314,8 +314,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
                 self.assertEqual(len(mail.outbox), i + 1)
 
         response = self.client.post(url, {'name': self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)})
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data['non_field_errors'][0].code, 'domain_limit')
+        self.assertContains(response, 'Domain limit', status_code=status.HTTP_403_FORBIDDEN)
         self.assertEqual(len(mail.outbox), user_quota)
 
     def test_domain_minimum_ttl(self):

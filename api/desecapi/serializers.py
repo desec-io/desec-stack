@@ -478,15 +478,6 @@ class DomainSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate(self, attrs):  # TODO I believe this should be a permission, not a validation
-        # Check user's domain limit
-        owner = self.context['request'].user
-        if (owner.limit_domains is not None and
-                owner.domains.count() >= owner.limit_domains):
-            msg = 'You reached the maximum number of domains allowed for your account.'
-            raise serializers.ValidationError(msg, code='domain_limit')
-        return attrs
-
 
 class DonationSerializer(serializers.ModelSerializer):
 

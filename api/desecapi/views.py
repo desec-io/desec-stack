@@ -21,7 +21,7 @@ from rest_framework.viewsets import GenericViewSet
 import desecapi.authentication as auth
 from desecapi import serializers, models
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import IsOwner, IsDomainOwner
+from desecapi.permissions import IsOwner, IsDomainOwner, WithinDomainLimitOnPOST
 from desecapi.renderers import PlainTextRenderer
 
 
@@ -66,7 +66,7 @@ class TokenViewSet(IdempotentDestroy,
 
 class DomainList(generics.ListCreateAPIView):
     serializer_class = serializers.DomainSerializer
-    permission_classes = (IsAuthenticated, IsOwner,)
+    permission_classes = (IsAuthenticated, IsOwner, WithinDomainLimitOnPOST)
 
     def get_queryset(self):
         return models.Domain.objects.filter(owner=self.request.user.pk)
