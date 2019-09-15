@@ -8,16 +8,18 @@ import uuid
 from base64 import b64encode
 from datetime import datetime, timedelta
 from os import urandom
+from typing import Union
 
+import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
 from django.core.signing import Signer
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Manager
+from django.db.models import Manager, Q
 from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
@@ -26,6 +28,7 @@ from rest_framework.exceptions import APIException
 from desecapi import pdns
 
 logger = logging.getLogger(__name__)
+psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
 
 
 def validate_lower(value):
@@ -184,31 +187,86 @@ class Token(rest_framework.authtoken.models.Token):
         unique_together = (('user', 'user_specific_id'),)
 
 
+validate_domain_name = [
+    validate_lower,
+    RegexValidator(
+        regex=r'^[a-z0-9_.-]*[a-z]$',
+        message='Invalid value (not a DNS name).',
+        code='invalid_domain_name'
+    )
+]
+
+
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
                             unique=True,
-                            validators=[validate_lower,
-                                        RegexValidator(regex=r'^[a-z0-9_.-]*[a-z]$',
-                                                       message='Invalid value (not a DNS name).',
-                                                       code='invalid_domain_name')
-                                        ])
+                            validators=validate_domain_name)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=settings.MINIMUM_TTL_DEFAULT)
+
+    @classmethod
+    def is_registrable(cls, domain_name: str, user: User):
+        """
+        Returns False in any of the following cases:
+        (a) the domain_name appears on the public suffix list,
+        (b) the domain is descendant to a zone that belongs to any user different from the given one,
+            unless it's parent is a public suffix, either through the Internet PSL or local settings.
+        Otherwise, True is returned.
+        """
+        if domain_name != domain_name.lower():
+            raise ValueError
+
+        try:
+            public_suffix = psl.get_public_suffix(domain_name)
+            is_public_suffix = psl.is_public_suffix(domain_name)
+        except psl_dns.exceptions.UnsupportedRule as e:
+            # It would probably be fine to just return True (with the TLD acting as the
+            # public suffix and setting both public_suffix and is_public_suffix accordingly).
+            # However, in order to allow to investigate the situation, it's better not catch
+            # this exception. For web requests, our error handler turns it into a 503 error
+            # and makes sure admins are notified.
+            raise e
+
+        if not is_public_suffix:
+            # Take into account that any of the parent domains could be a local public suffix. To that
+            # end, identify the longest local public suffix that is actually a suffix of domain_name.
+            # Then, override the global PSL result.
+            for local_public_suffix in settings.LOCAL_PUBLIC_SUFFIXES:
+                has_local_public_suffix_parent = ('.' + domain_name).endswith('.' + local_public_suffix)
+                if has_local_public_suffix_parent and len(local_public_suffix) > len(public_suffix):
+                    public_suffix = local_public_suffix
+                    is_public_suffix = (public_suffix == domain_name)
+
+        if is_public_suffix and domain_name not in settings.LOCAL_PUBLIC_SUFFIXES:
+            return False
+
+        # Generate a list of all domains connecting this one and its public suffix.
+        # If another user owns a zone with one of these names, then the requested
+        # domain is unavailable because it is part of the other user's zone.
+        private_components = domain_name.rsplit(public_suffix, 1)[0].rstrip('.')
+        private_components = private_components.split('.') if private_components else []
+        private_components += [public_suffix]
+        private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components) - 1)]
+        assert is_public_suffix or domain_name == private_domains[0]
+
+        # Deny registration for non-local public suffixes and for domains covered by other users' zones
+        user = user if not isinstance(user, AnonymousUser) else None
+        return not cls.objects.filter(Q(name__in=private_domains) & ~Q(owner=user)).exists()
 
     @property
     def keys(self):
         return pdns.get_keys(self)
 
-    def has_local_public_suffix(self):
+    def is_locally_registrable(self):
         return self.partition_name()[1] in settings.LOCAL_PUBLIC_SUFFIXES
 
     def parent_domain_name(self):
         return self.partition_name()[1]
 
-    def partition_name(domain):
-        name = domain.name if isinstance(domain, Domain) else domain
+    def partition_name(self: Union[Domain, str]):
+        name = self.name if isinstance(self, Domain) else self
         subname, _, parent_name = name.partition('.')
         return subname, parent_name or None
 

@@ -6,7 +6,104 @@ from rest_framework import status
 
 from desecapi.models import Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase
+from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, PublicSuffixMockMixin
+
+
+class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
+    """ Tests which domains can be registered by whom, depending on domain ownership and public suffix
+    configuration. Note that we use "global public suffix" to refer to public suffixes which appear on the
+    Internet-wide Public Suffix List (accessible, e.g., via psl_dns), and "local public suffix" to public
+    suffixes which are configured in the local Django settings.LOCAL_PUBLIC_SUFFIXES. Consequently, a
+    public suffix can be just local, just global, or both. """
+
+    def mock(self, global_public_suffixes, local_public_suffixes):
+        self.setUpMockPatch()
+        test_case = self
+
+        class _MockSuffixLists:
+
+            settings_mocker = None
+            psl_mocker = None
+
+            def __enter__(self):
+                self.settings_mocker = test_case.settings(LOCAL_PUBLIC_SUFFIXES=local_public_suffixes)
+                self.settings_mocker.__enter__()
+                self.psl_mocker = test_case.get_psl_context_manager(global_public_suffixes)
+                self.psl_mocker.__enter__()
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                if exc_type or exc_val or exc_tb:
+                    raise exc_val
+                self.settings_mocker.__exit__(None, None, None)
+                self.psl_mocker.__exit__(None, None, None)
+
+        return _MockSuffixLists()
+
+    def assertRegistrable(self, domain_name, user=None):
+        """ Raises if the given user (fresh if None) cannot register the given domain name. """
+        self.assertTrue(Domain.is_registrable(domain_name, user or self.create_user()),
+                        f'{domain_name} was expected to be registrable for {user or "a new user"}, but wasn\'t.')
+
+    def assertNotRegistrable(self, domain_name, user=None):
+        """ Raises if the given user (fresh if None) can register the given domain name. """
+        self.assertFalse(Domain.is_registrable(domain_name, user or self.create_user()),
+                         f'{domain_name} was expected to be not registrable for {user or "a new user"}, but was.')
+
+    def test_cant_register_global_non_local_public_suffix(self):
+        with self.mock(
+            global_public_suffixes=['com', 'de', 'xxx', 'com.uk'],
+            local_public_suffixes=['something.else'],
+        ):
+            self.assertNotRegistrable('xxx')
+            self.assertNotRegistrable('com.uk')
+            self.assertRegistrable('something.else')
+
+    def test_can_register_local_public_suffix(self):
+        with self.mock(
+            global_public_suffixes=['com', 'de', 'xxx', 'com.uk'],
+            local_public_suffixes=['something.else', 'our.public.suffix', 'com', 'com.uk'],
+        ):
+            self.assertRegistrable('something.else')
+            self.assertRegistrable('out.public.suffix')
+            self.assertRegistrable('com')
+            self.assertRegistrable('com.uk')
+            self.assertRegistrable('foo.bar.com')
+
+    def test_cant_register_descendants_of_children_of_public_suffixes(self):
+        with self.mock(
+            global_public_suffixes={'public.suffix'},
+            local_public_suffixes={'public.suffix'},
+        ):
+            # let A own a.public.suffix
+            user_a = self.create_user()
+            self.assertRegistrable('a.public.suffix', user_a)
+            self.create_domain(owner=user_a, name='a.public.suffix')
+            # user B shall not register b.a.public.suffix, but A may
+            user_b = self.create_user()
+            self.assertNotRegistrable('b.a.public.suffix', user_b)
+            self.assertRegistrable('b.a.public.suffix', user_a)
+
+    def test_can_register_public_suffixes_under_private_domains(self):
+        with self.mock(
+            global_public_suffixes={'public.suffix'},
+            local_public_suffixes={'another.public.suffix.private.public.suffix', 'public.suffix'},
+        ):
+            # let A own public.suffix
+            user_a = self.create_user()
+            self.assertRegistrable('public.suffix', user_a)
+            self.create_domain(owner=user_a, name='public.suffix')
+            # user B may register private.public.suffix
+            user_b = self.create_user()
+            self.assertRegistrable('private.public.suffix', user_b)
+            self.create_domain(owner=user_b, name='private.public.suffix')
+            # user C may register b.another.public.suffix.private.public.suffix,
+            # or long.silly.prefix.another.public.suffix.private.public.suffix,
+            # but not b.private.public.suffix.
+            user_c = self.create_user()
+            self.assertRegistrable('b.another.public.suffix.private.public.suffix', user_c)
+            self.assertRegistrable('long.silly.prefix.another.public.suffix.private.public.suffix', user_c)
+            self.assertNotRegistrable('b.private.public.suffix', user_c)
+            self.assertRegistrable('b.private.public.suffix', user_b)
 
 
 class UnauthenticatedDomainTests(DesecTestCase):

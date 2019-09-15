@@ -80,16 +80,17 @@ class DomainList(generics.ListCreateAPIView):
         with PDNSChangeTracker():
             domain = serializer.save(**domain_kwargs)
 
+        # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
 
         # Send dyn email
-        if domain.name.endswith('.dedyn.io'):
+        if domain_is_local:
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
             from_tmpl = get_template('emails/from.txt')
             context = {
                 'domain': domain.name,
-                'url': 'https://update.dedyn.io/',
+                'url': f'https://update.{parent_domain_name}/',
                 'username': domain.name,
                 'password': self.request.auth.key
             }
@@ -115,7 +116,7 @@ class DomainDetail(IdempotentDestroy, generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance: models.Domain):
         with PDNSChangeTracker():
             instance.delete()
-        if instance.has_local_public_suffix():
+        if instance.is_locally_registrable():
             parent_domain = models.Domain.objects.get(name=instance.parent_domain_name())
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
@@ -591,6 +592,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         domain = PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
 
         if domain.parent_domain_name() in settings.LOCAL_PUBLIC_SUFFIXES:
+            # TODO the following line raises Domain.DoesNotExist under unknown conditions
             PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
             token = models.Token.objects.create(user=action.user, name='dyndns')
             return Response({

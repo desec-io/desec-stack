@@ -17,8 +17,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
-from desecapi.models import User, Domain, Token, RRset, RR
-from desecapi.serializers import DomainSerializer
+from desecapi.models import User, Domain, Token, RRset, RR, psl
 
 
 class DesecAPIClient(APIClient):
@@ -829,7 +828,7 @@ class PublicSuffixMockMixin():
 
     @staticmethod
     def _mock_is_public_suffix(name):
-        return name == DomainSerializer.psl.get_public_suffix(name)
+        return name == psl.get_public_suffix(name)
 
     def get_psl_context_manager(self, side_effect_parameter):
         if side_effect_parameter is None:
@@ -838,13 +837,16 @@ class PublicSuffixMockMixin():
         if callable(side_effect_parameter):
             side_effect = side_effect_parameter
         else:
-            side_effect = partial(self._mock_get_public_suffix, public_suffixes=[side_effect_parameter])
+            side_effect = partial(
+                self._mock_get_public_suffix,
+                public_suffixes=[side_effect_parameter] if not isinstance(side_effect_parameter, list) else list(side_effect_parameter)
+            )
 
-        return mock.patch.object(DomainSerializer.psl, 'get_public_suffix', side_effect=side_effect)
+        return mock.patch.object(psl, 'get_public_suffix', side_effect=side_effect)
 
     def setUpMockPatch(self):
-        mock.patch.object(DomainSerializer.psl, 'get_public_suffix', side_effect=self._mock_get_public_suffix).start()
-        mock.patch.object(DomainSerializer.psl, 'is_public_suffix', side_effect=self._mock_is_public_suffix).start()
+        mock.patch.object(psl, 'get_public_suffix', side_effect=self._mock_get_public_suffix).start()
+        mock.patch.object(psl, 'is_public_suffix', side_effect=self._mock_is_public_suffix).start()
         self.addCleanup(mock.patch.stopall)
 
 
@@ -899,7 +901,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
     def setUp(self):
         super().setUp()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-        PublicSuffixMockMixin.setUpMockPatch(self)
+        self.setUpMockPatch()
 
 
 class LockedDomainOwnerTestCase(DomainOwnerTestCase):

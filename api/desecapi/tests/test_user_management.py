@@ -12,6 +12,7 @@ This involves testing five separate endpoints:
 (4) delete user endpoint, and
 (5) verify endpoint.
 """
+import random
 import re
 
 from django.core import mail
@@ -201,11 +202,18 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         )
         self.assertEqual(response.data['password'][0].code, 'blank')
 
-    def assertRegistrationFailureDomainUnavailableResponse(self, response, domain, reason):
+    def assertRegistrationFailureDomainUnavailableResponse(self, response, domain):
         self.assertContains(
             response=response,
-            text=("The requested domain {} could not be registered (reason: {}). "
-                  "Please start over and sign up again.".format(domain, reason)),
+            text='This domain name is unavailable',
+            status_code=status.HTTP_400_BAD_REQUEST,
+            msg_prefix=str(response.data)
+        )
+
+    def assertRegistrationFailureDomainInvalidResponse(self, response, domain):
+        self.assertContains(
+            response=response,
+            text="Invalid value (not a DNS name)",
             status_code=status.HTTP_400_BAD_REQUEST,
             msg_prefix=str(response.data)
         )
@@ -324,34 +332,31 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertPassword(email, password)
         return email, password
 
-    def _test_registration_with_domain(self, email=None, password=None, domain=None, expect_failure_reason=None):
+    def _test_registration_with_domain(self, email=None, password=None, domain=None, expect_failure_response=None):
         domain = domain or self.random_domain_name()
 
         email, password, response = self.register_user(email, password, domain=domain)
+        if expect_failure_response:
+            expect_failure_response(response, domain)
+            self.assertUserDoesNotExist(email)
+            return
         self.assertRegistrationSuccessResponse(response)
         self.assertUserExists(email)
         self.assertFalse(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
 
         confirmation_link = self.assertRegistrationEmail(email)
-        if expect_failure_reason is None:
-            if domain.endswith('.dedyn.io'):
-                cm = self.requests_desec_domain_creation_auto_delegation(domain)
-            else:
-                cm = self.requests_desec_domain_creation(domain)
-            with self.assertPdnsRequests(cm[:-1]):
-                response = self.client.verify(confirmation_link)
-            self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain)
-            self.assertTrue(User.objects.get(email=email).is_active)
-            self.assertPassword(email, password)
-            self.assertTrue(Domain.objects.filter(name=domain, owner__email=email).exists())
-            return email, password, domain
+        if domain.endswith('.dedyn.io'):
+            cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
-            domain_exists = Domain.objects.filter(name=domain).exists()
+            cm = self.requests_desec_domain_creation(domain)
+        with self.assertPdnsRequests(cm[:-1]):
             response = self.client.verify(confirmation_link)
-            self.assertRegistrationFailureDomainUnavailableResponse(response, domain, expect_failure_reason)
-            self.assertUserDoesNotExist(email)
-            self.assertEqual(Domain.objects.filter(name=domain).exists(), domain_exists)
+        self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain)
+        self.assertTrue(User.objects.get(email=email).is_active)
+        self.assertPassword(email, password)
+        self.assertTrue(Domain.objects.filter(name=domain, owner__email=email).exists())
+        return email, password, domain
 
     def _test_login(self):
         token, response = self.login_user(self.email, self.password)
@@ -415,13 +420,14 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         PublicSuffixMockMixin.setUpMockPatch(self)
         with self.get_psl_context_manager('.'):
             _, _, domain = self._test_registration_with_domain()
-            self._test_registration_with_domain(domain=domain, expect_failure_reason='unique')
-            self._test_registration_with_domain(domain='töö--', expect_failure_reason='invalid_domain_name')
+            self._test_registration_with_domain(domain=domain, expect_failure_response=self.assertRegistrationFailureDomainUnavailableResponse)
+            self._test_registration_with_domain(domain='töö--', expect_failure_response=self.assertRegistrationFailureDomainInvalidResponse)
 
         with self.get_psl_context_manager('co.uk'):
-            self._test_registration_with_domain(domain='co.uk', expect_failure_reason='name_unavailable')
-        with self.get_psl_context_manager('dedyn.io'):
-            self._test_registration_with_domain(domain=self.random_domain_name(suffix='dedyn.io'))
+            self._test_registration_with_domain(domain='co.uk', expect_failure_response=self.assertRegistrationFailureDomainUnavailableResponse)
+        local_public_suffix = random.sample(self.AUTO_DELEGATION_DOMAINS, 1)[0]
+        with self.get_psl_context_manager(local_public_suffix):
+            self._test_registration_with_domain(domain=self.random_domain_name(suffix=local_public_suffix))
 
     def test_registration_known_account(self):
         email, _ = self._test_registration()
