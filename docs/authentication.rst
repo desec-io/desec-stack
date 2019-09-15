@@ -1,70 +1,79 @@
 User Registration and Management
 --------------------------------
 
-Getting Started
-~~~~~~~~~~~~~~~
+Manage Account
+~~~~~~~~~~~~~~
 
-Access to the domain management API is granted to registered and logged in users only. User accounts
-can register free of charge through the API, providing an email address and a
-password. To register an user account, issue a ``POST`` request like this::
+Access to the domain management API is granted to registered and logged in
+users only. Users can register an account free of charge through the API as
+described below.
 
-    curl -X POST https://desec.io/api/v1/auth/users/ \
-        --header "Content-Type: application/json" --data @- <<< \
-        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
+Obtain a Captcha
+```````````````````
 
-Your email address is required for account recovery, in case you forgot your
-password, for contacting support, etc. It is deSEC's policy to require users
-to provide a valid email address so that support requests can be verified.
-**If you provide an invalid email address, we will not be able to help you
-if you need support.**
+Before registering a user account, you need to solve a captcha. You will have
+to send the captcha ID and solution along with your registration request. To
+obtain a captcha, issue a ``POST`` request as follows::
 
-Note that while we do not enforce restrictions on your password, please do not
-choose a weak one.
+    curl -X POST https://desec.io/api/v1/captcha/
 
-Once a user account has been registered, you will be able to log in. Log in is
-done by asking the API for a token that can be used to authorize subsequent DNS
-management requests. To obtain such a token, send your email address and password to the
-``/auth/token/login/`` endpoint::
+The response body will be a JSON object with an ``id`` and a ``challenge``
+field. The value of the ``id`` field is the one that you need to fill into the
+corresponding field of the account registration request. The value of the
+``challenge`` field is the base64-encoded PNG representation of the captcha
+itself. You can display it by directing your browser to the URL
+``data:image/png;base64,<challenge>``, after replacing ``<challenge>`` with
+the value of the ``challenge`` response field.
 
-    curl -X POST https://desec.io/api/v1/auth/token/login/ \
-        --header "Content-Type: application/json" --data @- <<< \
-        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
-
-The API will reply with a token like::
-
-    {
-        "auth_token": "i+T3b1h/OI+H9ab8tRS98stGtURe"
-    }
-
-Most interactions with the API require authentication of the domain owner using
-this token. To authenticate, the token is transmitted via the HTTP
-``Authorization`` header, as shown in the examples in this document.
-
-Additionally, the API provides you with the ``/auth/tokens/`` endpoint which you can
-use to create and destroy additional tokens (see below). Such token can be used
-to authenticate devices independently of your current login session, such as
-routers. They can be revoked individually.
+Captchas expire after 24 hours. IDs are also invalidated after using them in
+a registration request. This means that if you send an incorrect solution,
+you will have to obtain a fresh captcha and try again.
 
 
-Registration
-~~~~~~~~~~~~
+Register Account
+````````````````
 
-The API provides an endpoint to register new user accounts. New accounts
-require an email address and a password.
+You can register an account by sending a ``POST`` request containing your
+email address, a password, and a captcha ID and solution (see `Obtain a
+Captcha`_), like this::
 
-Your email address is required for account recovery, in case you forgot your
-password, for contacting support, etc. It is deSEC's policy to require users
-to provide a valid email address so that support requests can be verified.
-**If you provide an invalid email address, we will not be able to help you
-if you need support.**
+    curl -X POST https://desec.io/api/v1/auth/ \
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "email": "youremailaddress@example.com",
+          "password": "yourpassword",
+          "captcha": {
+            "id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
+            "solution": "12H45"
+          }
+        }
+    EOF
 
-Note that while we do not enforce restrictions on your password, please do not
-choose a weak one.
+Please consider the following when registering an account:
 
-Upon successful registration, the server will reply with ``201 Created`` and
-send you a welcome email. If there is a problem with your email or password,
-the server will reply with ``400 Bad Request`` and give a human-readable
-error message that may look like::
+- Surrounding whitespace is stripped automatically from passwords.
+
+- We do not enforce restrictions on your password. However, to maintain a high
+  level of security, make sure to choose a strong password. It is best to
+  generate a long random string consisting of at least 16 alphanumeric
+  characters, and use a password manager instead of attempting to remember it.
+
+- Your email address is required for account recovery in case you forgot your
+  password, for contacting support, etc. We also send out announcements for
+  technical changes occasionally. It is thus deSEC's policy to require users
+  provide a valid email address.
+
+When attempting to register a user account, the server will reply with ``202
+Accepted``. In case there already is an account for that email address,
+nothing else will be done. Otherwise, you will receive an email with a
+verification link of the form
+``https://desec.io/api/v1/v/activate-account/<code>/``. To activate your
+account, send a ``GET`` request using this link (i.e., you can simply click
+it). The link expires after 12 hours.
+
+If there is a problem with your email address, your password, or the proposed
+captcha solution, the server will reply with ``400 Bad Request`` and give a
+human-readable error message that may look like::
 
     HTTP/1.1 400 Bad Request
 
@@ -74,46 +83,61 @@ error message that may look like::
         ]
     }
 
-Your password information will be stored on our servers using `Django's default
-method, PBKDF2 <https://docs.djangoproject.com/en/2.1/topics/auth/passwords/>`_.
 
+Zone Creation during Account Registration
+*****************************************
 
-Preventing Abuse
-````````````````
+**Note:** The following functionality is intended for internal deSEC use only.
+Availability of this functionality may change without notice.
 
-We enforce some limits on user creation requests to make abuse harder. In cases
-where our heuristic suspects abuse, the server will still reply with
-``201 Created`` but will send you an (additional) email asking to solve a
-Google ReCaptcha. We implemented this as privacy-friendly as possible, but
-recommend solving the captcha using some additional privacy measures such as an
-anonymous browser-tab, VPN, etc. Before solving the captcha, the account will
-be locked, that is, it will be possible to log in; however, most operations on
-the API will be limited to read-only.
+Along with your account creation request, you can provide a domain name as
+follows::
+
+    curl -X POST https://desec.io/api/v1/auth/ \
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "email": "youremailaddress@example.com",
+          "password": "yourpassword",
+          "captcha": {
+            "id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
+            "solution": "12H45"
+          },
+          "domain": "example.org"
+        }
+    EOF
+
+If the ``domain`` field is present in the request payload, a DNS zone will be
+created for this domain name once you activate your account using the
+verification link that we will send to your email address. If the zone cannot
+be created (for example, because the domain name is unavailable), your account
+will be deleted, and you can start over with a fresh registration.
 
 
 Log In
-~~~~~~
+``````
 
 All interactions with the API that require authentication must be authenticated
-using a token that identifies the user and authorizes the request. The process
-of obtaining such a token is what we call log in.
+using a token that identifies the user and authorizes the request. Logging in
+is the process of obtaining such a token.
 
-To obtain an authentication token, log in by sending your email address and
-password to the token create endpoint of the API::
+In order to log in, you need to confirm your email address first. Afterwards,
+you can ask the API for a token that can be used to authorize subsequent DNS
+management requests. To obtain such a token, send a ``POST`` request with your
+email address and password to the ``/auth/login/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/token/login/ \
+    curl -X POST https://desec.io/api/v1/auth/login/ \
         --header "Content-Type: application/json" --data @- <<< \
-        '{"email": "anemailaddress@example.com", "password": "yourpassword"}'
+        '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
 If email address and password match our records, the server will reply with
 ``201 Created`` and send you the token as part of the response body::
 
-    {
-        "auth_token": "i+T3b1h/OI+H9ab8tRS98stGtURe"
-    }
+    {"auth_token": "i+T3b1h/OI+H9ab8tRS98stGtURe"}
 
-Note that every time you POST to this endpoint, a *new* Token will be created,
-while old tokens *remain valid*.
+In case of credential mismatch, the server replies with ``401 Unauthorized``.
+
+**Note:** Every time you send a ``POST`` request to this endpoint, an
+additional token will be created. Existing tokens will *remain valid*.
 
 To authorize subsequent requests with the new token, set the HTTP ``Authorization``
 header to the token value, prefixed with ``Token``::
@@ -122,88 +146,204 @@ header to the token value, prefixed with ``Token``::
         --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
 
-Log Out
-~~~~~~~
+Retrieve Account Information
+````````````````````````````
 
-To invalidate an authentication token (log out), send a ``POST`` request to
-the token destroy endpoint, using the token in question in the ``Authorization``
-header::
+To request information about your account, send a ``GET`` request to the
+``/auth/account/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/token/logout/ \
+    curl -X GET https://desec.io/api/v1/auth/account/ \
         --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
 
-The server will delete the token and respond with ``204 No Content``.
-
-
-Manage Account
-~~~~~~~~~~~~~~
-
-Field Reference
-```````````````
-
-A JSON object representing a user has the following structure::
+A JSON object representing your user account will be returned::
 
     {
-        "dyn": false,
-        "email": "address@example.com",
-        "limit_domains": 5,
-        "locked": false
+        "created": "2019-10-16T18:09:17.715702Z",
+        "email": "youremailaddress@example.com",
+        "id": 127,
+        "limit_domains": 5
     }
 
 Field details:
 
-``dyn``
-    :Access mode: read-only (deprecated)
+``created``
+    :Access mode: read-only
 
-    Indicates whether the account is restricted to dynDNS domains under
-    dedyn.io.
+    Registration timestamp.
 
 ``email``
-    :Access mode: read, write
+    :Access mode: read-only
 
-    Email address associated with the account.  This address must be valid
-    in order to submit support requests to deSEC.
+    Email address associated with the account.
+
+``id``
+    :Access mode: read-only
+
+    User ID.
 
 ``limit_domains``
     :Access mode: read-only
 
     Maximum number of DNS zones the user can create.
 
-``locked``
-    :Access mode: read-only
 
-    Indicates whether the account is locked.  If so, domains put in
-    read-only mode.  Changes are not propagated in the DNS system.
+Password Reset
+``````````````
 
+In case you forget your password, you can reset it. To do so, send a
+``POST`` request with your email address to the
+``/auth/account/reset-password/`` endpoint::
 
-Retrieve Account Information
-````````````````````````````
+    curl -X POST https://desec.io/api/v1/auth/account/reset-password/ \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"email": "youremailaddress@example.com"}'
 
-To request information about your account, send a ``GET`` request to the
-``auth/me/`` endpoint::
+The server will reply with ``202 Accepted``. If there is no account associated
+with this email address, nothing else will be done. Otherwise, you will receive
+an email with a URL of the form
+``https://desec.io/api/v1/v/reset-password/<code>/``. To perform the actual
+password reset, send a ``POST`` request to this URL, with the new password in
+the payload::
 
-    curl -X GET https://desec.io/api/v1/auth/me/ \
-        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+    curl -X POST https://desec.io/api/v1/v/reset-password/<code>/ \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"new_password": "yournewpassword"}'
+
+This URL expires after 12 hours. It is also invalidated by certain other
+account-related activities, such as changing your email address.
+
+Once the password was reset successfully, we will send you an email informing
+you of the event.
+
+Password Change
+```````````````
+
+To change your password, please follow the instructions for `Password Reset`_.
 
 
 Change Email Address
 ````````````````````
 
-You can change your account email address by sending a ``PUT`` request to the
-``auth/me/`` endpoint::
+To change the email address associated with your account, send a ``POST``
+request with your email address, your password, and your new email address to
+the ``/auth/account/change-email/`` endpoint::
 
-    curl -X PUT https://desec.io/api/v1/auth/me/ \
-        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe" \
+    curl -X POST https://desec.io/api/v1/auth/account/change-email/ \
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "email": "youremailaddress@example.com",
+          "password": "yourpassword",
+          "new_email": "anotheremailaddress@example.net"
+        }
+    EOF
+
+If the correct password has been provided, the server will reply with ``202
+Accepted``. In case there already is an account for the email address given in
+the ``new_email`` field, nothing else will be done. Otherwise, we will send
+an email to the new email address for verification purposes. It will contain a
+link of the form ``https://desec.io/api/v1/v/change-email/<code>/``. To perform
+the actual change, send a ``GET`` request using this link (i.e., you can simply
+click the link).
+
+The link expires after 12 hours. It is also invalidated by certain other
+account-related activities, such as changing your password.
+
+Once the email address was changed successfully, we will send a message to the
+old email address for informational purposes.
+
+
+Delete Account
+``````````````
+
+To delete your account, send a ``POST`` request with your email address and
+password to the ``/auth/account/delete/`` endpoint::
+
+    curl -X POST https://desec.io/api/v1/auth/account/delete/ \
         --header "Content-Type: application/json" --data @- <<< \
-        '{"email": "new-email@example.com"}'
+        '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
-Please note that our email support only acts upon requests that originate from
-the email address associated with the deSEC user in question.  It is therefore
-required that you provide a valid email address.  However, we do not
-automatically verify the validity of the address provided.
+You will receive an email with a link of the form
+``https://desec.io/api/v1/v/delete-account/<code>/``. To actually delete your
+account, send a ``GET`` request using this link (i.e., you can simply click
+the link).
 
-**If you provide an invalid email address and forget your account password and
-tokens, we will not be able to help you, and access will be lost permanently.**
+The link expires after 12 hours. It is also invalidated by certain other
+account-related activities, such as changing your email address or password.
+
+
+Log Out
+```````
+
+To invalidate an authentication token (log out), please see `Delete Tokens`_.
+
+
+Security Considerations
+```````````````````````
+
+Confirmation Codes
+    Some account-related activities require the user to explicitly reaffirm her
+    intent. For this purpose, we send a link with a confirmation code to the
+    user's email address. Although clients generally should consider these
+    codes opaque, we would like to give some insights into how they work.
+
+    The code is a base64-encoded JSON representation of the user's intent.
+    The representation carries a timestamp of when the intent was expressed,
+    the user ID, and also any extra parameters that were submitted along with
+    the intent. An example of such a parameter is the new email address in the
+    context of a `change email address`_ operation. Parameters that are
+    unknown at the time when the code is generated are not included in the
+    code and must be provided via ``POST`` request payload when using the
+    code. A typical example of this is the new password in a `password reset`_
+    operation, as it is only provided when the code is being used (and not at
+    the time when the code is requested).
+
+    To ensure integrity, we also include a message authentication code (MAC)
+    using `Django's signature implementation
+    <https://docs.djangoproject.com/en/2.2/_modules/django/core/signing/#Signer>`_.
+    When a confirmation code is used, we recompute the MAC based on the data
+    incorporated in the code, and only perform the requested action if the MAC
+    is reproduced identically. Codes are also checked for freshness using the
+    timestamp, and rejected if older than allowed.
+
+    In order to prevent race conditions, we add additional data to the MAC
+    input such that codes are only valid as long as the user state is not
+    modified (e.g. by performing another sensitive account operation). This is
+    achieved by mixing a) the account operation type (e.g. password reset), b)
+    the account's activation status, c) the account's current email address,
+    and d) the user's password hash into the MAC input. If any of these
+    parameters happens to change before a code is applied, the MAC will be
+    rendered invalid, and the operation will fail. This measure blocks
+    scenarios such as using an old email address change code after a more
+    recent password change.
+
+    This approach allows us to securely authenticate sensitive user operations
+    without keeping a list of requested operations on the server. This is both
+    an operational and a privacy advantage. For example, if the user expresses
+    her intent to change the account email address, we do not store that new
+    address on the server until the confirmation code is used (from which the
+    new address is then extracted).
+
+Email verification
+    Operations that require verification of a new email address (such as when
+    registering first), the server response does not depend on whether another
+    user is already using that address. This is to prevent clients from
+    telling whether a certain email address is registered with deSEC or not.
+
+    Verification emails will only be sent out if the email address is not yet
+    associated with an account. Otherwise, nothing will happen.
+
+    Also, accounts are created on the server side when the registration
+    request is received (and kept in inactive state). That is, state exists
+    on the server even before the email address is confirmed. Confirmation
+    merely activates the existing account. The purpose of this is to avoid
+    running the risk of sending out large numbers of emails to the same
+    address when a client decides to send multiple registration requests for
+    the same address. In this case, no emails will be sent after the first
+    one.
+
+Password Security
+    Password information is stored using `Django's default method, PBKDF2
+    <https://docs.djangoproject.com/en/2.1/topics/auth/passwords/>`_.
 
 
 Manage Tokens

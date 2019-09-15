@@ -1,0 +1,16 @@
+Hi there,
+
+Sad to see you leave! 😢 We know there's always room for improvement.
+If your wish to leave deSEC is due to any shortcomings of our service,
+please shoot us an email so that we can improve whatever is not right.
+
+Otherwise, we will delete your account, including all related data.
+Before we do so, we need you to confirm once more that this is what you
+really, really want by clicking the following link:
+
+{{ confirmation_link }}
+
+Note that this action is irreversible! We cannot recover your account.
+
+Wherever you go, stay secure!
+The deSEC Team

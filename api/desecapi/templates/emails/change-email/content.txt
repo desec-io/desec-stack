@@ -1,0 +1,21 @@
+Hi,
+
+You requested to change the email address associated with your deSEC
+account from:
+
+{{ old_email }}
+
+to:
+
+{{ new_email }}
+
+As we may need to contact you under this address in the future, you
+need to verify your new email address before we can make the change.
+To do so, please use the following link:
+
+{{ confirmation_link }}
+
+After your confirmation, we will perform the change.
+
+Stay secure,
+The deSEC Team

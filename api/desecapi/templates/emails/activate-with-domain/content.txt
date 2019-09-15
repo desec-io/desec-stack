@@ -1,0 +1,14 @@
+Hi there,
+
+Thank you for registering with deSEC!
+
+As we may need to contact you in the future, you need to verify your
+email address before we can register your domain. To do so, please use
+the following link:
+
+{{ confirmation_link }}
+
+After that, please follow the instructions on the confirmation page.
+
+Stay secure,
+Nils

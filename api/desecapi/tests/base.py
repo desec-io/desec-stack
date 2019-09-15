@@ -18,7 +18,7 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
 from desecapi.models import User, Domain, Token, RRset, RR
-from desecapi.views import DomainList
+from desecapi.serializers import DomainSerializer
 
 
 class DesecAPIClient(APIClient):
@@ -318,23 +318,6 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_create_422(cls):
         request = cls.request_pdns_zone_create(ns='LORD')
         request['status'] = 422
-        return request
-
-    @classmethod
-    def request_pdns_zone_create_already_exists(cls, existing_domains=None):
-        existing_domains = cls._normalize_name(existing_domains)
-
-        def request_callback(r, _, response_headers):
-            body = json.loads(r.parsed_body)
-            if not existing_domains or body['name'] in existing_domains:
-                return [422, response_headers, json.dumps({'error': 'Domain \'%s\' already exists' % body['name']})]
-            else:
-                return [200, response_headers, '']
-
-        request = cls.request_pdns_zone_create_422()
-        # noinspection PyTypeChecker
-        request['body'] = request_callback
-        request.pop('status')
         return request
 
     @classmethod
@@ -832,7 +815,40 @@ class DesecTestCase(MockPDNSTestCase):
             ))
 
 
-class DomainOwnerTestCase(DesecTestCase):
+class PublicSuffixMockMixin():
+    def _mock_get_public_suffix(self, domain_name, public_suffixes=None):
+        if public_suffixes is None:
+            public_suffixes = settings.LOCAL_PUBLIC_SUFFIXES | self.PUBLIC_SUFFIXES
+        # Poor man's PSL interpreter. First, find all known suffixes covering the domain.
+        suffixes = [suffix for suffix in public_suffixes
+                    if '.{}'.format(domain_name).endswith('.{}'.format(suffix))]
+        # Also, consider TLD.
+        suffixes += [domain_name.rsplit('.')[-1]]
+        # Select the candidate with the most labels.
+        return max(suffixes, key=lambda suffix: suffix.count('.'))
+
+    @staticmethod
+    def _mock_is_public_suffix(name):
+        return name == DomainSerializer.psl.get_public_suffix(name)
+
+    def get_psl_context_manager(self, side_effect_parameter):
+        if side_effect_parameter is None:
+            return nullcontext()
+
+        if callable(side_effect_parameter):
+            side_effect = side_effect_parameter
+        else:
+            side_effect = partial(self._mock_get_public_suffix, public_suffixes=[side_effect_parameter])
+
+        return mock.patch.object(DomainSerializer.psl, 'get_public_suffix', side_effect=side_effect)
+
+    def setUpMockPatch(self):
+        mock.patch.object(DomainSerializer.psl, 'get_public_suffix', side_effect=self._mock_get_public_suffix).start()
+        mock.patch.object(DomainSerializer.psl, 'is_public_suffix', side_effect=self._mock_is_public_suffix).start()
+        self.addCleanup(mock.patch.stopall)
+
+
+class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
     """
     This test case creates a domain owner, some domains for her and some domains that are owned by other users.
     DomainOwnerTestCase.client is authenticated with the owner's token.
@@ -848,42 +864,11 @@ class DomainOwnerTestCase(DesecTestCase):
     other_domain = None
     token = None
 
-    def _mock_get_public_suffix(self, domain_name, public_suffixes=None):
-        if public_suffixes is None:
-            public_suffixes = settings.LOCAL_PUBLIC_SUFFIXES | self.PUBLIC_SUFFIXES
-        # Poor man's PSL interpreter. First, find all known suffixes covering the domain.
-        suffixes = [suffix for suffix in public_suffixes
-                    if '.{}'.format(domain_name).endswith('.{}'.format(suffix))]
-        # Also, consider TLD.
-        suffixes += [domain_name.rsplit('.')[-1]]
-        # Select the candidate with the most labels.
-        return max(suffixes, key=lambda suffix: suffix.count('.'))
-
-    @staticmethod
-    def _mock_is_public_suffix(name):
-        return name == DomainList.psl.get_public_suffix(name)
-
-    def get_psl_context_manager(self, side_effect_parameter):
-        if side_effect_parameter is None:
-            return nullcontext()
-
-        if callable(side_effect_parameter):
-            side_effect = side_effect_parameter
-        else:
-            side_effect = partial(self._mock_get_public_suffix, public_suffixes=[side_effect_parameter])
-
-        return mock.patch.object(DomainList.psl, 'get_public_suffix', side_effect=side_effect)
-
-    def setUpMockPatch(self):
-        mock.patch.object(DomainList.psl, 'get_public_suffix', side_effect=self._mock_get_public_suffix).start()
-        mock.patch.object(DomainList.psl, 'is_public_suffix', side_effect=self._mock_is_public_suffix).start()
-        self.addCleanup(mock.patch.stopall)
-
     @classmethod
     def setUpTestDataWithPdns(cls):
         super().setUpTestDataWithPdns()
 
-        cls.owner = cls.create_user(dyn=cls.DYN)
+        cls.owner = cls.create_user()
 
         domain_kwargs = {'suffix': cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None}
         if cls.DYN:
@@ -914,7 +899,7 @@ class DomainOwnerTestCase(DesecTestCase):
     def setUp(self):
         super().setUp()
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-        self.setUpMockPatch()
+        PublicSuffixMockMixin.setUpMockPatch(self)
 
 
 class LockedDomainOwnerTestCase(DomainOwnerTestCase):

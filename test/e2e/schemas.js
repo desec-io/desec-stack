@@ -9,14 +9,18 @@ exports.rootNoLogin = {
 
 exports.user = {
     properties: {
-        dyn: { type: "boolean" },
+        created: {
+            type: "string",
+            format: "date-time"
+        },
         email: {
             type: "string",
             format: "email"
         },
+        id: { type: "integer" },
         limit_domains: { type: "integer" },
     },
-    required: ["dyn", "email", "limit_domains"]
+    required: ["created", "email", "id", "limit_domains"]
 };
 
 exports.domain = {
@@ -79,12 +83,12 @@ exports.rrsets = {
 
 exports.token = {
     properties: {
-        value: { type: "string" },
+        auth_token: { type: "string" },
         name: { type: "string" },
         created: { type: "string" },
         id: { type: "integer" },
     },
-    required: ["value", "name", "created", "id"]
+    required: ["auth_token", "name", "created", "id"]
 };
 
 exports.tokens = {

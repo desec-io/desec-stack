@@ -1,0 +1,12 @@
+Hi,
+
+We received a request to reset the password for your deSEC account. To
+ensure that this request is legitimate, we need you to confirm it using
+the following link:
+
+{{ confirmation_link }}
+
+After your confirmation, we will ask you to set a new password.
+
+Stay secure,
+The deSEC Team

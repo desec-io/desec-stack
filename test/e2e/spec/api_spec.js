@@ -23,7 +23,7 @@ describe("API Versioning", function () {
         it("maintains the requested version " + version, function() {
             chakram.get('/' + version + '/').then(function (response) {
                 expect(response).to.have.schema(schemas.rootNoLogin);
-                let regex = new RegExp('http://[^/]+/api/' + version + '/auth/users/', 'g')
+                let regex = new RegExp('http://[^/]+/api/' + version + '/auth/', 'g')
                 expect(response.body.login).to.match(regex);
                 return chakram.wait();
             });
@@ -47,8 +47,8 @@ describe("API v1", function () {
         })
 
         let credentials = {"email":"admin@e2etest.local", "password": "password"};
-        return chakram.post('/auth/users/', credentials).then(function() {
-            chakram.post('/auth/token/login/', credentials).then(function (response) {
+        return chakram.post('/auth/', credentials).then(function() {
+            chakram.post('/auth/login/', credentials).then(function (response) {
                 let config = {headers: {'Authorization': 'Token ' + response.body.auth_token}}
                 chakram.post('/domains/', {name: publicSuffix}, config)
                 // TODO verify behavior for non-existent local public suffixes
@@ -59,7 +59,7 @@ describe("API v1", function () {
     it("provides an index page", function () {
         chakram.get('/').then(function (response) {
             expect(response).to.have.schema(schemas.rootNoLogin);
-            expect(response.body.login).to.match(/http:\/\/[^\/]+\/api\/v1\/auth\/users\//);
+            expect(response.body.login).to.match(/http:\/\/[^\/]+\/api\/v1\/auth\//);
             return chakram.wait();
         });
     });
@@ -72,15 +72,13 @@ describe("API v1", function () {
             email = require("uuid").v4() + '@e2etest.local';
             password = require("uuid").v4();
 
-            var response = chakram.post('/auth/users/', {
+            var response = chakram.post('/auth/', {
                 "email": email,
                 "password": password,
             });
 
-            return expect(response).to.have.status(201);
+            return expect(response).to.have.status(202);
         });
-
-        it("locks new users that look suspicious");
     });
 
     describe("user account", function () {
@@ -93,16 +91,16 @@ describe("API v1", function () {
             email = require("uuid").v4() + '@e2etest.local';
             password = require("uuid").v4();
 
-            var response = chakram.post('/auth/users/', {
+            var response = chakram.post('/auth/', {
                 "email": email,
                 "password": password,
             });
 
-            return expect(response).to.have.status(201);
+            return expect(response).to.have.status(202);
         });
 
         it("returns a token when logging in", function () {
-            return chakram.post('/auth/token/login/', {
+            return chakram.post('/auth/login/', {
                 "email": email,
                 "password": password,
             }).then(function (loginResponse) {
@@ -110,7 +108,7 @@ describe("API v1", function () {
             });
         });
 
-        describe("auth/me/ endpoint", function () {
+        describe("auth/account/ endpoint", function () {
             var email2, password2, token2;
 
             before(function () {
@@ -118,11 +116,11 @@ describe("API v1", function () {
                 email2 = require("uuid").v4() + '@e2etest.local';
                 password2 = require("uuid").v4();
 
-                return chakram.post('/auth/users/', {
+                return chakram.post('/auth/', {
                     "email": email2,
                     "password": password2,
                 }).then(function () {
-                    return chakram.post('/auth/token/login/', {
+                    return chakram.post('/auth/login/', {
                         "email": email2,
                         "password": password2,
                     }).then(function (response) {
@@ -132,7 +130,7 @@ describe("API v1", function () {
             });
 
             it("returns JSON of correct schema", function () {
-                var response = chakram.get('/auth/me/', {
+                var response = chakram.get('/auth/account/', {
                     headers: {'Authorization': 'Token ' + token2 }
                 });
                 expect(response).to.have.status(200);
@@ -140,95 +138,16 @@ describe("API v1", function () {
                 return chakram.wait();
             });
 
-            it("allows changing email address", function () {
-                let email3 = require("uuid").v4() + '@e2etest.local';
-
-                return chakram.put('/auth/me/',
-                    {'email': email3},
-                    {headers: {'Authorization': 'Token ' + token2}}
-                ).then(function (response) {
-                    expect(response).to.have.status(200);
-                    expect(response).to.have.schema(schemas.user);
-                    expect(response.body.email).to.equal(email3);
+            it("allows triggering change email process", function () {
+                return chakram.post('/auth/account/change-email/', {
+                    "email": email2,
+                    "password": password2,
+                    "new_email": require("uuid").v4() + '@e2etest.local',
+                }).then(function (response) {
+                    expect(response).to.have.status(202);
                 });
             });
         });
-
-        describe("token management (djoser)", function () {
-
-            var token1, token2;
-
-            function createTwoTokens() {
-                return chakram.waitFor([
-                    chakram.post('/auth/token/login/', {
-                        "email": email,
-                        "password": password,
-                    }).then(function (loginResponse) {
-                        expect(loginResponse).to.have.status(201);
-                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                        token1 = loginResponse.body.auth_token;
-                        expect(token1).to.not.equal(token2);
-                    }),
-                    chakram.post('/auth/token/login/', {
-                        "email": email,
-                        "password": password,
-                    }).then(function (loginResponse) {
-                        expect(loginResponse).to.have.status(201);
-                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                        token2 = loginResponse.body.auth_token;
-                        expect(token2).to.not.equal(token1);
-                    })
-                ]);
-            }
-
-            function deleteToken(token) {
-                var response = chakram.post('/auth/token/logout/', null, {
-                    headers: {'Authorization': 'Token ' + token}
-                });
-
-                return expect(response).to.have.status(204);
-            }
-
-            it("can create additional tokens", createTwoTokens);
-
-            describe("additional tokens", function () {
-
-                before(createTwoTokens);
-
-                it("can be used for login (1)", function () {
-                    return expect(chakram.get('/domains/', {
-                        headers: {'Authorization': 'Token ' + token1 }
-                    })).to.have.status(200);
-                });
-
-                it("can be used for login (2)", function () {
-                    return expect(chakram.get('/domains/', {
-                        headers: {'Authorization': 'Token ' + token2 }
-                    })).to.have.status(200);
-                });
-
-                describe("and one deleted", function () {
-
-                    before(function () {
-                        var response = chakram.post('/auth/token/logout/', undefined,
-                            { headers: {'Authorization': 'Token ' + token1 } }
-                        );
-
-                        return expect(response).to.have.status(204);
-                    });
-
-                    it("leaves the other untouched", function () {
-                        return expect(chakram.get('/domains/', {
-                            headers: {'Authorization': 'Token ' + token2 }
-                        })).to.have.status(200);
-                    });
-
-                });
-
-            });
-
-        });
-
     });
 
     var email = require("uuid").v4() + '@e2etest.local';
@@ -237,10 +156,10 @@ describe("API v1", function () {
         var apiHomeSchema = {
             properties: {
                 domains: {type: "string"},
-                logout: {type: "string"},
-                user: {type: "string"},
+                tokens: {type: "string"},
+                account: {type: "object"},
             },
-            required: ["domains", "logout", "user"]
+            required: ["domains", "tokens", "account"]
         };
 
         var password, token;
@@ -257,11 +176,11 @@ describe("API v1", function () {
             // register a user that we can login and work with
             password = require("uuid").v4();
 
-            return chakram.post('/auth/users/', {
+            return chakram.post('/auth/', {
                 "email": email,
                 "password": password,
             }).then(function () {
-                return chakram.post('/auth/token/login/', {
+                return chakram.post('/auth/login/', {
                     "email": email,
                     "password": password,
                 }).then(function (loginResponse) {

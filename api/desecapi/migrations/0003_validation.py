@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='domain',
             name='name',
-            field=models.CharField(max_length=191, unique=True, validators=[desecapi.models.validate_lower, django.core.validators.RegexValidator(code='invalid_domain_name', message='Domain name malformed.', regex='^[a-z0-9_.-]*[a-z]$')]),
+            field=models.CharField(max_length=191, unique=True, validators=[desecapi.models.validate_lower, django.core.validators.RegexValidator(code='invalid_domain_name', message='Invalid value (not a DNS name).', regex='^[a-z0-9_.-]*[a-z]$')]),
         ),
         migrations.AlterField(
             model_name='rrset',

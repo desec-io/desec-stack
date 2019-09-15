@@ -4,12 +4,6 @@ And welcome to the deSEC dynDNS service! I'm Nils, CTO of deSEC.
 If you have any questions or concerns, please do not hestitate
 to contact me.
 
-Note: If you find that your domain does not work, it may be
-because a captcha needs to be solved first. In this case, please
-double-check your mailbox for a separate email with captcha
-instructions. Don't forget your spam folder, especially when
-using a gmail address!
-
 To get started using your new dynDNS domain {{ domain }},
 please configure your device (or any other dynDNS client) to use
 the following credentials:

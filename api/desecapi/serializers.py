@@ -1,26 +1,33 @@
+import binascii
+import json
 import re
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 
+import psl_dns
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
-from djoser import serializers as djoser_serializers
 from rest_framework import serializers
-from rest_framework.fields import empty, SkipField, ListField, CharField
+from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ListSerializer
 from rest_framework.settings import api_settings
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
-from desecapi.models import Domain, Donation, User, RRset, Token, RR
+from api import settings
+# TODO organize imports
+from desecapi.models import Domain, Donation, User, RRset, Token, RR, AuthenticatedUserAction, \
+    AuthenticatedActivateUserAction, AuthenticatedChangeEmailUserAction, \
+    AuthenticatedDeleteUserAction, AuthenticatedResetPasswordUserAction, AuthenticatedAction
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    value = serializers.ReadOnlyField(source='key')
+    auth_token = serializers.ReadOnlyField(source='key')
     # note this overrides the original "id" field, which is the db primary key
     id = serializers.ReadOnlyField(source='user_specific_id')
 
     class Meta:
         model = Token
-        fields = ('id', 'created', 'name', 'value',)
-        read_only_fields = ('created', 'value', 'id')
+        fields = ('id', 'created', 'name', 'auth_token',)
+        read_only_fields = ('created', 'auth_token', 'id')
 
 
 class RequiredOnPartialUpdateCharField(serializers.CharField):
@@ -28,7 +35,7 @@ class RequiredOnPartialUpdateCharField(serializers.CharField):
     This field is always required, even for partial updates (e.g. using PATCH).
     """
     def validate_empty_values(self, data):
-        if data is empty:
+        if data is serializers.empty:
             self.fail('required')
 
         return super().validate_empty_values(data)
@@ -67,19 +74,19 @@ class ReadOnlyOnUpdateValidator(Validator):
             raise serializers.ValidationError(self.message, code='read-only-on-update')
 
 
-class StringField(CharField):
+class StringField(serializers.CharField):
 
     def to_internal_value(self, data):
         return data
 
-    def run_validation(self, data=empty):
+    def run_validation(self, data=serializers.empty):
         data = super().run_validation(data)
         if not isinstance(data, str):
             raise serializers.ValidationError('Must be a string.', code='must-be-a-string')
         return data
 
 
-class RRsField(ListField):
+class RRsField(serializers.ListField):
 
     def __init__(self, **kwargs):
         super().__init__(child=StringField(), **kwargs)
@@ -156,7 +163,7 @@ class NonBulkOnlyDefault:
 
     def __call__(self):
         if self.is_many:
-            raise SkipField()
+            raise serializers.SkipField()
         if callable(self.default):
             return self.default()
         return self.default
@@ -177,7 +184,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
         }
 
-    def __init__(self, instance=None, data=empty, domain=None, **kwargs):
+    def __init__(self, instance=None, data=serializers.empty, domain=None, **kwargs):
         if domain is None:
             raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
         self.domain = domain
@@ -291,7 +298,7 @@ class RRsetListSerializer(ListSerializer):
 
         if not self.allow_empty and len(data) == 0:
             if self.parent and self.partial:
-                raise SkipField()
+                raise serializers.SkipField()
             else:
                 self.fail('empty')
 
@@ -425,6 +432,7 @@ class RRsetListSerializer(ListSerializer):
 
 
 class DomainSerializer(serializers.ModelSerializer):
+    psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
 
     class Meta:
         model = Domain
@@ -439,6 +447,48 @@ class DomainSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
         fields['name'].validators.append(ReadOnlyOnUpdateValidator())
         return fields
+
+    def validate_name(self, value):
+        # Check if domain is a public suffix
+        try:
+            public_suffix = self.psl.get_public_suffix(value)
+            is_public_suffix = self.psl.is_public_suffix(value)
+        except psl_dns.exceptions.UnsupportedRule as e:
+            # It would probably be fine to just create the domain (with the TLD acting as the
+            # public suffix and setting both public_suffix and is_public_suffix accordingly).
+            # However, in order to allow to investigate the situation, it's better not catch
+            # this exception. Our error handler turns it into a 503 error and makes sure
+            # admins are notified.
+            raise e
+
+        is_restricted_suffix = is_public_suffix and value not in settings.LOCAL_PUBLIC_SUFFIXES
+
+        # Generate a list of all domains connecting this one and its public suffix.
+        # If another user owns a zone with one of these names, then the requested
+        # domain is unavailable because it is part of the other user's zone.
+        private_components = value.rsplit(public_suffix, 1)[0].rstrip('.')
+        private_components = private_components.split('.') if private_components else []
+        private_components += [public_suffix]
+        private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components) - 1)]
+        assert is_public_suffix or value == private_domains[0]
+
+        # Deny registration for non-local public suffixes and for domains covered by other users' zones
+        owner = self.context['request'].user
+        queryset = Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner))
+        if is_restricted_suffix or queryset.exists():
+            msg = 'This domain name is unavailable.'
+            raise serializers.ValidationError(msg, code='name_unavailable')
+
+        return value
+
+    def validate(self, attrs):  # TODO I believe this should be a permission, not a validation
+        # Check user's domain limit
+        owner = self.context['request'].user
+        if (owner.limit_domains is not None and
+                owner.domains.count() >= owner.limit_domains):
+            msg = 'You reached the maximum number of domains allowed for your account.'
+            raise serializers.ValidationError(msg, code='domain_limit')
+        return attrs
 
 
 class DonationSerializer(serializers.ModelSerializer):
@@ -456,28 +506,184 @@ class DonationSerializer(serializers.ModelSerializer):
         return re.sub(r'[\s]', '', value)
 
 
-class UserSerializer(djoser_serializers.UserSerializer):
-    locked = serializers.SerializerMethodField()
+class UserSerializer(serializers.ModelSerializer):
 
-    class Meta(djoser_serializers.UserSerializer.Meta):
-        fields = tuple(User.REQUIRED_FIELDS) + (
-            User.USERNAME_FIELD,
-            'dyn',
-            'limit_domains',
-            'locked',
-        )
-        read_only_fields = ('dyn', 'limit_domains', 'locked',)
+    class Meta:
+        model = User
+        fields = ('created', 'email', 'id', 'limit_domains', 'password',)
+        extra_kwargs = {
+            'password': {
+                'write_only': True,  # Do not expose password field
+            }
+        }
 
-    @staticmethod
-    def get_locked(obj):
-        return bool(obj.locked)
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
 
 
-class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
+class RegisterAccountSerializer(UserSerializer):
+    domain = serializers.CharField(required=False)  # TODO Needs more validation
 
-    class Meta(djoser_serializers.UserCreateSerializer.Meta):
-        fields = tuple(User.REQUIRED_FIELDS) + (
-            User.USERNAME_FIELD,
-            'password',
-            'dyn',
-        )
+    class Meta:
+        model = UserSerializer.Meta.model
+        fields = ('email', 'password', 'domain')
+        extra_kwargs = UserSerializer.Meta.extra_kwargs
+
+    def create(self, validated_data):
+        validated_data.pop('domain', None)
+        return super().create(validated_data)
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class EmailPasswordSerializer(EmailSerializer):
+    password = serializers.CharField()
+
+
+class ChangeEmailSerializer(serializers.Serializer):
+    new_email = serializers.EmailField()
+
+    def validate_new_email(self, value):
+        if value == self.context['request'].user.email:
+            raise serializers.ValidationError('Email address unchanged.')
+        return value
+
+
+class CustomFieldNameUniqueValidator(UniqueValidator):
+    """
+    Does exactly what rest_framework's UniqueValidator does, however allows to further customize the
+    query that is used to determine the uniqueness.
+    More specifically, we allow that the field name the value is queried against is passed when initializing
+    this validator. (At the time of writing, UniqueValidator insists that the field's name is used for the
+    database query field; only how the lookup must match is allowed to be changed.)
+    """
+
+    def __init__(self, queryset, message=None, lookup='exact', lookup_field=None):
+        self.lookup_field = lookup_field
+        super().__init__(queryset, message, lookup)
+
+    def filter_queryset(self, value, queryset):
+        """
+        Filter the queryset to all instances matching the given value on the specified lookup field.
+        """
+        filter_kwargs = {'%s__%s' % (self.lookup_field or self.field_name, self.lookup): value}
+        return qs_filter(queryset, **filter_kwargs)
+
+
+class AuthenticatedActionSerializer(serializers.ModelSerializer):
+    mac = serializers.CharField()  # serializer read-write, but model read-only field
+
+    class Meta:
+        model = AuthenticatedAction
+        fields = ('mac', 'created')
+
+    @classmethod
+    def _pack_code(cls, unpacked_data):
+        return urlsafe_b64encode(json.dumps(unpacked_data).encode()).decode()
+
+    @classmethod
+    def _unpack_code(cls, packed_data):
+        try:
+            return json.loads(urlsafe_b64decode(packed_data.encode()).decode())
+        except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
+            raise ValueError
+
+    def to_representation(self, instance: AuthenticatedUserAction):
+        # do the regular business
+        data = super().to_representation(instance)
+
+        # encode into single string
+        return {'code': self._pack_code(data)}
+
+    def to_internal_value(self, data):
+        data = data.copy()  # avoid side effect from .pop
+        try:
+            # decode from single string
+            unpacked_data = self._unpack_code(data.pop('code'))
+        except KeyError:
+            raise ValidationError({'code': ['No verification code.']})
+        except ValueError:
+            raise ValidationError({'code': ['Invalid verification code.']})
+
+        # add extra fields added by the user
+        unpacked_data.update(**data)
+
+        # do the regular business
+        return super().to_internal_value(unpacked_data)
+
+    def validate(self, attrs):
+        if not self.instance:
+            self.instance = self.Meta.model(**attrs)  # TODO This creates an attribute on self. Side-effect intended?
+
+        # check if expired
+        expired = not self.instance.check_expiration(settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE)
+        if expired:
+            raise ValidationError(detail='Code expired, please restart the process.', code='expired')
+
+        # check if MAC valid
+        mac_valid = self.instance.check_mac(attrs['mac'])
+        if not mac_valid:
+            raise ValidationError(detail='Bad signature.', code='bad_sig')
+
+        return attrs
+
+    def act(self):
+        self.instance.act()
+        return self.instance
+
+    def save(self, **kwargs):
+        raise ValueError
+
+
+class AuthenticatedUserActionSerializer(AuthenticatedActionSerializer):
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        error_messages={'does_not_exist': 'This user does not exist.'}
+    )
+
+    class Meta:
+        model = AuthenticatedUserAction
+        fields = AuthenticatedActionSerializer.Meta.fields + ('user',)
+
+
+class AuthenticatedActivateUserActionSerializer(AuthenticatedUserActionSerializer):
+
+    class Meta(AuthenticatedUserActionSerializer.Meta):
+        model = AuthenticatedActivateUserAction
+        fields = AuthenticatedUserActionSerializer.Meta.fields + ('domain',)
+        extra_kwargs = {
+            'domain': {'default': None, 'allow_null': True}
+        }
+
+
+class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedUserActionSerializer):
+    new_email = serializers.EmailField(
+        validators=[
+            CustomFieldNameUniqueValidator(
+                queryset=User.objects.all(),
+                lookup_field='email',
+                message='You already have another account with this email address.',
+            )
+        ],
+        required=True,
+    )
+
+    class Meta(AuthenticatedUserActionSerializer.Meta):
+        model = AuthenticatedChangeEmailUserAction
+        fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_email',)
+
+
+class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedUserActionSerializer):
+    new_password = serializers.CharField(write_only=True)
+
+    class Meta(AuthenticatedUserActionSerializer.Meta):
+        model = AuthenticatedResetPasswordUserAction
+        fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_password',)
+
+
+class AuthenticatedDeleteUserActionSerializer(AuthenticatedUserActionSerializer):
+
+    class Meta(AuthenticatedUserActionSerializer.Meta):
+        model = AuthenticatedDeleteUserAction

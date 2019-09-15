@@ -1,23 +1,31 @@
 from __future__ import annotations
 
-import datetime
+import json
+import logging
 import random
 import time
 import uuid
 from base64 import b64encode
+from datetime import datetime, timedelta
 from os import urandom
 
 import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMessage
+from django.core.signing import Signer
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Manager
+from django.template.loader import get_template
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import APIException
 
 from desecapi import pdns
+
+logger = logging.getLogger(__name__)
 
 
 def validate_lower(value):
@@ -35,7 +43,7 @@ def validate_upper(value):
 
 
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None, registration_remote_ip=None, lock=False, dyn=False):
+    def create_user(self, email, password, **extra_fields):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -43,13 +51,9 @@ class MyUserManager(BaseUserManager):
         if not email:
             raise ValueError('Users must have an email address')
 
-        user = self.model(
-            email=self.normalize_email(email),
-            registration_remote_ip=registration_remote_ip,
-            locked=timezone.now() if lock else None,
-            dyn=dyn,
-        )
-
+        email = self.normalize_email(email)
+        extra_fields.setdefault('registration_remote_ip')
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -74,10 +78,8 @@ class User(AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     registration_remote_ip = models.CharField(max_length=1024, blank=True)
-    locked = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT, null=True, blank=True)
-    dyn = models.BooleanField(default=False)
 
     objects = MyUserManager()
 
@@ -118,6 +120,48 @@ class User(AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
+    def activate(self):
+        self.is_active = True
+        self.save()
+
+    def change_email(self, email):
+        old_email = self.email
+        self.email = email
+        self.validate_unique()
+        self.save()
+
+        self.send_email('change-email-confirmation-old-email', recipient=old_email)
+
+    def change_password(self, raw_password):
+        self.set_password(raw_password)
+        self.save()
+        self.send_email('password-change-confirmation')
+
+    def send_email(self, reason, context=None, recipient=None):
+        context = context or {}
+        reasons = [
+            'activate',
+            'activate-with-domain',
+            'change-email',
+            'change-email-confirmation-old-email',
+            'password-change-confirmation',
+            'reset-password',
+            'delete-user',
+        ]
+        recipient = recipient or self.email
+        if reason not in reasons:
+            raise ValueError('Cannot send email to user {} without a good reason: {}'.format(self.email, reason))
+        content_tmpl = get_template('emails/{}/content.txt'.format(reason))
+        subject_tmpl = get_template('emails/{}/subject.txt'.format(reason))
+        from_tmpl = get_template('emails/from.txt')
+        footer_tmpl = get_template('emails/footer.txt')
+        email = EmailMessage(subject_tmpl.render(context).strip(),
+                             content_tmpl.render(context) + footer_tmpl.render(),
+                             from_tmpl.render(),
+                             [recipient])
+        logger.warning('Sending email for user account %s (reason: %s)', str(self.pk), reason)
+        email.send()
+
 
 class Token(rest_framework.authtoken.models.Token):
     key = models.CharField("Key", max_length=40, db_index=True, unique=True)
@@ -148,7 +192,7 @@ class Domain(models.Model):
                             unique=True,
                             validators=[validate_lower,
                                         RegexValidator(regex=r'^[a-z0-9_.-]*[a-z]$',
-                                                       message='Domain name malformed.',
+                                                       message='Invalid value (not a DNS name).',
                                                        code='invalid_domain_name')
                                         ])
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
@@ -158,6 +202,12 @@ class Domain(models.Model):
     @property
     def keys(self):
         return pdns.get_keys(self)
+
+    def has_local_public_suffix(self):
+        return self.partition_name()[1] in settings.LOCAL_PUBLIC_SUFFIXES
+
+    def parent_domain_name(self):
+        return self.partition_name()[1]
 
     def partition_name(domain):
         name = domain.name if isinstance(domain, Domain) else domain
@@ -200,7 +250,7 @@ def get_default_value_created():
 
 
 def get_default_value_due():
-    return timezone.now() + datetime.timedelta(days=7)
+    return timezone.now() + timedelta(days=7)
 
 
 def get_default_value_mref():
@@ -313,3 +363,188 @@ class RR(models.Model):
 
     def __str__(self):
         return '<RR %s>' % self.content
+
+
+def authenticated_action_default_timestamp():
+    return int(datetime.timestamp(datetime.now()))
+
+
+class AuthenticatedAction(models.Model):
+    """
+    Represents a procedure call on a defined set of arguments.
+
+    Subclasses can define additional arguments by adding Django model fields and must define the action to be taken by
+    implementing the `act` method.
+
+    AuthenticatedAction provides the `mac` property that returns a Message Authentication Code (MAC) based on the
+    state. By default, the state contains the action's name (defined by the `name` property) and a timestamp; the
+    state can be extended by (carefully) overriding the `mac_state` method. Any AuthenticatedAction instance of
+    the same subclass and state will deterministically have the same MAC, effectively allowing authenticated
+    procedure calls by third parties according to the following protocol:
+
+    (1) Instantiate the AuthenticatedAction subclass representing the action to be taken with the desired state,
+    (2) provide information on how to instantiate the instance and the MAC to a third party,
+    (3) when provided with data that allows instantiation and a valid MAC, take the defined action, possibly with
+        additional parameters chosen by the third party that do not belong to the verified state.
+    """
+    created = models.PositiveIntegerField(default=lambda: int(datetime.timestamp(datetime.now())))
+
+    class Meta:
+        managed = False
+
+    def __init__(self, *args, **kwargs):
+        # silently ignore any value supplied for the mac value, that makes it easier to use with DRF serializers
+        kwargs.pop('mac', None)
+        super().__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        """
+        Returns a human-readable string containing the name of this action class that uniquely identifies this action.
+        """
+        return NotImplementedError
+
+    @property
+    def mac(self):
+        """
+        Deterministically generates a message authentication code (MAC) for this action, based on the state as defined
+        by `self.mac_state`. Identical state is guaranteed to yield identical MAC.
+        :return:
+        """
+        return Signer().signature(json.dumps(self.mac_state))
+
+    def check_mac(self, mac):
+        """
+        Checks if the message authentication code (MAC) provided by the first argument matches the MAC of this action.
+        Note that expiration is not verified by this method.
+        :param mac: Message Authentication Code
+        :return: True, if MAC is valid; False otherwise.
+        """
+        return constant_time_compare(
+            mac,
+            self.mac,
+        )
+
+    def check_expiration(self, validity_period: timedelta, check_time: datetime = None):
+        """
+        Checks if the action's timestamp is no older than the given validity period. Note that the message
+        authentication code itself is not verified by this method.
+        :param validity_period: How long after issuance the MAC of this action is considered valid.
+        :param check_time: Point in time for which to check the expiration. Defaults to datetime.now().
+        :return: True if valid, False if expired.
+        """
+        issue_time = datetime.fromtimestamp(self.created)
+        check_time = check_time or datetime.now()
+        return check_time - issue_time <= validity_period
+
+    @property
+    def mac_state(self):
+        """
+        Returns a list that defines the state of this action (used for MAC calculation).
+
+        Return value must be JSON-serializable.
+
+        Values not included in the return value will not be used for MAC calculation, i.e. the MAC will be independent
+        of them.
+
+        Use caution when overriding this method. You will usually want to append a value to the list returned by the
+        parent. Overriding the behavior altogether could result in reducing the state to fewer variables, resulting
+        in valid signatures when they were intended to be invalid. The suggested method for overriding is
+
+            @property
+            def mac_state:
+                return super().mac_state + [self.important_value, self.another_added_value]
+
+        :return: List of values to be signed.
+        """
+        # TODO consider adding a "last change" attribute of the user to the state to avoid code
+        #  re-use after the the state has been changed and changed back.
+        return [self.created, self.name]
+
+    def act(self):
+        """
+        Conduct the action represented by this class.
+        :return: None
+        """
+        raise NotImplementedError
+
+
+class AuthenticatedUserAction(AuthenticatedAction):
+    """
+    Abstract AuthenticatedAction involving an user instance, incorporating the user's id, email, password, and
+    is_active flag into the Message Authentication Code state.
+    """
+    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+
+    @property
+    def name(self):
+        raise NotImplementedError
+
+    @property
+    def mac_state(self):
+        return super().mac_state + [self.user.id, self.user.email, self.user.password, self.user.is_active]
+
+    def act(self):
+        raise NotImplementedError
+
+
+class AuthenticatedActivateUserAction(AuthenticatedUserAction):
+    domain = models.CharField(max_length=191)
+
+    class Meta:
+        managed = False
+
+    @property
+    def name(self):
+        return 'user/activate'
+
+    def act(self):
+        self.user.activate()
+
+
+class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
+    new_email = models.EmailField()
+
+    class Meta:
+        managed = False
+
+    @property
+    def name(self):
+        return 'user/change_email'
+
+    @property
+    def mac_state(self):
+        return super().mac_state + [self.new_email]
+
+    def act(self):
+        self.user.change_email(self.new_email)
+
+
+class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
+    new_password = models.CharField(max_length=128)
+
+    class Meta:
+        managed = False
+
+    @property
+    def name(self):
+        return 'user/reset_password'
+
+    def act(self):
+        self.user.change_password(self.new_password)
+
+
+class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
+
+    class Meta:
+        managed = False
+
+    @property
+    def name(self):
+        return 'user/delete'
+
+    def act(self):
+        self.user.delete()

@@ -17,16 +17,3 @@ class IsDomainOwner(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.domain.owner == request.user
-
-
-class IsUnlocked(permissions.BasePermission):
-    """
-    Allow non-safe methods only when account is not locked.
-    """
-    message = 'You cannot modify DNS data while your account is locked.'
-
-    def has_permission(self, request, view):
-        return bool(
-            request.method in permissions.SAFE_METHODS or
-            not request.user.locked
-        )

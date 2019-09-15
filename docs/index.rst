@@ -1,4 +1,5 @@
 .. include:: introduction.rst
+.. include:: quickstart.rst
 .. include:: authentication.rst
 .. include:: domains.rst
 .. include:: rrsets.rst

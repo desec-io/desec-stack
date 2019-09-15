@@ -1,5 +1,4 @@
 from django.urls import include, path, re_path
-from djoser.views import UserView
 from rest_framework.routers import SimpleRouter
 
 from desecapi import views
@@ -8,29 +7,23 @@ tokens_router = SimpleRouter()
 tokens_router.register(r'', views.TokenViewSet, base_name='token')
 
 auth_urls = [
-    # Old user management
-    # TODO deprecated, remove
-    path('users/create/', views.UserCreateView.as_view(), name='user-create'),  # deprecated
-    path('token/create/', views.TokenCreateView.as_view(), name='token-create'),  # deprecated
-    path('token/destroy/', views.TokenDestroyView.as_view(), name='token-destroy'),  # deprecated
-
-    # New user management
-    path('users/', views.UserCreateView.as_view(), name='register'),
+    # User management
+    path('', views.AccountCreateView.as_view(), name='register'),
+    path('account/', views.AccountView.as_view(), name='account'),
+    path('account/delete/', views.AccountDeleteView.as_view(), name='account-delete'),
+    path('account/change-email/', views.AccountChangeEmailView.as_view(), name='account-change-email'),
+    path('account/reset-password/', views.AccountResetPasswordView.as_view(), name='account-reset-password'),
+    path('login/', views.AccountLoginView.as_view(), name='login'),
 
     # Token management
-    path('token/login/', views.TokenCreateView.as_view(), name='login'),
-    path('token/logout/', views.TokenDestroyView.as_view(), name='logout'),
     path('tokens/', include(tokens_router.urls)),
-
-    # User home
-    path('me/', UserView.as_view(), name='user'),
 ]
 
 api_urls = [
     # API home
     path('', views.Root.as_view(), name='root'),
 
-    # Domain and RRSet endpoints
+    # Domain and RRSet management
     path('domains/', views.DomainList.as_view(), name='domain-list'),
     path('domains/<name>/', views.DomainDetail.as_view(), name='domain-detail'),
     path('domains/<name>/rrsets/', views.RRsetList.as_view(), name='rrsets'),
@@ -42,15 +35,17 @@ api_urls = [
             views.RRsetDetail.as_view(), name='rrset@'),
     path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
 
-    # DynDNS update endpoint
+    # DynDNS update
     path('dyndns/update', views.DynDNS12Update.as_view(), name='dyndns12update'),
 
-    # Donation endpoints
+    # Donation
     path('donation/', views.DonationList.as_view(), name='donation'),
 
-    # Unlock endpoints
-    path('unlock/user/<email>', views.unlock, name='unlock/byEmail'),
-    path('unlock/done', views.unlock_done, name='unlock/done'),
+    # Authenticated Actions
+    path('v/activate-account/<code>/', views.AuthenticatedActivateUserActionView.as_view(), name='confirm-activate-account'),
+    path('v/change-email/<code>/', views.AuthenticatedChangeEmailUserActionView.as_view(), name='confirm-change-email'),
+    path('v/reset-password/<code>/', views.AuthenticatedResetPasswordUserActionView.as_view(), name='confirm-reset-password'),
+    path('v/delete-account/<code>/', views.AuthenticatedDeleteUserActionView.as_view(), name='confirm-delete-account'),
 ]
 
 app_name = 'desecapi'

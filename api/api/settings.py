@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -39,7 +40,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'rest_framework',
-    'djoser',
     'desecapi',
     'corsheaders',
 )
@@ -95,20 +95,6 @@ REST_FRAMEWORK = {
     'ALLOWED_VERSIONS': ['v1', 'v2'],
 }
 
-# user management configuration
-DJOSER = {
-    'DOMAIN': 'desec.io',
-    'SITE_NAME': 'deSEC',
-    'LOGIN_AFTER_ACTIVATION': True,
-    'SEND_ACTIVATION_EMAIL': False,
-    'SERIALIZERS': {
-        'current_user': 'desecapi.serializers.UserSerializer',
-        'user': 'desecapi.serializers.UserSerializer',
-        'user_create': 'desecapi.serializers.UserCreateSerializer',
-    },
-    'TOKEN_MODEL': 'desecapi.models.Token',
-}
-
 # CORS
 # No need to add Authorization to CORS_ALLOW_HEADERS (included by default)
 CORS_ORIGIN_ALLOW_ALL = True
@@ -138,9 +124,6 @@ EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'deSEC <support@desec.io>'
 ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK_API_ADMIN'].split()]
 
-# use our own user model
-AUTH_USER_MODEL = 'desecapi.User'
-
 # default NS records
 DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
 DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
@@ -165,27 +148,18 @@ SEPA = {
     'CREDITOR_NAME': os.environ['DESECSTACK_API_SEPA_CREDITOR_NAME'],
 }
 
-# recaptcha
-NORECAPTCHA_SITE_KEY = os.environ['DESECSTACK_NORECAPTCHA_SITE_KEY']
-NORECAPTCHA_SECRET_KEY = os.environ['DESECSTACK_NORECAPTCHA_SECRET_KEY']
-NORECAPTCHA_WIDGET_TEMPLATE = 'captcha-widget.html'
-
-# abuse protection
+# user management
 MINIMUM_TTL_DEFAULT = int(os.environ['DESECSTACK_MINIMUM_TTL_DEFAULT'])
-ABUSE_BY_REMOTE_IP_LIMIT = 0
-ABUSE_BY_REMOTE_IP_PERIOD_HRS = 7*24
-ABUSE_BY_EMAIL_HOSTNAME_LIMIT = 0
-ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS = 24
+AUTH_USER_MODEL = 'desecapi.User'
 LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5
+USER_ACTIVATION_REQUIRED = True
+VALIDITY_PERIOD_VERIFICATION_SIGNATURE = timedelta(hours=12)
 
 if DEBUG and not EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
 if os.environ.get('DESECSTACK_E2E_TEST', "").upper() == "TRUE":
     DEBUG = True
-    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
-    ABUSE_BY_REMOTE_IP_LIMIT = 100
-    ABUSE_BY_REMOTE_IP_PERIOD_HRS = 0
-    ABUSE_BY_EMAIL_HOSTNAME_LIMIT = 100
-    ABUSE_BY_EMAIL_HOSTNAME_PERIOD_HRS = 0
     LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5000
+    USER_ACTIVATION_REQUIRED = False
+    EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
