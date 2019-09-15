@@ -1,5 +1,3 @@
-import base64
-import json
 import re
 
 from django.core import mail

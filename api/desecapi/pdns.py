@@ -1,7 +1,7 @@
 import json
 import re
-import requests
 
+import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 

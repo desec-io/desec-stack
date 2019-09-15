@@ -12,9 +12,6 @@ from rest_framework import mixins
 from rest_framework import status
 from rest_framework.authentication import get_authorization_header, BaseAuthentication
 from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
-from rest_framework.generics import (
-    GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView, get_object_or_404
-)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -22,9 +19,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 import desecapi.authentication as auth
-from desecapi import serializers
-from desecapi.models import Domain, User, RRset, Token, AuthenticatedActivateUserAction, AuthenticatedChangeEmailUserAction, AuthenticatedDeleteUserAction, \
-    AuthenticatedResetPasswordUserAction
+from desecapi import serializers, models
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.permissions import IsOwner, IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
@@ -49,7 +44,7 @@ class DomainView:
         try:
             # noinspection PyAttributeOutsideInit, PyUnresolvedReferences
             self.domain = self.request.user.domains.get(name=self.kwargs['name'])
-        except Domain.DoesNotExist:
+        except models.Domain.DoesNotExist:
             raise Http404
 
 
@@ -69,15 +64,15 @@ class TokenViewSet(IdempotentDestroy,
         serializer.save(user=self.request.user)
 
 
-class DomainList(ListCreateAPIView):
+class DomainList(generics.ListCreateAPIView):
     serializer_class = serializers.DomainSerializer
     permission_classes = (IsAuthenticated, IsOwner,)
 
     def get_queryset(self):
-        return Domain.objects.filter(owner=self.request.user.pk)
+        return models.Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
-        _, parent_domain_name = Domain.partition_name(serializer.validated_data['name'])
+        _, parent_domain_name = models.Domain.partition_name(serializer.validated_data['name'])
         domain_is_local = parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
         domain_kwargs = {'owner': self.request.user}
         if domain_is_local:
@@ -105,28 +100,28 @@ class DomainList(ListCreateAPIView):
             email.send()
 
     @staticmethod
-    def auto_delegate(domain: Domain):
+    def auto_delegate(domain: models.Domain):
         parent_domain_name = domain.partition_name()[1]
         if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
-            parent_domain = Domain.objects.get(name=parent_domain_name)
+            parent_domain = models.Domain.objects.get(name=parent_domain_name)
             parent_domain.update_delegation(domain)
 
 
-class DomainDetail(IdempotentDestroy, RetrieveUpdateDestroyAPIView):
+class DomainDetail(IdempotentDestroy, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.DomainSerializer
     permission_classes = (IsAuthenticated, IsOwner,)
     lookup_field = 'name'
 
-    def perform_destroy(self, instance: Domain):
+    def perform_destroy(self, instance: models.Domain):
         with PDNSChangeTracker():
             instance.delete()
         if instance.has_local_public_suffix():
-            parent_domain = Domain.objects.get(name=instance.parent_domain_name())
+            parent_domain = models.Domain.objects.get(name=instance.parent_domain_name())
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
 
     def get_queryset(self):
-        return Domain.objects.filter(owner=self.request.user.pk)
+        return models.Domain.objects.filter(owner=self.request.user.pk)
 
     def update(self, request, *args, **kwargs):
         try:
@@ -135,7 +130,7 @@ class DomainDetail(IdempotentDestroy, RetrieveUpdateDestroyAPIView):
             raise ValidationError(detail={"detail": e.message})
 
 
-class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
+class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
@@ -146,7 +141,7 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
         queryset = self.filter_queryset(self.get_queryset())
 
         filter_kwargs = {k: self.kwargs[k] for k in ['subname', 'type']}
-        obj = get_object_or_404(queryset, **filter_kwargs)
+        obj = generics.get_object_or_404(queryset, **filter_kwargs)
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
@@ -173,19 +168,19 @@ class RRsetDetail(IdempotentDestroy, DomainView, RetrieveUpdateDestroyAPIView):
             super().perform_destroy(instance)
 
 
-class RRsetList(DomainView, ListCreateAPIView, UpdateAPIView):
+class RRsetList(DomainView, generics.ListCreateAPIView, generics.UpdateAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
     def get_queryset(self):
-        rrsets = RRset.objects.filter(domain=self.domain)
+        rrsets = models.RRset.objects.filter(domain=self.domain)
 
         for filter_field in ('subname', 'type'):
             value = self.request.query_params.get(filter_field)
 
             if value is not None:
                 # TODO consider moving this
-                if filter_field == 'type' and value in RRset.RESTRICTED_TYPES:
+                if filter_field == 'type' and value in models.RRset.RESTRICTED_TYPES:
                     raise PermissionDenied("You cannot tinker with the %s RRset." % value)
 
                 rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
@@ -287,7 +282,7 @@ class DynDNS12Update(APIView):
 
         try:
             return self.request.user.domains.get(name=name)
-        except Domain.DoesNotExist:
+        except models.Domain.DoesNotExist:
             return None
 
     @staticmethod
@@ -417,7 +412,7 @@ class AccountCreateView(generics.CreateAPIView):
 
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
-                action = AuthenticatedActivateUserAction(user=user, domain=domain)
+                action = models.AuthenticatedActivateUserAction(user=user, domain=domain)
                 verification_code = serializers.AuthenticatedActivateUserActionSerializer(action).data['code']
                 user.send_email('activate-with-domain' if domain else 'activate', context={
                     'confirmation_link': reverse('confirm-activate-account', request=request, args=[verification_code])
@@ -436,12 +431,12 @@ class AccountView(generics.RetrieveAPIView):
         return self.request.user
 
 
-class AccountDeleteView(GenericAPIView):
+class AccountDeleteView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        action = AuthenticatedDeleteUserAction(user=self.request.user)
+        action = models.AuthenticatedDeleteUserAction(user=self.request.user)
         verification_code = serializers.AuthenticatedDeleteUserActionSerializer(action).data['code']
         request.user.send_email('delete-user', context={
             'confirmation_link': reverse('confirm-delete-account', request=request, args=[verification_code])
@@ -451,21 +446,21 @@ class AccountDeleteView(GenericAPIView):
                         status=status.HTTP_202_ACCEPTED)
 
 
-class AccountLoginView(GenericAPIView):
+class AccountLoginView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
 
-        token = Token.objects.create(user=user, name="login")
+        token = models.Token.objects.create(user=user, name="login")
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
         data = serializers.TokenSerializer(token).data
         return Response(data)
 
 
-class AccountChangeEmailView(GenericAPIView):
+class AccountChangeEmailView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.ChangeEmailSerializer
@@ -476,7 +471,7 @@ class AccountChangeEmailView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
 
-        action = AuthenticatedChangeEmailUserAction(user=request.user, new_email=new_email)
+        action = models.AuthenticatedChangeEmailUserAction(user=request.user, new_email=new_email)
         verification_code = serializers.AuthenticatedChangeEmailUserActionSerializer(action).data['code']
         request.user.send_email('change-email', recipient=new_email, context={
             'confirmation_link': reverse('confirm-change-email', request=request, args=[verification_code]),
@@ -489,7 +484,7 @@ class AccountChangeEmailView(GenericAPIView):
                         status=status.HTTP_202_ACCEPTED)
 
 
-class AccountResetPasswordView(GenericAPIView):
+class AccountResetPasswordView(generics.GenericAPIView):
     serializer_class = serializers.EmailSerializer
 
     def post(self, request, *args, **kwargs):
@@ -497,11 +492,11 @@ class AccountResetPasswordView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         try:
             email = serializer.validated_data['email']
-            user = User.objects.get(email=email, is_active=True)
-        except User.DoesNotExist:
+            user = models.User.objects.get(email=email, is_active=True)
+        except models.User.DoesNotExist:
             pass
         else:
-            action = AuthenticatedResetPasswordUserAction(user=user)
+            action = models.AuthenticatedResetPasswordUserAction(user=user)
             verification_code = serializers.AuthenticatedResetPasswordUserActionSerializer(action).data['code']
             user.send_email('reset-password', context={
                 'confirmation_link': reverse('confirm-reset-password', request=request, args=[verification_code])
@@ -513,7 +508,7 @@ class AccountResetPasswordView(GenericAPIView):
                         status=status.HTTP_202_ACCEPTED)
 
 
-class AuthenticatedActionView(GenericAPIView):
+class AuthenticatedActionView(generics.GenericAPIView):
     """
     Abstract class. Deserializes the given payload according the serializers specified by the view extending
     this class. If the `serializer.is_valid`, `act` is called on the action object.
@@ -597,7 +592,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
 
         if domain.parent_domain_name() in settings.LOCAL_PUBLIC_SUFFIXES:
             PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
-            token = Token.objects.create(user=action.user, name='dyndns')
+            token = models.Token.objects.create(user=action.user, name='dyndns')
             return Response({
                 'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
                           'client). This password is different from your account password for security reasons.',

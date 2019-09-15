@@ -1,10 +1,10 @@
 import logging
 
 from django.db.utils import OperationalError
+from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
-from psl_dns.exceptions import UnsupportedRule
 
 
 def exception_handler(exc, context):

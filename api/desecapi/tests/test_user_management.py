@@ -12,22 +12,15 @@ This involves testing five separate endpoints:
 (4) delete user endpoint, and
 (5) verify endpoint.
 """
-import base64
-import json
 import re
-import time
-from unittest import mock
 
 from django.core import mail
-from django.test import override_settings
 from rest_framework import status
 from rest_framework.reverse import reverse
-from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
 
 from api import settings
 from desecapi.models import Domain, User
-from desecapi.serializers import AuthenticatedUserAction
 from desecapi.tests.base import DesecTestCase, PublicSuffixMockMixin
 
 

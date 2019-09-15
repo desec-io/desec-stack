@@ -13,10 +13,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
-# TODO organize imports
-from desecapi.models import Domain, Donation, User, RRset, Token, RR, AuthenticatedUserAction, \
-    AuthenticatedActivateUserAction, AuthenticatedChangeEmailUserAction, \
-    AuthenticatedDeleteUserAction, AuthenticatedResetPasswordUserAction, AuthenticatedAction
+from desecapi import models
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -25,7 +22,7 @@ class TokenSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='user_specific_id')
 
     class Meta:
-        model = Token
+        model = models.Token
         fields = ('id', 'created', 'name', 'auth_token',)
         read_only_fields = ('created', 'auth_token', 'id')
 
@@ -178,7 +175,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
     ttl = serializers.IntegerField(max_value=604800)
 
     class Meta:
-        model = RRset
+        model = models.RRset
         fields = ('domain', 'subname', 'name', 'records', 'ttl', 'type',)
         extra_kwargs = {
             'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
@@ -211,10 +208,10 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     @staticmethod
     def validate_type(value):
-        if value in RRset.DEAD_TYPES:
+        if value in models.RRset.DEAD_TYPES:
             raise serializers.ValidationError(
                 "The %s RRset type is currently unsupported." % value)
-        if value in RRset.RESTRICTED_TYPES:
+        if value in models.RRset.RESTRICTED_TYPES:
             raise serializers.ValidationError(
                 "You cannot tinker with the %s RRset." % value)
         if value.startswith('TYPE'):
@@ -231,18 +228,18 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return value
 
     def exists(self, arg):
-        if isinstance(arg, RRset):
+        if isinstance(arg, models.RRset):
             return arg.records.exists()
         else:
             return bool(arg.get('records')) if 'records' in arg.keys() else True
 
     def create(self, validated_data):
         rrs_data = validated_data.pop('records')
-        rrset = RRset.objects.create(**validated_data)
+        rrset = models.RRset.objects.create(**validated_data)
         self._set_all_record_contents(rrset, rrs_data)
         return rrset
 
-    def update(self, instance: RRset, validated_data):
+    def update(self, instance: models.RRset, validated_data):
         rrs_data = validated_data.pop('records', None)
         if rrs_data is not None:
             self._set_all_record_contents(instance, rrs_data)
@@ -255,7 +252,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return instance
 
     @staticmethod
-    def _set_all_record_contents(rrset: RRset, record_contents):
+    def _set_all_record_contents(rrset: models.RRset, record_contents):
         """
         Updates this RR set's resource records, discarding any old values.
 
@@ -276,8 +273,8 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         unchanged_content = [unchanged_rr.content for unchanged_rr in unchanged_rrs]
         added_content = filter(lambda c: c not in unchanged_content, record_contents)
 
-        rrs = [RR(rrset=rrset, content=content) for content in added_content]
-        RR.objects.bulk_create(rrs)  # One INSERT
+        rrs = [models.RR(rrset=rrset, content=content) for content in added_content]
+        models.RR.objects.bulk_create(rrs)  # One INSERT
 
 
 class RRsetListSerializer(ListSerializer):
@@ -435,7 +432,7 @@ class DomainSerializer(serializers.ModelSerializer):
     psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
 
     class Meta:
-        model = Domain
+        model = models.Domain
         fields = ('created', 'published', 'name', 'keys', 'minimum_ttl',)
         extra_kwargs = {
             'name': {'trim_whitespace': False},
@@ -474,7 +471,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
         # Deny registration for non-local public suffixes and for domains covered by other users' zones
         owner = self.context['request'].user
-        queryset = Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner))
+        queryset = models.Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner))
         if is_restricted_suffix or queryset.exists():
             msg = 'This domain name is unavailable.'
             raise serializers.ValidationError(msg, code='name_unavailable')
@@ -494,7 +491,7 @@ class DomainSerializer(serializers.ModelSerializer):
 class DonationSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Donation
+        model = models.Donation
         fields = ('name', 'iban', 'bic', 'amount', 'message', 'email')
 
     @staticmethod
@@ -509,7 +506,7 @@ class DonationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = User
+        model = models.User
         fields = ('created', 'email', 'id', 'limit_domains', 'password',)
         extra_kwargs = {
             'password': {
@@ -518,7 +515,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        return models.User.objects.create_user(**validated_data)
 
 
 class RegisterAccountSerializer(UserSerializer):
@@ -576,7 +573,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     mac = serializers.CharField()  # serializer read-write, but model read-only field
 
     class Meta:
-        model = AuthenticatedAction
+        model = models.AuthenticatedAction
         fields = ('mac', 'created')
 
     @classmethod
@@ -590,7 +587,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
-    def to_representation(self, instance: AuthenticatedUserAction):
+    def to_representation(self, instance: models.AuthenticatedUserAction):
         # do the regular business
         data = super().to_representation(instance)
 
@@ -639,19 +636,19 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
 
 class AuthenticatedUserActionSerializer(AuthenticatedActionSerializer):
     user = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
+        queryset=models.User.objects.all(),
         error_messages={'does_not_exist': 'This user does not exist.'}
     )
 
     class Meta:
-        model = AuthenticatedUserAction
+        model = models.AuthenticatedUserAction
         fields = AuthenticatedActionSerializer.Meta.fields + ('user',)
 
 
 class AuthenticatedActivateUserActionSerializer(AuthenticatedUserActionSerializer):
 
     class Meta(AuthenticatedUserActionSerializer.Meta):
-        model = AuthenticatedActivateUserAction
+        model = models.AuthenticatedActivateUserAction
         fields = AuthenticatedUserActionSerializer.Meta.fields + ('domain',)
         extra_kwargs = {
             'domain': {'default': None, 'allow_null': True}
@@ -662,7 +659,7 @@ class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedUserActionSerial
     new_email = serializers.EmailField(
         validators=[
             CustomFieldNameUniqueValidator(
-                queryset=User.objects.all(),
+                queryset=models.User.objects.all(),
                 lookup_field='email',
                 message='You already have another account with this email address.',
             )
@@ -671,7 +668,7 @@ class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedUserActionSerial
     )
 
     class Meta(AuthenticatedUserActionSerializer.Meta):
-        model = AuthenticatedChangeEmailUserAction
+        model = models.AuthenticatedChangeEmailUserAction
         fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_email',)
 
 
@@ -679,11 +676,11 @@ class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedUserActionSeri
     new_password = serializers.CharField(write_only=True)
 
     class Meta(AuthenticatedUserActionSerializer.Meta):
-        model = AuthenticatedResetPasswordUserAction
+        model = models.AuthenticatedResetPasswordUserAction
         fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_password',)
 
 
 class AuthenticatedDeleteUserActionSerializer(AuthenticatedUserActionSerializer):
 
     class Meta(AuthenticatedUserActionSerializer.Meta):
-        model = AuthenticatedDeleteUserAction
+        model = models.AuthenticatedDeleteUserAction
