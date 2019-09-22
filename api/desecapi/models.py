@@ -52,7 +52,6 @@ class MyUserManager(BaseUserManager):
             raise ValueError('Users must have an email address')
 
         email = self.normalize_email(email)
-        extra_fields.setdefault('registration_remote_ip')
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -77,7 +76,6 @@ class User(AbstractBaseUser):
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    registration_remote_ip = models.CharField(max_length=1024, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT, null=True, blank=True)
 

@@ -413,8 +413,7 @@ class AccountCreateView(generics.CreateAPIView):
             if e.detail:
                 raise e
         else:
-            ip = self.request.META.get('REMOTE_ADDR')
-            user = serializer.save(is_active=(not activation_required), registration_remote_ip=ip)
+            user = serializer.save(is_active=(not activation_required))
 
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
