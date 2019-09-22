@@ -46,7 +46,10 @@ describe("API v1", function () {
             baseUrl: 'https://www/api/v1',
         })
 
-        let credentials = {"email":"admin@e2etest.local", "password": "password"};
+        let credentials = {
+            "email":"admin@e2etest.local", "password": "password",
+            "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
+        };
         return chakram.post('/auth/', credentials).then(function() {
             chakram.post('/auth/login/', credentials).then(function (response) {
                 let config = {headers: {'Authorization': 'Token ' + response.body.auth_token}}
@@ -75,6 +78,7 @@ describe("API v1", function () {
             var response = chakram.post('/auth/', {
                 "email": email,
                 "password": password,
+                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
             });
 
             return expect(response).to.have.status(202);
@@ -94,6 +98,7 @@ describe("API v1", function () {
             var response = chakram.post('/auth/', {
                 "email": email,
                 "password": password,
+                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
             });
 
             return expect(response).to.have.status(202);
@@ -119,6 +124,7 @@ describe("API v1", function () {
                 return chakram.post('/auth/', {
                     "email": email2,
                     "password": password2,
+                    "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
                 }).then(function () {
                     return chakram.post('/auth/login/', {
                         "email": email2,
@@ -179,6 +185,7 @@ describe("API v1", function () {
             return chakram.post('/auth/', {
                 "email": email,
                 "password": password,
+                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
             }).then(function () {
                 return chakram.post('/auth/login/', {
                     "email": email,

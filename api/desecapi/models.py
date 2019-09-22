@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import random
+import secrets
+import string
 import time
 import uuid
 from base64 import b64encode
@@ -421,10 +423,6 @@ class RR(models.Model):
         return '<RR %s>' % self.content
 
 
-def authenticated_action_default_timestamp():
-    return int(datetime.timestamp(datetime.now()))
-
-
 class AuthenticatedAction(models.Model):
     """
     Represents a procedure call on a defined set of arguments.
@@ -604,3 +602,26 @@ class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
 
     def act(self):
         self.user.delete()
+
+
+def captcha_default_content():
+    alphabet = (string.ascii_uppercase + string.digits).translate({ord(c): None for c in 'IO0'})
+    return ''.join([secrets.choice(alphabet) for _ in range(5)])
+
+
+class Captcha(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField(auto_now_add=True)
+    content = models.CharField(
+        max_length=24,
+        default=captcha_default_content,
+    )
+
+    def verify(self, solution: str):
+        age = timezone.now() - self.created
+        self.delete()
+        return (
+            str(solution).upper().strip() == self.content  # solution correct
+            and
+            age <= settings.CAPTCHA_VALIDITY_PERIOD  # not expired
+        )

@@ -155,6 +155,9 @@ LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5
 USER_ACTIVATION_REQUIRED = True
 VALIDITY_PERIOD_VERIFICATION_SIGNATURE = timedelta(hours=12)
 
+# CAPTCHA
+CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
+
 if DEBUG and not EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 

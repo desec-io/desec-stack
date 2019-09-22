@@ -1,1 +1,1 @@
-55 2 * * * /usr/local/bin/python3 /usr/src/app/manage.py privacy-chores >> /var/log/cron.log 2>&1
+55 2 * * * /usr/local/bin/python3 /usr/src/app/manage.py chores >> /var/log/cron.log 2>&1

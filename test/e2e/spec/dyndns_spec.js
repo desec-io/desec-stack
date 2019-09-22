@@ -27,6 +27,7 @@ describe("dyndns service", function () {
             return chakram.post('/auth/', {
                 "email": email,
                 "password": password,
+                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
             }).then(function () {
                 return chakram.post('/auth/login/', {
                     "email": email,

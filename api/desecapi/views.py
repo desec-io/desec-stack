@@ -409,8 +409,10 @@ class AccountCreateView(generics.CreateAPIView):
             if e.detail:
                 raise e
         else:
+            # create user
             user = serializer.save(is_active=(not activation_required))
 
+            # send email if needed
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
                 action = models.AuthenticatedActivateUserAction(user=user, domain=domain)
@@ -630,3 +632,7 @@ class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
 
     def finalize(self):
         return Response({'detail': 'All your data has been deleted. Bye bye, see you soon! <3'})
+
+
+class CaptchaView(generics.CreateAPIView):
+    serializer_class = serializers.CaptchaSerializer

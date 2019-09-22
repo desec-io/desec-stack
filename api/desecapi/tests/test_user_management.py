@@ -21,16 +21,17 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from api import settings
-from desecapi.models import Domain, User
+from desecapi.models import Domain, User, Captcha
 from desecapi.tests.base import DesecTestCase, PublicSuffixMockMixin
 
 
 class UserManagementClient(APIClient):
 
-    def register(self, email, password, **kwargs):
+    def register(self, email, password, captcha_id, captcha_solution, **kwargs):
         return self.post(reverse('v1:register'), {
             'email': email,
             'password': password,
+            'captcha': {'id': captcha_id, 'solution': captcha_solution},
             **kwargs
         })
 
@@ -65,6 +66,9 @@ class UserManagementClient(APIClient):
     def verify(self, url, **kwargs):
         return self.post(url, kwargs) if kwargs else self.get(url)
 
+    def obtain_captcha(self, **kwargs):
+        return self.post(reverse('v1:captcha'))
+
 
 class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
@@ -72,10 +76,17 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     password = None
     token = None
 
+    def get_captcha(self):
+        data = self.client.obtain_captcha().data
+        id = data['id']
+        solution = Captcha.objects.get(id=id).content
+        return id, solution
+
     def register_user(self, email=None, password=None, **kwargs):
         email = email if email is not None else self.random_username()
         password = password if password is not None else self.random_password()
-        return email.strip(), password, self.client.register(email, password, **kwargs)
+        captcha_id, captcha_solution = self.get_captcha()
+        return email.strip(), password, self.client.register(email, password, captcha_id, captcha_solution, **kwargs)
 
     def login_user(self, email, password):
         response = self.client.login_user(email, password)
@@ -214,6 +225,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertContains(
             response=response,
             text="Invalid value (not a DNS name)",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            msg_prefix=str(response.data)
+        )
+
+    def assertRegistrationFailureCaptchaInvalidResponse(self, response):
+        self.assertContains(
+            response=response,
+            text='CAPTCHA could not be validated. Please obtain a new one and try again.',
             status_code=status.HTTP_400_BAD_REQUEST,
             msg_prefix=str(response.data)
         )
@@ -453,6 +472,14 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 response=self.register_user(email=email)[2]
             )
             self.assertNoEmailSent()
+
+    def test_registration_wrong_captcha(self):
+        email = self.random_username()
+        password = self.random_password()
+        captcha_id, _ = self.get_captcha()
+        self.assertRegistrationFailureCaptchaInvalidResponse(
+            self.client.register(email, password, captcha_id, 'this is most definitely not a correct CAPTCHA solution')
+        )
 
 
 class OtherUserAccountTestCase(UserManagementTestCase):

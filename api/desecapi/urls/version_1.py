@@ -46,6 +46,9 @@ api_urls = [
     path('v/change-email/<code>/', views.AuthenticatedChangeEmailUserActionView.as_view(), name='confirm-change-email'),
     path('v/reset-password/<code>/', views.AuthenticatedResetPasswordUserActionView.as_view(), name='confirm-reset-password'),
     path('v/delete-account/<code>/', views.AuthenticatedDeleteUserActionView.as_view(), name='confirm-delete-account'),
+
+    # CAPTCHA
+    path('captcha/', views.CaptchaView.as_view(), name='captcha'),
 ]
 
 app_name = 'desecapi'

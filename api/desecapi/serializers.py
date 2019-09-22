@@ -1,8 +1,9 @@
 import binascii
 import json
 import re
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 
+from captcha.image import ImageCaptcha
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from rest_framework import serializers
@@ -13,6 +14,34 @@ from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, 
 
 from api import settings
 from desecapi import models
+
+
+class CaptchaSerializer(serializers.ModelSerializer):
+    challenge = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Captcha
+        fields = ('id', 'challenge') if not settings.DEBUG else ('id', 'challenge', 'content')
+
+    def get_challenge(self, obj: models.Captcha):
+        # TODO Does this need to be stored in the object instance, in case this method gets called twice?
+        challenge = ImageCaptcha().generate(obj.content).getvalue()
+        return b64encode(challenge)
+
+
+class CaptchaSolutionSerializer(serializers.Serializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Captcha.objects.all(),
+        error_messages={'does_not_exist': 'CAPTCHA does not exist.'}
+    )
+    solution = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        captcha = attrs['id']  # Note that this already is the Captcha object
+        if not captcha.verify(attrs['solution']):
+            raise serializers.ValidationError('CAPTCHA could not be validated. Please obtain a new one and try again.')
+
+        return attrs
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -485,10 +514,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterAccountSerializer(UserSerializer):
     domain = serializers.CharField(required=False, validators=models.validate_domain_name)
+    captcha = CaptchaSolutionSerializer(required=True)
 
     class Meta:
         model = UserSerializer.Meta.model
-        fields = ('email', 'password', 'domain')
+        fields = ('email', 'password', 'domain', 'captcha')
         extra_kwargs = UserSerializer.Meta.extra_kwargs
 
     def validate_domain(self, value):
@@ -497,6 +527,7 @@ class RegisterAccountSerializer(UserSerializer):
 
     def create(self, validated_data):
         validated_data.pop('domain', None)
+        validated_data.pop('captcha', None)
         return super().create(validated_data)
 
 
