@@ -1,0 +1,189 @@
+{
+	"info": {
+		"_postman_id": "f9496a76-6b02-4eeb-90c4-d1da0caa7bf1",
+		"name": "auth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Obtain captcha",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "8e497a9e-8429-46fe-85d0-c5453bc54b92",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.environment.set(\"captcha_id\", jsonData.id);",
+							"pm.environment.set(\"captcha_content\", jsonData.content);",
+							"",
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://www/api/v1/captcha/",
+					"protocol": "https",
+					"host": [
+						"www"
+					],
+					"path": [
+						"api",
+						"v1",
+						"captcha",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Account",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ffbeef1b-7ba1-4182-80d1-24123a2886ec",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "21ce6e90-22a3-4a54-a431-0a72a1b1733c",
+						"exec": [
+							"var reqBody = JSON.parse(request.data);",
+							"pm.environment.set(\"email\", reqBody[\"email\"]);",
+							"pm.environment.set(\"password\", reqBody[\"password\"]);",
+							"",
+							"pm.test(\"Status code is 202\", function () {",
+							"    pm.response.to.have.status(202);",
+							"});",
+							"",
+							"pm.test(\"Body welcomes user\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"Welcome!\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{$guid}}@dedyn.io\",\n  \"password\": \"{{$guid}}\",\n  \"captcha\": {\n    \"id\": \"{{captcha_id}}\",\n    \"solution\": \"{{captcha_content}}\"\n  }\n}"
+				},
+				"url": {
+					"raw": "https://www/api/v1/auth/",
+					"protocol": "https",
+					"host": [
+						"www"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cfd9e110-e09b-47b9-b68b-8d2977473440",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.environment.set(\"token\", jsonData.auth_token);",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+				},
+				"url": {
+					"raw": "https://www/api/v1/auth/login/",
+					"protocol": "https",
+					"host": [
+						"www"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "36a5675b-6e8a-47cf-8352-90ce5f62c1be",
+				"type": "text/javascript",
+				"exec": [
+					"var Header = require('postman-collection').Header",
+					"pm.request.headers.add(new Header(\"Host: desec.\" + pm.globals.get('desecstack_domain')))",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "1b1d9c8b-d8f8-4ca2-bf40-bb81c701f084",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
