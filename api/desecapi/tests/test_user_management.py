@@ -14,14 +14,19 @@ This involves testing five separate endpoints:
 """
 import random
 import re
+from unittest import mock
+from urllib.parse import urlparse
 
 from django.core import mail
+from django.urls import resolve
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from api import settings
 from desecapi.models import Domain, User, Captcha
+from desecapi.serializers import AuthenticatedActionSerializer
 from desecapi.tests.base import DesecTestCase, PublicSuffixMockMixin
 
 
@@ -332,6 +337,13 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
+    def assertVerificationFailureExpiredCodeResponse(self, response):
+        return self.assertContains(
+            response=response,
+            text="Code expired",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
     def assertVerificationFailureUnknownUserResponse(self, response):
         return self.assertContains(
             response=response,
@@ -351,7 +363,8 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertPassword(email, password)
         return email, password
 
-    def _test_registration_with_domain(self, email=None, password=None, domain=None, expect_failure_response=None):
+    def _test_registration_with_domain(self, email=None, password=None, domain=None, expect_failure_response=None,
+                                       tampered_domain=None):
         domain = domain or self.random_domain_name()
 
         email, password, response = self.register_user(email, password, domain=domain)
@@ -365,6 +378,18 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertPassword(email, password)
 
         confirmation_link = self.assertRegistrationEmail(email)
+
+        if tampered_domain is not None:
+            path = urlparse(confirmation_link).path
+            code = resolve(path).kwargs.get('code')
+            data = AuthenticatedActionSerializer._unpack_code(code)
+            data['domain'] = tampered_domain
+            tampered_code = AuthenticatedActionSerializer._pack_code(data)
+            confirmation_link = confirmation_link.replace(code, tampered_code)
+            response = self.client.verify(confirmation_link)
+            self.assertVerificationFailureInvalidCodeResponse(response)
+            return
+
         if domain.endswith('.dedyn.io'):
             cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
@@ -447,6 +472,11 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         local_public_suffix = random.sample(self.AUTO_DELEGATION_DOMAINS, 1)[0]
         with self.get_psl_context_manager(local_public_suffix):
             self._test_registration_with_domain(domain=self.random_domain_name(suffix=local_public_suffix))
+
+    def test_registration_with_tampered_domain(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        with self.get_psl_context_manager('.'):
+            self._test_registration_with_domain(tampered_domain='evil.com')
 
     def test_registration_known_account(self):
         email, _ = self._test_registration()
@@ -556,7 +586,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_view_account_read_only(self):
         # Should this test ever be removed (to allow writeable fields), make sure to
         # add new tests for each read-only field individually (such as limit_domains)!
-        for method in [self.client.put, self.client.post, self.client.delete]:
+        for method in [self.client.patch, self.client.put, self.client.post, self.client.delete]:
             response = method(
                 reverse('v1:account'),
                 {'limit_domains': 99},
@@ -728,3 +758,34 @@ class HasUserAccountTestCase(UserManagementTestCase):
         password = self.random_password()
         self._test_reset_password(self.email, password, code='foobar')
         self.assertPassword(self.email, password)
+
+    def test_action_code_expired(self):
+        self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
+        confirmation_link = self.assertResetPasswordEmail(self.email)
+
+        with mock.patch('desecapi.models.timezone.now',
+                        return_value=timezone.now() + settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE):
+            response = self.client.verify(confirmation_link, new_password=self.random_password())
+        self.assertVerificationFailureExpiredCodeResponse(response)
+
+    def test_action_code_confusion(self):
+        # Obtain change password code
+        self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
+        reset_password_link = self.assertResetPasswordEmail(self.email)
+        path = urlparse(reset_password_link).path
+        reset_password_code = resolve(path).kwargs.get('code')
+
+        # Obtain deletion code
+        self.assertDeleteAccountSuccessResponse(self.delete_account(self.email, self.password))
+        delete_link = self.assertDeleteAccountEmail(self.email)
+        path = urlparse(delete_link).path
+        deletion_code = resolve(path).kwargs.get('code')
+
+        # Swap codes
+        self.assertNotEqual(reset_password_code, deletion_code)
+        delete_link = delete_link.replace(deletion_code, reset_password_code)
+        reset_password_link = reset_password_link.replace(reset_password_code, deletion_code)
+
+        # Make sure links don't work
+        self.assertVerificationFailureInvalidCodeResponse(self.client.verify(delete_link))
+        self.assertVerificationFailureInvalidCodeResponse(self.client.verify(reset_password_link, new_password='dummy'))

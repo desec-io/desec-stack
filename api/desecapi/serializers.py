@@ -615,13 +615,11 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
             self.instance = self.Meta.model(**attrs)  # TODO This creates an attribute on self. Side-effect intended?
 
         # check if expired
-        expired = not self.instance.check_expiration(settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE)
-        if expired:
+        if self.instance.is_expired():
             raise ValidationError(detail='Code expired, please restart the process.', code='expired')
 
         # check if MAC valid
-        mac_valid = self.instance.check_mac(attrs['mac'])
-        if not mac_valid:
+        if not self.instance.validate_mac(attrs['mac']):
             raise ValidationError(detail='Bad signature.', code='bad_sig')
 
         return attrs

@@ -3,6 +3,7 @@
 import datetime
 from django.db import migrations, models
 import django.db.models.deletion
+from django.utils import timezone
 
 
 class Migration(migrations.Migration):
@@ -16,7 +17,7 @@ class Migration(migrations.Migration):
             name='AuthenticatedAction',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.PositiveIntegerField(default=lambda: int(datetime.timestamp(datetime.now())))),
+                ('created', models.PositiveIntegerField(default=lambda: int(datetime.timestamp(timezone.now())))),
             ],
             options={
                 'managed': False,

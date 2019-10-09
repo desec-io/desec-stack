@@ -432,7 +432,7 @@ class AuthenticatedAction(models.Model):
 
     AuthenticatedAction provides the `mac` property that returns a Message Authentication Code (MAC) based on the
     state. By default, the state contains the action's name (defined by the `name` property) and a timestamp; the
-    state can be extended by (carefully) overriding the `mac_state` method. Any AuthenticatedAction instance of
+    state can be extended by (carefully) overriding the `_mac_state` property. Any AuthenticatedAction instance of
     the same subclass and state will deterministically have the same MAC, effectively allowing authenticated
     procedure calls by third parties according to the following protocol:
 
@@ -441,7 +441,7 @@ class AuthenticatedAction(models.Model):
     (3) when provided with data that allows instantiation and a valid MAC, take the defined action, possibly with
         additional parameters chosen by the third party that do not belong to the verified state.
     """
-    created = models.PositiveIntegerField(default=lambda: int(datetime.timestamp(datetime.now())))
+    created = models.PositiveIntegerField(default=lambda: int(datetime.timestamp(timezone.now())))
 
     class Meta:
         managed = False
@@ -452,22 +452,15 @@ class AuthenticatedAction(models.Model):
         super().__init__(*args, **kwargs)
 
     @property
-    def name(self):
-        """
-        Returns a human-readable string containing the name of this action class that uniquely identifies this action.
-        """
-        return NotImplementedError
-
-    @property
     def mac(self):
         """
         Deterministically generates a message authentication code (MAC) for this action, based on the state as defined
-        by `self.mac_state`. Identical state is guaranteed to yield identical MAC.
+        by `self._mac_state`. Identical state is guaranteed to yield identical MAC.
         :return:
         """
-        return Signer().signature(json.dumps(self.mac_state))
+        return Signer().signature(json.dumps(self._mac_state))
 
-    def check_mac(self, mac):
+    def validate_mac(self, mac):
         """
         Checks if the message authentication code (MAC) provided by the first argument matches the MAC of this action.
         Note that expiration is not verified by this method.
@@ -479,20 +472,17 @@ class AuthenticatedAction(models.Model):
             self.mac,
         )
 
-    def check_expiration(self, validity_period: timedelta, check_time: datetime = None):
+    def is_expired(self):
         """
-        Checks if the action's timestamp is no older than the given validity period. Note that the message
+        Checks if the action's timestamp is older than the given validity period. Note that the message
         authentication code itself is not verified by this method.
-        :param validity_period: How long after issuance the MAC of this action is considered valid.
-        :param check_time: Point in time for which to check the expiration. Defaults to datetime.now().
-        :return: True if valid, False if expired.
+        :return: True if expired, False otherwise.
         """
-        issue_time = datetime.fromtimestamp(self.created)
-        check_time = check_time or datetime.now()
-        return check_time - issue_time <= validity_period
+        created = datetime.fromtimestamp(self.created, tz=timezone.utc)
+        return timezone.now() - created > settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
 
     @property
-    def mac_state(self):
+    def _mac_state(self):
         """
         Returns a list that defines the state of this action (used for MAC calculation).
 
@@ -506,14 +496,15 @@ class AuthenticatedAction(models.Model):
         in valid signatures when they were intended to be invalid. The suggested method for overriding is
 
             @property
-            def mac_state:
-                return super().mac_state + [self.important_value, self.another_added_value]
+            def _mac_state:
+                return super()._mac_state + [self.important_value, self.another_added_value]
 
         :return: List of values to be signed.
         """
         # TODO consider adding a "last change" attribute of the user to the state to avoid code
         #  re-use after the the state has been changed and changed back.
-        return [self.created, self.name]
+        name = '.'.join([self.__module__, self.__class__.__qualname__])
+        return [name, self.created]
 
     def act(self):
         """
@@ -534,12 +525,8 @@ class AuthenticatedUserAction(AuthenticatedAction):
         managed = False
 
     @property
-    def name(self):
-        raise NotImplementedError
-
-    @property
-    def mac_state(self):
-        return super().mac_state + [self.user.id, self.user.email, self.user.password, self.user.is_active]
+    def _mac_state(self):
+        return super()._mac_state + [self.user.id, self.user.email, self.user.password, self.user.is_active]
 
     def act(self):
         raise NotImplementedError
@@ -552,8 +539,8 @@ class AuthenticatedActivateUserAction(AuthenticatedUserAction):
         managed = False
 
     @property
-    def name(self):
-        return 'user/activate'
+    def _mac_state(self):
+        return super()._mac_state + [self.domain]
 
     def act(self):
         self.user.activate()
@@ -566,12 +553,8 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
         managed = False
 
     @property
-    def name(self):
-        return 'user/change_email'
-
-    @property
-    def mac_state(self):
-        return super().mac_state + [self.new_email]
+    def _mac_state(self):
+        return super()._mac_state + [self.new_email]
 
     def act(self):
         self.user.change_email(self.new_email)
@@ -583,10 +566,6 @@ class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
     class Meta:
         managed = False
 
-    @property
-    def name(self):
-        return 'user/reset_password'
-
     def act(self):
         self.user.change_password(self.new_password)
 
@@ -595,10 +574,6 @@ class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
 
     class Meta:
         managed = False
-
-    @property
-    def name(self):
-        return 'user/delete'
 
     def act(self):
         self.user.delete()
