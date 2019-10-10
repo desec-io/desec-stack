@@ -199,6 +199,10 @@ validate_domain_name = [
 ]
 
 
+def get_minimum_ttl_default():
+    return settings.MINIMUM_TTL_DEFAULT
+
+
 class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
@@ -206,7 +210,7 @@ class Domain(models.Model):
                             validators=validate_domain_name)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
-    minimum_ttl = models.PositiveIntegerField(default=settings.MINIMUM_TTL_DEFAULT)
+    minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
 
     @classmethod
     def is_registrable(cls, domain_name: str, user: User):
