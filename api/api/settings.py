@@ -130,7 +130,7 @@ DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
 
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
-LOCAL_PUBLIC_SUFFIXES = {'dedyn.io'}
+LOCAL_PUBLIC_SUFFIXES = {'dedyn.%s' % os.environ['DESECSTACK_DOMAIN']}
 
 # PowerDNS API access
 NSLORD_PDNS_API = 'http://nslord:8081/api/v1/servers/localhost'

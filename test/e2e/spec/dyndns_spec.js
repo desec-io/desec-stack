@@ -2,8 +2,11 @@ var chakram = require("./../setup.js").chakram;
 var expect = chakram.expect;
 var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
 var schemas = require("./../schemas.js");
+var withCaptcha = require("./../setup.js").withCaptcha;
 
 describe("dyndns service", function () {
+
+    let publicSuffix = 'dedyn.' + process.env.DESECSTACK_DOMAIN;  // see settings.py
 
     before(function () {
         chakram.setRequestSettings({
@@ -24,23 +27,25 @@ describe("dyndns service", function () {
             // register a user that we can login and work with
             password = require("uuid").v4();
 
-            return chakram.post('/auth/', {
-                "email": email,
-                "password": password,
-                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
-            }).then(function () {
-                return chakram.post('/auth/login/', {
+            return withCaptcha(function (captcha) {
+                return chakram.post('/auth/', {
                     "email": email,
                     "password": password,
-                }).then(function (loginResponse) {
-                    expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                    token = loginResponse.body.auth_token;
-                    chakram.setRequestHeader('Authorization', 'Token ' + token);
+                    "captcha": captcha,
+                }).then(function () {
+                    return chakram.post('/auth/login/', {
+                        "email": email,
+                        "password": password,
+                    }).then(function (loginResponse) {
+                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
+                        token = loginResponse.body.auth_token;
+                        chakram.setRequestHeader('Authorization', 'Token ' + token);
+                    });
                 });
             });
         });
 
-        var domain = 'e2etest-' + require("uuid").v4() + '.dedyn.io';
+        var domain = 'e2etest-' + require("uuid").v4() + '.' + publicSuffix;
         describe("and domain [" + domain + "]", function () {
 
             before(function () {

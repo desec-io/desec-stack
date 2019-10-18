@@ -230,5 +230,18 @@ function itShowsUpInPdnsAs(subname, domain, type, records, ttl) {
     });
 }
 
+/**
+ * Injects a CAPTCHA with correct solution
+ */
+function withCaptcha(f) {
+    return chakram.post('/captcha/', {}).then(function (response) {
+        return f({
+            "id": response.body.id,
+            "solution": response.body.content,
+        });
+    });
+}
+
 exports.itPropagatesToTheApi = itPropagatesToTheApi;
 exports.itShowsUpInPdnsAs = itShowsUpInPdnsAs;
+exports.withCaptcha = withCaptcha;

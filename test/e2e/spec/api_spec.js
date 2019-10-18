@@ -3,6 +3,7 @@ var expect = chakram.expect;
 var itPropagatesToTheApi = require("./../setup.js").itPropagatesToTheApi;
 var itShowsUpInPdnsAs = require("./../setup.js").itShowsUpInPdnsAs;
 var schemas = require("./../schemas.js");
+var withCaptcha = require("./../setup.js").withCaptcha;
 
 describe("API Versioning", function () {
 
@@ -35,7 +36,7 @@ describe("API Versioning", function () {
 describe("API v1", function () {
     this.timeout(3000);
 
-    let publicSuffix = 'dedyn.io';  // TODO replace with env variable
+    let publicSuffix = 'dedyn.' + process.env.DESECSTACK_DOMAIN;  // see settings.py
 
     before(function () {
         chakram.setRequestDefaults({
@@ -45,18 +46,6 @@ describe("API v1", function () {
             followRedirect: false,
             baseUrl: 'https://www/api/v1',
         })
-
-        let credentials = {
-            "email":"admin@e2etest.local", "password": "password",
-            "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
-        };
-        return chakram.post('/auth/', credentials).then(function() {
-            chakram.post('/auth/login/', credentials).then(function (response) {
-                let config = {headers: {'Authorization': 'Token ' + response.body.auth_token}}
-                chakram.post('/domains/', {name: publicSuffix}, config)
-                // TODO verify behavior for non-existent local public suffixes
-            });
-        });
     });
 
     it("provides an index page", function () {
@@ -69,6 +58,14 @@ describe("API v1", function () {
 
     describe("user registration", function () {
 
+        var captcha;
+
+        before(function () {
+            return withCaptcha(function (_captcha) {
+                captcha = _captcha;
+            });
+        });
+
         it("returns a user object", function () {
             var email, password, token;
 
@@ -78,7 +75,7 @@ describe("API v1", function () {
             var response = chakram.post('/auth/', {
                 "email": email,
                 "password": password,
-                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
+                "captcha": captcha,
             });
 
             return expect(response).to.have.status(202);
@@ -95,10 +92,12 @@ describe("API v1", function () {
             email = require("uuid").v4() + '@e2etest.local';
             password = require("uuid").v4();
 
-            var response = chakram.post('/auth/', {
-                "email": email,
-                "password": password,
-                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
+            let response = withCaptcha(function (captcha) {
+                return chakram.post('/auth/', {
+                    "email": email,
+                    "password": password,
+                    "captcha": captcha,
+                });
             });
 
             return expect(response).to.have.status(202);
@@ -121,16 +120,18 @@ describe("API v1", function () {
                 email2 = require("uuid").v4() + '@e2etest.local';
                 password2 = require("uuid").v4();
 
-                return chakram.post('/auth/', {
-                    "email": email2,
-                    "password": password2,
-                    "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
-                }).then(function () {
-                    return chakram.post('/auth/login/', {
+                return withCaptcha(function (captcha) {
+                    return chakram.post('/auth/', {
                         "email": email2,
                         "password": password2,
-                    }).then(function (response) {
-                        token2 = response.body.auth_token
+                        "captcha": captcha,
+                    }).then(function () {
+                        return chakram.post('/auth/login/', {
+                            "email": email2,
+                            "password": password2,
+                        }).then(function (response) {
+                            token2 = response.body.auth_token
+                        });
                     });
                 });
             });
@@ -182,18 +183,20 @@ describe("API v1", function () {
             // register a user that we can login and work with
             password = require("uuid").v4();
 
-            return chakram.post('/auth/', {
-                "email": email,
-                "password": password,
-                "captcha": {"id": "d7b5739e-9e14-40df-ac4a-1973777def5e", "solution": "no need for a solution when Django's DEBUG=True"},
-            }).then(function () {
-                return chakram.post('/auth/login/', {
+            return withCaptcha(function (captcha) {
+                return chakram.post('/auth/', {
                     "email": email,
                     "password": password,
-                }).then(function (loginResponse) {
-                    expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                    token = loginResponse.body.auth_token;
-                    chakram.setRequestHeader('Authorization', 'Token ' + token);
+                    "captcha": captcha,
+                }).then(function () {
+                    return chakram.post('/auth/login/', {
+                        "email": email,
+                        "password": password,
+                    }).then(function (loginResponse) {
+                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
+                        token = loginResponse.body.auth_token;
+                        chakram.setRequestHeader('Authorization', 'Token ' + token);
+                    });
                 });
             });
         });
@@ -205,7 +208,9 @@ describe("API v1", function () {
                 var response;
 
                 before(function () {
-                    response = chakram.get('/');
+                    return chakram.get('/').then(function (_response) {
+                        response = _response;
+                    });
                 });
 
                 it('has status 200', function () {
