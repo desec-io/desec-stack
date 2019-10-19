@@ -250,7 +250,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         )
 
     def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None):
-        if domain and domain.endswith('.dedyn.io'):
+        if domain and self.has_local_suffix(domain):
             text = 'Success! Here is the password'
         else:
             text = 'Success! Please check the docs for the next steps'
@@ -390,7 +390,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.assertVerificationFailureInvalidCodeResponse(response)
             return
 
-        if domain.endswith('.dedyn.io'):
+        if self.has_local_suffix(domain):
             cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
             cm = self.requests_desec_domain_creation(domain)

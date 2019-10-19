@@ -682,6 +682,10 @@ class DesecTestCase(MockPDNSTestCase):
         return (random.choice(string.ascii_letters) + cls.random_string() + '--test' + '.' + suffix).lower()
 
     @classmethod
+    def has_local_suffix(cls, domain_name: str):
+        return any([domain_name.endswith(f'.{suffix}') for suffix in settings.LOCAL_PUBLIC_SUFFIXES])
+
+    @classmethod
     def create_token(cls, user):
         token = Token.objects.create(user=user)
         token.save()
