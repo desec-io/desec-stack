@@ -46,6 +46,28 @@ describe("API v1", function () {
             followRedirect: false,
             baseUrl: 'https://www/api/v1',
         })
+
+        // ensure that the public suffix domain is set up and ready to use
+        let email = 'admin@example.com';
+        let password = 'admin123!';
+        return withCaptcha(function (captcha) {
+            return chakram.post('/auth/', {
+                    "email": email,
+                    "password": password,
+                    "captcha": captcha,
+                }).then(function (registerResponse) {
+                    return chakram.post('/auth/login/', {
+                        "email": email,
+                        "password": password,
+                    }).then(function (loginResponse) {
+                        return chakram.post('/domains/', {
+                            name: publicSuffix,
+                        }, {
+                            headers: {'Authorization': 'Token ' + loginResponse.body.auth_token }
+                        }); // note that we ignore errors here
+                    });
+            });
+        });
     });
 
     it("provides an index page", function () {
