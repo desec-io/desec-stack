@@ -323,6 +323,13 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_202_ACCEPTED
         )
 
+    def assertDeleteAccountFailureStillHasDomainsResponse(self, response):
+        return self.assertContains(
+            response=response,
+            text="To delete your user account, first delete all of your domains.",
+            status_code=status.HTTP_409_CONFLICT
+        )
+
     def assertDeleteAccountVerificationSuccessResponse(self, response):
         return self.assertContains(
             response=response,
@@ -747,6 +754,17 @@ class HasUserAccountTestCase(UserManagementTestCase):
             response=self.client.verify(confirmation_link)
         )
         self.assertNoEmailSent()
+
+    def test_delete_account_domains_present(self):
+        user = User.objects.get(email=self.email)
+        domain = self.create_domain(owner=user)
+        self.assertDeleteAccountFailureStillHasDomainsResponse(self.delete_account(self.email, self.password))
+        domain.delete()
+        confirmation_link = self._start_delete_account()
+        domain = self.create_domain(owner=user)
+        self.assertDeleteAccountFailureStillHasDomainsResponse(response=self.client.verify(confirmation_link))
+        domain.delete()
+        self._finish_delete_account(confirmation_link)
 
     def test_reset_password_password_strip(self):
         password = ' %s ' % self.random_password()

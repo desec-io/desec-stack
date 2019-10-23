@@ -437,8 +437,14 @@ class AccountView(generics.RetrieveAPIView):
 class AccountDeleteView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
+    response_still_has_domains = Response(
+        data={'detail': 'To delete your user account, first delete all of your domains.'},
+        status=status.HTTP_409_CONFLICT,
+    )
 
     def post(self, request, *args, **kwargs):
+        if self.request.user.domains.exists():
+            return self.response_still_has_domains
         action = models.AuthenticatedDeleteUserAction(user=self.request.user)
         verification_code = serializers.AuthenticatedDeleteUserActionSerializer(action).data['code']
         request.user.send_email('delete-user', context={
@@ -629,6 +635,11 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
 class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
     http_method_names = ['get']
     serializer_class = serializers.AuthenticatedDeleteUserActionSerializer
+
+    def take_action(self):
+        if self.request.user.domains.exists():
+            return AccountDeleteView.response_still_has_domains
+        return super().take_action()
 
     def finalize(self):
         return Response({'detail': 'All your data has been deleted. Bye bye, see you soon! <3'})
