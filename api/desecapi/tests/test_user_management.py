@@ -650,7 +650,9 @@ class HasUserAccountTestCase(UserManagementTestCase):
         # Make sure that the account's email address cannot be changed with a token (password required)
         new_email = self.random_username()
         response = self.client.change_email_token_auth(self.token, new_email=new_email)
-        self.assertContains(response, 'You do not have permission', status_code=status.HTTP_403_FORBIDDEN)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['email'][0], 'This field is required.')
+        self.assertEqual(response.data['password'][0], 'This field is required.')
         self.assertNoEmailSent()
 
     def test_change_email_multiple_times(self):
