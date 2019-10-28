@@ -180,7 +180,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:3.7-alpine
+    image: rabbitmq:3.8-alpine
     init: true
     volumes:
     - rabbitmq_data:/var/lib/rabbitmq
