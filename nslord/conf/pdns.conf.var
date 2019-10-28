@@ -26,4 +26,3 @@ gmysql-dnssec=yes
 cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
 negquery-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
 query-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
-dnssec-key-cache-ttl=0
