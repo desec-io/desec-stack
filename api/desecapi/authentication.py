@@ -102,7 +102,8 @@ class URLParamAuthentication(BaseAuthentication):
         return token.user, token
 
 
-class EmailPasswordPayloadAuthentication(BasicAuthentication):
+class EmailPasswordPayloadAuthentication(BaseAuthentication):
+    authenticate_credentials = BasicAuthentication.authenticate_credentials
 
     def authenticate(self, request):
         serializer = EmailPasswordSerializer(data=request.data)
