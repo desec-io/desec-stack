@@ -17,6 +17,7 @@ import re
 from unittest import mock
 from urllib.parse import urlparse
 
+from django.contrib.auth.hashers import is_password_usable
 from django.core import mail
 from django.urls import resolve
 from django.utils import timezone
@@ -89,7 +90,6 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def register_user(self, email=None, password=None, **kwargs):
         email = email if email is not None else self.random_username()
-        password = password if password is not None else self.random_password()
         captcha_id, captcha_solution = self.get_captcha()
         return email.strip(), password, self.client.register(email, password, captcha_id, captcha_solution, **kwargs)
 
@@ -112,6 +112,10 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         super().assertContains(response, text, count, status_code, msg_prefix, html)
 
     def assertPassword(self, email, password):
+        if password is None:
+            self.assertFalse(is_password_usable(User.objects.get(email=email).password))
+            return
+
         password = password.strip()
         self.assertTrue(User.objects.get(email=email).check_password(password),
                         'Expected user password to be "%s" (potentially trimmed), but check failed.' % password)
@@ -459,11 +463,11 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         self.assertResponse(self.client.get(reverse('v1:root')), status.HTTP_200_OK)
 
     def test_registration(self):
-        self._test_registration()
+        self._test_registration(password=self.random_password())
 
     def test_registration_trim_email(self):
         user_email = ' {} '.format(self.random_username())
-        email, new_password = self._test_registration(user_email)
+        email, _ = self._test_registration(user_email)
         self.assertEqual(email, user_email.strip())
 
     def test_registration_with_domain(self):
@@ -497,6 +501,12 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         self.assertNoEmailSent()
         self.assertUserDoesNotExist(email)
 
+    def test_no_login_with_unusable_password(self):
+        email, password = self._test_registration(password=None)
+        response = self.client.login_user(email, password)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['password'][0], 'This field may not be null.')
+
     def test_registration_spam_protection(self):
         email = self.random_username()
         self.assertRegistrationSuccessResponse(
@@ -522,7 +532,7 @@ class OtherUserAccountTestCase(UserManagementTestCase):
 
     def setUp(self):
         super().setUp()
-        self.other_email, self.other_password = self._test_registration()
+        self.other_email, self.other_password = self._test_registration(password=self.random_password())
 
     def test_reset_password_unknown_user(self):
         self.assertResetPasswordSuccessResponse(
@@ -540,7 +550,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
     def setUp(self):
         super().setUp()
-        self.email, self.password = self._test_registration()
+        self.email, self.password = self._test_registration(password=self.random_password())
         self.token = self._test_login()
 
     def _start_reset_password(self):

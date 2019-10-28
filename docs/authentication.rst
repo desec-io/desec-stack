@@ -58,6 +58,11 @@ Please consider the following when registering an account:
   generate a long random string consisting of at least 16 alphanumeric
   characters, and use a password manager instead of attempting to remember it.
 
+- If you do not require a password at the moment, you can pass ``null`` (the
+  JSON value, not the string!). If you create an account this way, it will not
+  be possible to `Log In`_. You can set a password later using the `Password
+  Reset`_ procedure.
+
 - Your email address is required for account recovery in case you forgot your
   password, for contacting support, etc. We also send out announcements for
   technical changes occasionally. It is thus deSEC's policy to require users

@@ -505,6 +505,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {
                 'write_only': True,  # Do not expose password field
+                'allow_null': True,
             }
         }
 
