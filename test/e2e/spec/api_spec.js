@@ -549,8 +549,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             expect(response).to.have.json([
-                                {"__all__": ["Same subname and type as in position(s) 1, but must be unique."]},
-                                {"__all__": ["Same subname and type as in position(s) 0, but must be unique."]}
+                                {"non_field_errors": ["Same subname and type as in position(s) 1, but must be unique."]},
+                                {"non_field_errors": ["Same subname and type as in position(s) 0, but must be unique."]}
                             ]);
                             return chakram.wait();
                         });
@@ -780,8 +780,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             return expect(response).to.have.json([
-                                { '__all__': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
-                                { '__all__': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
+                                { 'non_field_errors': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
+                                { 'non_field_errors': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
                             ]);
                         });
 
@@ -1021,8 +1021,8 @@ describe("API v1", function () {
 
                         it("gives the right response", function () {
                             return expect(response).to.have.json([
-                                { '__all__': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
-                                { '__all__': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
+                                { 'non_field_errors': [ 'Same subname and type as in position(s) 1, but must be unique.' ] },
+                                { 'non_field_errors': [ 'Same subname and type as in position(s) 0, but must be unique.' ] },
                             ]);
                         });
 

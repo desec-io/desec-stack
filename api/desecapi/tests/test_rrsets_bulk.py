@@ -93,8 +93,8 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=data),
             status.HTTP_400_BAD_REQUEST,
             [
-                {'__all__': ['Same subname and type as in position(s) 1, but must be unique.']},
-                {'__all__': ['Same subname and type as in position(s) 0, but must be unique.']},
+                {'non_field_errors': ['Same subname and type as in position(s) 1, but must be unique.']},
+                {'non_field_errors': ['Same subname and type as in position(s) 0, but must be unique.']},
                 {},
             ]
         )
@@ -104,10 +104,10 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=data),
             status.HTTP_400_BAD_REQUEST,
             [
-                {'__all__': ['Same subname and type as in position(s) 1, 3, but must be unique.']},
-                {'__all__': ['Same subname and type as in position(s) 0, 3, but must be unique.']},
+                {'non_field_errors': ['Same subname and type as in position(s) 1, 3, but must be unique.']},
+                {'non_field_errors': ['Same subname and type as in position(s) 0, 3, but must be unique.']},
                 {},
-                {'__all__': ['Same subname and type as in position(s) 0, 1, but must be unique.']},
+                {'non_field_errors': ['Same subname and type as in position(s) 0, 1, but must be unique.']},
             ]
         )
 

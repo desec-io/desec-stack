@@ -350,7 +350,7 @@ class RRsetListSerializer(ListSerializer):
                 # see if other rows have the same key
                 if len(indices_by_key[self._key(item)]) > 1:
                     raise serializers.ValidationError({
-                        '__all__': [
+                        'non_field_errors': [
                             'Same subname and type as in position(s) %s, but must be unique.' %
                             ', '.join(map(str, indices_by_key[self._key(item)] - {idx}))
                         ]
