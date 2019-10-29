@@ -129,9 +129,9 @@ field is optional.
 
 Upon success, the response status code will be ``201 Created``, with the RRset
 contained in the response body.  If another RRset with the same name and type
-exists already, the API responds with ``409 Conflict``.  If there is a
-syntactical error (e.g. not all required fields were provided or the type was
-not specified in uppercase), the API responds with ``400 Bad Request``.  If
+exists already, the API responds with ``400 Bad Request``.  The same status
+code is returned If there is a syntactical error (e.g. not all required fields
+were provided or the type was not specified in uppercase).  If
 field values were semantically invalid (e.g. when you provide an unknown record
 type, or an `A` value that is not an IPv4 address), ``422 Unprocessable
 Entity`` is returned.
@@ -448,37 +448,35 @@ records to ``[]``.
 
 Input validation
 ````````````````
-For efficiency and other reasons, there are three stages of input validation:
+There are two stages of input validation:
 
-1. Basic syntactical and semantical checks for missing JSON fields, negative
-   TTL and such.
+1. Sanity checks, such as syntax, basic semantics (e.g. negative TTL), and
+   uniqueness checks. (We both check for uniqueness with respect to
+   pre-existing RRsets as well as with respect to other RRsets sent in the
+   same bulk request.)
 
-2. Uniqueness validation.  This is both to avoid the creation of multiple
-   RRsets with the same subname and type, and to uncover bulk requests
-   containing multiple parts that refer to the same subname and type.
+2. DNS conformity checks, such as whether the given type is a supported record
+   type, and whether the given record contents are consistent with the type.
 
-3. Lastly, we check whether the given type is a supported DNS record type, and
-   whether the given record contents are consistent with the type.
+If an error occurs in the first validation stage, the request is aborted, and
+the error(s) are returned.  Only if no error occurred, will the request be
+allowed to proceed to the second stage.
 
-Errors are collected at each stage; if at least one error occured, the request
-is aborted at the end of the stage, and the error(s) are returned.  Only if no
-error occurred, will the request be allowed to proceed to the next stage.
-
-In stages 1 and 2, errors are presented as a list of errors, with each list
+In the first stage, errors are presented as a list of errors, with each list
 item referring to one part of the bulk request, in the same order.  Parts that
 did not cause errors have an empty error object ``{}``, and parts with errors
-contain more details describing the error.  Unfortunately, in step 3, the API
+contain more details describing the error.  Unfortunately, in step 2, the API
 currently does not associate the error message with the RRset that caused it.
 
-The successive treatment of stages 1 and 2 means that one bulk part with a
-stage-2 error may appear valid (``{}``) as long as another RRset has a stage-1
-error.  Only after the stage-1 error is resolved, the request will reach stage
-2, at which point an error may occur for the bulk part that previously seemed
+The successive treatment of stages means that one bulk part with a stage-2
+error may appear valid (``{}``) as long as another RRset has a stage-1 error.
+Only after the stage-1 error is resolved, the request will reach stage 2, at
+which point an error may appear due to a bulk part that previously seemed
 valid.
 
-Errors in stages 1 and 2 cause status code ``400`` (regardless of the exact
-reason(s) which may vary across bulk parts), and errors from stage 3 cause
-status code ``422``.
+Errors from stage 1 cause status code ``400 Bad Request`` (regardless of the
+exact reason(s) which may vary across bulk parts), and errors from stage 2
+cause status code ``422 Unprocessable Entity``.
 
 
 Notes

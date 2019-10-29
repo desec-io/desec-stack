@@ -108,16 +108,13 @@ endpoint, like this::
 Only the ``name`` field is mandatory.
 
 Upon success, the response status code will be ``201 Created``, with the
-domain object contained in the response body.  ``400 Bad Request`` is returned
-if the request contained malformed data.  If the object could not be
-created although the request was wellformed, the API responds with ``403
-Forbidden`` if the maximum number of domains for this user has been reached,
-and with ``409 Conflict`` otherwise.  This can happen, for example, if there
-already is a domain with the same name or if the domain name is considered
-invalid for policy reasons.
+domain object contained in the response body.  If an improper request was
+sent, ``400 Bad Request`` is returned.  This can happen when the request
+payload was malformed, or when the requested domain name is unavailable or
+invalid (e.g. because another user owns it, or due to policy reasons).
 
-The response body *may* provide further, human-readable information on the
-policy violation that occurred.
+If you have reached the maximum number of domains for your account, the API
+responds with ``403 Forbidden``.
 
 Restrictions on what is a valid domain name apply.  In particular, domains
 listed on the `Public Suffix List`_ cannot be registered.  (If you operate a

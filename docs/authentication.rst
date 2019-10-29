@@ -260,20 +260,26 @@ old email address for informational purposes.
 Delete Account
 ``````````````
 
-To delete your account, send a ``POST`` request with your email address and
-password to the ``/auth/account/delete/`` endpoint::
+Before you can delete your account, it is required to first delete all your
+domains from deSEC (see `Deleting a Domain`_).
+
+To delete your (empty) account, send a ``POST`` request with your email
+address and password to the ``/auth/account/delete/`` endpoint::
 
     curl -X POST https://desec.io/api/v1/auth/account/delete/ \
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
-You will receive an email with a link of the form
-``https://desec.io/api/v1/v/delete-account/<code>/``. To actually delete your
-account, send a ``GET`` request using this link (i.e., you can simply click
-the link).
+If the correct password has been provided, the server will reply with ``202
+Accepted`` and send you an email with a link of the form
+``https://desec.io/api/v1/v/delete-account/<code>/``. To finish the deletion,
+send a ``GET`` request using this link (i.e., you can simply click the link).
 
 The link expires after 12 hours. It is also invalidated by certain other
 account-related activities, such as changing your email address or password.
+
+If your account still contains domains, the server will respond with ``409
+Conflict`` and not delete your account.
 
 
 Log Out
