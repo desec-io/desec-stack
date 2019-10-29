@@ -351,7 +351,7 @@ class RRsetManager(Manager):
 class RRset(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(null=True)
+    updated = models.DateTimeField(null=True)  # undocumented, used for debugging only
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
@@ -408,7 +408,7 @@ class RRManager(Manager):
     def bulk_create(self, rrs, **kwargs):
         ret = super().bulk_create(rrs, **kwargs)
 
-        # For each rrset, save once to update published timestamp and trigger signal for post-save processing
+        # For each rrset, save once to set RRset.updated timestamp and trigger signal for post-save processing
         rrsets = {rr.rrset for rr in rrs}
         for rrset in rrsets:
             rrset.save()
