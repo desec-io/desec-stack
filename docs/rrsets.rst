@@ -598,7 +598,7 @@ Record types with priority field
     The contents of the ``TXT`` record must be enclosed in double quotes.
     Thus, when ``POST``\ ing to the API, make sure to do proper escaping etc.
     as required by the client you are using.  Here's an example of how to
-    create a ``TXT`` RRset with HTTPie::
+    create a ``TXT`` RRset::
 
         curl -X POST https://desec.io/api/v1/domains/:name/rrsets/ \
             --header "Authorization: Token {token}" \
