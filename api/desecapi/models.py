@@ -74,6 +74,7 @@ class MyUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(
         verbose_name='email address',
         max_length=191,
@@ -526,7 +527,7 @@ class AuthenticatedUserAction(AuthenticatedAction):
 
     @property
     def _mac_state(self):
-        return super()._mac_state + [self.user.id, self.user.email, self.user.password, self.user.is_active]
+        return super()._mac_state + [str(self.user.id), self.user.email, self.user.password, self.user.is_active]
 
     def act(self):
         raise NotImplementedError

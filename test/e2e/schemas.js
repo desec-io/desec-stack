@@ -17,7 +17,10 @@ exports.user = {
             type: "string",
             format: "email"
         },
-        id: { type: "integer" },
+        id: {
+            type: "string",
+            format: "uuid"
+        },
         limit_domains: { type: "integer" },
     },
     required: ["created", "email", "id", "limit_domains"]

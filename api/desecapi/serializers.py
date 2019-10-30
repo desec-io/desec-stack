@@ -649,7 +649,8 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
 class AuthenticatedUserActionSerializer(AuthenticatedActionSerializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=models.User.objects.all(),
-        error_messages={'does_not_exist': 'This user does not exist.'}
+        error_messages={'does_not_exist': 'This user does not exist.'},
+        pk_field=serializers.UUIDField()
     )
 
     class Meta:

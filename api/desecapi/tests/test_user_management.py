@@ -612,7 +612,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue('created' in response.data)
         self.assertEqual(response.data['email'], self.email)
-        self.assertEqual(response.data['id'], User.objects.get(email=self.email).pk)
+        self.assertEqual(response.data['id'], str(User.objects.get(email=self.email).pk))
         self.assertEqual(response.data['limit_domains'], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT)
 
     def test_view_account_read_only(self):
