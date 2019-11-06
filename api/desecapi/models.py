@@ -10,7 +10,6 @@ import uuid
 from base64 import b64encode
 from datetime import datetime, timedelta
 from os import urandom
-from typing import Union
 
 import psl_dns
 import rest_framework.authtoken.models
@@ -265,15 +264,17 @@ class Domain(models.Model):
     def keys(self):
         return pdns.get_keys(self)
 
+    @property
     def is_locally_registrable(self):
-        return self.partition_name()[1] in settings.LOCAL_PUBLIC_SUFFIXES
+        return self.parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
 
+    @property
     def parent_domain_name(self):
-        return self.partition_name()[1]
+        return self._partitioned_name[1]
 
-    def partition_name(self: Union[Domain, str]):
-        name = self.name if isinstance(self, Domain) else self
-        subname, _, parent_name = name.partition('.')
+    @property
+    def _partitioned_name(self):
+        subname, _, parent_name = self.name.partition('.')
         return subname, parent_name or None
 
     def save(self, *args, **kwargs):
@@ -281,7 +282,7 @@ class Domain(models.Model):
         super().save(*args, **kwargs)
 
     def update_delegation(self, child_domain: Domain):
-        child_subname, child_domain_name = child_domain.partition_name()
+        child_subname, child_domain_name = child_domain._partitioned_name
         if self.name != child_domain_name:
             raise ValueError('Cannot update delegation of %s as it is not an immediate child domain of %s.' %
                              (child_domain.name, self.name))

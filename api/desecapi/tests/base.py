@@ -890,8 +890,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
 
         if cls.DYN:
             for domain in cls.my_domains + cls.other_domains:
-                parent_domain_name = domain.partition_name()[1]
-                parent_domain = Domain.objects.get(name=parent_domain_name)
+                parent_domain = Domain.objects.get(name=domain.parent_domain_name)
                 parent_domain.update_delegation(domain)
 
         cls.my_domain = cls.my_domains[0]

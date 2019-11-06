@@ -72,10 +72,8 @@ class DomainList(generics.ListCreateAPIView):
         return models.Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
-        _, parent_domain_name = models.Domain.partition_name(serializer.validated_data['name'])
-        domain_is_local = parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
         domain_kwargs = {'owner': self.request.user}
-        if domain_is_local:
+        if models.Domain(name=serializer.validated_data['name']).is_locally_registrable:
             domain_kwargs['minimum_ttl'] = 60
         with PDNSChangeTracker():
             domain = serializer.save(**domain_kwargs)
@@ -84,13 +82,13 @@ class DomainList(generics.ListCreateAPIView):
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
 
         # Send dyn email
-        if domain_is_local:
+        if domain.is_locally_registrable:
             content_tmpl = get_template('emails/domain-dyndns/content.txt')
             subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
             from_tmpl = get_template('emails/from.txt')
             context = {
                 'domain': domain.name,
-                'url': f'https://update.{parent_domain_name}/',
+                'url': f'https://update.{domain.parent_domain_name}/',
                 'username': domain.name,
                 'password': self.request.auth.key
             }
@@ -102,9 +100,8 @@ class DomainList(generics.ListCreateAPIView):
 
     @staticmethod
     def auto_delegate(domain: models.Domain):
-        parent_domain_name = domain.partition_name()[1]
-        if parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES:
-            parent_domain = models.Domain.objects.get(name=parent_domain_name)
+        if domain.is_locally_registrable:
+            parent_domain = models.Domain.objects.get(name=domain.parent_domain_name)
             parent_domain.update_delegation(domain)
 
 
@@ -116,8 +113,8 @@ class DomainDetail(IdempotentDestroy, generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance: models.Domain):
         with PDNSChangeTracker():
             instance.delete()
-        if instance.is_locally_registrable():
-            parent_domain = models.Domain.objects.get(name=instance.parent_domain_name())
+        if instance.is_locally_registrable:
+            parent_domain = models.Domain.objects.get(name=instance.parent_domain_name)
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
 
@@ -599,7 +596,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             )
         domain = PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
 
-        if domain.parent_domain_name() in settings.LOCAL_PUBLIC_SUFFIXES:
+        if domain.is_locally_registrable:
             # TODO the following line raises Domain.DoesNotExist under unknown conditions
             PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
             token = models.Token.objects.create(user=action.user, name='dyndns')
