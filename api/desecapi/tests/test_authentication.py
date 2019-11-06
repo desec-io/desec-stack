@@ -1,11 +1,6 @@
-import re
-
-from django.core import mail
-from rest_framework import status
 from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
-from desecapi.models import Token, User
-from desecapi.tests.base import DynDomainOwnerTestCase, DesecTestCase
+from desecapi.tests.base import DynDomainOwnerTestCase
 
 
 class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
