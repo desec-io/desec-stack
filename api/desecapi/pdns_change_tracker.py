@@ -184,12 +184,12 @@ class PDNSChangeTracker:
     def _manage_signals(self, method):
         if method not in ['connect', 'disconnect']:
             raise ValueError()
-        getattr(post_save, method)(self._on_rr_post_save, sender=RR)
-        getattr(post_delete, method)(self._on_rr_post_delete, sender=RR)
-        getattr(post_save, method)(self._on_rr_set_post_save, sender=RRset)
-        getattr(post_delete, method)(self._on_rr_set_post_delete, sender=RRset)
-        getattr(post_save, method)(self._on_domain_post_save, sender=Domain)
-        getattr(post_delete, method)(self._on_domain_post_delete, sender=Domain)
+        getattr(post_save, method)(self._on_rr_post_save, sender=RR, dispatch_uid=self.__module__)
+        getattr(post_delete, method)(self._on_rr_post_delete, sender=RR, dispatch_uid=self.__module__)
+        getattr(post_save, method)(self._on_rr_set_post_save, sender=RRset, dispatch_uid=self.__module__)
+        getattr(post_delete, method)(self._on_rr_set_post_delete, sender=RRset, dispatch_uid=self.__module__)
+        getattr(post_save, method)(self._on_domain_post_save, sender=Domain, dispatch_uid=self.__module__)
+        getattr(post_delete, method)(self._on_domain_post_delete, sender=Domain, dispatch_uid=self.__module__)
 
     def __enter__(self):
         PDNSChangeTracker._active_change_trackers += 1
