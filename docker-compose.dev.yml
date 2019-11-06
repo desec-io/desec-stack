@@ -3,6 +3,12 @@ version: '2.2'
 # mostly extending from main .yml
 services:
   www:
+    depends_on:
+    - webapp
+    networks:
+    - rearwebapp
+    volumes:
+    - ./www/90-desec.static.dev.location:/etc/nginx/sites-available/90-desec.static.location  # override webapp access
     logging:
       driver: "json-file"
 
@@ -50,3 +56,26 @@ services:
   celery:
     logging:
       driver: "json-file"
+
+  webapp:
+    image: node:latest
+    volumes:
+    - ./webapp/:/usr/src/app/
+    working_dir: /usr/src/app/
+    command: npm run serve --fix
+    environment:
+    - HOST=0.0.0.0
+    - PORT=443
+    networks:
+    - rearwebapp
+    logging:
+      driver: "json-file"
+
+networks:
+  rearwebapp:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.100.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.100.1

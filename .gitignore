@@ -12,3 +12,7 @@ api/desecapi.sqlite
 # local certificates
 /certs/
 /replication-certs/
+
+# Webapp development files
+node_modules
+package-lock.json

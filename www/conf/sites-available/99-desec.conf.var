@@ -83,6 +83,8 @@ server {
 	#	expires epoch;
 	#	etag on;
 	#}
+
+    include sites-available/99-desec.*.dev.location; # include dev locations, if any. Note that they have priority over locations below
 	
 	######
 	# Pass API requests to an API server
@@ -98,7 +100,21 @@ server {
 		include uwsgi_params;
 		uwsgi_pass desecapi;
 	}
-	
+
+
+    #####
+    # Static content for the web app
+    #####
+    location /app/static/ {
+        root   /usr/share/nginx/html/;
+    }
+
+    location /app/ {
+        root   /usr/share/nginx/html/;
+        index  index.html;
+        try_files $uri $uri/ /app/index.html =404;
+    }
+
 	######
 	# Pass static content requests
 	######

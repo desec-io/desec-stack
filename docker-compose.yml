@@ -11,6 +11,7 @@ services:
     volumes:
     - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
     - ./www/html:/usr/share/nginx/html:ro
+    - webapp_dist:/usr/share/nginx/html/app:ro
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_WWW_CERTS
@@ -180,6 +181,18 @@ services:
         tag: "desec/nsmaster"
     restart: unless-stopped
 
+  webapp:
+    image: node:latest
+    volumes:
+    - ./webapp/:/usr/src/app/
+    - webapp_dist:/usr/src/app/dist
+    working_dir: /usr/src/app/
+    command: bash -c "npm install && npm run build -- --no-clean"
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/webapp"
+
   rabbitmq:
     image: rabbitmq:3.8-alpine
     init: true
@@ -236,6 +249,7 @@ volumes:
   dblord_mysql:
   dbmaster_mysql:
   rabbitmq_data:
+  webapp_dist:
 
 networks:
   # Note that it is required that the front network ranks lower (in lexical order)
