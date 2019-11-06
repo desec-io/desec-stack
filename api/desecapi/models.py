@@ -149,6 +149,7 @@ class User(AbstractBaseUser):
             'password-change-confirmation',
             'reset-password',
             'delete-user',
+            'domain-dyndns',
         ]
         recipient = recipient or self.email
         if reason not in reasons:
