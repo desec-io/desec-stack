@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 
-from desecapi.models import Domain
+from desecapi.models import Domain, Token
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, PublicSuffixMockMixin
 
@@ -398,7 +398,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
                 self.assertEqual(len(mail.outbox), i + 1)
                 email = str(mail.outbox[0].message())
                 self.assertTrue(name in email)
-                self.assertTrue(self.token.key in email)
+                self.assertTrue(any(token.key in email for token in Token.objects.filter(user=self.owner).all()))
                 self.assertFalse(self.user.plain_password in email)
 
     def test_domain_limit(self):

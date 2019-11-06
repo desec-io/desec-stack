@@ -25,7 +25,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from api import settings
-from desecapi.models import Domain, User, Captcha
+from desecapi.models import Domain, User, Captcha, Token
 from desecapi.serializers import AuthenticatedActionSerializer
 from desecapi.tests.base import DesecTestCase, PublicSuffixMockMixin
 
@@ -249,16 +249,15 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_200_OK
         )
 
-    def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None):
+    def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None, email=None):
         if domain and self.has_local_suffix(domain):
+            body = self.assertEmailSent('', body_contains=domain, recipient=email)
+            self.assertTrue(any(token.key in body for token in Token.objects.filter(user__email=email).all()))
             text = 'Success! Here is the password'
         else:
+            self.assertNoEmailSent()
             text = 'Success! Please check the docs for the next steps'
-        return self.assertContains(
-            response=response,
-            text=text,
-            status_code=status.HTTP_200_OK
-        )
+        self.assertContains(response=response, text=text, status_code=status.HTTP_200_OK)
 
     def assertResetPasswordSuccessResponse(self, response):
         return self.assertContains(
@@ -403,7 +402,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             cm = self.requests_desec_domain_creation(domain)
         with self.assertPdnsRequests(cm[:-1]):
             response = self.client.verify(confirmation_link)
-        self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain)
+        self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain, email)
         self.assertTrue(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
         self.assertTrue(Domain.objects.filter(name=domain, owner__email=email).exists())

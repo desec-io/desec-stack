@@ -81,23 +81,6 @@ class DomainList(generics.ListCreateAPIView):
         # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
 
-        # Send dyn email
-        if domain.is_locally_registrable:
-            content_tmpl = get_template('emails/domain-dyndns/content.txt')
-            subject_tmpl = get_template('emails/domain-dyndns/subject.txt')
-            from_tmpl = get_template('emails/from.txt')
-            context = {
-                'domain': domain.name,
-                'url': f'https://update.{domain.parent_domain_name}/',
-                'username': domain.name,
-                'password': self.request.auth.key
-            }
-            email = EmailMessage(subject_tmpl.render(context),
-                                 content_tmpl.render(context),
-                                 from_tmpl.render(context),
-                                 [self.request.user.email])
-            email.send()
-
     @staticmethod
     def auto_delegate(domain: models.Domain):
         if domain.is_locally_registrable:
