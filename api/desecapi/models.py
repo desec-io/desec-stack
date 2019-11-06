@@ -152,7 +152,7 @@ class User(AbstractBaseUser):
         ]
         recipient = recipient or self.email
         if reason not in reasons:
-            raise ValueError('Cannot send email to user {} without a good reason: {}'.format(self.email, reason))
+            raise ValueError('Cannot send email to user {} without a good reason: {}'.format(self.pk, reason))
         content_tmpl = get_template('emails/{}/content.txt'.format(reason))
         subject_tmpl = get_template('emails/{}/subject.txt'.format(reason))
         from_tmpl = get_template('emails/from.txt')
