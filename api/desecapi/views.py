@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth import user_logged_in
 from django.core.mail import EmailMessage
 from django.http import Http404
+from django.shortcuts import redirect
 from django.template.loader import get_template
 from rest_framework import generics
 from rest_framework import mixins
@@ -13,6 +14,7 @@ from rest_framework import status
 from rest_framework.authentication import get_authorization_header, BaseAuthentication
 from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
@@ -397,7 +399,8 @@ class AccountCreateView(generics.CreateAPIView):
                 action = models.AuthenticatedActivateUserAction(user=user, domain=domain)
                 verification_code = serializers.AuthenticatedActivateUserActionSerializer(action).data['code']
                 user.send_email('activate-with-domain' if domain else 'activate', context={
-                    'confirmation_link': reverse('confirm-activate-account', request=request, args=[verification_code])
+                    'confirmation_link': reverse('confirm-activate-account', request=request, args=[verification_code]),
+                    'domain': domain,
                 })
 
         # This request is unauthenticated, so don't expose whether we did anything.
@@ -568,6 +571,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     http_method_names = ['get']
+    renderer_classes = [JSONRenderer, StaticHTMLRenderer]
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
@@ -608,11 +612,14 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         # TODO the following line raises Domain.DoesNotExist under unknown conditions
         PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
         token = models.Token.objects.create(user=domain.owner, name='dyndns')
-        return Response({
-            'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
-                      'client). This password is different from your account password for security reasons.',
-            **serializers.TokenSerializer(token).data,
-        })
+        if self.request.accepted_renderer.format == 'html':
+            return redirect(f'/app/dynsetup/{domain.name}/#{token.plain}')
+        else:
+            return Response({
+                'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
+                          'client). This password is different from your account password for security reasons.',
+                **serializers.TokenSerializer(token).data,
+            })
 
     def _finalize_with_domain(self):
         return Response({

@@ -397,12 +397,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name=name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
-                self.assertEqual(len(mail.outbox), i + 1)
-                email = str(mail.outbox[0].message())
-                self.assertTrue(name in email)
-                password_plain = re.search('password: (.*)', email).group(1)
-                self.assertToken(password_plain)
-                self.assertFalse(self.user.plain_password in email)
+                self.assertFalse(mail.outbox)  # do not send email
 
     def test_domain_limit(self):
         url = self.reverse('v1:domain-list')
@@ -413,11 +408,10 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             with self.assertPdnsRequests(self.requests_desec_domain_creation_auto_delegation(name)):
                 response = self.client.post(url, {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
-                self.assertEqual(len(mail.outbox), i + 1)
 
         response = self.client.post(url, {'name': self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)})
         self.assertContains(response, 'Domain limit', status_code=status.HTTP_403_FORBIDDEN)
-        self.assertEqual(len(mail.outbox), user_quota)
+        self.assertFalse(mail.outbox)  # do not send email
 
     def test_domain_minimum_ttl(self):
         url = self.reverse('v1:domain-list')

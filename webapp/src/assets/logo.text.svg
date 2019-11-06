@@ -15,7 +15,7 @@
    version="1.1"
    id="svg1262"
    sodipodi:docname="logo.svg"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
   <defs
      id="defs1256" />
   <sodipodi:namedview
@@ -35,9 +35,9 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="2560"
-     inkscape:window-height="1374"
-     inkscape:window-x="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1043"
+     inkscape:window-x="4480"
      inkscape:window-y="0"
      inkscape:window-maximized="1" />
   <metadata
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -84,31 +84,20 @@
              style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:117.14173126;stroke-opacity:1;marker:none;enable-background:accumulate" />
         </g>
       </g>
-      <g
-         aria-label="deSEC"
+      <text
+         id="text3809"
+         y="220.60074"
+         x="139.70496"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
-         id="text3809">
-        <path
-           d="m 154.14496,216.08074 c -1.48,1.88 -3.32,2.84 -4.92,2.84 -2.16,0 -4,-2.16 -4,-7.16 0,-6 3.16,-7.12 5.12,-7.12 1.88,0 2.84,0.8 3.8,2.32 z m 0,2.2 h 0.08 l 0.2,2.32 c 0,0.08 0.12,0.12 0.36,0.12 0.52,-0.04 0.8,-0.12 1.36,-0.12 0.52,0 1.28,0.04 1.8,0.12 l 0.08,-0.12 c -0.32,-1.72 -0.68,-4.68 -0.68,-7.68 v -12.32 c 0,-2.96 0.16,-5.04 0.36,-7.52 0,-0.28 -0.12,-0.4 -0.36,-0.4 -1.04,0.4 -1.88,0.68 -3.48,0.8 l -0.08,0.12 c 0.28,1.72 0.36,4.68 0.36,7.72 v 2.6 c -0.92,-0.52 -2.56,-0.88 -3.36,-0.88 -5.24,0 -9.04,3.6 -9.04,9.04 0,4.92 2.92,8.92 7.24,8.92 1.92,0 3.72,-0.84 5.16,-2.72 z"
-           style="font-size:40px;line-height:1.25;fill:#000000"
-           id="path3774" />
-        <path
-           d="m 165.87683,209.68074 c 0.68,-4.16 3.28,-5.04 4.56,-5.04 1.56,0 3.36,1.48 3.36,4.48 0,0.36 -0.16,0.56 -0.56,0.56 z m 10.68,6.76 c -1.4,1.52 -3.28,2.2 -5.48,2.2 -1.4,0 -3.28,-0.52 -4.36,-2.28 -0.72,-1.12 -0.96,-2.72 -0.96,-5.08 h 10.88 c 0.44,0 0.72,-0.24 0.72,-0.68 0,-3.36 -1.64,-7.56 -6.92,-7.56 -4.12,0 -8.2,3.32 -8.2,9.2 0,2.28 0.44,4.52 1.8,6.12 1.36,1.68 3.64,2.64 6.36,2.64 2.88,0 5.44,-1.48 6.96,-3.56 z"
-           style="font-size:40px;line-height:1.25;fill:#000000"
-           id="path3776" />
-        <path
-           d="m 188.68183,219.24074 c -2.24,0 -5.12,-1.96 -6.36,-4.32 l -0.4,0.04 c -0.16,1.44 -0.6,2.92 -0.92,4.12 l 0.08,0.12 c 0,0 2.6,1.8 7.28,1.8 4.92,0 8.72,-3 8.72,-7.64 0,-4.64 -3.96,-6.76 -7.16,-8 -2.04,-0.76 -4.88,-1.92 -4.88,-5.24 0,-1.44 0.8,-3.04 1.84,-3.6 0.68,-0.36 1.52,-0.48 2.44,-0.48 2.2,0 4.36,1.72 5.44,4.2 l 0.4,-0.04 c 0.16,-1.44 0.56,-2.8 0.92,-4 l -0.08,-0.12 c 0,0 -1.68,-1.8 -6.36,-1.8 -1.08,0 -2.28,0.2 -3.44,0.68 -2.36,1 -4.4,3.32 -4.4,6.24 0,4.2 3.56,6.16 6.88,7.56 2.6,1.08 4.68,2.4 4.68,5.8 0,3 -2.32,4.68 -4.68,4.68 z"
-           style="font-size:40px;line-height:1.25;fill:#000000"
-           id="path3778" />
-        <path
-           d="m 206.83621,212.60074 v -4.68 c 1.92,0 6.16,0.12 8.92,0.4 l 0.12,-0.12 c -0.08,-0.36 -0.12,-0.92 -0.12,-1.28 0,-0.36 0.04,-0.92 0.12,-1.28 l -0.12,-0.12 c -2.36,0.2 -4.2,0.4 -8.92,0.4 v -3.12 c 0,-0.68 0.04,-4.8 0.32,-5.76 5.36,0 10.88,0.48 10.88,0.48 l 0.08,-0.16 c -0.04,-0.32 -0.08,-0.68 -0.08,-1.04 0,-0.32 0.04,-0.96 0.08,-1.52 l -0.08,-0.12 c -0.64,0.08 -1.56,0.12 -2.4,0.12 h -10.52 c -1.36,0 -2.04,-0.12 -2.04,-0.12 l -0.08,0.12 c 0.32,2.28 0.4,5 0.4,8 v 9.8 c 0,3 -0.08,5.84 -0.4,8 l 0.04,0.12 c 0,0 0.68,-0.12 2.08,-0.12 h 10.92 c 0.84,0 1.76,0.04 2.4,0.12 l 0.08,-0.12 c -0.04,-0.56 -0.08,-0.84 -0.08,-1.24 0,-0.4 0.04,-1 0.08,-1.32 l -0.08,-0.16 c 0,0 -5.92,0.48 -11.28,0.48 -0.28,-0.96 -0.32,-5.08 -0.32,-5.76 z"
-           style="font-size:40px;line-height:1.25;fill:#000000"
-           id="path3780" />
-        <path
-           d="m 235.92058,194.28074 c -6.76,0 -13.12,5.84 -13.12,13.72 0,6.92 3.96,13 12.56,13 3.68,0 7.16,-1.12 9.84,-4.36 -0.04,-0.48 -0.12,-1.36 -0.24,-1.72 l -0.28,-0.12 c -2.84,3.12 -5.24,4.16 -8.96,4.16 -5.08,0 -8.8,-5.48 -8.8,-11.72 0,-8.12 5.16,-11.08 8.44,-11.08 3.6,0 6.52,1.44 8.16,4.72 l 0.48,-0.04 c 0.12,-2.04 0.28,-2.72 0.72,-4.44 l -0.08,-0.12 c 0,0 -3.84,-2 -8.72,-2 z"
-           style="font-size:40px;line-height:1.25;fill:#000000"
-           id="path3782" />
-      </g>
+         xml:space="preserve"
+         inkscape:export-filename="/home/nils/git/desec-stack/webapp/src/assets/logo.png"
+         inkscape:export-xdpi="567.52002"
+         inkscape:export-ydpi="567.52002"><tspan
+           y="220.60074"
+           x="139.70496"
+           id="tspan3811"
+           sodipodi:role="line"
+           style="font-size:40px;line-height:1.25;fill:#000000">deSEC</tspan></text>
     </g>
   </g>
 </svg>

@@ -2,9 +2,8 @@ Hi there,
 
 Thank you for registering with deSEC!
 
-As we may need to contact you in the future, you need to verify your
-email address before we can register your domain. To do so, please use
-the following link:
+To create your account and register {{ domain }}, please confirm you
+received this email by clicking on the following link:
 
 {{ confirmation_link }}
 
