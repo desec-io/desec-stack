@@ -56,14 +56,21 @@ services:
     build: dbapi
     image: desec/dedyn-dbapi:latest
     init: true
-    user: mysql:mysql
+    user: postgres:postgres
+    shm_size: 256M
     volumes:
-    - dbapi_mysql:/var/lib/mysql
+    - dbapi_postgres:/var/lib/postgresql/data
+    - ./dbapi/pg_hba.conf:/usr/local/src/pg_hba.conf:ro
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
-    - DESECSTACK_DBAPI_PASSWORD_desec
+    - POSTGRES_DB=desec
+    - POSTGRES_HOST_AUTH_METHOD=reject
+    - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    - POSTGRES_NON_ROOT_USER=desec
+    - POSTGRES_NON_ROOT_USER_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_desec}
     networks:
     - rearapi_dbapi
+    command: ["postgres", "-c", "hba_file=/usr/local/src/pg_hba.conf"]
     logging:
       driver: "syslog"
       options:
@@ -352,7 +359,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  dbapi_mysql:
+  dbapi_postgres:
   dblord_mysql:
   dbmaster_mysql:
   openvpn-server_logs:

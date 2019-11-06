@@ -62,21 +62,12 @@ WSGI_APPLICATION = 'desecapi.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_prometheus.db.backends.mysql',
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
         'NAME': 'desec',
         'USER': 'desec',
         'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
         'HOST': 'dbapi',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-        'TEST': {
-            'CHARSET': 'utf8mb4',
-            'COLLATION': 'utf8mb4_bin',
-        },
     },
-
 }
 
 CACHES = {

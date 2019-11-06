@@ -492,14 +492,9 @@ class RRsetListSerializer(serializers.ListSerializer):
 
         # time of check (does it exist?) and time of action (create vs update) are different,
         # so for parallel requests, we can get integrity errors due to duplicate keys.
-        # This will be considered a 429-error, even though re-sending the request will be successful.
+        # We knew how to handle this with MySQL, but after switching for Postgres, we don't.
+        # Re-raise it so we get an email based on which we can learn and improve error handling.
         except OperationalError as e:
-            try:
-                if e.args[0] == 1213:
-                    # 1213 is mysql for deadlock, other OperationalErrors are treated elsewhere or not treated at all
-                    raise ConcurrencyException from e
-            except (AttributeError, KeyError):
-                pass
             raise e
         except (IntegrityError, models.RRset.DoesNotExist) as e:
             raise ConcurrencyException from e

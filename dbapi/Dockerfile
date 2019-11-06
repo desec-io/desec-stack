@@ -1,13 +1,14 @@
-FROM mariadb:10.3
+FROM postgres:12-alpine
 
-# Use random throw-away root password. Our init scripts switch authentication to socket logins only
-ENV MYSQL_RANDOM_ROOT_PASSWORD=yes
+RUN apk add --no-cache pwgen
 
-# install tools used in init script
-RUN set -ex && apt-get update && apt-get -y install gettext-base && apt-get clean && rm -rf /var/lib/apt/lists/*
+ADD docker-entrypoint-initdb.d /docker-entrypoint-initdb.d
 
-COPY initdb.d/* /docker-entrypoint-initdb.d/
-RUN chown -R mysql:mysql /docker-entrypoint-initdb.d/
+USER postgres
 
 # mountable storage
-VOLUME /var/lib/mysql
+VOLUME /var/lib/postgresql/data
+
+COPY entrypoint-wrapper.sh /usr/local/bin/
+ENTRYPOINT ["entrypoint-wrapper.sh"]
+CMD ["postgres"]

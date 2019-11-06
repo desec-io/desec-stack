@@ -6,7 +6,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
-- `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively.
+- `dbapi`, `dblord`, `dbmaster`: Postgres database for `api`, MariaDB databases for `nslord` and `nsmaster`, respectively.
 - `www`: nginx instance serving static web site content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
@@ -52,7 +52,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_API_EMAIL_PORT`: port for sending email
       - `DESECSTACK_API_SECRETKEY`: Django secret
       - `DESECSTACK_API_PSL_RESOLVER`: Resolver IP address to use for PSL lookups. If empty, the system's default resolver is used.
-      - `DESECSTACK_DBAPI_PASSWORD_desec`: mysql password for desecapi
+      - `DESECSTACK_DBAPI_PASSWORD_desec`: database password for desecapi
       - `DESECSTACK_MINIMUM_TTL_DEFAULT`: minimum TTL users can set for RRsets. The setting is per domain, and the default defined here is used on domain creation.
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
@@ -82,8 +82,8 @@ Production:
 
 Storage
 -------
-All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desecstack_{dbapi,dblord,dbmaster}_mysql`.
-This is the location you will want to back up. (Be sure to follow standard MySQL backup practices, i.e. make sure things are consistent.)
+All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desec-stack_{dbapi_postgres,dblord_mysql,dbmaster_mysql}`.
+This is the location you will want to back up. (Be sure to follow standard MySQL/Postgres backup practices, i.e. make sure things are consistent.)
 
 API Versions and Roadmap
 ------------------------
@@ -135,10 +135,10 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     For desec-stack, [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) are required.
     Further tools that are required to start hacking are git and curl.
     Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
-    jq, httpie, libmariadbclient-dev, python3-dev (>= 3.8) and python3-venv (>= 3.8) are useful if you want to follow this guide.
+    jq, httpie, libmariadbclient-dev, libpq-dev, python3-dev (>= 3.8) and python3-venv (>= 3.8) are useful if you want to follow this guide.
     The webapp requires nodejs. To install everything you need for this guide except docker and docker-compose, use
 
-       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs npm python3-dev python3-venv libmemcached-dev
+       sudo apt install certbot curl git httpie jq libmariadbclient-dev libpq-dev nodejs npm python3-dev python3-venv libmemcached-dev
 
 1. **Get the code.** Clone this repository to your favorite location.
 
