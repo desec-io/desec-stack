@@ -72,11 +72,8 @@ class DomainList(generics.ListCreateAPIView):
         return models.Domain.objects.filter(owner=self.request.user.pk)
 
     def perform_create(self, serializer):
-        domain_kwargs = {'owner': self.request.user}
-        if models.Domain(name=serializer.validated_data['name']).is_locally_registrable:
-            domain_kwargs['minimum_ttl'] = 60
         with PDNSChangeTracker():
-            domain = serializer.save(**domain_kwargs)
+            domain = serializer.save(owner=self.request.user)
 
         # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))

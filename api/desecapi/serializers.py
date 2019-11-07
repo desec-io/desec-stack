@@ -481,6 +481,11 @@ class DomainSerializer(serializers.ModelSerializer):
         if not models.Domain.is_registrable(domain_name, user):
             raise serializers.ValidationError('This domain name is unavailable.', code='name_unavailable')
 
+    def create(self, validated_data):
+        if 'minimum_ttl' not in validated_data and models.Domain(name=validated_data['name']).is_locally_registrable:
+            validated_data.update(minimum_ttl=60)
+        return super().create(validated_data)
+
 
 class DonationSerializer(serializers.ModelSerializer):
 
