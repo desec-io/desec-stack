@@ -7,7 +7,7 @@ import secrets
 import string
 import time
 import uuid
-from base64 import b64encode
+from base64 import urlsafe_b64encode
 from datetime import datetime, timedelta
 from os import urandom
 
@@ -185,7 +185,7 @@ class Token(rest_framework.authtoken.models.Token):
         super().save(*args, **kwargs)  # Call the "real" save() method.
 
     def generate_key(self):
-        return b64encode(urandom(21)).decode('utf-8').replace('/', '-').replace('=', '_').replace('+', '.')
+        return urlsafe_b64encode(urandom(21)).decode()
 
     class Meta:
         abstract = False

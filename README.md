@@ -146,12 +146,12 @@ While there are certainly many ways to get started hacking desec-stack, here is 
         The deSEC API will reply with an authentication token to the second request, similar to 
 
            {
-               "auth_token": "i+T3b1h/OI+H9ab8tRS98stGtURe"
+               "auth_token": "i-T3b1h_OI-H9ab8tRS98stGtURe"
            }
 
         Setup a shell variable that holds the authentication token for future use:
 
-           TOKEN=i+T3b1h/OI+H9ab8tRS98stGtURe
+           TOKEN=i-T3b1h_OI-H9ab8tRS98stGtURe
 
         Check your email and follow the instructions for completing the registration.
 

@@ -137,7 +137,7 @@ email address and password to the ``/auth/login/`` endpoint::
 If email address and password match our records, the server will reply with
 ``201 Created`` and send you the token as part of the response body::
 
-    {"auth_token": "i+T3b1h/OI+H9ab8tRS98stGtURe"}
+    {"auth_token": "i-T3b1h_OI-H9ab8tRS98stGtURe"}
 
 In case of credential mismatch, the server replies with ``401 Unauthorized``.
 
@@ -148,7 +148,7 @@ To authorize subsequent requests with the new token, set the HTTP ``Authorizatio
 header to the token value, prefixed with ``Token``::
 
     curl -X GET https://desec.io/api/v1/ \
-        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+        --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 
 Retrieve Account Information
@@ -158,7 +158,7 @@ To request information about your account, send a ``GET`` request to the
 ``/auth/account/`` endpoint::
 
     curl -X GET https://desec.io/api/v1/auth/account/ \
-        --header "Authorization: Token i+T3b1h/OI+H9ab8tRS98stGtURe"
+        --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 A JSON object representing your user account will be returned::
 
@@ -448,8 +448,8 @@ to change in the future.
 Any token is generated from 168 bits of true randomness at the server. Guessing
 the token correctly is hence practically impossible. The value corresponds to 21
 bytes and is represented by 28 characters in Base64-like encoding. That is, any token
-will only consist of URL-safe characters ``A-Z``, ``a-z``, ``-``, and ``.``. (We do not
-have any padding at the end because the string length is a multiple of 4.)
+will only consist of URL-safe characters ``A-Z``, ``a-z``, ``0-9``, ``-``, and ``_``.
+(We do not have any padding at the end because the string length is a multiple of 4.)
 
 As all tokens are stored in plain text on the server, the user may not choose
 the token value individually to prevent re-using passwords as tokens at deSEC.
