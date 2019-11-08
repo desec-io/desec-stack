@@ -103,6 +103,7 @@ services:
     depends_on:
     - dbapi
     - nslord
+    - celery
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_NS
@@ -199,7 +200,6 @@ services:
     init: true
     command: celery -A api worker -l info
     depends_on:
-    - api
     - dbapi
     - nslord
     environment:
