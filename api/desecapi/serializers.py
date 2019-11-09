@@ -13,7 +13,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
-from desecapi import models
+from desecapi import crypto, models
 
 
 class CaptchaSerializer(serializers.ModelSerializer):
@@ -584,20 +584,25 @@ class CustomFieldNameUniqueValidator(UniqueValidator):
 
 
 class AuthenticatedActionSerializer(serializers.ModelSerializer):
-    mac = serializers.CharField()  # serializer read-write, but model read-only field
+    state = serializers.CharField()  # serializer read-write, but model read-only field
 
     class Meta:
         model = models.AuthenticatedAction
-        fields = ('mac', 'created')
+        fields = ('state',)
 
     @classmethod
-    def _pack_code(cls, unpacked_data):
-        return urlsafe_b64encode(json.dumps(unpacked_data).encode()).decode()
+    def _pack_code(cls, data):
+        payload = json.dumps(data).encode()
+        payload_enc = crypto.encrypt(payload, context='desecapi.serializers.AuthenticatedActionSerializer')
+        return urlsafe_b64encode(payload_enc).decode()
 
     @classmethod
-    def _unpack_code(cls, packed_data):
+    def _unpack_code(cls, code):
         try:
-            return json.loads(urlsafe_b64decode(packed_data.encode()).decode())
+            payload_enc = urlsafe_b64decode(code.encode())
+            payload = crypto.decrypt(payload_enc, context='desecapi.serializers.AuthenticatedActionSerializer',
+                                     ttl=settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE.total_seconds())
+            return json.loads(payload.decode())
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
@@ -623,20 +628,6 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
 
         # do the regular business
         return super().to_internal_value(unpacked_data)
-
-    def validate(self, attrs):
-        if not self.instance:
-            self.instance = self.Meta.model(**attrs)  # TODO This creates an attribute on self. Side-effect intended?
-
-        # check if expired
-        if self.instance.is_expired():
-            raise ValidationError(detail='Code expired, please restart the process.', code='expired')
-
-        # check if MAC valid
-        if not self.instance.validate_mac(attrs['mac']):
-            raise ValidationError(detail='Bad signature.', code='bad_sig')
-
-        return attrs
 
     def act(self):
         self.instance.act()

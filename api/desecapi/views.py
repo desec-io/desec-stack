@@ -541,7 +541,10 @@ class AuthenticatedActionView(generics.GenericAPIView):
             data = {**request.data, 'code': self.view.kwargs['code']}  # order crucial to avoid override from payload!
             serializer = self.view.serializer_class(data=data, context=self.view.get_serializer_context())
             serializer.is_valid(raise_exception=True)
-            self.view.authenticated_action = serializer.instance
+            try:
+                self.view.authenticated_action = serializer.Meta.model(**serializer.validated_data)
+            except ValueError:
+                raise ValidationError()
 
             return self.view.authenticated_action.user, None
 

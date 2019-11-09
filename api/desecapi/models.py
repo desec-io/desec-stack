@@ -8,7 +8,8 @@ import string
 import time
 import uuid
 from base64 import urlsafe_b64encode
-from datetime import datetime, timedelta
+from datetime import timedelta
+from hashlib import sha256
 from os import urandom
 
 import psl_dns
@@ -18,13 +19,11 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
-from django.core.signing import Signer
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Manager, Q
 from django.template.loader import get_template
 from django.utils import timezone
-from django.utils.crypto import constant_time_compare
 from rest_framework.exceptions import APIException
 
 from desecapi import pdns
@@ -429,90 +428,83 @@ class AuthenticatedAction(models.Model):
     Represents a procedure call on a defined set of arguments.
 
     Subclasses can define additional arguments by adding Django model fields and must define the action to be taken by
-    implementing the `act` method.
+    implementing the `_act` method.
 
-    AuthenticatedAction provides the `mac` property that returns a Message Authentication Code (MAC) based on the
-    state. By default, the state contains the action's name (defined by the `name` property) and a timestamp; the
-    state can be extended by (carefully) overriding the `_mac_state` property. Any AuthenticatedAction instance of
-    the same subclass and state will deterministically have the same MAC, effectively allowing authenticated
-    procedure calls by third parties according to the following protocol:
+    AuthenticatedAction provides the `state` property which by default is a hash of the action type (defined by the
+    action's class path). Other information such as user state can be included in the state hash by (carefully)
+    overriding the `_state_fields` property. Instantiation of the model, if given a `state` kwarg, will raise an error
+    if the given state argument does not match the state computed from `_state_fields` at the moment of instantiation.
+    The same applies to the `act` method: If called on an object that was instantiated without a `state` kwargs, an
+    error will be raised.
 
-    (1) Instantiate the AuthenticatedAction subclass representing the action to be taken with the desired state,
-    (2) provide information on how to instantiate the instance and the MAC to a third party,
-    (3) when provided with data that allows instantiation and a valid MAC, take the defined action, possibly with
+    This effectively allows hash-authenticated procedure calls by third parties as long as the server-side state is
+    unaltered, according to the following protocol:
+
+    (1) Instantiate the AuthenticatedAction subclass representing the action to be taken (no `state` kwarg here),
+    (2) provide information on how to instantiate the instance, and the state hash, to a third party,
+    (3) when provided with data that allows instantiation and a valid state hash, take the defined action, possibly with
         additional parameters chosen by the third party that do not belong to the verified state.
     """
-    created = models.PositiveIntegerField(default=lambda: int(datetime.timestamp(timezone.now())))
+    _validated = False
 
     class Meta:
         managed = False
 
     def __init__(self, *args, **kwargs):
-        # silently ignore any value supplied for the mac value, that makes it easier to use with DRF serializers
-        kwargs.pop('mac', None)
+        state = kwargs.pop('state', None)
         super().__init__(*args, **kwargs)
 
-    @property
-    def mac(self):
-        """
-        Deterministically generates a message authentication code (MAC) for this action, based on the state as defined
-        by `self._mac_state`. Identical state is guaranteed to yield identical MAC.
-        :return:
-        """
-        return Signer().signature(json.dumps(self._mac_state))
-
-    def validate_mac(self, mac):
-        """
-        Checks if the message authentication code (MAC) provided by the first argument matches the MAC of this action.
-        Note that expiration is not verified by this method.
-        :param mac: Message Authentication Code
-        :return: True, if MAC is valid; False otherwise.
-        """
-        return constant_time_compare(
-            mac,
-            self.mac,
-        )
-
-    def is_expired(self):
-        """
-        Checks if the action's timestamp is older than the given validity period. Note that the message
-        authentication code itself is not verified by this method.
-        :return: True if expired, False otherwise.
-        """
-        created = datetime.fromtimestamp(self.created, tz=timezone.utc)
-        return timezone.now() - created > settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
+        if state is not None:
+            self._validated = self.validate_state(state)
+            if not self._validated:
+                raise ValueError
 
     @property
-    def _mac_state(self):
+    def _state_fields(self):
         """
-        Returns a list that defines the state of this action (used for MAC calculation).
+        Returns a list that defines the state of this action (used for authentication of this action).
 
         Return value must be JSON-serializable.
 
-        Values not included in the return value will not be used for MAC calculation, i.e. the MAC will be independent
-        of them.
+        Values not included in the return value will not be used for authentication, i.e. those values can be varied
+        freely and function as unauthenticated action input parameters.
 
         Use caution when overriding this method. You will usually want to append a value to the list returned by the
         parent. Overriding the behavior altogether could result in reducing the state to fewer variables, resulting
         in valid signatures when they were intended to be invalid. The suggested method for overriding is
 
             @property
-            def _mac_state:
-                return super()._mac_state + [self.important_value, self.another_added_value]
+            def _state_fields:
+                return super()._state_fields + [self.important_value, self.another_added_value]
 
         :return: List of values to be signed.
         """
         # TODO consider adding a "last change" attribute of the user to the state to avoid code
         #  re-use after the the state has been changed and changed back.
         name = '.'.join([self.__module__, self.__class__.__qualname__])
-        return [name, self.created]
+        return [name]
 
-    def act(self):
+    @property
+    def state(self):
+        state = json.dumps(self._state_fields).encode()
+        hash = sha256()
+        hash.update(state)
+        return hash.hexdigest()
+
+    def validate_state(self, value):
+        return value == self.state
+
+    def _act(self):
         """
         Conduct the action represented by this class.
         :return: None
         """
         raise NotImplementedError
+
+    def act(self):
+        if not self._validated:
+            raise RuntimeError('Action state could not be verified.')
+        return self._act()
 
 
 class AuthenticatedUserAction(AuthenticatedAction):
@@ -526,10 +518,10 @@ class AuthenticatedUserAction(AuthenticatedAction):
         managed = False
 
     @property
-    def _mac_state(self):
-        return super()._mac_state + [str(self.user.id), self.user.email, self.user.password, self.user.is_active]
+    def _state_fields(self):
+        return super()._state_fields + [str(self.user.id), self.user.email, self.user.password, self.user.is_active]
 
-    def act(self):
+    def _act(self):
         raise NotImplementedError
 
 
@@ -540,10 +532,10 @@ class AuthenticatedActivateUserAction(AuthenticatedUserAction):
         managed = False
 
     @property
-    def _mac_state(self):
-        return super()._mac_state + [self.domain]
+    def _state_fields(self):
+        return super()._state_fields + [self.domain]
 
-    def act(self):
+    def _act(self):
         self.user.activate()
 
 
@@ -554,10 +546,10 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
         managed = False
 
     @property
-    def _mac_state(self):
-        return super()._mac_state + [self.new_email]
+    def _state_fields(self):
+        return super()._state_fields + [self.new_email]
 
-    def act(self):
+    def _act(self):
         self.user.change_email(self.new_email)
 
 
@@ -567,7 +559,7 @@ class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
     class Meta:
         managed = False
 
-    def act(self):
+    def _act(self):
         self.user.change_password(self.new_password)
 
 
@@ -576,7 +568,7 @@ class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
     class Meta:
         managed = False
 
-    def act(self):
+    def _act(self):
         self.user.delete()
 
 

@@ -14,13 +14,13 @@ This involves testing five separate endpoints:
 """
 import random
 import re
+import time
 from unittest import mock
 from urllib.parse import urlparse
 
 from django.contrib.auth.hashers import is_password_usable
 from django.core import mail
 from django.urls import resolve
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
@@ -353,14 +353,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertVerificationFailureInvalidCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Bad signature.",
+            text="Invalid input.",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
     def assertVerificationFailureExpiredCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Code expired",
+            text="Invalid verification code.",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
@@ -808,8 +808,8 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
         confirmation_link = self.assertResetPasswordEmail(self.email)
 
-        with mock.patch('desecapi.models.timezone.now',
-                        return_value=timezone.now() + settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE):
+        with mock.patch('time.time',
+                        return_value=time.time() + settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE.total_seconds() + 1):
             response = self.client.verify(confirmation_link, new_password=self.random_password())
         self.assertVerificationFailureExpiredCodeResponse(response)
 
