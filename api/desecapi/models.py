@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import random
 import secrets
 import string
 import time
@@ -24,12 +23,14 @@ from django.db import models
 from django.db.models import Manager, Q
 from django.template.loader import get_template
 from django.utils import timezone
+from dns.exception import Timeout
+from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
 from desecapi import pdns
 
 logger = logging.getLogger(__name__)
-psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER)
+psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
 
 
 def validate_lower(value):
@@ -221,8 +222,11 @@ class Domain(models.Model):
         try:
             public_suffix = psl.get_public_suffix(domain_name)
             is_public_suffix = psl.is_public_suffix(domain_name)
+        except (Timeout, NoNameservers):
+            public_suffix = domain_name.rpartition('.')[2]
+            is_public_suffix = False
         except psl_dns.exceptions.UnsupportedRule as e:
-            # It would probably be fine to just return True (with the TLD acting as the
+            # It would probably be fine to treat this as a non-public suffix (with the TLD acting as the
             # public suffix and setting both public_suffix and is_public_suffix accordingly).
             # However, in order to allow to investigate the situation, it's better not catch
             # this exception. For web requests, our error handler turns it into a 503 error
