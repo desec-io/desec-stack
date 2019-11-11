@@ -378,10 +378,11 @@ To retrieve a list of currently valid tokens, issue a ``GET`` request::
 
 The server will respond with a list of token objects, each containing a
 timestamp when the token was created (note the ``Z`` indicating the UTC
-timezone), an ID to identify that token, as well as the secret token value
-itself. Each token can carry a name that has no operational
-relevance to the API and is for user reference only. All tokens created
-by the log in endpoint will have "login" as name.
+timezone) and an ID to identify that token. Furthermore, each token can
+carry a name that is of no operational relevance to the API (it is meant
+for user reference only). Certain API operations (such as login) will
+automatically populate the ``name`` field with values such as "login" or
+"dyndns".
 
 ::
 

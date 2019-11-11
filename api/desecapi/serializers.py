@@ -54,6 +54,16 @@ class TokenSerializer(serializers.ModelSerializer):
         fields = ('id', 'created', 'name', 'token',)
         read_only_fields = ('created', 'token', 'id')
 
+    def __init__(self, *args, include_plain=False, **kwargs):
+        self.include_plain = include_plain
+        return super().__init__(*args, **kwargs)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if not self.include_plain:
+            fields.pop('token')
+        return fields
+
 
 class RequiredOnPartialUpdateCharField(serializers.CharField):
     """

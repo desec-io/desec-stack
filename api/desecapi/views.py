@@ -60,6 +60,12 @@ class TokenViewSet(IdempotentDestroy,
     def get_queryset(self):
         return self.request.user.auth_tokens.all()
 
+    def get_serializer(self, *args, **kwargs):
+        # When creating a new token, return the plaintext representation
+        if self.request.method == 'POST':
+            kwargs.setdefault('include_plain', True)
+        return super().get_serializer(*args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -442,7 +448,7 @@ class AccountLoginView(generics.GenericAPIView):
         token = models.Token.objects.create(user=user, name="login")
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
-        data = serializers.TokenSerializer(token).data
+        data = serializers.TokenSerializer(token, include_plain=True).data
         return Response(data)
 
 
@@ -585,7 +591,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
                           "configuring a router (or other DNS client), place it into the password field of the "
                           "configuration. Do not confuse the secret token with your account password! Your password is "
                           "not needed for DNS configuration, and you should not store it anywhere in plain text.",
-                **serializers.TokenSerializer(token).data,
+                **serializers.TokenSerializer(token, include_plain=True).data,
             })
         else:
             return Response({
