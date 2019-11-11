@@ -1,5 +1,6 @@
 import base64
 
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authentication import (
     BaseAuthentication,
@@ -13,6 +14,10 @@ from desecapi.serializers import EmailPasswordSerializer
 
 class TokenAuthentication(RestFrameworkTokenAuthentication):
     model = Token
+
+    def authenticate_credentials(self, key):
+        key = Token.make_hash(key)
+        return super().authenticate_credentials(key)
 
 
 class BasicTokenAuthentication(BaseAuthentication):
@@ -53,6 +58,7 @@ class BasicTokenAuthentication(BaseAuthentication):
         invalid_token_message = 'Invalid basic auth token'
         try:
             user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
+            key = Token.make_hash(key)
             token = self.model.objects.get(key=key)
             domain_names = token.user.domains.values_list('name', flat=True)
             if user not in ['', token.user.email] and not user.lower() in domain_names:
@@ -91,6 +97,7 @@ class URLParamAuthentication(BaseAuthentication):
         return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
 
     def authenticate_credentials(self, _, key):
+        key = Token.make_hash(key)
         try:
             token = self.model.objects.get(key=key)
         except self.model.DoesNotExist:
@@ -109,3 +116,8 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
         serializer = EmailPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return self.authenticate_credentials(serializer.data['email'], serializer.data['password'], request)
+
+
+class TokenHasher(PBKDF2PasswordHasher):
+    algorithm = 'pbkdf2_sha256_iter1'
+    iterations = 1

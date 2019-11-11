@@ -14,6 +14,7 @@ from os import urandom
 import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
@@ -163,26 +164,23 @@ class User(AbstractBaseUser):
 
 
 class Token(rest_framework.authtoken.models.Token):
-    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
-    # relation to user is a ForeignKey, so each user can have more than one token
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    key = models.CharField("Key", max_length=128, db_index=True, unique=True)
     user = models.ForeignKey(
         User, related_name='auth_tokens',
         on_delete=models.CASCADE, verbose_name="User"
     )
     name = models.CharField("Name", max_length=64, default="")
-    user_specific_id = models.BigIntegerField("User-Specific ID")
-
-    def save(self, *args, **kwargs):
-        if not self.user_specific_id:
-            self.user_specific_id = random.randrange(16 ** 8)
-        super().save(*args, **kwargs)  # Call the "real" save() method.
+    plain = None
 
     def generate_key(self):
-        return urlsafe_b64encode(urandom(21)).decode()
+        self.plain = urlsafe_b64encode(urandom(21)).decode()
+        self.key = Token.make_hash(self.plain)
+        return self.key
 
-    class Meta:
-        abstract = False
-        unique_together = (('user', 'user_specific_id'),)
+    @staticmethod
+    def make_hash(plain):
+        return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
 
 
 validate_domain_name = [

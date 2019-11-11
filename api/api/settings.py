@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 from datetime import timedelta
 
+from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HASHERS
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -96,6 +98,9 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'ALLOWED_VERSIONS': ['v1', 'v2'],
 }
+
+PASSWORD_HASHER_TOKEN = 'desecapi.authentication.TokenHasher'
+PASSWORD_HASHERS = DEFAULT_PASSWORD_HASHERS + [PASSWORD_HASHER_TOKEN]
 
 # CORS
 # No need to add Authorization to CORS_ALLOW_HEADERS (included by default)

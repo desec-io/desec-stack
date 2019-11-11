@@ -89,7 +89,10 @@ exports.token = {
     properties: {
         name: { type: "string" },
         created: { type: "string" },
-        id: { type: "integer" },
+        id: {
+            type: "string",
+            format: "uuid"
+        },
     },
     required: ["name", "created", "id"]
 };

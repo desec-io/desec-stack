@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
@@ -398,7 +400,8 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
                 self.assertEqual(len(mail.outbox), i + 1)
                 email = str(mail.outbox[0].message())
                 self.assertTrue(name in email)
-                self.assertTrue(any(token.key in email for token in Token.objects.filter(user=self.owner).all()))
+                password_plain = re.search('password: (.*)', email).group(1)
+                self.assertToken(password_plain)
                 self.assertFalse(self.user.plain_password in email)
 
     def test_domain_limit(self):

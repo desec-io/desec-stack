@@ -378,7 +378,7 @@ To retrieve a list of currently valid tokens, issue a ``GET`` request::
 
 The server will respond with a list of token objects, each containing a
 timestamp when the token was created (note the ``Z`` indicating the UTC
-timezone) and an ID to identify that token. Furthermore, each token can
+timezone) and a UUID to identify that token. Furthermore, each token can
 carry a name that is of no operational relevance to the API (it is meant
 for user reference only). Certain API operations (such as login) will
 automatically populate the ``name`` field with values such as "login" or
@@ -389,14 +389,12 @@ automatically populate the ``name`` field with values such as "login" or
     [
         {
             "created": "2018-09-06T07:05:54.080564Z",
-            "id": 14423,
-            "value": "4yScSMFFNdAlk6WZuLIwYBVYnXPF",
+            "id": "3159e485-5499-46c0-ae2b-aeb84d627a8e",
             "name": "login"
         },
         {
             "created": "2018-09-06T08:53:26.428396Z",
-            "id": 36483,
-            "value": "mu4W4MHuSc0HyrGD1h/dnKuZBond",
+            "id": "76d6e39d-65bc-4ab2-a1b7-6e94eee0a534",
             "name": ""
         }
     ]
@@ -418,8 +416,8 @@ will reply with ``201 Created`` and the created token in the response body::
 
     {
         "created": "2018-09-06T09:08:43.762697Z",
-        "id": 73658,
-        "value": "4pnk7u+NHvrEkFzrhFDRTjGFyX+S",
+        "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
+        "token": "4pnk7u+NHvrEkFzrhFDRTjGFyX+S",
         "name": "my new token"
     }
 
@@ -443,18 +441,17 @@ any action. We may implement specialized tokens in the future.
 Token Security Considerations
 `````````````````````````````
 
-This section is for information only. Token length and encoding may be subject
-to change in the future.
+This section is for information only. Token length and encoding may change in
+the future.
 
-Any token is generated from 168 bits of true randomness at the server. Guessing
-the token correctly is hence practically impossible. The value corresponds to 21
-bytes and is represented by 28 characters in Base64-like encoding. That is, any token
-will only consist of URL-safe characters ``A-Z``, ``a-z``, ``0-9``, ``-``, and ``_``.
-(We do not have any padding at the end because the string length is a multiple of 4.)
+Any token is generated from 168 bits of randomness at the server and stored in
+hashed format (PBKDF2-HMAC-SHA256). Guessing the token correctly or reversing
+the hash is hence practically impossible.
 
-As all tokens are stored in plain text on the server, the user may not choose
-the token value individually to prevent re-using passwords as tokens at deSEC.
+The token value is represented by 28 characters using a URL-safe variant of
+base64 encoding. It comprises only the characters ``A-Z``, ``a-z``, ``0-9``, ``-``,
+and ``_``. (Base64 padding is not needed as the string length is a multiple of 4.)
 
-Old versions of deSEC encoded 20-byte tokens in 40 characters with hexadecimal
+Old versions of the API encoded 20-byte tokens in 40 characters with hexadecimal
 representation. Such tokens will not be issued anymore, but remain valid until
 invalidated by the user.

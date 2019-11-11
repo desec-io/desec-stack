@@ -16,6 +16,7 @@ DATABASES = {
 # avoid computationally expensive password hashing for tests
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
+    PASSWORD_HASHER_TOKEN,
 ]
 
 REST_FRAMEWORK['PAGE_SIZE'] = 20

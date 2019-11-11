@@ -256,7 +256,8 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None, email=None):
         if domain and self.has_local_suffix(domain):
             body = self.assertEmailSent('', body_contains=domain, recipient=email)
-            self.assertTrue(any(token.key in body for token in Token.objects.filter(user__email=email).all()))
+            password_plain = re.search('password: (.*)', body).group(1)
+            self.assertToken(password_plain, user=User.objects.get(email=email))
             text = 'Success! Here is the secret token'
         else:
             self.assertNoEmailSent()

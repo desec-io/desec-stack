@@ -55,7 +55,6 @@ class TokenViewSet(IdempotentDestroy,
                    GenericViewSet):
     serializer_class = serializers.TokenSerializer
     permission_classes = (IsAuthenticated, )
-    lookup_field = 'user_specific_id'
 
     def get_queryset(self):
         return self.request.user.auth_tokens.all()

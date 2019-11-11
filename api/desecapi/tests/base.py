@@ -10,6 +10,7 @@ from typing import Union, List, Dict
 from unittest import mock
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.db import connection
 from django.utils import timezone
 from httpretty import httpretty, core as hr_core
@@ -545,6 +546,12 @@ class MockPDNSTestCase(APITestCase):
         if body:
             self.assertJSONEqual(response.content, body)
 
+    def assertToken(self, plain, user=None):
+        user = user or self.owner
+        self.assertTrue(any(check_password(plain, hashed, preferred='pbkdf2_sha256_iter1')
+                            for hashed in Token.objects.filter(user=user).values_list('key', flat=True)))
+        self.assertEqual(len(Token.make_hash(plain).split('$')), 4)
+
     @classmethod
     def setUpTestData(cls):
         httpretty.enable(allow_net_connect=False)
@@ -689,7 +696,7 @@ class DesecTestCase(MockPDNSTestCase):
     def create_token(cls, user):
         token = Token.objects.create(user=user)
         token.save()
-        return token.key
+        return token.plain
 
     @classmethod
     def create_user(cls, **kwargs):

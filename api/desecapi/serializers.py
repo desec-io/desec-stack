@@ -45,9 +45,7 @@ class CaptchaSolutionSerializer(serializers.Serializer):
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    token = serializers.ReadOnlyField(source='key')
-    # note this overrides the original "id" field, which is the db primary key
-    id = serializers.ReadOnlyField(source='user_specific_id')
+    token = serializers.ReadOnlyField(source='plain')
 
     class Meta:
         model = models.Token
