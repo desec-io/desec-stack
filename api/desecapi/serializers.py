@@ -45,14 +45,14 @@ class CaptchaSolutionSerializer(serializers.Serializer):
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    auth_token = serializers.ReadOnlyField(source='key')
+    token = serializers.ReadOnlyField(source='key')
     # note this overrides the original "id" field, which is the db primary key
     id = serializers.ReadOnlyField(source='user_specific_id')
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'name', 'auth_token',)
-        read_only_fields = ('created', 'auth_token', 'id')
+        fields = ('id', 'created', 'name', 'token',)
+        read_only_fields = ('created', 'token', 'id')
 
 
 class RequiredOnPartialUpdateCharField(serializers.CharField):

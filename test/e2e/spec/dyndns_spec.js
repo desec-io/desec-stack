@@ -37,8 +37,8 @@ describe("dyndns service", function () {
                         "email": email,
                         "password": password,
                     }).then(function (loginResponse) {
-                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                        token = loginResponse.body.auth_token;
+                        expect(loginResponse.body.token).to.match(schemas.TOKEN_REGEX);
+                        token = loginResponse.body.token;
                         chakram.setRequestHeader('Authorization', 'Token ' + token);
                     });
                 });

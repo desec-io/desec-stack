@@ -87,12 +87,12 @@ exports.rrsets = {
 
 exports.token = {
     properties: {
-        auth_token: { type: "string" },
+        token: { type: "string" },
         name: { type: "string" },
         created: { type: "string" },
         id: { type: "integer" },
     },
-    required: ["auth_token", "name", "created", "id"]
+    required: ["token", "name", "created", "id"]
 };
 
 exports.tokens = {

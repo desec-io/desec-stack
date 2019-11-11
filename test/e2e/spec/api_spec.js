@@ -63,7 +63,7 @@ describe("API v1", function () {
                         return chakram.post('/domains/', {
                             name: publicSuffix,
                         }, {
-                            headers: {'Authorization': 'Token ' + loginResponse.body.auth_token }
+                            headers: {'Authorization': 'Token ' + loginResponse.body.token }
                         }); // note that we ignore errors here
                     });
             });
@@ -130,7 +130,7 @@ describe("API v1", function () {
                 "email": email,
                 "password": password,
             }).then(function (loginResponse) {
-                expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
+                expect(loginResponse.body.token).to.match(schemas.TOKEN_REGEX);
             });
         });
 
@@ -152,7 +152,7 @@ describe("API v1", function () {
                             "email": email2,
                             "password": password2,
                         }).then(function (response) {
-                            token2 = response.body.auth_token
+                            token2 = response.body.token
                         });
                     });
                 });
@@ -215,8 +215,8 @@ describe("API v1", function () {
                         "email": email,
                         "password": password,
                     }).then(function (loginResponse) {
-                        expect(loginResponse.body.auth_token).to.match(schemas.TOKEN_REGEX);
-                        token = loginResponse.body.auth_token;
+                        expect(loginResponse.body.token).to.match(schemas.TOKEN_REGEX);
+                        token = loginResponse.body.token;
                         chakram.setRequestHeader('Authorization', 'Token ' + token);
                     });
                 });

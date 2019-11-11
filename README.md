@@ -261,7 +261,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
        EMAIL=john@example.com
        PASSWORD=insecure
        http POST https://desec.${DOMAIN}/api/v1/auth/users/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\"
-       TOKEN=$(http POST https://desec.${DOMAIN}/api/v1/auth/token/login/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\" | jq -r .auth_token)
+       TOKEN=$(http POST https://desec.${DOMAIN}/api/v1/auth/token/login/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\" | jq -r .token)
        http POST https://desec.${DOMAIN}/api/v1/domains/ Authorization:"Token ${TOKEN}" name:='"test.example"'
        http POST https://desec.${DOMAIN}/api/v1/domains/test.example/rrsets/ Authorization:"Token ${TOKEN}" type:=\"A\" ttl:=60 records:='["127.0.0.254"]'
 

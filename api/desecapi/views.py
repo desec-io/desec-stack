@@ -581,8 +581,10 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
             token = models.Token.objects.create(user=action.user, name='dyndns')
             return Response({
-                'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
-                          'client). This password is different from your account password for security reasons.',
+                'detail': "Success! Here is the secret token required for updating your domain's DNS information. When "
+                          "configuring a router (or other DNS client), place it into the password field of the "
+                          "configuration. Do not confuse the secret token with your account password! Your password is "
+                          "not needed for DNS configuration, and you should not store it anywhere in plain text.",
                 **serializers.TokenSerializer(token).data,
             })
         else:

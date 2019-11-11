@@ -40,7 +40,7 @@ Here's a quick intro how to get started:
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
-   The response body will contain an ``auth_token`` which is used to
+   The response body will contain an ``token`` which is used to
    authenticate requests to the DNS management endpoints as demonstrated in
    the next step.
 

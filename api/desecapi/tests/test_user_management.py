@@ -95,7 +95,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def login_user(self, email, password):
         response = self.client.login_user(email, password)
-        token = response.data.get('auth_token')
+        token = response.data.get('token')
         return token, response
 
     def reset_password(self, email):
@@ -210,7 +210,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertLoginSuccessResponse(self, response):
         return self.assertContains(
             response=response,
-            text="auth_token",
+            text="token",
             status_code=status.HTTP_200_OK
         )
 
@@ -257,7 +257,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if domain and self.has_local_suffix(domain):
             body = self.assertEmailSent('', body_contains=domain, recipient=email)
             self.assertTrue(any(token.key in body for token in Token.objects.filter(user__email=email).all()))
-            text = 'Success! Here is the password'
+            text = 'Success! Here is the secret token'
         else:
             self.assertNoEmailSent()
             text = 'Success! Please check the docs for the next steps'
