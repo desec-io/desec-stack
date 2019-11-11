@@ -689,7 +689,7 @@ class DesecTestCase(MockPDNSTestCase):
     def create_token(cls, user):
         token = Token.objects.create(user=user)
         token.save()
-        return token
+        return token.key
 
     @classmethod
     def create_user(cls, **kwargs):
@@ -903,7 +903,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def setUp(self):
         super().setUp()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         self.setUpMockPatch()
 
 
@@ -939,8 +939,8 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def setUp(self):
         super().setUp()
         self.client_token_authorized = self.client_class()
-        self.client.set_credentials_basic_auth(self.my_domain.name.lower(), self.token.key)
-        self.client_token_authorized.set_credentials_token_auth(self.token.key)
+        self.client.set_credentials_basic_auth(self.my_domain.name.lower(), self.token)
+        self.client_token_authorized.set_credentials_token_auth(self.token)
 
 
 class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
