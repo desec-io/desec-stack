@@ -907,15 +907,6 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.setUpMockPatch()
 
 
-class LockedDomainOwnerTestCase(DomainOwnerTestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.owner.locked = timezone.now()
-        cls.owner.save()
-
-
 class DynDomainOwnerTestCase(DomainOwnerTestCase):
     DYN = True
 

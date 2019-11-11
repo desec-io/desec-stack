@@ -29,13 +29,9 @@ class Command(BaseCommand):
                 self._sync_domain(domain)
                 self.stdout.write(' synced')
             except Exception as e:
-                if str(e).startswith('Could not find domain ') \
-                        and domain.owner.locked:
-                    self.stdout.write(' skipped')
-                else:
-                    self.stdout.write(' failed')
-                    msg = 'Error while processing {}: {}'.format(domain.name, e)
-                    raise CommandError(msg)
+                self.stdout.write(' failed')
+                msg = 'Error while processing {}: {}'.format(domain.name, e)
+                raise CommandError(msg)
 
     @staticmethod
     @transaction.atomic
