@@ -132,6 +132,8 @@ EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'deSEC <support@desec.io>'
 ADMINS = [(address.split("@")[0], address) for address in os.environ['DESECSTACK_API_ADMIN'].split()]
 
+DESECSTACK_DOMAIN = os.environ['DESECSTACK_DOMAIN']
+
 # default NS records
 DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
 DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
