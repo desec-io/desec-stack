@@ -384,7 +384,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         return email, password
 
     def _test_registration_with_domain(self, email=None, password=None, domain=None, expect_failure_response=None,
-                                       tampered_domain=None, local=False):
+                                       tampered_domain=None):
         domain = domain or self.random_domain_name()
 
         email, password, response = self.register_user(email, password, domain=domain)
@@ -497,7 +497,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             self._test_registration_with_domain(domain='co.uk', expect_failure_response=self.assertRegistrationFailureDomainUnavailableResponse)
         local_public_suffix = random.sample(self.AUTO_DELEGATION_DOMAINS, 1)[0]
         with self.get_psl_context_manager(local_public_suffix):
-            self._test_registration_with_domain(domain=self.random_domain_name(suffix=local_public_suffix), local=True)
+            self._test_registration_with_domain(domain=self.random_domain_name(suffix=local_public_suffix))
 
     def test_registration_with_tampered_domain(self):
         PublicSuffixMockMixin.setUpMockPatch(self)
