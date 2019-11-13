@@ -30,10 +30,6 @@ class CaptchaModelTestCase(TestCase):
         self.assertNotEqual(captcha[0].content, '')
         self.assertNotEqual(captcha[0].content, captcha[1].content)
 
-
-class CaptchaModelTestCase(TestCase):
-    captcha_class = Captcha
-
     def test_valid_png(self):
         for _ in range(10):
             # use the show method on the Image object to see the actual image during test run
