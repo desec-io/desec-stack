@@ -249,7 +249,7 @@ networks:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.1
       - subnet: ${DESECSTACK_IPV6_SUBNET}
-  # Make sure these come after the front network (lexical order). This is why we 
+  # Make sure these come after the front network (lexical order). This is why we
   # call it rear, not back. See https://github.com/docker/docker/issues/27101
   rearapi_celery:
     driver: bridge
