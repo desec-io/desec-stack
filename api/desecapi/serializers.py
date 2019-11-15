@@ -482,7 +482,10 @@ class DomainSerializer(serializers.ModelSerializer):
     @staticmethod
     def raise_if_domain_unavailable(domain_name: str, user: models.User):
         if not models.Domain.is_registrable(domain_name, user):
-            raise serializers.ValidationError('This domain name is unavailable.', code='name_unavailable')
+            raise serializers.ValidationError(
+                'This domain name is unavailable because it is already taken, or disallowed by policy.',
+                code='name_unavailable'
+            )
 
     def create(self, validated_data):
         if 'minimum_ttl' not in validated_data and models.Domain(name=validated_data['name']).is_locally_registrable:
