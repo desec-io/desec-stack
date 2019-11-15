@@ -60,6 +60,11 @@ const routes = [
     component: () => import('../views/Donate.vue')
   },
   {
+    path: '/howto/',
+    name: 'howto',
+    component: () => import('../views/HowTo.vue')
+  },
+  {
     path: '/impressum/',
     name: 'impressum',
     component: () => import('../views/Impressum.vue')
