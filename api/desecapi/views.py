@@ -571,13 +571,17 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
+        if not self.authenticated_action.domain:
+            return self._finalize_without_domain()
+        else:
+            domain = self._create_domain()
+            if domain.is_locally_registrable:
+                return self._finalize_with_local_public_suffix_domain(domain)
+            else:
+                return self._finalize_with_domain()
+
+    def _create_domain(self):
         action = self.authenticated_action
-
-        if not action.domain:
-            return Response({
-                'detail': 'Success! Please log in at {}.'.format(self.request.build_absolute_uri(reverse('v1:login')))
-            })
-
         serializer = serializers.DomainSerializer(
             data={'name': action.domain},
             context=self.get_serializer_context()
@@ -591,23 +595,29 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
                 f'The requested domain {action.domain} could not be registered (reason: {reasons}). '
                 f'Please start over and sign up again.'
             )
-        domain = PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
+        # TODO the following line is subject to race condition and can fail, as for the domain name, we have that
+        #  time-of-check != time-of-action
+        return PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
 
-        if domain.is_locally_registrable:
-            # TODO the following line raises Domain.DoesNotExist under unknown conditions
-            PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
-            token = models.Token.objects.create(user=action.user, name='dyndns')
-            return Response({
-                'detail': "Success! Here is the secret token required for updating your domain's DNS information. When "
-                          "configuring a router (or other DNS client), place it into the password field of the "
-                          "configuration. Do not confuse the secret token with your account password! Your password is "
-                          "not needed for DNS configuration, and you should not store it anywhere in plain text.",
-                **serializers.TokenSerializer(token, include_plain=True).data,
+    def _finalize_without_domain(self):
+        return Response({
+                'detail': 'Success! Please log in at {}.'.format(self.request.build_absolute_uri(reverse('v1:login')))
             })
-        else:
-            return Response({
-                'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.'
-            })
+
+    def _finalize_with_local_public_suffix_domain(self, domain):
+        # TODO the following line raises Domain.DoesNotExist under unknown conditions
+        PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
+        token = models.Token.objects.create(user=domain.owner, name='dyndns')
+        return Response({
+            'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
+                      'client). This password is different from your account password for security reasons.',
+            **serializers.TokenSerializer(token).data,
+        })
+
+    def _finalize_with_domain(self):
+        return Response({
+            'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.'
+        })
 
 
 class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
