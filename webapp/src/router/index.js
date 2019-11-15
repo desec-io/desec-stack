@@ -33,6 +33,16 @@ const routes = [
     name: 'docs',
     beforeEnter(to) { location.href = to.path },
   },
+  {
+    path: '/impressum/',
+    name: 'impressum',
+    component: () => import('../views/Impressum.vue')
+  },
+  {
+    path: '/privacy-policy/',
+    name: 'privacy-policy',
+    component: () => import('../views/PrivacyPolicy.vue')
+  },
 ]
 
 const router = new VueRouter({

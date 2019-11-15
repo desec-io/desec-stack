@@ -57,8 +57,8 @@
         </div>
         <div class="d-sm-flex flex-row align-right py-2">
           <div class="px-2"><a href="//github.com/desec-io/desec-stack/">Source Code</a></div>
-          <div class="px-2"><a href="//encrypt.to/0x7963D427FD32AC6FD20FD0B1EFD6143A3EF22D2F">Contact</a></div>
-          <div class="px-2"><a href="#">Data Protection Policy</a></div>
+          <div class="px-2"><router-link :to="{name: 'impressum'}">Impressum (Legal Notice)</router-link></div>
+          <div class="px-2"><router-link :to="{name: 'privacy-policy'}">Datenschutzerklärung (Privacy Policy)</router-link></div>
         </div>
       </div>
       <div class="grey darken-4 d-md-flex flex-row justify-space-between pa-6">

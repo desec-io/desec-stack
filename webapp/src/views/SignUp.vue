@@ -113,7 +113,11 @@
                       tabindex="4"
               >
                 <template slot="label">
-                  <v-flex>Yes, I agree to the <a @click.stop="privacyPolicy">privacy policy</a>.</v-flex>
+                  <v-layout>
+                    <v-flex x12>
+                      Yes, I agree to the <a @click.stop="privacyPolicy">privacy policy</a>.
+                    </v-flex>
+                  </v-layout>
                 </template>
               </v-checkbox>
             </v-layout>
