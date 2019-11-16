@@ -34,6 +34,11 @@ const routes = [
     beforeEnter(to) { location.href = to.path },
   },
   {
+    path: '/donate/',
+    name: 'donate',
+    component: () => import('../views/Donate.vue')
+  },
+  {
     path: '/impressum/',
     name: 'impressum',
     component: () => import('../views/Impressum.vue')

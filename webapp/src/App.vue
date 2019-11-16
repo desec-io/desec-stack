@@ -71,7 +71,7 @@
           </p>
         </div>
         <div>
-          <p>Please Donate! 💛</p>
+          <p>Please <router-link :to="{name: 'donate'}">donate</router-link>! 💛</p>
           <p>
             European Bank Account:<br>
             IBAN: DE91&nbsp;8306&nbsp;5408&nbsp;0004&nbsp;1580&nbsp;59<br>

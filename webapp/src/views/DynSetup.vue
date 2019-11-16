@@ -149,11 +149,7 @@
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn
-                      block
-                      outlined
-                      :to="{name: 'signup'}"
-              >Donate</v-btn> <!-- TODO -->
+              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>
