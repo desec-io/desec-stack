@@ -59,8 +59,6 @@ Although most configuration is contained in this repository, some external depen
     - replication-manager related
       - `DESECSTACK_REPLICATION_MANAGER_CERTS`: a directory where `replication-manager` (to configure slave replication) will dump the slave's TLS key and certificate
 
-Running the standard stack will also fire up an instance of the `www` proxy service (see `desec-www` repository), assuming that the `desec-static` project is located under the `static` directory/symlink.
-
 How to Run
 ----------
 
@@ -234,15 +232,6 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     Optionally, edit the file and
     1. configure an email server host name, user name, and password to deliver emails can be included in `.env`. A convenient option is a MailTrap account.
     2. adjust the network prefixes in `.env` to avoid collisions with other local networks.
-
-1. **Get desec-static.** Currently, a second clone is needed to start desec-stack. We are planning to remove this dependency.
-    Static is responsible for the static content (i.e. website) of desec-stack.
-    As it currently requires components which we may not distribute, the website in your deployment will be broken. This will not affect the API in any way.
-    In the project root,
-
-       rm static
-       git clone https://github.com/desec-io/desec-static.git static
-       mkdir static/ultima  # workaround for proprietary components
 
 1. **Run desec-stack.** To run desec-stack, use
 

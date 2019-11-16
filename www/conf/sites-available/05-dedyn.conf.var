@@ -30,7 +30,7 @@ server {
 
         location =/check {
 		add_header Strict-Transport-Security "max-age=31536000" always;
-		root /usr/share/nginx/html;
+		root /var/www/html;
 		try_files /check.html =404;
         }
 }

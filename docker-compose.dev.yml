@@ -12,10 +12,6 @@ services:
     logging:
       driver: "json-file"
 
-  static:
-    logging:
-      driver: "json-file"
-
   dbapi:
     logging:
       driver: "json-file"

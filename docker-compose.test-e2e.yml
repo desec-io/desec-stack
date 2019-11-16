@@ -21,11 +21,6 @@ services:
     logging:
       driver: "json-file"
 
-  static:
-    build: test/e2e/mock-static # build a mock static to save time executing tests
-    logging:
-      driver: "json-file"
-
   test-e2e:
     build: test/e2e
     restart: "no"

@@ -105,23 +105,9 @@ server {
     #####
     # Static content for the web app
     #####
-    location /app/static/ {
-        root   /usr/share/nginx/html/;
-    }
-
-    location /app/ {
+    location / {
         root   /usr/share/nginx/html/;
         index  index.html;
-        try_files $uri $uri/ /app/index.html =404;
+        try_files $uri $uri/ /index.html =404;
     }
-
-	######
-	# Pass static content requests
-	######
-	location / {
-		# we limit downloading of static assets, but bootstrapping the website takes a lot of requests (40+)
-		limit_req zone=perip-general burst=1000 nodelay;
-
-		proxy_pass http://static;
-	}
 }

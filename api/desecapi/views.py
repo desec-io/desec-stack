@@ -613,7 +613,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
         token = models.Token.objects.create(user=domain.owner, name='dyndns')
         if self.request.accepted_renderer.format == 'html':
-            return redirect(f'/app/dynsetup/{domain.name}/#{token.plain}')
+            return redirect(f'/dynsetup/{domain.name}/#{token.plain}')
         else:
             return Response({
                 'detail': 'Success! Here is the password ("token") to configure your router (or any other dynDNS '

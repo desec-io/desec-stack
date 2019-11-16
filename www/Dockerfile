@@ -12,6 +12,6 @@ COPY entrypoint.sh .
 VOLUME /etc/ssl/private
 
 # mountable content
-VOLUME /usr/share/nginx/html
+VOLUME /var/www/html
 
 CMD ["./entrypoint.sh"]

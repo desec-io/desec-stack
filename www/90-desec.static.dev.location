@@ -14,5 +14,5 @@ location / {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
 
-    proxy_pass http://webapp:443; # FIXME Note that we use 443 for non-SSL communication, to make webpack dev tools use port 443, too. A vue-cli upgrade may help.
+    proxy_pass http://webapp:443; # FIXME Note that we use 443 for plain text communication, to make webpack dev tools use port 443, too. A vue-cli upgrade may help.
 }

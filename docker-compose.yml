@@ -10,13 +10,12 @@ services:
     - "443:443"
     volumes:
     - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
-    - ./www/html:/usr/share/nginx/html:ro
-    - webapp_dist:/usr/share/nginx/html/app:ro
+    - webapp_dist:/usr/share/nginx/html:ro
+    - ./www/html:/var/www/html:ro
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_WWW_CERTS
     depends_on:
-    - static
     - api
     mac_address: 06:42:ac:10:00:80
     networks:
@@ -28,18 +27,6 @@ services:
       driver: "syslog"
       options:
         tag: "desec/www"
-    restart: unless-stopped
-
-  static:
-    build: static
-    image: desec/dedyn-static:latest
-    init: true
-    networks:
-    - rearwww
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/static"
     restart: unless-stopped
 
   dbapi:

@@ -35,10 +35,7 @@ services:
   - docker
 
 before_install:
-  # Get web content
-  - rm -f static
-  - git clone https://github.com/desec-io/desec-static.git static
-  - mkdir static/ultima certs dbmastercerts
+  - mkdir certs dbmastercerts
 
   # Prepare images
   # we build them separately to get timing information from travis
@@ -51,9 +48,6 @@ before_install:
   - docker-compose build nsmaster
   - docker-compose build api
   - docker-compose build www
-
-  # mock images
-  - docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build static
 
   # test images
   - docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build test-e2e
