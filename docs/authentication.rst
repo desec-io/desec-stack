@@ -285,7 +285,13 @@ Conflict`` and not delete your account.
 Log Out
 ```````
 
-To invalidate an authentication token (log out), please see `Delete Tokens`_.
+To invalidate an authentication token (log out), send a POST request to the
+the log out endpoint::
+
+    curl -X POST https://desec.io/api/v1/auth/logout/ \
+        --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
+
+To delete other tokens based on their ID, see `Delete Tokens`_.
 
 
 Security Considerations
@@ -425,7 +431,7 @@ will reply with ``201 Created`` and the created token in the response body::
 Delete Tokens
 `````````````
 
-To delete an existing token via the token management endpoints, issue a
+To delete an existing token by its ID via the token management endpoints, issue a
 ``DELETE`` request on the token's endpoint, replacing ``:id`` with the
 token ``id`` value::
 
@@ -434,8 +440,11 @@ token ``id`` value::
 
 The server will reply with ``204 No Content``, even if the token was not found.
 
+If you do not have the token UUID, but you do have the token value itself, you
+can use the `Log Out`_ endpoint to delete it.
+
 Note that, for now, all tokens have equal power -- every token can authorize
-any action. We may implement specialized tokens in the future.
+any action. We are planning to implement scoped tokens in the future.
 
 
 Token Security Considerations

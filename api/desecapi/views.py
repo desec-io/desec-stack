@@ -205,6 +205,7 @@ class Root(APIView):
                     'change-email': reverse('account-change-email', request=request),
                     'reset-password': reverse('account-reset-password', request=request),
                 },
+                'logout': reverse('logout', request=request),
                 'tokens': reverse('token-list', request=request),
                 'domains': reverse('domain-list', request=request),
             }
@@ -449,6 +450,18 @@ class AccountLoginView(generics.GenericAPIView):
 
         data = serializers.TokenSerializer(token, include_plain=True).data
         return Response(data)
+
+
+class AccountLogoutView(generics.GenericAPIView, mixins.DestroyModelMixin):
+    authentication_classes = (auth.TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self):
+        # self.request.auth contains the hashed key as it is stored in the database
+        return models.Token.objects.get(key=self.request.auth)
+
+    def post(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class AccountChangeEmailView(generics.GenericAPIView):

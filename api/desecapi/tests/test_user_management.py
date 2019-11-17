@@ -47,6 +47,9 @@ class UserManagementClient(APIClient):
             'password': password,
         })
 
+    def logout(self, token):
+        return self.post(reverse('v1:logout'), HTTP_AUTHORIZATION=f'Token {token}')
+
     def reset_password(self, email):
         return self.post(reverse('v1:account-reset-password'), {
             'email': email,
@@ -97,6 +100,9 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         response = self.client.login_user(email, password)
         token = response.data.get('token')
         return token, response
+
+    def logout(self, token):
+        return self.client.logout(token)
 
     def reset_password(self, email):
         return self.client.reset_password(email)
@@ -213,6 +219,9 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             text="token",
             status_code=status.HTTP_200_OK
         )
+
+    def assertLogoutSuccessResponse(self, response):
+        return self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
     def assertRegistrationFailurePasswordRequiredResponse(self, response):
         self.assertContains(
@@ -418,6 +427,11 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertLoginSuccessResponse(response)
         return token
 
+    def _test_logout(self):
+        response = self.logout(self.token)
+        self.assertLogoutSuccessResponse(response)
+        return response
+
     def _test_reset_password(self, email, new_password=None, **kwargs):
         new_password = new_password or self.random_password()
         self.assertResetPasswordSuccessResponse(self.reset_password(email))
@@ -455,6 +469,7 @@ class UserLifeCycleTestCase(UserManagementTestCase):
         mail.outbox = []
         self.token = self._test_login()
         email = self._test_change_email()
+        self._test_logout()
         self._test_delete_account(email, self.password)
 
 
