@@ -405,6 +405,9 @@ automatically populate the ``name`` field with values such as "login" or
         }
     ]
 
+You can also retrieve an individual token by appending ``:id/`` to the URL,
+for example in order to look up a token's name or creation timestamp.
+
 
 Create Additional Tokens
 ````````````````````````

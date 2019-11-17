@@ -50,6 +50,7 @@ class DomainView:
 
 class TokenViewSet(IdempotentDestroy,
                    mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
                    mixins.DestroyModelMixin,
                    mixins.ListModelMixin,
                    GenericViewSet):
