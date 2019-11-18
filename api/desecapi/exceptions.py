@@ -1,17 +1,28 @@
 import json
 from json import JSONDecodeError
 
-from rest_framework.exceptions import APIException
+from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
+
+
+class RequestEntityTooLarge(APIException):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    default_detail = 'Payload too large.'
+    default_code = 'too_large'
+
+
+class PDNSValidationError(ValidationError):
+    status_code = 422
+
+    def __init__(self, response=None):
+        try:
+            detail = json.loads(response.text)['error']
+        except JSONDecodeError:
+            detail = response.text
+
+        return super().__init__(detail=detail, code='invalid')
 
 
 class PDNSException(APIException):
-
-    def __init__(self, response=None, detail=None, status=None):
-        self.status_code = status or response.status_code
-        if detail:
-            self.detail = detail
-        else:
-            try:
-                self.detail = json.loads(response.text)['error']
-            except (JSONDecodeError, KeyError):
-                self.detail = response.text
+    def __init__(self, response=None):
+        return super().__init__(f'pdns response code: {response.status_code}, pdns response body: {response.text}')

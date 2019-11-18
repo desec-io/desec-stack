@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 
-from desecapi.exceptions import PDNSException
+from desecapi.exceptions import PDNSException, PDNSValidationError, RequestEntityTooLarge
 
 NSLORD = object()
 NSMASTER = object()
@@ -34,11 +34,13 @@ _config = {
 def _pdns_request(method, *, server, path, body=None):
     data = json.dumps(body) if body else None
     if data is not None and len(data) > settings.PDNS_MAX_BODY_SIZE:
-        raise PDNSException(detail='Payload too large', status=413)
+        raise RequestEntityTooLarge
 
     r = requests.request(method, _config[server]['base_url'] + path, data=data, headers=_config[server]['headers'])
-    if r.status_code not in range(200, 300):
-        raise PDNSException(r)
+    if r.status_code == PDNSValidationError.status_code:
+        raise PDNSValidationError(response=r)
+    elif r.status_code not in range(200, 300):
+        raise PDNSException(response=r)
 
     return r
 
