@@ -42,7 +42,6 @@ INSTALLED_APPS = (
     'rest_framework',
     'desecapi.apps.AppConfig',
     'corsheaders',
-    'djcelery_email',
 )
 
 MIDDLEWARE = (
@@ -119,7 +118,7 @@ TEMPLATES = [
 ]
 
 # How and where to send mail
-EMAIL_BACKEND = 'djcelery_email.backends.CeleryEmailBackend'
+EMAIL_BACKEND = 'desecapi.mail_backends.MultiLaneEmailBackend'
 EMAIL_HOST = os.environ['DESECSTACK_API_EMAIL_HOST']
 EMAIL_HOST_USER = os.environ['DESECSTACK_API_EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['DESECSTACK_API_EMAIL_HOST_PASSWORD']
@@ -144,13 +143,12 @@ NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 
 # Celery
 CELERY_BROKER_URL = 'amqp://rabbitmq'
-CELERY_EMAIL_CHUNK_SIZE = 1
-CELERY_EMAIL_TASK_CONFIG = {
-    'queue' : 'celery',
-    'rate_limit' : '3/m',
-}
-CELERY_TASK_DEFAULT_RATE_LIMIT = '3/m'
+CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = []  # required because djcelery_email.utils accesses it
 CELERY_TASK_TIME_LIMIT = 30
+TASK_CONFIG = {
+    'email_fast_lane': {'rate_limit': '1/s'},
+    'email_slow_lane': {'rate_limit': '3/m'},
+}
 
 # pdns accepts request payloads of this size.
 # This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550

@@ -16,7 +16,7 @@ import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, AnonymousUser
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, get_connection
 from django.core.signing import Signer
 from django.core.validators import RegexValidator
 from django.db import models
@@ -140,30 +140,33 @@ class User(AbstractBaseUser):
         self.send_email('password-change-confirmation')
 
     def send_email(self, reason, context=None, recipient=None):
+        fast_lane = 'email_fast_lane'
+        slow_lane = 'email_slow_lane'
+        lanes = {
+            'activate': slow_lane,
+            'activate-with-domain': slow_lane,
+            'change-email': slow_lane,
+            'change-email-confirmation-old-email': fast_lane,
+            'password-change-confirmation': fast_lane,
+            'reset-password': fast_lane,
+            'delete-user': fast_lane,
+            'domain-dyndns': fast_lane,
+        }
+        if reason not in lanes:
+            raise ValueError(f'Cannot send email to user {self.pk} without a good reason: {reason}')
+
         context = context or {}
-        reasons = [
-            'activate',
-            'activate-with-domain',
-            'change-email',
-            'change-email-confirmation-old-email',
-            'password-change-confirmation',
-            'reset-password',
-            'delete-user',
-            'domain-dyndns',
-        ]
-        recipient = recipient or self.email
-        if reason not in reasons:
-            raise ValueError('Cannot send email to user {} without a good reason: {}'.format(self.pk, reason))
-        content_tmpl = get_template('emails/{}/content.txt'.format(reason))
-        subject_tmpl = get_template('emails/{}/subject.txt'.format(reason))
-        from_tmpl = get_template('emails/from.txt')
-        footer_tmpl = get_template('emails/footer.txt')
-        email = EmailMessage(subject_tmpl.render(context).strip(),
-                             content_tmpl.render(context) + footer_tmpl.render(),
-                             from_tmpl.render(),
-                             [recipient])
-        logger.warning('Sending email for user account %s (reason: %s)', str(self.pk), reason)
-        email.send()
+        content = get_template(f'emails/{reason}/content.txt').render(context)
+        footer = get_template('emails/footer.txt').render()
+
+        logger.warning(f'Queuing email for user account {self.pk} (reason: {reason})')
+        return EmailMessage(
+            subject=get_template(f'emails/{reason}/subject.txt').render(context).strip(),
+            body=content + footer,
+            from_email=get_template('emails/from.txt').render(),
+            to=[recipient or self.email],
+            connection=get_connection(lane=lanes[reason], debug={'user': self.pk, 'reason': reason})
+        ).send()
 
 
 class Token(rest_framework.authtoken.models.Token):

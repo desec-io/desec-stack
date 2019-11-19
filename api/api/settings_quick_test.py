@@ -19,3 +19,6 @@ PASSWORD_HASHERS = [
 ]
 
 REST_FRAMEWORK['PAGE_SIZE'] = 20
+
+# Carry email backend connection over to test mail outbox
+CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ['connection']
