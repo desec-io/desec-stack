@@ -152,6 +152,8 @@ services:
     build: nsmaster
     image: desec/dedyn-nsmaster:latest
     init: true
+    cap_add:
+    - NET_ADMIN
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBMASTER_PASSWORD_pdns
@@ -164,6 +166,8 @@ services:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
       rearmaster:
+      rearreplication:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.3
     logging:
       driver: "syslog"
       options:
@@ -247,6 +251,24 @@ services:
         tag: "desec/memcached"
     restart: unless-stopped
 
+  openvpn-server:
+    build: openvpn-server
+    image: desec/openvpn-server:latest
+    init: true
+    cap_add:
+    - NET_ADMIN
+    ports:
+    - "1194:1194/udp"
+    volumes:
+    - ./openvpn-server/secrets:/etc/openvpn/secrets:ro
+    networks:
+      rearreplication:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.2
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/openvpn-server"
+    restart: unless-stopped
 
 volumes:
   dbapi_mysql:
@@ -311,3 +333,10 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.4.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.4.1
+  rearreplication:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.1

@@ -73,6 +73,10 @@ services:
     logging:
       driver: "json-file"
 
+  openvpn-server:
+    logging:
+      driver: "json-file"
+
 networks:
   rearwebapp:
     driver: bridge

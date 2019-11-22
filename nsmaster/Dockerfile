@@ -21,6 +21,8 @@ RUN set -ex \
 	&& apt-get install -y pdns-server pdns-backend-mysql \
 	# credentials management via envsubst
 	&& apt-get -y install gettext-base \
+	# VPN route
+	&& apt-get -y install iproute2 \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 

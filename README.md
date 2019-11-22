@@ -11,6 +11,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
 - `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
+- `openvpn-server`: OpenVPN server used to tunnel replication traffic between this stack and frontend DNS slaves.
 
 Requirements
 ------------
@@ -19,9 +20,16 @@ Although most configuration is contained in this repository, some external depen
 
 1.  We run this software with the `--userland-proxy=false` flag of the `dockerd` daemon, and recommend you do the same.
 
-2.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves.
+2.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves. To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
 
-    To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
+    Also, configure certificates for `openvpn-server`:
+
+    - [Get easy-rsa](https://github.com/OpenVPN/easy-rsa) and follow [this tutorial](https://github.com/OpenVPN/easy-rsa/blob/master/README.quickstart.md).
+    - Then, copy `ca.crt`, `server.crt`, and `server.key` to `openvpn-server/secrets/`.
+    - Create a preshared secret using `openvpn --genkey --secret ta.key` inside `openvpn-server/secrets/`.
+
+    For provisioning a slave, use the same `easy-rsa` PKI and create a new `client.key` and `client.crt` pair. Transfer these securely onto the slave, along with `ca.crt` and `ta.key`.
+    (You can also create the key on the slave and only transfer a certificate signing request and the certificate.) 
 
 3.  Set sensitive information and network topology using environment variables or an `.env` file. You need (you can use the `.env.default` file as a template):
     - global
