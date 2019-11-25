@@ -333,12 +333,13 @@ Examples::
         '{"ttl": 86400}'
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
-updated RRset in the reponse body.  If there is a syntactical error (e.g. not
-all required fields were provided or the type was not specified in uppercase),
-the API responds with ``400 Bad Request``.  If field values were semantically
-invalid (e.g. when you provide an unknown record type, or an `A` value that is
-not an IPv4 address), ``422 Unprocessable Entity`` is returned.  If the RRset
-does not exist, ``404 Not Found`` is returned.
+updated RRset in the response body.  If the operation cannot be performed with
+the given parameters, the API returns ``400 Bad Request``.  This can happen, for
+instance, when there is a conflicting RRset with the same name and type, when
+not all required fields were provided correctly (such as, when the ``type``
+value was not provided in uppercase), or when the record content is
+semantically invalid (e.g. when you provide an unknown record type, or an ``A``
+value that is not an IPv4 address).
 
 To modify an RRset at the zone apex (empty subname), use the special subname
 value ``@`` (read more about `Accessing the Zone Apex`_).
@@ -473,10 +474,6 @@ error may appear valid (``{}``) as long as another RRset has a stage-1 error.
 Only after the stage-1 error is resolved, the request will reach stage 2, at
 which point an error may appear due to a bulk part that previously seemed
 valid.
-
-Errors from stage 1 cause status code ``400 Bad Request`` (regardless of the
-exact reason(s) which may vary across bulk parts), and errors from stage 2
-cause status code ``422 Unprocessable Entity``.
 
 
 Notes
