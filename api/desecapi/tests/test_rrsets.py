@@ -219,7 +219,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     self.request_pdns_zone_update_unknown_type(name=self.my_domain.name, unknown_types=_type)
             ):
                 response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=3660, type=_type)
-                self.assertStatus(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+                self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_insufficient_ttl(self):
         ttl = settings.MINIMUM_TTL_DEFAULT - 1

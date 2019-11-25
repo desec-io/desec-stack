@@ -367,7 +367,7 @@ describe("API v1", function () {
                                 'subname': 'duplicate-contents', 'type': 'AAAA',
                                 'records': ['::1', '::1'], 'ttl': 60
                             }
-                        )).to.have.status(422);
+                        )).to.have.status(400);
                     });
 
                     it("rejects semantic duplicates", function () {
@@ -377,7 +377,7 @@ describe("API v1", function () {
                                 'subname': 'duplicate-contents', 'type': 'AAAA',
                                 'records': ['::1', '::0001'], 'ttl': 60
                             }
-                        )).to.have.status(422);
+                        )).to.have.status(400);
                     });
                 });
 
@@ -520,7 +520,7 @@ describe("API v1", function () {
                                     {'subname': 'replace-test-2', 'ttl': 3601, 'type': 'CNAME', 'records': ['no.trailing.dot']},
                                 ]
                             );
-                            return expect(response).to.have.status(422);
+                            return expect(response).to.have.status(400);
                         });
 
                         itPropagatesToTheApi([
@@ -595,7 +595,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for invalid records", function () {
@@ -603,7 +603,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for records contents being null", function () {
@@ -824,7 +824,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for invalid records", function () {
@@ -832,7 +832,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for records contents being null", function () {
@@ -1065,7 +1065,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'INVALID', 'records': ['"foo"']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for invalid records", function () {
@@ -1073,7 +1073,7 @@ describe("API v1", function () {
                             '/domains/' + domain + '/rrsets/',
                             [{'subname': 'a.2', 'ttl': 3650, 'type': 'MX', 'records': ['1.2.3.4']}]
                         );
-                        return expect(response).to.have.status(422);
+                        return expect(response).to.have.status(400);
                     });
 
                     it("gives the right response for records contents being null", function () {

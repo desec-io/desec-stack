@@ -128,13 +128,13 @@ To create a new RRset, simply issue a ``POST`` request to the
 field is optional.
 
 Upon success, the response status code will be ``201 Created``, with the RRset
-contained in the response body.  If another RRset with the same name and type
-exists already, the API responds with ``400 Bad Request``.  The same status
-code is returned If there is a syntactical error (e.g. not all required fields
-were provided or the type was not specified in uppercase).  If
-field values were semantically invalid (e.g. when you provide an unknown record
-type, or an `A` value that is not an IPv4 address), ``422 Unprocessable
-Entity`` is returned.
+contained in the response body.  If the operation cannot be performed with the
+given parameters, the API returns ``400 Bad Request``.  This can happen, for
+instance, when there is a conflicting RRset with the same name and type, when
+not all required fields were provided correctly (such as, when the ``type``
+value was not provided in uppercase), or when the record content is
+semantically invalid (e.g. when you provide an unknown record type, or an ``A``
+value that is not an IPv4 address).
 
 Note that the values of ``type`` and ``subname`` as well as the ``records``
 items are strings, and as such the JSON specification requires them to be

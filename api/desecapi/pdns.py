@@ -37,7 +37,7 @@ def _pdns_request(method, *, server, path, body=None):
         raise RequestEntityTooLarge
 
     r = requests.request(method, _config[server]['base_url'] + path, data=data, headers=_config[server]['headers'])
-    if r.status_code == PDNSValidationError.status_code:
+    if r.status_code == PDNSValidationError.pdns_code:
         raise PDNSValidationError(response=r)
     elif r.status_code not in range(200, 300):
         raise PDNSException(response=r)
