@@ -7,8 +7,6 @@ from captcha.image import ImageCaptcha
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import ListSerializer
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
@@ -245,14 +243,11 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
     @staticmethod
     def validate_type(value):
         if value in models.RRset.DEAD_TYPES:
-            raise serializers.ValidationError(
-                "The %s RRset type is currently unsupported." % value)
+            raise serializers.ValidationError(f'The {value} RRset type is currently unsupported.')
         if value in models.RRset.RESTRICTED_TYPES:
-            raise serializers.ValidationError(
-                "You cannot tinker with the %s RRset." % value)
+            raise serializers.ValidationError(f'You cannot tinker with the {value} RRset.')
         if value.startswith('TYPE'):
-            raise serializers.ValidationError(
-                "Generic type format is not supported.")
+            raise serializers.ValidationError('Generic type format is not supported.')
         return value
 
     def validate_records(self, value):
@@ -313,10 +308,10 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         models.RR.objects.bulk_create(rrs)  # One INSERT
 
 
-class RRsetListSerializer(ListSerializer):
+class RRsetListSerializer(serializers.ListSerializer):
     default_error_messages = {
         **serializers.Serializer.default_error_messages,
-        **ListSerializer.default_error_messages,
+        **serializers.ListSerializer.default_error_messages,
         **{'not_a_list': 'Expected a list of items but got {input_type}.'},
     }
 
@@ -619,9 +614,9 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
             # decode from single string
             unpacked_data = self._unpack_code(data.pop('code'))
         except KeyError:
-            raise ValidationError({'code': ['No verification code.']})
+            raise serializers.ValidationError({'code': ['No verification code.']})
         except ValueError:
-            raise ValidationError({'code': ['Invalid verification code.']})
+            raise serializers.ValidationError({'code': ['Invalid verification code.']})
 
         # add extra fields added by the user
         unpacked_data.update(**data)
