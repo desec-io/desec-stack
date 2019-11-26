@@ -9,7 +9,7 @@ users only. Users can register an account free of charge through the API as
 described below.
 
 Obtain a Captcha
-```````````````````
+````````````````
 
 Before registering a user account, you need to solve a captcha. You will have
 to send the captcha ID and solution along with your registration request. To
@@ -303,35 +303,39 @@ Confirmation Codes
     user's email address. Although clients generally should consider these
     codes opaque, we would like to give some insights into how they work.
 
-    The code is a base64-encoded JSON representation of the user's intent.
-    The representation carries a timestamp of when the intent was expressed,
-    the user ID, and also any extra parameters that were submitted along with
-    the intent. An example of such a parameter is the new email address in the
-    context of a `change email address`_ operation. Parameters that are
-    unknown at the time when the code is generated are not included in the
-    code and must be provided via ``POST`` request payload when using the
-    code. A typical example of this is the new password in a `password reset`_
+    The code is a base64-encoded encrypted-then-signed JSON representation of
+    the user's intent. Encryption/decryption and authentication (sign/verify)
+    is handled by `pyca/cryptography's Fernet implementation
+    <https://cryptography.io/en/latest/fernet/>`_ which is uses AES-CBC and
+    HMAC-SHA256 with specifically derived key material. The HMAC also signs the
+    current time (i.e. when the intent was expressed). During verification,
+    codes are checked for freshness and rejected when older than allowed.
+
+    The encoded intent is composed of the user ID and any extra parameters that
+    were submitted along with the intent. An example of such a parameter is the
+    new email address in the context of a `change email address`_ operation.
+    Parameters that are unknown at code generation time are not included in the
+    code and must be provided via ``POST`` request payload when using the code.
+    A typical example of this is the new password in a `password reset`_
     operation, as it is only provided when the code is being used (and not at
     the time when the code is requested).
 
-    To ensure integrity, we also include a message authentication code (MAC)
-    using `Django's signature implementation
-    <https://docs.djangoproject.com/en/2.2/_modules/django/core/signing/#Signer>`_.
-    When a confirmation code is used, we recompute the MAC based on the data
-    incorporated in the code, and only perform the requested action if the MAC
-    is reproduced identically. Codes are also checked for freshness using the
-    timestamp, and rejected if older than allowed.
-
-    In order to prevent race conditions, we add additional data to the MAC
-    input such that codes are only valid as long as the user state is not
-    modified (e.g. by performing another sensitive account operation). This is
-    achieved by mixing a) the account operation type (e.g. password reset), b)
-    the account's activation status, c) the account's current email address,
-    and d) the user's password hash into the MAC input. If any of these
-    parameters happens to change before a code is applied, the MAC will be
+    In order to prevent race conditions, we augment the code with additional
+    data which we use to invalidate codes when the user state is modified (e.g.
+    by performing another sensitive account operation). This is achieved by
+    including the combined hash of a) the account operation type (e.g. password
+    reset), b) the account's activation status, c) the account's current email
+    address, and d) the user's password hash. When a confirmation code is used,
+    we recompute this hash based on the user's current state, and only perform
+    the requested action if the hash is reproduced identically. If any of these
+    parameters happens to change before a code is applied, the code will be
     rendered invalid, and the operation will fail. This measure blocks
     scenarios such as using an old email address change code after a more
-    recent password change.
+    recent password change. (Note that it is sometimes possible to revert the
+    state so that an old code becomes valid again, such as when you change the
+    email address twice, with the second change undoing the first one. This
+    issue does not occur for password changes; those do permanently invalidate
+    other codes.)
 
     This approach allows us to securely authenticate sensitive user operations
     without keeping a list of requested operations on the server. This is both
@@ -450,8 +454,8 @@ Note that, for now, all tokens have equal power -- every token can authorize
 any action. We are planning to implement scoped tokens in the future.
 
 
-Token Security Considerations
-`````````````````````````````
+Security Considerations
+```````````````````````
 
 This section is for information only. Token length and encoding may change in
 the future.
