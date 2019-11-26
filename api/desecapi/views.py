@@ -616,9 +616,9 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             return redirect(f'/app/dynsetup/{domain.name}/#{token.plain}')
         else:
             return Response({
-                'detail': 'Success! Here is the password ("auth_token") to configure your router (or any other dynDNS '
+                'detail': 'Success! Here is the password ("token") to configure your router (or any other dynDNS '
                           'client). This password is different from your account password for security reasons.',
-                **serializers.TokenSerializer(token).data,
+                **serializers.TokenSerializer(token, include_plain=True).data,
             })
 
     def _finalize_with_domain(self):
