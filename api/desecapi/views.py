@@ -332,45 +332,40 @@ class DonationList(generics.CreateAPIView):
     serializer_class = serializers.DonationSerializer
 
     def perform_create(self, serializer):
-        iban = serializer.validated_data['iban']
-        obj = serializer.save()
+        instance = self.serializer_class.Meta.model(**serializer.validated_data)
 
-        def send_donation_emails(donation):
-            context = {
-                'donation': donation,
-                'creditoridentifier': settings.SEPA['CREDITOR_ID'],
-                'creditorname': settings.SEPA['CREDITOR_NAME'],
-                'complete_iban': iban
-            }
+        context = {
+            'donation': instance,
+            'creditoridentifier': settings.SEPA['CREDITOR_ID'],
+            'creditorname': settings.SEPA['CREDITOR_NAME'],
+        }
 
-            # internal desec notification
-            content_tmpl = get_template('emails/donation/desec-content.txt')
-            subject_tmpl = get_template('emails/donation/desec-subject.txt')
-            attachment_tmpl = get_template('emails/donation/desec-attachment-jameica.txt')
-            from_tmpl = get_template('emails/from.txt')
+        # internal desec notification
+        content_tmpl = get_template('emails/donation/desec-content.txt')
+        subject_tmpl = get_template('emails/donation/desec-subject.txt')
+        attachment_tmpl = get_template('emails/donation/desec-attachment-jameica.txt')
+        from_tmpl = get_template('emails/from.txt')
+        email = EmailMessage(subject_tmpl.render(context),
+                             content_tmpl.render(context),
+                             from_tmpl.render(context),
+                             ['donation@desec.io'],
+                             attachments=[
+                                 ('jameica-directdebit.xml',
+                                  attachment_tmpl.render(context),
+                                  'text/xml')
+                             ])
+        email.send()
+
+        # donor notification
+        if instance.email:
+            content_tmpl = get_template('emails/donation/donor-content.txt')
+            subject_tmpl = get_template('emails/donation/donor-subject.txt')
+            footer_tmpl = get_template('emails/footer.txt')
             email = EmailMessage(subject_tmpl.render(context),
-                                 content_tmpl.render(context),
+                                 content_tmpl.render(context) + footer_tmpl.render(),
                                  from_tmpl.render(context),
-                                 ['donation@desec.io'],
-                                 attachments=[
-                                     ('jameica-directdebit.xml',
-                                      attachment_tmpl.render(context),
-                                      'text/xml')
-                                 ])
+                                 [instance.email])
             email.send()
-
-            # donor notification
-            if donation.email:
-                content_tmpl = get_template('emails/donation/donor-content.txt')
-                subject_tmpl = get_template('emails/donation/donor-subject.txt')
-                email = EmailMessage(subject_tmpl.render(context),
-                                     content_tmpl.render(context),
-                                     from_tmpl.render(context),
-                                     [donation.email])
-                email.send()
-
-        # send emails
-        send_donation_emails(obj)
 
 
 class AccountCreateView(generics.CreateAPIView):

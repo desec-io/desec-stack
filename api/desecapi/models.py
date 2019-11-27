@@ -326,12 +326,8 @@ class Donation(models.Model):
     mref = models.CharField(max_length=32, default=get_default_value_mref)
     email = models.EmailField(max_length=255, blank=True)
 
-    def save(self, *args, **kwargs):
-        self.iban = self.iban[:6] + "xxx"  # do NOT save account details
-        super().save(*args, **kwargs)
-
     class Meta:
-        ordering = ('created',)
+        managed = False
 
 
 class RRsetManager(Manager):

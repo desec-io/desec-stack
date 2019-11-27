@@ -49,12 +49,6 @@ describe("donating", function () {
             return expect(response).to.have.schema(apiDonationSchema);
         });
 
-        it("does not return the full iban", function () {
-            return response.then(function (donationResponse) {
-                expect(donationResponse.body.iban).to.equal("DE8937xxx");
-            });
-        });
-
     });
 
     it("does not require an email address", function () {
