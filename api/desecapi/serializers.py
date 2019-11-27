@@ -623,9 +623,9 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
             # decode from single string
             unpacked_data = self._unpack_code(data.pop('code'))
         except KeyError:
-            raise serializers.ValidationError({'code': ['No verification code.']})
+            raise serializers.ValidationError({'code': ['This field is required.']})
         except ValueError:
-            raise serializers.ValidationError({'code': ['Invalid verification code.']})
+            raise serializers.ValidationError({'code': ['Invalid code.']})
 
         # add extra fields added by the user
         unpacked_data.update(**data)

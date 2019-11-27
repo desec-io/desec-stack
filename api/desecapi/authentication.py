@@ -118,6 +118,28 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
         return self.authenticate_credentials(serializer.data['email'], serializer.data['password'], request)
 
 
+class AuthenticatedActionAuthentication(BaseAuthentication):
+    """
+    Authenticates a request based on whether the serializer determines the validity of the given verification code
+    and additional data (using `serializer.is_valid()`). The serializer's input data will be determined by (a) the
+    view's 'code' kwarg and (b) the request payload for POST requests.
+
+    If the request is valid, the AuthenticatedAction instance will be attached to the request as `auth` attribute.
+    """
+    def authenticate(self, request):
+        view = request.parser_context['view']
+        data = {**request.data, 'code': view.kwargs['code']}  # order crucial to avoid override from payload!
+        serializer = view.serializer_class(data=data, context=view.get_serializer_context())
+        serializer.is_valid(raise_exception=True)
+        try:
+            action = serializer.Meta.model(**serializer.validated_data)
+        except ValueError:
+            exc = getattr(view, 'authentication_exception', exceptions.AuthenticationFailed)
+            raise exc('Invalid code.')
+
+        return action.user, action
+
+
 class TokenHasher(PBKDF2PasswordHasher):
     algorithm = 'pbkdf2_sha256_iter1'
     iterations = 1

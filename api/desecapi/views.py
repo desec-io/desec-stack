@@ -516,37 +516,8 @@ class AuthenticatedActionView(generics.GenericAPIView):
     Abstract class. Deserializes the given payload according the serializers specified by the view extending
     this class. If the `serializer.is_valid`, `act` is called on the action object.
     """
-
-    class AuthenticatedActionAuthenticator(BaseAuthentication):
-        """
-        Authenticates a request based on whether the serializer determines the validity of the given verification code
-        and additional data (using `serializer.is_valid()`). The serializer's input data will be determined by (a) the
-        view's 'code' kwarg and (b) the request payload for POST requests. Request methods other than GET and POST will
-        fail authentication regardless of other conditions.
-
-        If the request is valid, the AuthenticatedAction instance will be attached to the request as `auth` attribute.
-
-        Note that this class will raise ValidationError instead of AuthenticationFailed, usually resulting in status
-        400 instead of 403.
-        """
-
-        def __init__(self, view):
-            super().__init__()
-            self.view = view
-
-        def authenticate(self, request):
-            data = {**request.data, 'code': self.view.kwargs['code']}  # order crucial to avoid override from payload!
-            serializer = self.view.serializer_class(data=data, context=self.view.get_serializer_context())
-            serializer.is_valid(raise_exception=True)
-            try:
-                action = serializer.Meta.model(**serializer.validated_data)
-            except ValueError:
-                raise ValidationError()
-
-            return action.user, action
-
-    def get_authenticators(self):
-        return [self.AuthenticatedActionAuthenticator(self)]
+    authentication_classes = (auth.AuthenticatedActionAuthentication,)
+    authentication_exception = ValidationError
 
     def perform_authentication(self, request):
         # Delay authentication until request.auth or request.user is first accessed.

@@ -352,14 +352,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertVerificationFailureInvalidCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Invalid input.",
+            text="Invalid code.",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
     def assertVerificationFailureExpiredCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Invalid verification code.",
+            text="Invalid code.",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
