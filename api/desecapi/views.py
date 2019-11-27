@@ -524,8 +524,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
         view's 'code' kwarg and (b) the request payload for POST requests. Request methods other than GET and POST will
         fail authentication regardless of other conditions.
 
-        If the request is valid, the AuthenticatedAction instance will be attached to the view as `authenticated_action`
-        attribute.
+        If the request is valid, the AuthenticatedAction instance will be attached to the request as `auth` attribute.
 
         Note that this class will raise ValidationError instead of AuthenticationFailed, usually resulting in status
         400 instead of 403.
@@ -540,18 +539,19 @@ class AuthenticatedActionView(generics.GenericAPIView):
             serializer = self.view.serializer_class(data=data, context=self.view.get_serializer_context())
             serializer.is_valid(raise_exception=True)
             try:
-                self.view.authenticated_action = serializer.Meta.model(**serializer.validated_data)
+                action = serializer.Meta.model(**serializer.validated_data)
             except ValueError:
                 raise ValidationError()
 
-            return self.view.authenticated_action.user, None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.authenticated_action = None
+            return action.user, action
 
     def get_authenticators(self):
         return [self.AuthenticatedActionAuthenticator(self)]
+
+    def perform_authentication(self, request):
+        # Delay authentication until request.auth or request.user is first accessed.
+        # This allows returning a redirect or status 405 without validating the action code.
+        pass
 
     def get(self, request, *args, **kwargs):
         return self.take_action()
@@ -563,9 +563,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
         raise NotImplementedError
 
     def take_action(self):
-        # execute the action
-        self.authenticated_action.act()
-
+        self.request.auth.act()  # execute the action (triggers authentication if not yet done)
         return self.finalize()
 
 
@@ -575,7 +573,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
-        if not self.authenticated_action.domain:
+        if not self.request.auth.domain:
             return self._finalize_without_domain()
         else:
             domain = self._create_domain()
@@ -585,7 +583,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
                 return self._finalize_with_domain()
 
     def _create_domain(self):
-        action = self.authenticated_action
+        action = self.request.auth
         serializer = serializers.DomainSerializer(
             data={'name': action.domain},
             context=self.get_serializer_context()
@@ -633,7 +631,7 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
 
     def finalize(self):
         return Response({
-            'detail': f'Success! Your email address has been changed to {self.authenticated_action.user.email}.'
+            'detail': f'Success! Your email address has been changed to {self.request.user.email}.'
         })
 
 

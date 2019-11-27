@@ -660,11 +660,16 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertUserDoesNotExist(new_email)
         self.assertPassword(self.email, new_password)
 
+    def test_reset_password_via_get(self):
+        confirmation_link = self._start_reset_password()
+        response = self.client.verify(confirmation_link)
+        self.assertResponse(response, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_reset_password_validation_unknown_user(self):
         confirmation_link = self._start_reset_password()
         self._test_delete_account(self.email, self.password)
         self.assertVerificationFailureUnknownUserResponse(
-            response=self.client.verify(confirmation_link)
+            response=self.client.verify(confirmation_link, new_password='foobar')
         )
         self.assertNoEmailSent()
 
