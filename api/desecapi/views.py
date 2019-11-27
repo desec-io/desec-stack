@@ -11,8 +11,8 @@ from django.template.loader import get_template
 from rest_framework import generics
 from rest_framework import mixins
 from rest_framework import status
-from rest_framework.authentication import get_authorization_header, BaseAuthentication
-from rest_framework.exceptions import (NotFound, PermissionDenied, ValidationError)
+from rest_framework.authentication import get_authorization_header
+from rest_framework.exceptions import (NotAcceptable, NotFound, PermissionDenied, ValidationError)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
@@ -518,6 +518,8 @@ class AuthenticatedActionView(generics.GenericAPIView):
     """
     authentication_classes = (auth.AuthenticatedActionAuthentication,)
     authentication_exception = ValidationError
+    html_url = None
+    renderer_classes = [JSONRenderer, StaticHTMLRenderer]
 
     def perform_authentication(self, request):
         # Delay authentication until request.auth or request.user is first accessed.
@@ -525,6 +527,19 @@ class AuthenticatedActionView(generics.GenericAPIView):
         pass
 
     def get(self, request, *args, **kwargs):
+        is_redirect = (request.accepted_renderer.format == 'html') and self.html_url
+
+        # For POST-type actions, only allow GET for the purpose of returning a frontend redirect to a browser
+        if 'post' in self.http_method_names:
+            if not is_redirect:
+                raise NotAcceptable
+
+        # Redirect browsers to frontend if available
+        if is_redirect:
+            # Careful: This can generally lead to an open redirect if values contain slashes!
+            # However, it cannot happen for Django view kwargs.
+            return redirect(self.html_url.format(**kwargs))
+
         return self.take_action()
 
     def post(self, request, *args, **kwargs):
@@ -539,8 +554,8 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
 
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
+    html_url = '/confirm/activate-account/{code}/'
     http_method_names = ['get']
-    renderer_classes = [JSONRenderer, StaticHTMLRenderer]
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
@@ -548,10 +563,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             return self._finalize_without_domain()
         else:
             domain = self._create_domain()
-            if domain.is_locally_registrable:
-                return self._finalize_with_local_public_suffix_domain(domain)
-            else:
-                return self._finalize_with_domain()
+            return self._finalize_with_domain(domain)
 
     def _create_domain(self):
         action = self.request.auth
@@ -577,26 +589,24 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
                 'detail': 'Success! Please log in at {}.'.format(self.request.build_absolute_uri(reverse('v1:login')))
             })
 
-    def _finalize_with_local_public_suffix_domain(self, domain):
-        # TODO the following line raises Domain.DoesNotExist under unknown conditions
-        PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
-        token = models.Token.objects.create(user=domain.owner, name='dyndns')
-        if self.request.accepted_renderer.format == 'html':
-            return redirect(f'/dynsetup/{domain.name}/#{token.plain}')
-        else:
+    def _finalize_with_domain(self, domain):
+        if domain.is_locally_registrable:
+            # TODO the following line raises Domain.DoesNotExist under unknown conditions
+            PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
+            token = models.Token.objects.create(user=domain.owner, name='dyndns')
             return Response({
                 'detail': 'Success! Here is the password ("token") to configure your router (or any other dynDNS '
                           'client). This password is different from your account password for security reasons.',
                 **serializers.TokenSerializer(token, include_plain=True).data,
             })
-
-    def _finalize_with_domain(self):
-        return Response({
-            'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.'
-        })
+        else:
+            return Response({
+                'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.'
+            })
 
 
 class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
+    html_url = '/confirm/change-email/{code}/'
     http_method_names = ['get']
     serializer_class = serializers.AuthenticatedChangeEmailUserActionSerializer
 
@@ -607,7 +617,8 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
 
 
 class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
-    http_method_names = ['post']
+    html_url = '/confirm/reset-password/{code}/'
+    http_method_names = ['get', 'post']  # GET is for redirect only
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer
 
     def finalize(self):
@@ -615,6 +626,7 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
 
 
 class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
+    html_url = '/confirm/delete-account/{code}/'
     http_method_names = ['get']
     serializer_class = serializers.AuthenticatedDeleteUserActionSerializer
 

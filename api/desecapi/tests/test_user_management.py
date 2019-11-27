@@ -663,7 +663,11 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_reset_password_via_get(self):
         confirmation_link = self._start_reset_password()
         response = self.client.verify(confirmation_link)
-        self.assertResponse(response, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertResponse(response, status.HTTP_406_NOT_ACCEPTABLE)
+
+        confirmation_link = self._start_reset_password()
+        response = self.client.verify(confirmation_link, HTTP_ACCEPT='text/html')
+        self.assertResponse(response, status.HTTP_302_FOUND)
 
     def test_reset_password_validation_unknown_user(self):
         confirmation_link = self._start_reset_password()
