@@ -314,10 +314,10 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    def assertChangeEmailVerificationSuccessResponse(self, response):
+    def assertChangeEmailVerificationSuccessResponse(self, response, new_email):
         return self.assertContains(
             response=response,
-            text="Success! Your email address has been changed to",
+            text=f'Success! Your email address has been changed to {new_email}.',
             status_code=status.HTTP_200_OK
         )
 
@@ -446,7 +446,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertChangeEmailSuccessResponse(self.change_email(new_email))
         new_email = new_email.strip()
         confirmation_link = self.assertChangeEmailVerificationEmail(new_email)
-        self.assertChangeEmailVerificationSuccessResponse(self.client.verify(confirmation_link))
+        self.assertChangeEmailVerificationSuccessResponse(self.client.verify(confirmation_link), new_email)
         self.assertChangeEmailNotificationEmail(old_email)
         self.assertUserExists(new_email)
         self.assertUserDoesNotExist(old_email)
@@ -594,10 +594,10 @@ class HasUserAccountTestCase(UserManagementTestCase):
             self.assertVerificationFailureInvalidCodeResponse(response)
         return new_password
 
-    def _finish_change_email(self, confirmation_link, expect_success=True):
+    def _finish_change_email(self, confirmation_link, new_email='', expect_success=True):
         response = self.client.verify(confirmation_link)
         if expect_success:
-            self.assertChangeEmailVerificationSuccessResponse(response)
+            self.assertChangeEmailVerificationSuccessResponse(response, new_email)
             self.assertChangeEmailNotificationEmail(self.email)
         else:
             self.assertVerificationFailureInvalidCodeResponse(response)
@@ -720,7 +720,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_change_email_during_reset_password_interleaved(self):
         change_email_verification_code, new_email = self._start_change_email()
         reset_password_verification_code = self._start_reset_password()
-        self._finish_change_email(change_email_verification_code)
+        self._finish_change_email(change_email_verification_code, new_email)
         self._finish_reset_password(reset_password_verification_code, expect_success=False)
 
         self.assertUserExists(new_email)
@@ -730,7 +730,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_change_email_during_reset_password_nested(self):
         reset_password_verification_code = self._start_reset_password()
         change_email_verification_code, new_email = self._start_change_email()
-        self._finish_change_email(change_email_verification_code)
+        self._finish_change_email(change_email_verification_code, new_email)
         self._finish_reset_password(reset_password_verification_code, expect_success=False)
 
         self.assertUserExists(new_email)
@@ -741,7 +741,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         verification_code_1, new_email_1 = self._start_change_email()
         verification_code_2, new_email_2 = self._start_change_email()
 
-        self._finish_change_email(verification_code_2)
+        self._finish_change_email(verification_code_2, new_email_2)
         self.assertUserDoesNotExist(self.email)
         self.assertUserDoesNotExist(new_email_1)
         self.assertUserExists(new_email_2)
@@ -755,7 +755,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         verification_code_1, new_email_1 = self._start_change_email()
         verification_code_2, new_email_2 = self._start_change_email()
 
-        self._finish_change_email(verification_code_1)
+        self._finish_change_email(verification_code_1, new_email_1)
         self.assertUserDoesNotExist(self.email)
         self.assertUserExists(new_email_1)
         self.assertUserDoesNotExist(new_email_2)
