@@ -19,11 +19,12 @@ class MultiLaneEmailBackendTestCase(TestCase):
         debug_params_orig = debug_params.copy()
 
         with self.settings(EMAIL_BACKEND='desecapi.mail_backends.MultiLaneEmailBackend'):
-            for lane in ['email_slow_lane', 'email_fast_lane']:
+            for lane in ['email_slow_lane', 'email_fast_lane', None]:
                 subject = f'Test subject for lane {lane}'
                 connection = get_connection(lane=lane, backbackend=self.test_backend, debug=debug_params)
                 EmailMessage(subject=subject, to=['to@test.invalid'], connection=connection).send()
-                self.assertDictEqual(mail.outbox[-1].connection.task_kwargs['debug'], {'lane': lane, **debug_params})
+                self.assertEqual(mail.outbox[-1].connection.task_kwargs['debug'],
+                                 {'lane': lane or 'email_slow_lane', **debug_params})
                 self.assertEqual(mail.outbox[-1].subject, subject)
 
         # Check that the backend hasn't modified the dict we passed

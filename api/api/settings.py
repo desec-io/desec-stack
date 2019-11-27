@@ -150,9 +150,9 @@ NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
 CELERY_BROKER_URL = 'amqp://rabbitmq'
 CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = []  # required because djcelery_email.utils accesses it
 CELERY_TASK_TIME_LIMIT = 30
-TASK_CONFIG = {
-    'email_fast_lane': {'rate_limit': '1/s'},
+TASK_CONFIG = {  # The first entry is the default queue
     'email_slow_lane': {'rate_limit': '3/m'},
+    'email_fast_lane': {'rate_limit': '1/s'},
 }
 
 # pdns accepts request payloads of this size.

@@ -14,7 +14,8 @@ class MultiLaneEmailBackend(BaseEmailBackend):
     config = {'ignore_result': True, 'queue': 'celery'}
     default_backend = 'django.core.mail.backends.smtp.EmailBackend'
 
-    def __init__(self, lane: str, fail_silently=False, **kwargs):
+    def __init__(self, lane: str = None, fail_silently=False, **kwargs):
+        lane = lane or next(iter(settings.TASK_CONFIG))
         self.config.update(name=lane)
         self.config.update(settings.TASK_CONFIG[lane])
         self.task_kwargs = kwargs.copy()
