@@ -260,7 +260,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertRegistrationVerificationSuccessResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Success! Please log in at",
+            text="Success!",
             status_code=status.HTTP_200_OK
         )
 
@@ -463,7 +463,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 class UserLifeCycleTestCase(UserManagementTestCase):
 
     def test_life_cycle(self):
-        self.email, self.password = self._test_registration()
+        self.email, self.password = self._test_registration(self.random_username(), self.random_password())
         self.password = self._test_reset_password(self.email)
         mail.outbox = []
         self.token = self._test_login()
@@ -498,13 +498,17 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         with self.get_psl_context_manager(local_public_suffix):
             self._test_registration_with_domain(domain=self.random_domain_name(suffix=local_public_suffix))
 
+    def test_registration_without_domain_and_password(self):
+        email, password = self._test_registration(self.random_username(), None)
+        self.assertResetPasswordEmail(email)
+
     def test_registration_with_tampered_domain(self):
         PublicSuffixMockMixin.setUpMockPatch(self)
         with self.get_psl_context_manager('.'):
             self._test_registration_with_domain(tampered_domain='evil.com')
 
     def test_registration_known_account(self):
-        email, _ = self._test_registration()
+        email, _ = self._test_registration(self.random_username(), self.random_password())
         self.assertRegistrationSuccessResponse(self.register_user(email, self.random_password())[2])
         self.assertNoEmailSent()
 

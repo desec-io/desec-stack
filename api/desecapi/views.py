@@ -4,6 +4,7 @@ import binascii
 import django.core.exceptions
 from django.conf import settings
 from django.contrib.auth import user_logged_in
+from django.contrib.auth.hashers import is_password_usable
 from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import redirect
@@ -499,16 +500,20 @@ class AccountResetPasswordView(generics.GenericAPIView):
         except models.User.DoesNotExist:
             pass
         else:
-            action = models.AuthenticatedResetPasswordUserAction(user=user)
-            verification_code = serializers.AuthenticatedResetPasswordUserActionSerializer(action).data['code']
-            user.send_email('reset-password', context={
-                'confirmation_link': reverse('confirm-reset-password', request=request, args=[verification_code])
-            })
+            self.send_reset_token(user, request)
 
         # This request is unauthenticated, so don't expose whether we did anything.
         return Response(data={'detail': 'Please check your mailbox for further password reset instructions. '
                                         'If you did not receive an email, please contact support.'},
                         status=status.HTTP_202_ACCEPTED)
+
+    @staticmethod
+    def send_reset_token(user, request):
+        action = models.AuthenticatedResetPasswordUserAction(user=user)
+        verification_code = serializers.AuthenticatedResetPasswordUserActionSerializer(action).data['code']
+        user.send_email('reset-password', context={
+            'confirmation_link': reverse('confirm-reset-password', request=request, args=[verification_code])
+        })
 
 
 class AuthenticatedActionView(generics.GenericAPIView):
@@ -585,8 +590,15 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         return PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
 
     def _finalize_without_domain(self):
+        login_url = self.request.build_absolute_uri(reverse('v1:login'))
+        if not is_password_usable(self.request.auth.user.password):
+            AccountResetPasswordView.send_reset_token(self.request.auth.user, self.request)
+            return Response({
+                'detail': f'Success! We sent you instructions on how to reset your password. Afterwards, Please log in '
+                          f'at {login_url}.'
+            })
         return Response({
-                'detail': 'Success! Please log in at {}.'.format(self.request.build_absolute_uri(reverse('v1:login')))
+                'detail': f'Success! Please log in at {login_url}.'
             })
 
     def _finalize_with_domain(self, domain):
