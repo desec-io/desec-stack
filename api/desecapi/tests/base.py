@@ -774,7 +774,6 @@ class DesecTestCase(MockPDNSTestCase):
         return cls.requests_desec_domain_creation(name=name) + [
             cls.request_pdns_zone_update(name=delegate_at),
             cls.request_pdns_zone_axfr(name=delegate_at),
-            cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
 
     @classmethod

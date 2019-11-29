@@ -412,8 +412,8 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if self.has_local_suffix(domain):
             cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
-            cm = self.requests_desec_domain_creation(domain)
-        with self.assertPdnsRequests(cm[:-1]):
+            cm = self.requests_desec_domain_creation(domain)[:-1]
+        with self.assertPdnsRequests(cm):
             response = self.client.verify(confirmation_link)
         self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain, email)
         self.assertTrue(User.objects.get(email=email).is_active)

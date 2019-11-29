@@ -206,6 +206,7 @@ class Domain(models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
+    _keys = None
 
     @classmethod
     def is_registrable(cls, domain_name: str, user: User):
@@ -261,7 +262,9 @@ class Domain(models.Model):
 
     @property
     def keys(self):
-        return pdns.get_keys(self)
+        if not self._keys:
+            self._keys = pdns.get_keys(self)
+        return self._keys
 
     @property
     def is_locally_registrable(self):

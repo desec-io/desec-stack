@@ -597,6 +597,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             return Response({
                 'detail': 'Success! Here is the password ("token") to configure your router (or any other dynDNS '
                           'client). This password is different from your account password for security reasons.',
+                'domain': serializers.DomainSerializer(domain).data,
                 **serializers.TokenSerializer(token, include_plain=True).data,
             })
         else:
