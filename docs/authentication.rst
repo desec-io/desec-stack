@@ -73,8 +73,8 @@ Accepted``. In case there already is an account for that email address,
 nothing else will be done. Otherwise, you will receive an email with a
 verification link of the form
 ``https://desec.io/api/v1/v/activate-account/<code>/``. To activate your
-account, send a ``GET`` request using this link (i.e., you can simply click
-it). The link expires after 12 hours.
+account, click on that link (which will direct you to our frontend) or send a
+``POST`` request on the command line. The link expires after 12 hours.
 
 If there is a problem with your email address, your password, or the proposed
 captcha solution, the server will reply with ``400 Bad Request`` and give a
@@ -207,7 +207,8 @@ The server will reply with ``202 Accepted``. If there is no account associated
 with this email address, nothing else will be done. Otherwise, you will receive
 an email with a URL of the form
 ``https://desec.io/api/v1/v/reset-password/<code>/``. To perform the actual
-password reset, send a ``POST`` request to this URL, with the new password in
+password reset, click on that link (which will direct you to our frontend) or
+send a ``POST`` request to this URL, with the new password in
 the payload::
 
     curl -X POST https://desec.io/api/v1/v/reset-password/<code>/ \
@@ -247,8 +248,8 @@ Accepted``. In case there already is an account for the email address given in
 the ``new_email`` field, nothing else will be done. Otherwise, we will send
 an email to the new email address for verification purposes. It will contain a
 link of the form ``https://desec.io/api/v1/v/change-email/<code>/``. To perform
-the actual change, send a ``GET`` request using this link (i.e., you can simply
-click the link).
+the actual change, click on that link (which will direct you to our frontend)
+or send a ``POST`` request on the command line.
 
 The link expires after 12 hours. It is also invalidated by certain other
 account-related activities, such as changing your password.
@@ -273,7 +274,8 @@ address and password to the ``/auth/account/delete/`` endpoint::
 If the correct password has been provided, the server will reply with ``202
 Accepted`` and send you an email with a link of the form
 ``https://desec.io/api/v1/v/delete-account/<code>/``. To finish the deletion,
-send a ``GET`` request using this link (i.e., you can simply click the link).
+click on that link (which will direct you to our frontend) or send a ``POST``
+request on the command line.
 
 The link expires after 12 hours. It is also invalidated by certain other
 account-related activities, such as changing your email address or password.

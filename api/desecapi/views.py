@@ -524,6 +524,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
     authentication_classes = (auth.AuthenticatedActionAuthentication,)
     authentication_exception = ValidationError
     html_url = None
+    http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
 
     def perform_authentication(self, request):
@@ -532,35 +533,25 @@ class AuthenticatedActionView(generics.GenericAPIView):
         pass
 
     def get(self, request, *args, **kwargs):
-        is_redirect = (request.accepted_renderer.format == 'html') and self.html_url
-
-        # For POST-type actions, only allow GET for the purpose of returning a frontend redirect to a browser
-        if 'post' in self.http_method_names:
-            if not is_redirect:
-                raise NotAcceptable
-
         # Redirect browsers to frontend if available
+        is_redirect = (request.accepted_renderer.format == 'html') and self.html_url
         if is_redirect:
             # Careful: This can generally lead to an open redirect if values contain slashes!
             # However, it cannot happen for Django view kwargs.
             return redirect(self.html_url.format(**kwargs))
-
-        return self.take_action()
+        else:
+            raise NotAcceptable
 
     def post(self, request, *args, **kwargs):
-        return self.take_action()
+        self.request.auth.act()  # execute the action (triggers authentication if not yet done)
+        return self.finalize()
 
     def finalize(self):
         raise NotImplementedError
 
-    def take_action(self):
-        self.request.auth.act()  # execute the action (triggers authentication if not yet done)
-        return self.finalize()
-
 
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     html_url = '/confirm/activate-account/{code}/'
-    http_method_names = ['get']
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
@@ -619,7 +610,6 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
 
 class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
     html_url = '/confirm/change-email/{code}/'
-    http_method_names = ['get']
     serializer_class = serializers.AuthenticatedChangeEmailUserActionSerializer
 
     def finalize(self):
@@ -630,7 +620,6 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
 
 class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     html_url = '/confirm/reset-password/{code}/'
-    http_method_names = ['get', 'post']  # GET is for redirect only
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer
 
     def finalize(self):
@@ -640,13 +629,12 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
 
 class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
     html_url = '/confirm/delete-account/{code}/'
-    http_method_names = ['get']
     serializer_class = serializers.AuthenticatedDeleteUserActionSerializer
 
-    def take_action(self):
+    def post(self, request, *args, **kwargs):
         if self.request.user.domains.exists():
             return AccountDeleteView.response_still_has_domains
-        return super().take_action()
+        return super().post(request, *args, **kwargs)
 
     def finalize(self):
         return Response({'detail': 'All your data has been deleted. Bye bye, see you soon! <3'})

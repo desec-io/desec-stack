@@ -74,7 +74,7 @@ class UserManagementClient(APIClient):
         return self.get(reverse('v1:account'), HTTP_AUTHORIZATION='Token {}'.format(token))
 
     def verify(self, url, data=None, **kwargs):
-        return self.post(url, data, **kwargs) if data else self.get(url, **kwargs)
+        return self.post(url, data, **kwargs)
 
     def obtain_captcha(self, **kwargs):
         return self.post(reverse('v1:captcha'))
@@ -163,6 +163,13 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if reset:
             mail.outbox = []
         return body if not pattern else re.search(pattern, body).group(1)
+
+    def assertConfirmationLinkRedirect(self, confirmation_link):
+        response = self.client.get(confirmation_link)
+        self.assertResponse(response, status.HTTP_406_NOT_ACCEPTABLE)
+        response = self.client.get(confirmation_link, HTTP_ACCEPT='text/html')
+        self.assertResponse(response, status.HTTP_302_FOUND)
+        self.assertNoEmailSent()
 
     def assertRegistrationEmail(self, recipient, reset=True):
         return self.assertEmailSent(
@@ -377,6 +384,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertFalse(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
         confirmation_link = self.assertRegistrationEmail(email)
+        self.assertConfirmationLinkRedirect(confirmation_link)
         self.assertRegistrationVerificationSuccessResponse(self.client.verify(confirmation_link))
         self.assertTrue(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
@@ -435,6 +443,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         new_password = new_password or self.random_password()
         self.assertResetPasswordSuccessResponse(self.reset_password(email))
         confirmation_link = self.assertResetPasswordEmail(email)
+        self.assertConfirmationLinkRedirect(confirmation_link)
         self.assertResetPasswordVerificationSuccessResponse(
             self.client.verify(confirmation_link, data={'new_password': new_password}, **kwargs))
         self.assertPassword(email, new_password)
@@ -446,6 +455,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertChangeEmailSuccessResponse(self.change_email(new_email))
         new_email = new_email.strip()
         confirmation_link = self.assertChangeEmailVerificationEmail(new_email)
+        self.assertConfirmationLinkRedirect(confirmation_link)
         self.assertChangeEmailVerificationSuccessResponse(self.client.verify(confirmation_link), new_email)
         self.assertChangeEmailNotificationEmail(old_email)
         self.assertUserExists(new_email)
@@ -456,6 +466,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def _test_delete_account(self, email, password):
         self.assertDeleteAccountSuccessResponse(self.delete_account(email, password))
         confirmation_link = self.assertDeleteAccountEmail(email)
+        self.assertConfirmationLinkRedirect(confirmation_link)
         self.assertDeleteAccountVerificationSuccessResponse(self.client.verify(confirmation_link))
         self.assertUserDoesNotExist(email)
 
@@ -664,14 +675,12 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertUserDoesNotExist(new_email)
         self.assertPassword(self.email, new_password)
 
-    def test_reset_password_via_get(self):
+    def test_reset_password_without_new_password(self):
         confirmation_link = self._start_reset_password()
         response = self.client.verify(confirmation_link)
-        self.assertResponse(response, status.HTTP_406_NOT_ACCEPTABLE)
-
-        confirmation_link = self._start_reset_password()
-        response = self.client.verify(confirmation_link, HTTP_ACCEPT='text/html')
-        self.assertResponse(response, status.HTTP_302_FOUND)
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['new_password'][0], 'This field is required.')
+        self.assertNoEmailSent()
 
     def test_reset_password_validation_unknown_user(self):
         confirmation_link = self._start_reset_password()
@@ -716,13 +725,6 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertPassword(self.email, self.password)
         self.assertUserExists(new_email)
         self.assertPassword(new_email, new_password)
-
-    def test_change_email_verification_change_password(self):
-        new_email = self.random_username()
-        self.assertChangeEmailSuccessResponse(self.change_email(new_email))
-        confirmation_link = self.assertChangeEmailVerificationEmail(new_email)
-        response = self.client.verify(confirmation_link, data={'new_password': self.random_password()})
-        self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_change_email_same_email(self):
         self.assertChangeEmailFailureSameAddressResponse(

@@ -31,13 +31,13 @@ for `User Registration and Management`_.
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/captcha/``                             | ``POST``   | Obtain captcha                              |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/activate-account/:code/``            | ``GET``    | Confirm email address for new account       |
+| ...\ ``/v/activate-account/:code/``            | ``POST``   | Confirm email address for new account       |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/v/reset-password/:code/``              | ``POST``   | Confirm password reset                      |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/change-email/:code/``                | ``GET``    | Confirm email address change                |
+| ...\ ``/v/change-email/:code/``                | ``POST``   | Confirm email address change                |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/delete-account/:code/``              | ``GET``    | Confirm account deletion                    |
+| ...\ ``/v/delete-account/:code/``              | ``POST``   | Confirm account deletion                    |
 +------------------------------------------------+------------+---------------------------------------------+
 
 The following table summarizes basic information about the deSEC API endpoints used
