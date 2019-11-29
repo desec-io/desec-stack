@@ -19,7 +19,7 @@ const routes = [
     component: () => import(/* webpackChunkName: "signup" */ '../views/SignUp.vue')
   },
   {
-    path: '/dynsetup/:domain?',
+    path: '/dynsetup/:domain',
     name: 'dynsetup',
     component: () => import(/* webpackChunkName: "signup" */ '../views/DynSetup.vue')
   },
@@ -32,6 +32,11 @@ const routes = [
     path: '//desec.readthedocs.io/',
     name: 'docs',
     beforeEnter(to) { location.href = to.path },
+  },
+  {
+    path: '/confirm/:action/:code',
+    name: 'confirmation',
+    component: () => import(/* webpackChunkName: "signup" */ '../views/Confirmation.vue')
   },
   {
     path: '/reset-password/:email?',
