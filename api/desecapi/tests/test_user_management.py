@@ -73,8 +73,8 @@ class UserManagementClient(APIClient):
     def view_account(self, token):
         return self.get(reverse('v1:account'), HTTP_AUTHORIZATION='Token {}'.format(token))
 
-    def verify(self, url, **kwargs):
-        return self.post(url, kwargs) if kwargs else self.get(url)
+    def verify(self, url, data=None, **kwargs):
+        return self.post(url, data, **kwargs) if data else self.get(url, **kwargs)
 
     def obtain_captcha(self, **kwargs):
         return self.post(reverse('v1:captcha'))
@@ -436,7 +436,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertResetPasswordSuccessResponse(self.reset_password(email))
         confirmation_link = self.assertResetPasswordEmail(email)
         self.assertResetPasswordVerificationSuccessResponse(
-            self.client.verify(confirmation_link, new_password=new_password, **kwargs))
+            self.client.verify(confirmation_link, data={'new_password': new_password}, **kwargs))
         self.assertPassword(email, new_password)
         return new_password
 
@@ -587,7 +587,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
     def _finish_reset_password(self, confirmation_link, expect_success=True):
         new_password = self.random_password()
-        response = self.client.verify(confirmation_link, new_password=new_password)
+        response = self.client.verify(confirmation_link, data={'new_password': new_password})
         if expect_success:
             self.assertResetPasswordVerificationSuccessResponse(response=response)
         else:
@@ -669,7 +669,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         confirmation_link = self._start_reset_password()
         self._test_delete_account(self.email, self.password)
         self.assertVerificationFailureUnknownUserResponse(
-            response=self.client.verify(confirmation_link, new_password='foobar')
+            response=self.client.verify(confirmation_link, data={'new_password': 'foobar'})
         )
         self.assertNoEmailSent()
 
@@ -713,7 +713,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         new_email = self.random_username()
         self.assertChangeEmailSuccessResponse(self.change_email(new_email))
         confirmation_link = self.assertChangeEmailVerificationEmail(new_email)
-        response = self.client.verify(confirmation_link, new_password=self.random_password())
+        response = self.client.verify(confirmation_link, data={'new_password': self.random_password()})
         self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_change_email_same_email(self):
@@ -814,7 +814,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
         with mock.patch('time.time',
                         return_value=time.time() + settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE.total_seconds() + 1):
-            response = self.client.verify(confirmation_link, new_password=self.random_password())
+            response = self.client.verify(confirmation_link, data={'new_password': self.random_password()})
         self.assertVerificationFailureExpiredCodeResponse(response)
 
     def test_action_code_confusion(self):
@@ -837,4 +837,5 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
         # Make sure links don't work
         self.assertVerificationFailureInvalidCodeResponse(self.client.verify(delete_link))
-        self.assertVerificationFailureInvalidCodeResponse(self.client.verify(reset_password_link, new_password='dummy'))
+        self.assertVerificationFailureInvalidCodeResponse(self.client.verify(reset_password_link,
+                                                                             data={'new_password': 'dummy'}))
