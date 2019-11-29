@@ -485,7 +485,7 @@ class AccountChangeEmailView(generics.GenericAPIView):
 
 
 class AccountResetPasswordView(generics.GenericAPIView):
-    serializer_class = serializers.EmailSerializer
+    serializer_class = serializers.ResetPasswordSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

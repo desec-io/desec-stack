@@ -50,9 +50,10 @@ class UserManagementClient(APIClient):
     def logout(self, token):
         return self.post(reverse('v1:logout'), HTTP_AUTHORIZATION=f'Token {token}')
 
-    def reset_password(self, email):
+    def reset_password(self, email, captcha_id, captcha_solution):
         return self.post(reverse('v1:account-reset-password'), {
             'email': email,
+            'captcha': {'id': captcha_id, 'solution': captcha_solution},
         })
 
     def change_email(self, email, password, **payload):
@@ -105,7 +106,8 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         return self.client.logout(token)
 
     def reset_password(self, email):
-        return self.client.reset_password(email)
+        captcha_id, captcha_solution = self.get_captcha()
+        return self.client.reset_password(email, captcha_id, captcha_solution)
 
     def change_email(self, new_email):
         return self.client.change_email(self.email, self.password, new_email=new_email)

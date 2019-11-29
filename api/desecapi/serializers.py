@@ -557,6 +557,10 @@ class ChangeEmailSerializer(serializers.Serializer):
         return value
 
 
+class ResetPasswordSerializer(EmailSerializer):
+    captcha = CaptchaSolutionSerializer(required=True)
+
+
 class CustomFieldNameUniqueValidator(UniqueValidator):
     """
     Does exactly what rest_framework's UniqueValidator does, however allows to further customize the
