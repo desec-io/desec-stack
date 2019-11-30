@@ -45,11 +45,31 @@
           <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
         </span>
       </div>
-      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'signup', query: $route.query}">Create Account</v-btn>
+      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!$store.state.authenticated">Create Account</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!$store.state.authenticated">Log In</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="$store.state.authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
+      <template v-slot:extension v-if="$store.state.authenticated">
+        <v-tabs background-color="primary darken-1" fixed-tabs>
+          <v-tab
+            v-for="(item, key) in tabmenu"
+            :key="key"
+            :to="{name: item.name}"
+          >
+            {{ item.text }}
+          </v-tab>
+        </v-tabs>
+      </template>
     </v-app-bar>
 
     <v-content>
+      <v-progress-linear
+              :active="$store.getters.working"
+              :indeterminate="$store.getters.working"
+              fixed
+              color="secondary"
+              style="z-index: 3"
+      ></v-progress-linear>
       <router-view/>
     </v-content>
     <v-footer
@@ -106,6 +126,9 @@
 
 <script>
 import {EMAIL} from './env';
+import router from './router';
+import {logout} from './utils';
+
 export default {
   name: 'App',
   data: () => ({
@@ -144,7 +167,23 @@ export default {
         'icon': 'mdi-lock-reset',
         'text': 'Reset Account Password',
       },
-    }
+    },
+    tabmenu: {
+      'domains': {
+        'name': 'domains',
+        'text': 'Domain Management',
+      },
+      'tokens': {
+        'name': 'tokens',
+        'text': 'Token Management',
+      },
+    },
   }),
+  methods: {
+    async logout() {
+      await logout();
+      router.push({name: 'home'});
+    }
+  }
 }
 </script>

@@ -1,6 +1,9 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import {HTTP, logout} from "../utils";
+import Login from "../views/Login";
+import store from '../store';
 
 Vue.use(VueRouter)
 
@@ -79,6 +82,23 @@ const routes = [
     name: 'about',
     component: () => import('../views/About.vue')
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: Login,
+  },
+  {
+    path: '/tokens',
+    name: 'tokens',
+    component: () => import(/* webpackChunkName: "gui" */ '../views/TokenList.vue'),
+    meta: {guest: false},
+  },
+  {
+    path: '/domains',
+    name: 'domains',
+    component: () => import(/* webpackChunkName: "gui" */ '../views/DomainList.vue'),
+    meta: {guest: false},
+  }
 ]
 
 const router = new VueRouter({
@@ -93,5 +113,46 @@ const router = new VueRouter({
   },
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  // see if there are credentials in the session store that we don't know of
+  let recovered = false;
+  if (sessionStorage.getItem('token') && !store.state.authenticated) {
+    const token = JSON.parse(sessionStorage.getItem('token'))
+    HTTP.defaults.headers.common['Authorization'] = 'Token ' + token.token;
+    store.commit('login', token);
+    recovered = true
+  }
+
+  if (to.matched.some(record => 'guest' in record.meta && record.meta.guest === false)) {
+    // this route requires auth, check if logged in
+    // if not, redirect to login page.
+    if (!store.state.authenticated) {
+      next({
+        name: 'login',
+        query: { redirect: to.fullPath }
+      })
+    } else {
+      next()
+    }
+  } else {
+    if (store.state.authenticated) {
+      // Log in state was present, but not needed for the current page
+      if (recovered) {
+        // user restored a previous session
+        // redirect her to the home page for authorized users
+        next({
+          name: 'DomainList'
+        })
+      } else {
+        // user navigated to a page that doesn't require auth
+        // from within the current session (without session restore)
+        // to bias on the safe side we log out
+        logout()
+      }
+    }
+    next() // make sure to always call next()!
+  }
+});
 
 export default router
