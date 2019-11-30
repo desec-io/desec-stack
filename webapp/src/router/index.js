@@ -115,7 +115,13 @@ const routes = [
     name: 'domains',
     component: () => import(/* webpackChunkName: "gui" */ '../views/DomainList.vue'),
     meta: {guest: false},
-  }
+  },
+  {
+    path: '/domains/:domain',
+    name: 'domain',
+    component: () => import(/* webpackChunkName: "gui" */ '../views/Domain/CrudDomain.vue'),
+    meta: {guest: false},
+  },
 ]
 
 const router = new VueRouter({

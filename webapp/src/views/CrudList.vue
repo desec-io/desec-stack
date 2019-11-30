@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
-      <v-col cols="12" sm="10">
+      <v-col cols="12" :sm="fullWidth ? '12' : '10'">
         <v-card>
           <!-- Error Snackbar -->
           <v-snackbar
@@ -38,6 +38,7 @@
                   :custom-filter="filterSearchableCols"
                   :loading="$store.getters.working || createDialogWorking || destroyDialogWorking"
                   class="elevation-1"
+                  @click:row="rowClick"
           >
             <template slot="top">
               <!-- Headline & Toolbar, Including New Form -->
@@ -175,7 +176,7 @@
             </template>
             <template v-slot:item.actions="itemFieldProps">
               <v-layout
-                      align-center
+                      class="my-1 py-3"
                       justify-end
               >
                 <v-btn
@@ -304,6 +305,7 @@ import RRSetType from '@/components/Field/RRSetType';
 import TimeAgo from '@/components/Field/TimeAgo';
 import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
+import Record from '@/components/Field/Record';
 import RRSet from '@/components/Field/RRSet';
 
 // safely access deeply nested objects
@@ -316,6 +318,7 @@ export default {
     TimeAgo,
     Code,
     GenericText,
+    Record,
     RRSet,
   },
   data() { return {
@@ -332,6 +335,7 @@ export default {
     errors: [],
     extraComponentName: '',
     extraComponentBind: {},
+    fullWidth: false,
     snackbar: false,
     snackbarInfoText: '',
     search: '',
@@ -377,6 +381,7 @@ export default {
         e.target.closest('tr').querySelector('.mdi-content-save-edit').closest('button').click();
       }
     },
+    handleRowClick: () => {},
   }},
   computed: {
     createInhibited: () => false,
@@ -387,6 +392,7 @@ export default {
         sortable: false,
         align: 'right',
         value: 'actions',
+        width: '130px',
       });
       return cols; // data table expects an array
     },
@@ -418,6 +424,9 @@ export default {
   methods: {
     clearErrors(c) {
       c.createErrors = [];
+    },
+    rowClick(value) {
+      this.handleRowClick(value);
     },
     /** *
      * Ask the user to delete the given item.
@@ -570,7 +579,7 @@ export default {
       // TODO only search searchable columns
       return value != null &&
               search != null &&
-              typeof value === 'string' &&
+              typeof value !== 'boolean' &&
               value.toString().toLocaleLowerCase().indexOf(search.toLocaleLowerCase()) !== -1
     },
   },
@@ -594,5 +603,8 @@ export default {
   }
   >>> tr:focus-within :focus {
     background-color: #FFFFFF;
+  }
+  >>> tbody tr > :hover {
+    cursor: pointer;
   }
 </style>

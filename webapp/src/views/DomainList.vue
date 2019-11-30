@@ -22,7 +22,7 @@ export default {
           destroy: 'Domain Deletion',
         },
         texts: {
-          banner: () => ('You can create and delete domains here. We will soon extend our GUI to offer DNS record management. In the meantime, please <a href="https://desec.readthedocs.io/en/latest/dns/rrsets.html" target="_blank">use the API</a> to manage records.'),
+          banner: () => '<b>New:</b> You can now edit your DNS records using the GUI. To get started, click on one of your domains.',
           create: () => `You have ${self.availableCount} of ${self.limit_domains} domains left.`,
           createWarning: () => (self.availableCount <= 0 ? 'You have reached your maximum number of domains. Please contact support to apply for a higher limit.' : ''),
           destroy: d => (`Delete domain ${d.name}?`),
@@ -91,6 +91,9 @@ export default {
             }, this.extraComponentBind);
           }
           this.extraComponentName = 'DomainDetailsDialog';
+        },
+        handleRowClick: (value) => {
+          this.$router.push({name: 'domain', params: {domain: value.name}});
         },
     }
   },

@@ -1,5 +1,8 @@
 <template>
-  <span :title="value">{{ value ? timeAgo.format(new Date(value)) : 'never' }}</span>
+  <div
+          class="my-1 py-3"
+          :title="value"
+  >{{ value ? timeAgo.format(new Date(value)) : 'never' }}</div>
 </template>
 
 <script>

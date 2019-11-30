@@ -1,6 +1,8 @@
 <template>
   <v-combobox
     :label="label"
+    :disabled="disabled || readonly"
+    :error-messages="errorMessages"
     :value="value"
     :items="types"
     @input="input($event)"
@@ -11,8 +13,20 @@
 export default {
   name: 'RRSetType',
   props: {
+    disabled: {
+      type: Boolean,
+      required: false,
+    },
+    errorMessages: {
+      type: [String, Array],
+      default: () => [],
+    },
     label: {
       type: String,
+      required: false,
+    },
+    readonly: {
+      type: Boolean,
       required: false,
     },
     value: {
@@ -34,7 +48,6 @@ export default {
       'PTR',
       'SRV',
       'DS',
-      'DNSKEY',
     ],
   }),
   methods: {

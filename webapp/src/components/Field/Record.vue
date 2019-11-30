@@ -1,20 +1,24 @@
 <template>
-  <v-layout>
+  <v-layout class="flex">
     <div
       v-for="(field, index) in fields"
       :key="index"
+      :class="index == fields.length - 1 ? 'flex-grow-1' : ''"
     >
       <v-text-field
         ref="input"
         v-model="field.value"
-        :clearable="clearable"
-        :label="field.label"
+        :label="hideLabel ? '' : field.label"
+        :class="hideLabel ? 'pt-0' : ''"
         placeholder=" "
-        :hide-details="!$v.fields.$each[index].$invalid && !$v.fields[index].$invalid"
+        :hide-details="!content.length || (!$v.fields.$each[index].$invalid && !$v.fields[index].$invalid)"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
         :style="{ width: fieldWidth(index) }"
+        :append-icon="index == fields.length-1 ? appendIcon : ''"
+        @click:append="() => $emit('remove')"
         @input="inputHandler()"
+        @paste.prevent="pasteHandler($event)"
         @keydown.8="backspaceHandler(index, $event)"
         @keydown.32="spaceHandler(index, $event)"
         @keydown.35="endHandler($event)"
@@ -22,6 +26,7 @@
         @keydown.37="leftHandler(index, $event)"
         @keydown.39="rightHandler(index, $event)"
         @keydown.46="deleteHandler(index, $event)"
+        @keyup="(e) => $emit('keyup', e)"
       />
       <span
         ref="mirror"
@@ -44,9 +49,13 @@ export default {
       type: String,
       required: true,
     },
-    clearable: {
+    hideLabel: {
       type: Boolean,
       default: false,
+    },
+    appendIcon: {
+      type: String,
+      required: false,
     },
   },
   data: () => ({
@@ -54,7 +63,7 @@ export default {
       required: ' ',
     },
     fields: [
-      { label: 'Content', validations: {} },
+      { label: 'Value', validations: {} },
     ],
     value: '',
   }),
@@ -137,6 +146,9 @@ export default {
       }
       return ret;
     },
+    focus() {
+      this.$refs.input[0].focus();
+    },
     async update(value, caretPosition) {
       await this.$nextTick();
 
@@ -161,7 +173,7 @@ export default {
       this.updateFields();
 
       if (caretPosition !== undefined) {
-        this.setPosition(caretPosition);
+        await this.setPosition(caretPosition);
       }
     },
     positionAfterDelimiter(index) {
@@ -231,6 +243,21 @@ export default {
       const pos = this.getPosition();
       const value = this.fields.map(field => field.value).join(' ');
       this.update(value, pos);
+    },
+    pasteHandler(e) {
+      let value = this.fields.map(field => field.value).join(' ');
+      const pos = this.getPosition();
+      const clipboardData = e.clipboardData.getData('text');
+
+      // number of fields covered by this paste, minus 1 (given by number of spaces in the clipboard text, bounded from
+      // above by the number of fields (minus 1) at or to the right of the caret position
+      const nBeforeCaret = (value.slice(0, pos).match(/ /g) || []).length
+      const n = Math.min((clipboardData.match(/ /g) || []).length, this.fields.length - 1 - nBeforeCaret);
+
+      // Insert clipboard text and remove up to n spaces form the right
+      value = value.slice(0, pos) + clipboardData + value.slice(pos);
+      value = value.replace(new RegExp(` {0,${n}}$`,'g'), '');
+      this.update(value, pos + clipboardData.length);
     },
     async setPosition(pos) {
       await this.$nextTick();
