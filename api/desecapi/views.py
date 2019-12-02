@@ -590,13 +590,12 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         return PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
 
     def _finalize_without_domain(self):
-        login_url = self.request.build_absolute_uri(reverse('v1:login'))
         if not is_password_usable(self.request.auth.user.password):
             AccountResetPasswordView.send_reset_token(self.request.auth.user, self.request)
             return Response({
-                'detail': f'Success! We sent you instructions on how to reset your password. Afterwards, Please log in '
-                          f'at {login_url}.'
+                'detail': 'Success! We sent you instructions on how to set your password.'
             })
+        login_url = self.request.build_absolute_uri(reverse('v1:login'))
         return Response({
                 'detail': f'Success! Please log in at {login_url}.'
             })
@@ -635,7 +634,8 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer
 
     def finalize(self):
-        return Response({'detail': 'Success! Your password has been changed.'})
+        login_url = self.request.build_absolute_uri(reverse('v1:login'))
+        return Response({'detail': f'Success! Your password has been changed. Log in at {login_url}.'})
 
 
 class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
