@@ -160,6 +160,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             else:
                 self.assertIn(recipient, email.recipients())
         body = email.body
+        self.assertIn('user_id = ', body)
         if reset:
             mail.outbox = []
         return body if not pattern else re.search(pattern, body).group(1)

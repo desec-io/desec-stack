@@ -152,6 +152,7 @@ class User(AbstractBaseUser):
 
         context = context or {}
         content = get_template(f'emails/{reason}/content.txt').render(context)
+        content += f'\nSupport Reference: user_id = {self.pk}\n'
         footer = get_template('emails/footer.txt').render()
 
         logger.warning(f'Queuing email for user account {self.pk} (reason: {reason})')
