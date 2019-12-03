@@ -311,10 +311,10 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_503_SERVICE_UNAVAILABLE)
 
     def test_create_domain_policy(self):
-        name = '*.' + self.random_domain_name()
-        response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("Invalid value (not a DNS name)." in response.data['name'][0])
+        for name in ['1.2.3..4.test.dedyn.io', 'test..de', '*.' + self.random_domain_name(), 'a' * 64 + '.bla.test']:
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertTrue("Invalid value (not a DNS name)." in response.data['name'][0])
 
     def test_create_domain_other_parent(self):
         name = 'something.' + self.other_domain.name

@@ -186,7 +186,7 @@ class Token(rest_framework.authtoken.models.Token):
 validate_domain_name = [
     validate_lower,
     RegexValidator(
-        regex=r'^[a-z0-9_.-]*[a-z]$',
+        regex=r'^([a-z0-9_-]{1,63}\.)*[a-z]{1,63}$',
         message='Invalid value (not a DNS name).',
         code='invalid_domain_name'
     )
