@@ -356,6 +356,20 @@ class MockPDNSTestCase(APITestCase):
         request.pop('status')
         return request
 
+    @classmethod
+    def request_pdns_zone_update_invalid_rr(cls, name=None):
+        def request_callback(r, _, response_headers):
+            return [
+                422, response_headers,
+                json.dumps({'error': 'Mocked error. Considering RR content invalid.'})
+            ]
+
+        request = cls.request_pdns_zone_update(name)
+        # noinspection PyTypeChecker
+        request['body'] = request_callback
+        request.pop('status')
+        return request
+
     def request_pdns_zone_update_assert_body(self, name: str = None, updated_rr_sets: Union[List[RRset], Dict] = None):
         if updated_rr_sets is None:
             updated_rr_sets = []

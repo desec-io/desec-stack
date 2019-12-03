@@ -19,7 +19,7 @@ class PDNSValidationError(ValidationError):
         except json.JSONDecodeError:
             detail = response.text
 
-        return super().__init__(detail=detail, code='invalid')
+        return super().__init__(detail={'detail': detail}, code='invalid')
 
 
 class PDNSException(APIException):
