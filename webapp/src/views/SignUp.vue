@@ -111,28 +111,25 @@
                       :disabled="working"
                       :rules="terms_rules"
                       tabindex="4"
-              >
-                <template slot="label">
-                  <v-layout>
-                    <v-flex x12>
-                      Yes, I agree to the <a @click.stop="privacyPolicy">privacy policy</a>.
-                    </v-flex>
-                  </v-layout>
-                </template>
-              </v-checkbox>
-            </v-layout>
-          </v-card-text>
-          <v-card-actions class="justify-center">
-            <v-btn
-                    depressed
-                    color="primary"
-                    type="submit"
-                    :disabled="working"
-                    :loading="working"
-                    tabindex="5"
-            >Sign Up</v-btn>
-          </v-card-actions>
-        </v-card>
+                >
+                  <template slot="label">
+                    <v-flex>Yes, I agree to the <a @click.stop="privacyPolicy">privacy policy</a>.</v-flex>
+                  </template>
+                </v-checkbox>
+              </v-layout>
+            </v-card-text>
+            <v-card-actions class="justify-center">
+              <v-btn
+                      depressed
+                      class="px-4"
+                      color="primary"
+                      type="submit"
+                      :disabled="working"
+                      :loading="working"
+                      tabindex="5"
+              >Sign up for Beta Account</v-btn>
+            </v-card-actions>
+          </v-card>
         </v-form>
       </v-col>
     </v-row>

@@ -15,7 +15,7 @@
               deSEC is free for everyone to use.
             </p>
           </h3>
-          <div class="pa-2 mt-4">
+          <div class="pa-2">
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>
                 <v-col md="9" cols="12">
@@ -37,8 +37,9 @@
                     x-large
                     block
                   >
-                    Create Account
+                    Create Beta Account
                   </v-btn>
+                  <p class="mt-4 body-2 grey--text text--darken-1">While currently in beta test, we have reached stable operation and are approaching official launch.</p>
                 </v-col>
               </v-row>
             </v-form>
