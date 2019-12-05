@@ -148,7 +148,7 @@ describe("www/nginx", function () {
             chakram.setRequestHeader('Host', 'desec.' + process.env.DESECSTACK_DOMAIN);
         });
 
-        it("is alive", function () {
+        it.skip("is alive", function () {
             var response = chakram.get('https://www/');
             return expect(response).to.have.status(200);
         });

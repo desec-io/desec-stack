@@ -11,7 +11,12 @@ COPY entrypoint.sh .
 # (we don't want any keys in this repository)
 VOLUME /etc/ssl/private
 
-# mountable content
+# mountable content for /.well-known/ ACME challenge
 VOLUME /var/www/html
+
+# mountable content for web app (remove default stuff in there)
+RUN rm /usr/share/nginx/html/*
+COPY html/503.html /usr/share/nginx/html
+VOLUME /usr/share/nginx/html
 
 CMD ["./entrypoint.sh"]
