@@ -64,6 +64,8 @@ services:
     command: bash -c "cat src/env.js.template | envsubst > src/env.js && npm run serve --fix"
     environment:
     - DESECSTACK_DOMAIN
+    - DESECSTACK_API_SEPA_CREDITOR_ID
+    - DESECSTACK_API_SEPA_CREDITOR_NAME
     - HOST=0.0.0.0
     - PORT=443
     networks:

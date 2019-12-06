@@ -323,7 +323,7 @@ class Donation(models.Model):
     created = models.DateTimeField(default=get_default_value_created)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
-    bic = models.CharField(max_length=11)
+    bic = models.CharField(max_length=11, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     message = models.CharField(max_length=255, blank=True)
     due = models.DateTimeField(default=get_default_value_due)

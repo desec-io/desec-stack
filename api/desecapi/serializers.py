@@ -497,7 +497,9 @@ class DonationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Donation
-        fields = ('name', 'iban', 'bic', 'amount', 'message', 'email')
+        fields = ('name', 'iban', 'bic', 'amount', 'message', 'email', 'mref')
+        read_only_fields = ('mref',)
+
 
     @staticmethod
     def validate_bic(value):

@@ -185,6 +185,8 @@ services:
     build: webapp
     environment:
     - DESECSTACK_DOMAIN
+    - DESECSTACK_API_SEPA_CREDITOR_ID
+    - DESECSTACK_API_SEPA_CREDITOR_NAME
     volumes:
     - ./webapp/:/usr/src/app/
     - webapp_dist:/usr/src/app/dist
