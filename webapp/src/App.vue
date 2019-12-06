@@ -118,6 +118,11 @@ export default {
         'icon': 'mdi-gift-outline',
         'text': 'Donate',
       },
+      'reset-password': {
+        'name': 'reset-password',
+        'icon': 'mdi-lock-reset',
+        'text': 'Reset Account Password',
+      },
     }
   }),
 }

@@ -26,7 +26,7 @@
               Thank you for your interest in deSEC.
               To create your deSEC account, please click the verification link in the email that we sent you.
               If you did not receive an email, please check your spam folder or if you already have an account
-              by using the <router-link to="/">account recovery form</router-link>. <!-- TODO -->
+              by using the <router-link :to="{name: 'reset-password'}">password reset form</router-link>.
             </v-alert>
           </v-card-text>
           <v-card-actions>

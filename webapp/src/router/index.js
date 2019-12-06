@@ -34,6 +34,11 @@ const routes = [
     beforeEnter(to) { location.href = to.path },
   },
   {
+    path: '/reset-password/:email?',
+    name: 'reset-password',
+    component: () => import(/* webpackChunkName: "signup" */ '../views/ResetPassword.vue')
+  },
+  {
     path: '/donate/',
     name: 'donate',
     component: () => import('../views/Donate.vue')
