@@ -30,6 +30,7 @@
         <v-img
                 :src="require('./assets/logo.svg')"
                 alt="deSEC Logo"
+                eager
                 contain
         ></v-img>
       </router-link></v-toolbar-title>
