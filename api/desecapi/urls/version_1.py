@@ -29,10 +29,10 @@ api_urls = [
     path('domains/<name>/', views.DomainDetail.as_view(), name='domain-detail'),
     path('domains/<name>/rrsets/', views.RRsetList.as_view(), name='rrsets'),
     path('domains/<name>/rrsets/.../<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
-    re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)\.\.\./(?P<type>[^/]+)/',
+    re_path(r'^domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)\.\.\./(?P<type>[^/]+)/$',
             views.RRsetDetail.as_view(), name='rrset'),
     path('domains/<name>/rrsets/@/<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
-    re_path(r'domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)@/(?P<type>[^/]+)/',
+    re_path(r'^domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)@/(?P<type>[^/]+)/$',
             views.RRsetDetail.as_view(), name='rrset@'),
     path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
 
