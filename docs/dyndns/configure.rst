@@ -9,10 +9,25 @@ To update your dynDNS IP address, there are several options:
 
 Option 1: Use Your Router
 `````````````````````````
+
 For most folks, using the integrated dynDNS client of their router will be
-easiest. The configuration procedures vary for all routers which is why we
-can't provide a tutorial for all of them. However, most of the time it boils
-down to enter the following details in your router configuration:
+easiest. Here are two ways how to configure it.
+
+Use your router's deSEC provider
+********************************
+
+Some routers have support for deSEC out of the box, and you just need to select
+the right option ("deSEC", "desec.io", "dedyn", or similar). For example, if
+you run a router with the OpenWRT operation system, watch out for the
+"desec.io" provider.
+
+Custom Configuration
+********************
+
+If your router does not have deSEC preconfigured, the configuration procedure
+will depend on the specific type of router which is why we can't provide a
+tutorial for all of them. However, most of the time it boils down to enter the
+following details in your router configuration:
 
 - Update Server ``update.dedyn.io``, or Update URL ``https://update.dedyn.io/``
 - Username (your dedyn.io hostname, e.g. yourname.dedyn.io)
