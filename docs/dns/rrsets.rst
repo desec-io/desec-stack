@@ -1,3 +1,5 @@
+.. _`manage-rrsets`:
+
 Retrieving and Manipulating DNS Information
 -------------------------------------------
 
@@ -21,7 +23,7 @@ The relevant endpoints all reside under ``/api/v1/domains/:name/rrsets/``,
 where ``:name`` is the name of a domain you own.  When operating on domains
 that don't exist or you don't own, the API responds with a ``404 Not Found``
 status code.  For a quick overview of the available endpoints, methods, and
-operations, see `Endpoint Reference`_.
+operations, see :ref:`endpoint-reference`.
 
 
 .. _`RRset object`:
@@ -100,7 +102,8 @@ Field details:
 
     TTL (time-to-live) value, which dictates for how long resolvers may cache
     this RRset, measured in seconds.  The smallest acceptable value is given by
-    the domain's `minimum TTL`_ setting.  The maximum value is 604800 (one week).
+    the domain's :ref:`minimum TTL <domain object>` setting.  The maximum value
+    is 604800 (one week).
 
 ``type``
     :Access mode: read, write-once (upon RRset creation)
@@ -211,6 +214,8 @@ reverse chronological order of their creation.
 The response status code in case of success is ``200 OK``.  This is true also
 if there are no RRsets in the zone; in this case, the response body will be an
 empty JSON array.
+
+.. _pagination:
 
 Pagination
 ``````````

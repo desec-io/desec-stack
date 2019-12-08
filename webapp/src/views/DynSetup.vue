@@ -79,7 +79,7 @@
                   <p>
                     Please only update your IP address when it has changed. If your client is
                     unable to determine when your address changes, please refer to our
-                    <a href="https://desec.readthedocs.io/en/latest/#configuring-your-dyndns-client">documentation</a>
+                    <a href="https://desec.readthedocs.io/en/latest/dyndns/configure.html">documentation</a>
                     for alternative IP update approaches.
                   </p>
                 </v-expansion-panel-content>
@@ -102,7 +102,7 @@
                   <p>
                     For alternative approaches to updating your IP address and for a
                     detailed explanation of the update protocol, please refer to our
-                    <a href="https://desec.readthedocs.io/en/latest/#dyndns-howto">documentation</a>.
+                    <a href="https://desec.readthedocs.io/en/latest/dyndns/update-api.html">documentation</a>.
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>

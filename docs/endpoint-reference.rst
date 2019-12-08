@@ -1,8 +1,10 @@
+.. _endpoint-reference:
+
 Endpoint Reference
 ------------------
 
 The following table summarizes basic information about the deSEC API endpoints used
-for `User Registration and Management`_.
+for :ref:`managing users <manage-account>` and :ref:`tokens <manage-tokens>`.
 
 +------------------------------------------------+------------+---------------------------------------------+
 | Endpoint ``/api/v1``...                        | Methods    | Use case                                    |
@@ -41,7 +43,8 @@ for `User Registration and Management`_.
 +------------------------------------------------+------------+---------------------------------------------+
 
 The following table summarizes basic information about the deSEC API endpoints used
-for `Domain Management`_ and `Retrieving and Manipulating DNS Information`_.
+for :ref:`domain-management` and :ref:`Retrieving and Manipulating DNS
+Information <manage-rrsets>`.
 
 +------------------------------------------------+------------+---------------------------------------------+
 | Endpoint ``/api/v1/domains``...                | Methods    | Use case                                    |
@@ -65,13 +68,13 @@ for `Domain Management`_ and `Retrieving and Manipulating DNS Information`_.
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Create, modify or delete one or more RRsets |
 +------------------------------------------------+------------+---------------------------------------------+
+| ...\ ``/:name/rrsets/@/:type/``                |            | Access an RRset at the zone apex            |
++------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/:name/rrsets/:subname/:type/``         | ``GET``    | Retrieve a specific RRset                   |
-| ...\ ``/:name/rrsets/:subname.../:type/``      +------------+---------------------------------------------+
-|                                                | ``PATCH``  | Modify an RRset                             |
+|                                                +------------+---------------------------------------------+
+| ...\ ``/:name/rrsets/:subname.../:type/``      | ``PATCH``  | Modify an RRset                             |
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Replace an RRset                            |
 |                                                +------------+---------------------------------------------+
 |                                                | ``DELETE`` | Delete an RRset                             |
-+------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/:name/rrsets/@/:type/``                |            | Access an RRset at the zone apex            |
 +------------------------------------------------+------------+---------------------------------------------+

@@ -12,7 +12,7 @@ Check out the `current status of the API versions`_ to make sure you
 are using the latest stable API whenever using our service in
 production.
 
-.. _current status of the API versions: https://github.com/desec-io/desec-stack/#api-versions-and-road-map
+.. _current status of the API versions: https://github.com/desec-io/desec-stack/#api-versions-and-roadmap
 
 **Unstable API versions** are currently under development and may
 change without prior notice, but we promise to keep an eye on users

@@ -1,3 +1,5 @@
+.. _domain-management:
+
 Domain Management
 -----------------
 
@@ -63,12 +65,10 @@ Field details:
       We look at each active ``cryptokey_resource`` (``active`` is true) and
       then use the ``dnskey``, ``ds``, ``flags``, and ``keytype`` fields.
 
-.. _`minimum TTL`:
-
 ``minimum_ttl``
     :Access mode: read-only
 
-    Smallest TTL that can be used in an `RRset <RRset object_>`__. The value
+    Smallest TTL that can be used in an :ref:`RRset <RRset object>`. The value
     is set automatically by the server.
 
     If you would like to use lower TTL values, you can apply for an exception
@@ -146,7 +146,7 @@ if you do not own any domains; in this case, the response body will be an empty
 JSON array.
 
 Up to 500 items are returned at a time.  If you have a larger number of
-domains configured, the use of `pagination`_ is required.
+domains configured, the use of :ref:`pagination` is required.
 
 
 Retrieving a Specific Domain
@@ -164,6 +164,8 @@ If you own a domain with that name, the API responds with ``200 OK`` and
 returns the domain object in the reponse body.  Otherwise, the return status
 code is ``404 Not Found``.
 
+
+.. _deleting-a-domain:
 
 Deleting a Domain
 ~~~~~~~~~~~~~~~~~

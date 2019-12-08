@@ -4,7 +4,7 @@ Quickstart
 To use our domain management API, you need to register an account with deSEC.
 Here's a quick intro how to get started:
 
-#. `Obtain a captcha`_ and solve it::
+#. :ref:`obtain-a-captcha` and solve it::
 
     curl -X POST https://desec.io/api/v1/captcha/
 
@@ -14,7 +14,7 @@ Here's a quick intro how to get started:
    ``data:image/png;base64,<challenge>``, after replacing ``<challenge>`` with
    the value of the ``challenge`` response field
 
-#. `Register account`_::
+#. :ref:`register-account`::
 
     curl -X POST https://desec.io/api/v1/auth/ \
         --header "Content-Type: application/json" --data @- <<EOF
@@ -34,7 +34,7 @@ Here's a quick intro how to get started:
    your address and activate your account, simply click the link.
 
 
-#. `Log in`_::
+#. :ref:`log-in`::
 
     curl -X POST https://desec.io/api/v1/auth/login/ \
         --header "Content-Type: application/json" --data @- <<< \
@@ -51,5 +51,5 @@ Here's a quick intro how to get started:
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'
 
-#. Yay! Keep browsing the `Domain Management`_ section of the docs to see how
+#. Yay! Keep browsing the :ref:`domain-management` section of the docs to see how
    to continue.
