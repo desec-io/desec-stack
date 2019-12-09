@@ -1,8 +1,8 @@
 TLS Certificate with Let's Encrypt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-cerbot with deSEC hook
-``````````````````````
+certbot with deSEC hook
+```````````````````````
 
 dynDNS by deSEC supports the DNS challenge protocol to make it easy for you to
 obtain certificates for your domain name easily from anywhere. All you need is
@@ -61,6 +61,6 @@ steps.
 Other ACME clients
 ``````````````````
 There are other ACME clients that support deSEC out of the box. We currently
-know the following:
+know of the following:
 
 - `acme.sh <https://github.com/Neilpang/acme.sh/wiki/dnsapi#71-use-desecio>`_
