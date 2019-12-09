@@ -127,8 +127,7 @@ class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyA
         return obj
 
     def get_serializer(self, *args, **kwargs):
-        kwargs['domain'] = self.domain
-        return super().get_serializer(*args, **kwargs)
+        return super().get_serializer(domain=self.domain, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
@@ -173,6 +172,7 @@ class RRsetList(DomainView, generics.ListCreateAPIView, generics.UpdateAPIView):
         return self.filter_queryset(self.get_queryset())
 
     def get_serializer(self, *args, **kwargs):
+        kwargs = kwargs.copy()
         data = kwargs.get('data')
         if data and 'many' not in kwargs:
             if self.request.method == 'POST':
