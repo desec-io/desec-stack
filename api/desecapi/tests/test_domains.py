@@ -1,12 +1,10 @@
-import re
-
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 
-from desecapi.models import Domain, Token
+from desecapi.models import Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, PublicSuffixMockMixin
 
@@ -183,51 +181,15 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             response = self.client.get(self.reverse('v1:domain-detail', name=domain.name))
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
-    def test_update_my_domain_name(self):
+    def test_update_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
         with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
             response = self.client.get(url)
             self.assertStatus(response, status.HTTP_200_OK)
 
-        response.data['name'] = self.random_domain_name()
-        response = self.client.put(url, response.data, format='json')
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-
-        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
-            response = self.client.get(url)
-            self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(response.data['name'], self.my_domain.name)
-
-    def test_update_my_domain_immutable(self):
-        url = self.reverse('v1:domain-detail', name=self.my_domain.name)
-        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
-            response = self.client.get(url)
-            self.assertStatus(response, status.HTTP_200_OK)
-
-        created = response.data['created']
-        keys = response.data['keys']
-        published = response.data['published']
-
-        response.data['created'] = '2019-08-07T18:34:39.249227Z'
-        response.data['published'] = '2019-08-07T18:34:39.249227Z'
-        response.data['keys'] = [{'dnskey': '257 3 13 badefefe'}]
-
-        self.assertNotEqual(response.data['created'], created)
-        self.assertNotEqual(response.data['published'], published)
-        self.assertNotEqual(response.data['keys'], keys)
-
-        with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)):
-            response = self.client.put(url, response.data, format='json')
-        self.assertStatus(response, status.HTTP_200_OK)
-
-        self.assertEqual(response.data['created'], created)
-        self.assertEqual(response.data['published'], published)
-        self.assertEqual(response.data['keys'], keys)
-
-    def test_update_other_domains(self):
-        url = self.reverse('v1:domain-detail', name=self.other_domain.name)
-        response = self.client.put(url, {}, format='json')
-        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+        for method in [self.client.patch, self.client.put]:
+            response = method(url, response.data, format='json')
+            self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_create_domains(self):
         self.owner.limit_domains = 100

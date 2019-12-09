@@ -1,7 +1,6 @@
 import base64
 import binascii
 
-import django.core.exceptions
 from django.conf import settings
 from django.contrib.auth import user_logged_in
 from django.contrib.auth.hashers import is_password_usable
@@ -73,12 +72,19 @@ class TokenViewSet(IdempotentDestroy,
         serializer.save(user=self.request.user)
 
 
-class DomainList(generics.ListCreateAPIView):
+class DomainViewSet(IdempotentDestroy,
+                    mixins.CreateModelMixin,
+                    mixins.RetrieveModelMixin,
+                    mixins.DestroyModelMixin,
+                    mixins.ListModelMixin,
+                    GenericViewSet):
     serializer_class = serializers.DomainSerializer
     permission_classes = (IsAuthenticated, IsOwner, WithinDomainLimitOnPOST)
+    lookup_field = 'name'
+    lookup_value_regex = r'[^/]+'
 
     def get_queryset(self):
-        return models.Domain.objects.filter(owner=self.request.user.pk)
+        return self.request.user.domains
 
     def perform_create(self, serializer):
         with PDNSChangeTracker():
@@ -93,12 +99,6 @@ class DomainList(generics.ListCreateAPIView):
             parent_domain = models.Domain.objects.get(name=domain.parent_domain_name)
             parent_domain.update_delegation(domain)
 
-
-class DomainDetail(IdempotentDestroy, generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = serializers.DomainSerializer
-    permission_classes = (IsAuthenticated, IsOwner,)
-    lookup_field = 'name'
-
     def perform_destroy(self, instance: models.Domain):
         with PDNSChangeTracker():
             instance.delete()
@@ -106,15 +106,6 @@ class DomainDetail(IdempotentDestroy, generics.RetrieveUpdateDestroyAPIView):
             parent_domain = models.Domain.objects.get(name=instance.parent_domain_name)
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
-
-    def get_queryset(self):
-        return models.Domain.objects.filter(owner=self.request.user.pk)
-
-    def update(self, request, *args, **kwargs):
-        try:
-            return super().update(request, *args, **kwargs)
-        except django.core.exceptions.ValidationError as e:
-            raise ValidationError(detail={"detail": e.message})
 
 
 class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyAPIView):
@@ -594,7 +585,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     def _finalize_with_domain(self, domain):
         if domain.is_locally_registrable:
             # TODO the following line raises Domain.DoesNotExist under unknown conditions
-            PDNSChangeTracker.track(lambda: DomainList.auto_delegate(domain))
+            PDNSChangeTracker.track(lambda: DomainViewSet.auto_delegate(domain))
             token = models.Token.objects.create(user=domain.owner, name='dyndns')
             return Response({
                 'detail': 'Success! Here is the password ("token") to configure your router (or any other dynDNS '

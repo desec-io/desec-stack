@@ -20,13 +20,15 @@ auth_urls = [
     path('tokens/', include(tokens_router.urls)),
 ]
 
+domains_router = SimpleRouter()
+domains_router.register(r'', views.DomainViewSet, basename='domain')
+
 api_urls = [
     # API home
     path('', views.Root.as_view(), name='root'),
 
     # Domain and RRSet management
-    path('domains/', views.DomainList.as_view(), name='domain-list'),
-    path('domains/<name>/', views.DomainDetail.as_view(), name='domain-detail'),
+    path('domains/', include(domains_router.urls)),
     path('domains/<name>/rrsets/', views.RRsetList.as_view(), name='rrsets'),
     path('domains/<name>/rrsets/.../<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
     re_path(r'^domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)\.\.\./(?P<type>[^/]+)/$',
