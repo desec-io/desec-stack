@@ -57,8 +57,9 @@ Field details:
 
     Notes:
 
-    - Newly created domains are assigned a key after a short while (usually
-      around one minute).  Until then, this field is empty.
+    - Keys are returned immediately after domain creation or when retrieving a
+      specific domain. In contrast, when listing all domains, the keys field
+      is omitted for performance reasons.
 
     - The contents of this field are generated from PowerDNS' ``cryptokeys``
       endpoint, see https://doc.powerdns.com/md/httpapi/api_spec/#cryptokeys.
@@ -132,14 +133,14 @@ support.
 Listing Domains
 ~~~~~~~~~~~~~~~
 
-The ``/api/v1/domains/`` endpoint reponds to ``GET`` requests with an array of
+The ``/api/v1/domains/`` endpoint responds to ``GET`` requests with an array of
 `domain object`_\ s. For example, you may issue the following command::
 
     curl -X GET https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {token}"
 
 to retrieve an overview of the domains you own.  Domains are returned in
-reverse chronological order of their creation.
+reverse chronological order of their creation, and DNSSEC keys are omitted.
 
 The response status code in case of success is ``200 OK``.  This is true also
 if you do not own any domains; in this case, the response body will be an empty

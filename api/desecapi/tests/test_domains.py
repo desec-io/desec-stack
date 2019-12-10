@@ -148,6 +148,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             response_set = {data['name'] for data in response.data}
             expected_set = {domain.name for domain in self.my_domains}
             self.assertEqual(response_set, expected_set)
+            self.assertFalse(any('keys' in data for data in response.data))
 
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
@@ -204,6 +205,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
                 self.assertEqual(len(mail.outbox), 0)
+                self.assertTrue(isinstance(response.data['keys'], list))
 
             with self.assertPdnsRequests(self.request_pdns_zone_retrieve_crypto_keys(name)):
                 self.assertStatus(

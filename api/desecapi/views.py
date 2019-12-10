@@ -86,6 +86,10 @@ class DomainViewSet(IdempotentDestroy,
     def get_queryset(self):
         return self.request.user.domains
 
+    def get_serializer(self, *args, **kwargs):
+        include_keys = (self.action in ['create', 'retrieve'])
+        return super().get_serializer(*args, include_keys=include_keys, **kwargs)
+
     def perform_create(self, serializer):
         with PDNSChangeTracker():
             domain = serializer.save(owner=self.request.user)
