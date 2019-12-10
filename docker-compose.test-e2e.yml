@@ -2,6 +2,12 @@ version: '2.2'
 
 # mostly extending from main .yml
 services:
+  www:
+    environment:
+    - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    logging:
+      driver: "json-file"
+
   api:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such

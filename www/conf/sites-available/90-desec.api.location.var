@@ -4,7 +4,7 @@
 location /api/ {
     # max .5r/s to the API per IP, but 10 at once is okay. This limit may need to be increased once
     # client applications become more powerful
-    limit_req zone=perip-api burst=10 nodelay;
+    ${PROD_ONLY} limit_req zone=perip-api burst=10 nodelay;
 
     expires epoch;
     etag off;
