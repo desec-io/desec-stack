@@ -57,7 +57,7 @@ class TokenViewSet(IdempotentDestroy,
                    mixins.ListModelMixin,
                    GenericViewSet):
     serializer_class = serializers.TokenSerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return self.request.user.auth_tokens.all()
@@ -529,7 +529,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         # Redirect browsers to frontend if available
-        is_redirect = (request.accepted_renderer.format == 'html') and self.html_url
+        is_redirect = (request.accepted_renderer.format == 'html') and self.html_url is not None
         if is_redirect:
             # Careful: This can generally lead to an open redirect if values contain slashes!
             # However, it cannot happen for Django view kwargs.

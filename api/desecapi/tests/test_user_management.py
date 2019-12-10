@@ -26,7 +26,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from api import settings
-from desecapi.models import Domain, User, Captcha, Token
+from desecapi.models import Domain, User, Captcha
 from desecapi.serializers import AuthenticatedActionSerializer
 from desecapi.tests.base import DesecTestCase, PublicSuffixMockMixin
 
@@ -87,8 +87,9 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     token = None
 
     def get_captcha(self):
-        data = self.client.obtain_captcha().data
-        id = data['id']
+        response = self.client.obtain_captcha()
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        id = response.data['id']
         solution = Captcha.objects.get(id=id).content
         return id, solution
 

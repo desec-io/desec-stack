@@ -10,7 +10,6 @@ DATABASES = {
             'CHARSET': 'utf8mb4',
         },
     },
-
 }
 
 # avoid computationally expensive password hashing for tests
