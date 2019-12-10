@@ -20,8 +20,7 @@ server {
 	}
 
 	location / {
-		# max .5r/s to the API per IP. Allow burst as some people update multiple domains via cron.
-		limit_req zone=perip-api burst=10 nodelay;
+		limit_req zone=perip-dyndns;
 
 		include uwsgi_params;
 		rewrite ^(.*)$ /api/v1/dyndns/update?$1 break;
