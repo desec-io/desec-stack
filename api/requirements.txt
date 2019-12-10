@@ -9,5 +9,6 @@ django-celery-email~=3.0.0
 httpretty~=0.9.0
 mysqlclient~=1.4.0
 psl-dns~=1.0
+pylibmc~=1.6.1
 requests~=2.22.0
 uwsgi~=2.0.0

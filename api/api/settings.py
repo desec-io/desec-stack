@@ -76,6 +76,13 @@ DATABASES = {
 
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+        'LOCATION': 'memcached:11211',
+    }
+}
+
 # This is necessary because the default is America/Chicago
 TIME_ZONE = 'UTC'
 

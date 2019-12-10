@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y \
 		gcc \
 		gettext \
 		default-mysql-client default-libmysqlclient-dev \
+		libmemcached-dev \
 		postgresql-client libpq-dev \
 		sqlite3 \
 		cron \

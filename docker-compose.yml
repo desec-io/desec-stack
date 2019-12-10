@@ -92,6 +92,7 @@ services:
     - dbapi
     - nslord
     - celery
+    - memcached
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_NS
@@ -232,6 +233,17 @@ services:
       driver: "syslog"
       options:
         tag: "desec/celery"
+    restart: unless-stopped
+
+  memcached:
+    image: memcached:1.5-alpine
+    init: true
+    networks:
+    - rearapi_celery
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/memcached"
     restart: unless-stopped
 
 

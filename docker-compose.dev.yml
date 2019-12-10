@@ -53,6 +53,10 @@ services:
     logging:
       driver: "json-file"
 
+  memcached:
+    logging:
+      driver: "json-file"
+
   webapp:
     volumes:
     - ./webapp/:/usr/src/app/

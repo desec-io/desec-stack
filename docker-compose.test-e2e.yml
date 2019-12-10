@@ -27,6 +27,10 @@ services:
     logging:
       driver: "json-file"
 
+  memcached:
+    logging:
+      driver: "json-file"
+
   test-e2e:
     build: test/e2e
     restart: "no"
