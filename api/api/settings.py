@@ -97,6 +97,21 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'desecapi.exception_handlers.exception_handler',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'ALLOWED_VERSIONS': ['v1', 'v2'],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'desecapi.throttling.ScopedRatesThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        # ScopedRatesThrottle
+        'account_management_active': ['3/min'],  # things with side effect, e.g. sending mail or zone creation on signup
+        'account_management_passive': ['10/min'],  # things like viewing your account or creating/deleting tokens
+        'dyndns': ['1/min'],  # dynDNS updates; anything above 1/min is a client misconfiguration
+        'dns_api_read': ['5/s', '50/min'],  # DNS API requests that do not involve pdns
+        'dns_api_write': ['3/s', '50/min', '200/h'],  # DNS API requests that do involve pdns
+        # UserRateThrottle
+        'user': '1000/d',  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
+    },
+    'NUM_PROXIES': 0,  # Do not use X-Forwarded-For header when determining IP for throttling
 }
 
 PASSWORD_HASHER_TOKEN = 'desecapi.authentication.TokenHasher'
@@ -185,3 +200,4 @@ if os.environ.get('DESECSTACK_E2E_TEST', "").upper() == "TRUE":
     LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5000
     USER_ACTIVATION_REQUIRED = False
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []

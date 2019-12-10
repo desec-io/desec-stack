@@ -18,7 +18,14 @@ PASSWORD_HASHERS = [
     PASSWORD_HASHER_TOKEN,
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 REST_FRAMEWORK['PAGE_SIZE'] = 20
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
 
 # Carry email backend connection over to test mail outbox
 CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ['connection']

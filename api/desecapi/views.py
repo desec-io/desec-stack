@@ -13,7 +13,7 @@ from rest_framework import mixins
 from rest_framework import status
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import (NotAcceptable, NotFound, PermissionDenied, ValidationError)
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -58,6 +58,7 @@ class TokenViewSet(IdempotentDestroy,
                    GenericViewSet):
     serializer_class = serializers.TokenSerializer
     permission_classes = (IsAuthenticated,)
+    throttle_scope = 'account_management_passive'
 
     def get_queryset(self):
         return self.request.user.auth_tokens.all()
@@ -82,6 +83,10 @@ class DomainViewSet(IdempotentDestroy,
     permission_classes = (IsAuthenticated, IsOwner, WithinDomainLimitOnPOST)
     lookup_field = 'name'
     lookup_value_regex = r'[^/]+'
+
+    @property
+    def throttle_scope(self):
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
 
     def get_queryset(self):
         return self.request.user.domains
@@ -115,6 +120,10 @@ class DomainViewSet(IdempotentDestroy,
 class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
+
+    @property
+    def throttle_scope(self):
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
 
     def get_queryset(self):
         return self.domain.rrset_set
@@ -152,6 +161,10 @@ class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyA
 class RRsetList(DomainView, generics.ListCreateAPIView, generics.UpdateAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
+
+    @property
+    def throttle_scope(self):
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
 
     def get_queryset(self):
         rrsets = models.RRset.objects.filter(domain=self.domain)
@@ -220,6 +233,7 @@ class Root(APIView):
 class DynDNS12Update(APIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [PlainTextRenderer]
+    throttle_scope = 'dyndns'
 
     def _find_domain(self, request):
         def find_domain_name(r):
@@ -368,6 +382,7 @@ class DonationList(generics.CreateAPIView):
 
 class AccountCreateView(generics.CreateAPIView):
     serializer_class = serializers.RegisterAccountSerializer
+    throttle_scope = 'account_management_active'
 
     def create(self, request, *args, **kwargs):
         # Create user and send trigger email verification.
@@ -407,6 +422,7 @@ class AccountCreateView(generics.CreateAPIView):
 class AccountView(generics.RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.UserSerializer
+    throttle_scope = 'account_management_passive'
 
     def get_object(self):
         return self.request.user
@@ -419,6 +435,7 @@ class AccountDeleteView(generics.GenericAPIView):
         data={'detail': 'To delete your user account, first delete all of your domains.'},
         status=status.HTTP_409_CONFLICT,
     )
+    throttle_scope = 'account_management_active'
 
     def post(self, request, *args, **kwargs):
         if self.request.user.domains.exists():
@@ -436,6 +453,7 @@ class AccountDeleteView(generics.GenericAPIView):
 class AccountLoginView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
+    throttle_scope = 'account_management_passive'
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
@@ -450,6 +468,7 @@ class AccountLoginView(generics.GenericAPIView):
 class AccountLogoutView(generics.GenericAPIView, mixins.DestroyModelMixin):
     authentication_classes = (auth.TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
+    throttle_classes = []  # always allow people to log out
 
     def get_object(self):
         # self.request.auth contains the hashed key as it is stored in the database
@@ -463,6 +482,7 @@ class AccountChangeEmailView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.ChangeEmailSerializer
+    throttle_scope = 'account_management_active'
 
     def post(self, request, *args, **kwargs):
         # Check password and extract email
@@ -485,6 +505,7 @@ class AccountChangeEmailView(generics.GenericAPIView):
 
 class AccountResetPasswordView(generics.GenericAPIView):
     serializer_class = serializers.ResetPasswordSerializer
+    throttle_scope = 'account_management_active'
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -521,6 +542,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
     html_url = None
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
+    throttle_scope = 'account_management_active'
 
     def get_serializer_context(self):
         return {**super().get_serializer_context(), 'code': self.kwargs['code']}
@@ -647,3 +669,4 @@ class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
 
 class CaptchaView(generics.CreateAPIView):
     serializer_class = serializers.CaptchaSerializer
+    throttle_scope = 'account_management_passive'
