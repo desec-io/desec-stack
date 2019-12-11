@@ -516,11 +516,14 @@ class AuthenticatedActionView(generics.GenericAPIView):
     Abstract class. Deserializes the given payload according the serializers specified by the view extending
     this class. If the `serializer.is_valid`, `act` is called on the action object.
     """
+    action = None
     authentication_classes = (auth.AuthenticatedActionAuthentication,)
-    authentication_exception = ValidationError
     html_url = None
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'code': self.kwargs['code']}
 
     def perform_authentication(self, request):
         # Delay authentication until request.auth or request.user is first accessed.
@@ -538,7 +541,15 @@ class AuthenticatedActionView(generics.GenericAPIView):
             raise NotAcceptable
 
     def post(self, request, *args, **kwargs):
-        self.request.auth.act()  # execute the action (triggers authentication if not yet done)
+        super().perform_authentication(request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.action = serializer.Meta.model(**serializer.validated_data)
+        except ValueError:  # this happens when state cannot be verified
+            raise ValidationError('Invalid code.')
+
+        self.action.act()
         return self.finalize()
 
     def finalize(self):
@@ -550,34 +561,33 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
-        if not self.request.auth.domain:
+        if not self.action.domain:
             return self._finalize_without_domain()
         else:
             domain = self._create_domain()
             return self._finalize_with_domain(domain)
 
     def _create_domain(self):
-        action = self.request.auth
         serializer = serializers.DomainSerializer(
-            data={'name': action.domain},
+            data={'name': self.action.domain},
             context=self.get_serializer_context()
         )
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:  # e.g. domain name unavailable
-            action.user.delete()
+            self.action.user.delete()
             reasons = ', '.join([detail.code for detail in e.detail.get('name', [])])
             raise ValidationError(
-                f'The requested domain {action.domain} could not be registered (reason: {reasons}). '
+                f'The requested domain {self.action.domain} could not be registered (reason: {reasons}). '
                 f'Please start over and sign up again.'
             )
         # TODO the following line is subject to race condition and can fail, as for the domain name, we have that
         #  time-of-check != time-of-action
-        return PDNSChangeTracker.track(lambda: serializer.save(owner=action.user))
+        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.action.user))
 
     def _finalize_without_domain(self):
-        if not is_password_usable(self.request.auth.user.password):
-            AccountResetPasswordView.send_reset_token(self.request.auth.user, self.request)
+        if not is_password_usable(self.action.user.password):
+            AccountResetPasswordView.send_reset_token(self.action.user, self.request)
             return Response({
                 'detail': 'Success! We sent you instructions on how to set your password.'
             })
@@ -609,7 +619,7 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
 
     def finalize(self):
         return Response({
-            'detail': f'Success! Your email address has been changed to {self.request.user.email}.'
+            'detail': f'Success! Your email address has been changed to {self.action.user.email}.'
         })
 
 

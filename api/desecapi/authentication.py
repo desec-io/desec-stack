@@ -9,7 +9,7 @@ from rest_framework.authentication import (
     BasicAuthentication)
 
 from desecapi.models import Token
-from desecapi.serializers import EmailPasswordSerializer
+from desecapi.serializers import AuthenticatedUserActionSerializer, EmailPasswordSerializer
 
 
 class TokenAuthentication(RestFrameworkTokenAuthentication):
@@ -128,16 +128,9 @@ class AuthenticatedActionAuthentication(BaseAuthentication):
     """
     def authenticate(self, request):
         view = request.parser_context['view']
-        data = {**request.data, 'code': view.kwargs['code']}  # order crucial to avoid override from payload!
-        serializer = view.serializer_class(data=data, context=view.get_serializer_context())
+        serializer = AuthenticatedUserActionSerializer(data=request.data, context=view.get_serializer_context())
         serializer.is_valid(raise_exception=True)
-        try:
-            action = serializer.Meta.model(**serializer.validated_data)
-        except ValueError:
-            exc = getattr(view, 'authentication_exception', exceptions.AuthenticationFailed)
-            raise exc('Invalid code.')
-
-        return action.user, action
+        return serializer.validated_data['user'], None
 
 
 class TokenHasher(PBKDF2PasswordHasher):

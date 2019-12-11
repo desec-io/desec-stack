@@ -626,7 +626,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         data = data.copy()  # avoid side effect from .pop
         try:
             # decode from single string
-            unpacked_data = self._unpack_code(data.pop('code'))
+            unpacked_data = self._unpack_code(self.context['code'])
         except KeyError:
             raise serializers.ValidationError({'code': ['This field is required.']})
         except ValueError:
