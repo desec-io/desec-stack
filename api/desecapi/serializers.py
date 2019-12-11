@@ -579,11 +579,11 @@ class CustomFieldNameUniqueValidator(UniqueValidator):
         self.lookup_field = lookup_field
         super().__init__(queryset, message, lookup)
 
-    def filter_queryset(self, value, queryset):
+    def filter_queryset(self, value, queryset, field_name):
         """
         Filter the queryset to all instances matching the given value on the specified lookup field.
         """
-        filter_kwargs = {'%s__%s' % (self.lookup_field or self.field_name, self.lookup): value}
+        filter_kwargs = {'%s__%s' % (self.lookup_field or field_name, self.lookup): value}
         return qs_filter(queryset, **filter_kwargs)
 
 

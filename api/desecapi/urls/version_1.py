@@ -4,7 +4,7 @@ from rest_framework.routers import SimpleRouter
 from desecapi import views
 
 tokens_router = SimpleRouter()
-tokens_router.register(r'', views.TokenViewSet, base_name='token')
+tokens_router.register(r'', views.TokenViewSet, basename='token')
 
 auth_urls = [
     # User management
