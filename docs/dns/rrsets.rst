@@ -1,7 +1,7 @@
 .. _`manage-rrsets`:
 
-Retrieving and Manipulating DNS Information
--------------------------------------------
+Retrieving and Creating DNS Records
+-----------------------------------
 
 All DNS information is composed of so-called *Resource Record Sets*
 (*RRsets*).  An RRset is the set of all Resource Records of a given record
