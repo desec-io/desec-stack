@@ -332,6 +332,8 @@ class DynDNS12Update(APIView):
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
+            if any('ttl' in error for error in e.detail):
+                raise PermissionDenied({'detail': 'Domain not eligible for dynamic updates, please contact support.'})
             raise e
 
         with PDNSChangeTracker():

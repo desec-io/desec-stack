@@ -188,6 +188,13 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
 class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 4
 
+    def test_honor_minimum_ttl(self):
+        self.my_domain.minimum_ttl = 61
+        self.my_domain.save()
+        response = self.assertDynDNS12NoUpdate(self.my_domain.name)
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'Domain not eligible for dynamic updates, please contact support.')
+
     def test_identification_by_token(self):
         """
         Test if the conflict of having multiple domains, but not specifying which to update is correctly recognized.

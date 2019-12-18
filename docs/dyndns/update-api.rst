@@ -57,7 +57,10 @@ determine the hostname, we try the following steps until there is a match:
   associated with your user account (if not ambiguous).
 
 If we cannot determine a hostname to update, the API will return a ``404 Not
-Found`` status code.
+Found`` status code. If the selected hostname is not eligible for dynamic
+updates, we will return ``403 Forbidden``. This usually happens if you try
+updating a hostname that is not under the ``dedyn.io`` domain. If you are
+affected by this and would like to use another domain, please contact support.
 
 .. _determine-ip-addresses:
 
