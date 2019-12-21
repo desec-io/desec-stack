@@ -31,8 +31,9 @@ _config = {
 }
 
 
-def _pdns_request(method, *, server, path, body=None):
-    data = json.dumps(body) if body else None
+def _pdns_request(method, *, server, path, data=None):
+    if data is not None:
+        data = json.dumps(data)
     if data is not None and len(data) > settings.PDNS_MAX_BODY_SIZE:
         raise RequestEntityTooLarge
 
@@ -45,12 +46,12 @@ def _pdns_request(method, *, server, path, body=None):
     return r
 
 
-def _pdns_post(server, path, body):
-    return _pdns_request('post', server=server, path=path, body=body)
+def _pdns_post(server, path, data):
+    return _pdns_request('post', server=server, path=path, data=data)
 
 
-def _pdns_patch(server, path, body):
-    return _pdns_request('patch', server=server, path=path, body=body)
+def _pdns_patch(server, path, data):
+    return _pdns_request('patch', server=server, path=path, data=data)
 
 
 def _pdns_get(server, path):
