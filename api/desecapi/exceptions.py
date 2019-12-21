@@ -24,6 +24,7 @@ class PDNSValidationError(ValidationError):
 
 class PDNSException(APIException):
     def __init__(self, response=None):
+        self.response = response
         return super().__init__(f'pdns response code: {response.status_code}, pdns response body: {response.text}')
 
 
