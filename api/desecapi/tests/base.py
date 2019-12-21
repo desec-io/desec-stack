@@ -12,7 +12,6 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.db import connection
-from django.utils import timezone
 from httpretty import httpretty, core as hr_core
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
