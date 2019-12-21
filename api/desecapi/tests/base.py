@@ -483,6 +483,16 @@ class MockPDNSTestCase(APITestCase):
             'body': None,
         }
 
+    @classmethod
+    def request_pdns_update_catalog(cls):
+        return {
+            'method': 'PATCH',
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, ns='MASTER', id=cls._pdns_zone_id_heuristic('catalog.internal')),
+            'status': 204,
+            'body': None,
+            'priority': 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
+        }
+
     def assertPdnsRequests(self, *expected_requests, expect_order=True):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
@@ -756,6 +766,7 @@ class DesecTestCase(MockPDNSTestCase):
         return [
             cls.request_pdns_zone_create(ns='LORD'),
             cls.request_pdns_zone_create(ns='MASTER'),
+            cls.request_pdns_update_catalog(),
             cls.request_pdns_zone_axfr(name=name),
             cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
@@ -765,6 +776,7 @@ class DesecTestCase(MockPDNSTestCase):
         return [
             cls.request_pdns_zone_delete(name=name, ns='LORD'),
             cls.request_pdns_zone_delete(name=name, ns='MASTER'),
+            cls.request_pdns_update_catalog(),
         ]
 
     @classmethod
@@ -781,6 +793,7 @@ class DesecTestCase(MockPDNSTestCase):
         return [
             cls.request_pdns_zone_delete(name=name, ns='LORD'),
             cls.request_pdns_zone_delete(name=name, ns='MASTER'),
+            cls.request_pdns_update_catalog(),
             cls.request_pdns_zone_update(name=delegate_at),
             cls.request_pdns_zone_axfr(name=delegate_at),
         ]

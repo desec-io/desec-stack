@@ -49,7 +49,7 @@ before_install:
   - docker-compose build api
   - docker-compose build www
 
-  # test images
+  # build images
   - docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build test-e2e
 
 script:

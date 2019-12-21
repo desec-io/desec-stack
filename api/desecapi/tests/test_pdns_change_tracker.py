@@ -477,6 +477,7 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
                 [
                     self.request_pdns_zone_create('LORD'),
                     self.request_pdns_zone_create('MASTER'),
+                    self.request_pdns_update_catalog(),
                     self.request_pdns_zone_axfr(name)
                 ]), PDNSChangeTracker():
             Domain.objects.create(name=name, owner=self.user)

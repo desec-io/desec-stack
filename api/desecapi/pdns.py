@@ -1,3 +1,4 @@
+from hashlib import sha1
 import json
 import re
 
@@ -104,3 +105,26 @@ def get_rrset_datas(domain):
              'records': [record['content'] for record in rrset['records']],
              'ttl': rrset['ttl']}
             for rrset in get_zone(domain)['rrsets']]
+
+
+def construct_catalog_rrset(zone=None, delete=False, subname=None, qtype='PTR', rdata=None):
+    # subname can be generated from zone for convenience; exactly one needs to be given
+    assert (zone is None) ^ (subname is None)
+    # sanity check: one can't delete an rrset and give record data at the same time
+    assert not (delete and rdata)
+
+    if subname is None:
+        zone = zone.rstrip('.') + '.'
+        m_unique = sha1(zone.encode()).hexdigest()
+        subname = f'{m_unique}.zones'
+
+    if rdata is None:
+        rdata = zone
+
+    return {
+        'name': f'{subname}.{settings.CATALOG_ZONE}'.strip('.') + '.',
+        'type': qtype,
+        'ttl': 0,  # as per the specification
+        'changetype': 'REPLACE',
+        'records': [] if delete else [{'content': rdata, 'disabled': False}],
+    }

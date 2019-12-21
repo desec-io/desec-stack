@@ -13,5 +13,8 @@ echo "waiting for dependencies ..."
 # migrate database
 python manage.py migrate || exit 1
 
-echo Finished migrations, starting API server ...
+# Prepare catalog zone
+python manage.py align-catalog-zone
+
+echo Starting API server ...
 exec uwsgi --ini uwsgi.ini

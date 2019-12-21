@@ -164,11 +164,12 @@ DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
 PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
 LOCAL_PUBLIC_SUFFIXES = {'dedyn.%s' % os.environ['DESECSTACK_DOMAIN']}
 
-# PowerDNS API access
+# PowerDNS-related
 NSLORD_PDNS_API = 'http://nslord:8081/api/v1/servers/localhost'
 NSLORD_PDNS_API_TOKEN = os.environ['DESECSTACK_NSLORD_APIKEY']
 NSMASTER_PDNS_API = 'http://nsmaster:8081/api/v1/servers/localhost'
 NSMASTER_PDNS_API_TOKEN = os.environ['DESECSTACK_NSMASTER_APIKEY']
+CATALOG_ZONE = 'catalog.internal'
 
 # Celery
 CELERY_BROKER_URL = 'amqp://rabbitmq'
