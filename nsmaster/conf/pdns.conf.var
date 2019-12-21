@@ -1,6 +1,6 @@
 api=yes
 api-key=${DESECSTACK_NSMASTER_APIKEY}
-disable-axfr=yes
+allow-axfr-ips=10.8.0.0/24
 setgid=pdns
 setuid=pdns
 slave=yes
