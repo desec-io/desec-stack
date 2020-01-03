@@ -11,6 +11,7 @@ class PlainTextRenderer(renderers.BaseRenderer):
         response = renderer_context.get('response')
 
         if response and response.exception:
+            # TODO enable the renderer to handle responses where reponse.data is a list
             if not isinstance(data, dict) or data.get('detail', None) is None:
                 raise ValueError('Expected response.data to be a dict with error details in response.data[\'detail\'], '
                                  'but got %s:\n\n%s' % (type(response.data), response.data))

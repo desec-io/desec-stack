@@ -22,6 +22,7 @@ from rest_framework.viewsets import GenericViewSet
 
 import desecapi.authentication as auth
 from desecapi import serializers, models
+from desecapi.exceptions import ConcurrencyException
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.permissions import IsOwner, IsDomainOwner, WithinDomainLimitOnPOST
 from desecapi.renderers import PlainTextRenderer
@@ -334,6 +335,16 @@ class DynDNS12Update(APIView):
         except ValidationError as e:
             if any('ttl' in error for error in e.detail):
                 raise PermissionDenied({'detail': 'Domain not eligible for dynamic updates, please contact support.'})
+
+            if any(
+                    any(
+                        getattr(non_field_error, 'code', '') == 'unique'
+                        for non_field_error
+                        in err.get('non_field_errors', [])
+                    )
+                    for err in e.detail
+            ):
+                raise ConcurrencyException from e
             raise e
 
         with PDNSChangeTracker():

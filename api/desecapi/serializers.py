@@ -5,13 +5,16 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 
 from captcha.image import ImageCaptcha
 from django.core.validators import MinValueValidator
+from django.db import IntegrityError, OperationalError
 from django.db.models import Model, Q
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
 from desecapi import crypto, models
+from desecapi.exceptions import ConcurrencyException
 
 
 class CaptchaSerializer(serializers.ModelSerializer):
@@ -442,19 +445,35 @@ class RRsetListSerializer(serializers.ListSerializer):
         deleted = known & empty
 
         ret = []
-        for subname, type_ in created:
-            ret.append(self.child.create(
-                validated_data=data_index[(subname, type_)]
-            ))
 
-        for subname, type_ in updated:
-            ret.append(self.child.update(
-                instance=instance_index[(subname, type_)],
-                validated_data=data_index[(subname, type_)]
-            ))
+        try:
+            for subname, type_ in created:
+                ret.append(self.child.create(
+                    validated_data=data_index[(subname, type_)]
+                ))
 
-        for subname, type_ in deleted:
-            instance_index[(subname, type_)].delete()
+            for subname, type_ in updated:
+                ret.append(self.child.update(
+                    instance=instance_index[(subname, type_)],
+                    validated_data=data_index[(subname, type_)]
+                ))
+
+            for subname, type_ in deleted:
+                instance_index[(subname, type_)].delete()
+
+        # time of check (does it exist?) and time of action (create vs update) are different,
+        # so for parallel requests, we can get integrity errors due to duplicate keys.
+        # This will be considered a 429-error, even though re-sending the request will be successful.
+        except OperationalError as e:
+            try:
+                if e.args[0] == 1213:
+                    # 1213 is mysql for deadlock, other OperationalErrors are treated elsewhere or not treated at all
+                    raise ConcurrencyException from e
+            except (AttributeError, KeyError):
+                pass
+            raise e
+        except (IntegrityError, models.RRset.DoesNotExist) as e:
+            raise ConcurrencyException from e
 
         return ret
 

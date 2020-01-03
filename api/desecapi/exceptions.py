@@ -25,3 +25,9 @@ class PDNSValidationError(ValidationError):
 class PDNSException(APIException):
     def __init__(self, response=None):
         return super().__init__(f'pdns response code: {response.status_code}, pdns response body: {response.text}')
+
+
+class ConcurrencyException(APIException):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    default_detail = 'Too many concurrent requests.'
+    default_code = 'concurrency_conflict'
