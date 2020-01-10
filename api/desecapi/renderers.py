@@ -11,11 +11,23 @@ class PlainTextRenderer(renderers.BaseRenderer):
         response = renderer_context.get('response')
 
         if response and response.exception:
-            # TODO enable the renderer to handle responses where reponse.data is a list
-            if not isinstance(data, dict) or data.get('detail', None) is None:
-                raise ValueError('Expected response.data to be a dict with error details in response.data[\'detail\'], '
-                                 'but got %s:\n\n%s' % (type(response.data), response.data))
             response['Content-Type'] = 'text/plain'
-            return data['detail']
+
+            try:
+                return data['detail']
+            except (KeyError, TypeError):
+                pass
+
+            try:
+                details = list(filter(None, [el.get('detail') for el in data]))
+                if details:
+                    return ', '.join(details)
+            except (TypeError, AttributeError):
+                pass
+
+            raise ValueError('Expected response.data to be one of the following:\n'
+                             '- a dict with error details in response.data[\'detail\'],\n'
+                             '- a list with at least one element that has error details in element[\'detail\'];\n'
+                             'but got %s:\n\n%s' % (type(response.data), response.data))
 
         return data
