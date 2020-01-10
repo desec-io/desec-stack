@@ -91,6 +91,7 @@ services:
     depends_on:
     - dbapi
     - nslord
+    - nsmaster
     - celery
     - memcached
     environment:
