@@ -202,12 +202,19 @@ Password Reset
 ``````````````
 
 In case you forget your password, you can reset it. To do so, send a
-``POST`` request with your email address to the
-``/auth/account/reset-password/`` endpoint::
+``POST`` request with your email address and a captcha ID and solution (see
+`Obtain a Captcha`_) to the ``/auth/account/reset-password/`` endpoint::
 
     curl -X POST https://desec.io/api/v1/auth/account/reset-password/ \
-        --header "Content-Type: application/json" --data @- <<< \
-        '{"email": "youremailaddress@example.com"}'
+        --header "Content-Type: application/json" --data @- <<EOF
+        {
+          "email": "youremailaddress@example.com",
+          "captcha": {
+            "id": "00010203-0405-0607-0809-0a0b0c0d0e0f",
+            "solution": "12H45"
+          }
+        }
+    EOF
 
 The server will reply with ``202 Accepted``. If there is no account associated
 with this email address, nothing else will be done. Otherwise, you will receive
