@@ -4,10 +4,13 @@ deSEC Stack
 This is a docker-compose application providing the basic stack for deSEC name services. It consists of
 
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
-  - There is a cron hook installed to secure new zones with DNSSEC and to set NSEC3 parameters. For new zones under `dedyn.io`, `DS` records are set in the parent zone. Expected to be superseded by native DNSSEC support in the PowerDNS API.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
-- `api`: RESTful API to create deSEC users and domains. Currently used for dynDNS purposes only.
+- `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
 - `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively. The `dbmaster` database is exposed at 3306 for TLS-secured replication.
+- `www`: nginx instance serving static web site content and proxying to `api`
+- `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
+- `rabbitmq`: `celery`'s queue
+- `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
 
 Requirements
 ------------
