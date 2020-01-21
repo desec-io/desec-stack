@@ -213,13 +213,17 @@ class Domain(models.Model):
     def is_registrable(cls, domain_name: str, user: User):
         """
         Returns False in any of the following cases:
-        (a) the domain_name appears on the public suffix list,
-        (b) the domain is descendant to a zone that belongs to any user different from the given one,
+        (a) the domain name is under .internal,
+        (b) the domain_name appears on the public suffix list,
+        (c) the domain is descendant to a zone that belongs to any user different from the given one,
             unless it's parent is a public suffix, either through the Internet PSL or local settings.
         Otherwise, True is returned.
         """
         if domain_name != domain_name.lower():
             raise ValueError
+
+        if f'.{domain_name}'.endswith('.internal'):
+            return False
 
         try:
             public_suffix = psl.get_public_suffix(domain_name)

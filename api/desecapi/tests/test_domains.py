@@ -105,6 +105,11 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.assertNotRegistrable('b.private.public.suffix', user_c)
             self.assertRegistrable('b.private.public.suffix', user_b)
 
+    def test_cant_register_internal(self):
+        self.assertNotRegistrable('internal')
+        self.assertNotRegistrable('catalog.internal')
+        self.assertNotRegistrable('some.other.internal')
+
 
 class UnauthenticatedDomainTests(DesecTestCase):
 
