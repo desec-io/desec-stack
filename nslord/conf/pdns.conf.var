@@ -1,4 +1,4 @@
-allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
 api=yes
 api-key=${DESECSTACK_NSLORD_APIKEY}
 default-soa-edit=INCREMENT-WEEKS
@@ -10,8 +10,8 @@ setuid=pdns
 soa-minimum-ttl=60
 version-string=powerdns
 webserver=yes
-webserver-address=0.0.0.0
-webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+webserver-address=${DESECSTACK_IPV4_REAR_PREFIX16}.1.11
+webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
 carbon-server=${DESECSTACK_NSLORD_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSLORD_CARBONOURNAME}
 

@@ -55,9 +55,11 @@ before_install:
 script:
   # e2e tests
   - docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml run -T test-e2e bash -c "./apiwait 45 && mocha ./spec"
+  - docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
 
   # API tests
   - docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
+  - docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
 
 after_failure:
   - docker-compose ps

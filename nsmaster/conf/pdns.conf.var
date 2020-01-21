@@ -9,8 +9,8 @@ slave=yes
 slave-renotify=yes
 version-string=powerdns
 webserver=yes
-webserver-address=0.0.0.0
-webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
+webserver-address=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
+webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
 carbon-server=${DESECSTACK_NSMASTER_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSMASTER_CARBONOURNAME}
 
