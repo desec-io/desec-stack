@@ -114,10 +114,11 @@ services:
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     networks:
-    - rearapi_celery
-    - rearapi_dbapi
-    - rearapi_ns
-    - rearwww
+      rearapi_celery:
+      rearapi_dbapi:
+      rearapi_ns:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
+      rearwww:
     logging:
       driver: "syslog"
       options:
