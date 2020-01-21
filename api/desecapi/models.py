@@ -226,7 +226,7 @@ class Domain(models.Model):
             is_public_suffix = psl.is_public_suffix(domain_name)
         except (Timeout, NoNameservers):
             public_suffix = domain_name.rpartition('.')[2]
-            is_public_suffix = False
+            is_public_suffix = ('.' not in domain_name)  # TLDs are public suffixes
         except psl_dns.exceptions.UnsupportedRule as e:
             # It would probably be fine to treat this as a non-public suffix (with the TLD acting as the
             # public suffix and setting both public_suffix and is_public_suffix accordingly).
