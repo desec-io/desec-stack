@@ -214,7 +214,7 @@ services:
     build: api
     image: desec/dedyn-api:latest
     init: true
-    command: celery -A api worker -l info
+    command: celery -A api worker -l info --uid nobody --gid nogroup
     depends_on:
     - dbapi
     - nslord
