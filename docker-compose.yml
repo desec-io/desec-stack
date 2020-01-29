@@ -37,6 +37,7 @@ services:
     build: dbapi
     image: desec/dedyn-dbapi:latest
     init: true
+    user: mysql:mysql
     volumes:
     - dbapi_mysql:/var/lib/mysql
     environment:
@@ -54,6 +55,7 @@ services:
     build: dblord
     image: desec/dedyn-dblord:latest
     init: true
+    user: mysql:mysql
     volumes:
     - dblord_mysql:/var/lib/mysql
     environment:
@@ -71,6 +73,7 @@ services:
     build: dbmaster
     image: desec/dedyn-dbmaster:latest
     init: true
+    user: mysql:mysql
     ports:
     - "${DESECSTACK_DBMASTER_PORT:-3306}:3306"
     volumes:
@@ -199,6 +202,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.8-alpine
     init: true
+    user: rabbitmq:rabbitmq
     volumes:
     - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -249,6 +253,7 @@ services:
   memcached:
     image: memcached:1.5-alpine
     init: true
+    user: memcache:memcache
     networks:
     - rearapi_celery
     logging:
