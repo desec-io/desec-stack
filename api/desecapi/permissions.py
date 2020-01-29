@@ -1,3 +1,5 @@
+from ipaddress import IPv4Address, IPv4Network
+
 from rest_framework import permissions
 
 
@@ -17,6 +19,17 @@ class IsDomainOwner(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return obj.domain.owner == request.user
+
+
+class IsVPNClient(permissions.BasePermission):
+    """
+    Permission that requires that the user is accessing using an IP from the VPN net.
+    """
+    message = 'Inadmissible client IP.'
+
+    def has_permission(self, request, view):
+        ip = IPv4Address(request.META.get('REMOTE_ADDR'))
+        return ip in IPv4Network('10.8.0.0/24')
 
 
 class WithinDomainLimitOnPOST(permissions.BasePermission):

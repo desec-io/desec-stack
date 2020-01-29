@@ -128,3 +128,7 @@ def construct_catalog_rrset(zone=None, delete=False, subname=None, qtype='PTR', 
         'changetype': 'REPLACE',
         'records': [] if delete else [{'content': rdata, 'disabled': False}],
     }
+
+
+def get_serials():
+    return {zone['name']: zone['edited_serial'] for zone in _pdns_get(NSMASTER, '/zones').json()}

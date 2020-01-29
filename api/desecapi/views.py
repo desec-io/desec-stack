@@ -4,6 +4,7 @@ import binascii
 from django.conf import settings
 from django.contrib.auth import user_logged_in
 from django.contrib.auth.hashers import is_password_usable
+from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import redirect
@@ -23,8 +24,9 @@ from rest_framework.viewsets import GenericViewSet
 import desecapi.authentication as auth
 from desecapi import serializers, models
 from desecapi.exceptions import ConcurrencyException
+from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import IsOwner, IsDomainOwner, WithinDomainLimitOnPOST
+from desecapi.permissions import IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimitOnPOST
 from desecapi.renderers import PlainTextRenderer
 
 
@@ -116,6 +118,19 @@ class DomainViewSet(IdempotentDestroy,
             parent_domain = models.Domain.objects.get(name=instance.parent_domain_name)
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
+
+
+class SerialList(generics.ListAPIView):
+    permission_classes = (IsVPNClient,)
+    throttle_classes = []  # don't break slaves when they ask too often (our cached responses are cheap)
+
+    def list(self, request):
+        key = 'desecapi.views.serials'
+        serials = cache.get(key)
+        if serials is None:
+            serials = get_serials()
+            cache.get_or_set(key, serials, timeout=59)
+        return Response(serials)
 
 
 class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyAPIView):
