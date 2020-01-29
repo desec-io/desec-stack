@@ -69,6 +69,8 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
     - replication-manager related
       - `DESECSTACK_REPLICATION_MANAGER_CERTS`: a directory where `replication-manager` (to configure slave replication) will dump the slave's TLS key and certificate
+    - watchdog-related
+      - `DESECSTACK_WATCHDOG_SLAVES`: space-separated list of slave hostnames; used to check correct replication of recent DNS changes
 
 How to Run
 ----------

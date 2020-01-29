@@ -1,1 +1,2 @@
-55 2 * * * /usr/local/bin/python3 /usr/src/app/manage.py chores >> /var/log/cron.log 2>&1
+55 2 * * * /usr/local/bin/python3 -u /usr/src/app/manage.py chores >> /var/log/cron.log 2>&1
+*/5 * * * * /usr/local/bin/python3 -u /usr/src/app/manage.py check-slaves >> /var/log/cron.log 2>&1

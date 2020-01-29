@@ -117,6 +117,7 @@ services:
     - DESECSTACK_NSLORD_DEFAULT_TTL
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_MINIMUM_TTL_DEFAULT
+    - DESECSTACK_WATCHDOG_SLAVES
     networks:
     - rearapi_celery
     - rearapi_dbapi

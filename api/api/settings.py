@@ -200,6 +200,10 @@ VALIDITY_PERIOD_VERIFICATION_SIGNATURE = timedelta(hours=12)
 # CAPTCHA
 CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
 
+# Watchdog
+WATCHDOG_SLAVES = os.environ.get('DESECSTACK_WATCHDOG_SLAVES', '').split()
+WATCHDOG_WINDOW_SEC = 600
+
 if DEBUG and not EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
