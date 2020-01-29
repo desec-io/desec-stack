@@ -237,7 +237,7 @@ class MockPDNSTestCase(APITestCase):
     and httpretty.reset() may be used.
     """
 
-    PDNS_ZONES = r'/zones'
+    PDNS_ZONES = r'/zones\?rrsets=false'
     PDNS_ZONE_CRYPTO_KEYS = r'/zones/(?P<id>[^/]+)/cryptokeys'
     PDNS_ZONE = r'/zones/(?P<id>[^/]+)'
     PDNS_ZONE_AXFR = r'/zones/(?P<id>[^/]+)/axfr-retrieve'
@@ -293,6 +293,7 @@ class MockPDNSTestCase(APITestCase):
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
             'status': 201,
             'body': None,
+            'match_querystring': True,
         }
 
     def request_pdns_zone_create_assert_name(self, ns, name):

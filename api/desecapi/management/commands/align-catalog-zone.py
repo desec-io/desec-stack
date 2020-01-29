@@ -54,5 +54,5 @@ class Command(BaseCommand):
         if serial is not None:
             data['serial'] = serial + 1  # actually, pdns does increase this as well, but let's not rely on this
 
-        _pdns_post(NSMASTER, '/zones', data)
+        _pdns_post(NSMASTER, '/zones?rrsets=false', data)
         print(f'Aligned catalog zone ({len(zones)} member zones).')

@@ -84,7 +84,7 @@ class PDNSChangeTracker:
         def pdns_do(self):
             salt = '%016x' % random.randrange(16 ** 16)
             _pdns_post(
-                NSLORD, '/zones',
+                NSLORD, '/zones?rrsets=false',
                 {
                     'name': self.domain_name_normalized,
                     'kind': 'MASTER',
@@ -95,7 +95,7 @@ class PDNSChangeTracker:
             )
 
             _pdns_post(
-                NSMASTER, '/zones',
+                NSMASTER, '/zones?rrsets=false',
                 {
                     'name': self.domain_name_normalized,
                     'kind': 'SLAVE',
