@@ -5,6 +5,8 @@ services:
     build: www
     image: desec/dedyn-www:latest
     init: true
+    cap_add:
+    - NET_ADMIN
     ports:
     - "80:80"
     - "443:443"
@@ -23,6 +25,8 @@ services:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.128
         ipv6_address: ${DESECSTACK_IPV6_ADDRESS}
       rearwww:
+      rearreplication:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.4
     logging:
       driver: "syslog"
       options:

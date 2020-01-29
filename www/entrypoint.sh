@@ -1,5 +1,7 @@
 #!/bin/bash
 
+/sbin/ip route add 10.8.0.0/24 via 172.16.7.2
+
 # list of domains we're using
 DOMAINS="\
     checkipv4.dedyn.${DESECSTACK_DOMAIN} \
