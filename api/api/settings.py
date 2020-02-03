@@ -182,7 +182,7 @@ TASK_CONFIG = {  # The first entry is the default queue
 
 # pdns accepts request payloads of this size.
 # This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550
-PDNS_MAX_BODY_SIZE = 2 * 1024 * 1024
+PDNS_MAX_BODY_SIZE = 16 * 1024 * 1024
 
 # SEPA direct debit settings
 SEPA = {

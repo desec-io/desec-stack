@@ -11,6 +11,7 @@ version-string=powerdns
 webserver=yes
 webserver-address=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
 webserver-allow-from=${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
+webserver-max-bodysize=16
 carbon-server=${DESECSTACK_NSMASTER_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSMASTER_CARBONOURNAME}
 
