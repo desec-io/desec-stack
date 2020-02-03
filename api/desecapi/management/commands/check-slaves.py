@@ -36,7 +36,7 @@ class Command(BaseCommand):
         parser.add_argument('--window', type=int, default=settings.WATCHDOG_WINDOW_SEC,
                             help='Check domains that were published no longer than this many seconds ago.')
 
-    def find_outdated_zones(self, zone, local_serial):
+    def find_outdated_servers(self, zone, local_serial):
         """
         Returns a dict, the key being the outdated slave name, and the value being the slave's current zone serial.
         """
