@@ -58,7 +58,6 @@ class Command(BaseCommand):
                 raise e
         else:
             created = True
-            PDNSChangeTracker.PDNSChange(domain_name=domain.name).update_catalog()
 
         # modifications actually merged with additions in CreateUpdateDeleteRRSets
         modifications = {(rrset.type, rrset.subname) for rrset in domain.rrset_set.all()}
