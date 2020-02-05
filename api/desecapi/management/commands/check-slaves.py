@@ -32,7 +32,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('domain-name', nargs='*',
                             help='Domain name to check. If omitted, will check all recently published domains.')
-        parser.add_argument('--delay', type=int, default=60, help='Delay SOA checks to allow pending AXFRs to finish.')
+        parser.add_argument('--delay', type=int, default=120, help='Delay SOA checks to allow pending AXFRs to finish.')
         parser.add_argument('--window', type=int, default=settings.WATCHDOG_WINDOW_SEC,
                             help='Check domains that were published no longer than this many seconds ago.')
 

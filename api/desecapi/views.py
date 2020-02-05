@@ -129,7 +129,7 @@ class SerialList(generics.ListAPIView):
         serials = cache.get(key)
         if serials is None:
             serials = get_serials()
-            cache.get_or_set(key, serials, timeout=59)
+            cache.get_or_set(key, serials, timeout=15)
         return Response(serials)
 
 
