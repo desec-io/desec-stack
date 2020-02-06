@@ -1,6 +1,11 @@
 #!/bin/bash
 
+# Figure out how to route responses when slaves access through VPN
 /sbin/ip route add 10.8.0.0/24 via 172.16.7.2
+
+# Prometheus basic auth
+[[ -z "${DESECSTACK_PROMETHEUS_PASSWORD}" ]] && { echo "You must set DESECSTACK_PROMETHEUS_PASSWORD to a non-empty value."; exit 1; }
+echo prometheus:$(openssl passwd -apr1 -stdin <<< $DESECSTACK_PROMETHEUS_PASSWORD) > /etc/nginx/htpasswd
 
 # list of domains we're using
 DOMAINS="\

@@ -17,8 +17,10 @@ services:
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_WWW_CERTS
+    - DESECSTACK_PROMETHEUS_PASSWORD
     depends_on:
     - api
+    - prometheus
     mac_address: 06:42:ac:10:00:80
     networks:
       front:
@@ -27,6 +29,7 @@ services:
       rearwww:
       rearreplication:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.4
+      rearmonitoring_www:
     logging:
       driver: "syslog"
       options:
@@ -281,10 +284,39 @@ services:
         tag: "desec/openvpn-server"
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    init: true
+    volumes:
+    - ./prometheus/conf:/etc/prometheus:ro
+    - prometheus:/prometheus
+    networks:
+      rearmonitoring_www:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
+    extra_hosts:
+    - prometheus.localhost:${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
+    command: [
+      # Defaults follow
+      "--config.file=/etc/prometheus/prometheus.yml",
+      "--storage.tsdb.path=/prometheus",
+      "--web.console.libraries=/usr/share/prometheus/console_libraries",
+      "--web.console.templates=/usr/share/prometheus/consoles",
+      # Local parameters follow
+      "--web.listen-address=${DESECSTACK_IPV4_REAR_PREFIX16}.8.2:9090",
+      "--web.external-url=https://desec.${DESECSTACK_DOMAIN}/prometheus",
+      "--web.route-prefix=/",
+    ]
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/prometheus"
+    restart: unless-stopped
+
 volumes:
   dbapi_mysql:
   dblord_mysql:
   dbmaster_mysql:
+  prometheus:
   rabbitmq_data:
   webapp_dist:
 
@@ -351,3 +383,11 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.1
+  # Monitoring
+  rearmonitoring_www:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.0/29
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.1

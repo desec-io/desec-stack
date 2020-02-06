@@ -31,5 +31,6 @@ server {
 
     # include api and static locations, these files may be overridden for debugging
     include sites-available/90-desec.api.location;
+    include sites-available/90-desec.prometheus.location;
     include sites-available/90-desec.static.location;
 }

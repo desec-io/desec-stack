@@ -77,6 +77,10 @@ services:
     logging:
       driver: "json-file"
 
+  prometheus:
+    logging:
+      driver: "json-file"
+
 networks:
   rearwebapp:
     driver: bridge

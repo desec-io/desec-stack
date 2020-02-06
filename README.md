@@ -11,7 +11,8 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
 - `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
-- `openvpn-server`: OpenVPN server used to tunnel replication traffic between this stack and frontend DNS slaves.
+- `openvpn-server`: OpenVPN server used to tunnel replication traffic between this stack and frontend DNS slaves
+- `prometheus`: Prometheus server for monitoring
 
 Requirements
 ------------
@@ -69,8 +70,9 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
     - replication-manager related
       - `DESECSTACK_REPLICATION_MANAGER_CERTS`: a directory where `replication-manager` (to configure slave replication) will dump the slave's TLS key and certificate
-    - watchdog-related
+    - monitoring-related
       - `DESECSTACK_WATCHDOG_SLAVES`: space-separated list of slave hostnames; used to check correct replication of recent DNS changes
+      - `DESECSTACK_PROMETHEUS_PASSWORD`: basic auth password for user `prometheus` at `https://${DESECSTACK_DOMAIN}/prometheus/`
 
 How to Run
 ----------

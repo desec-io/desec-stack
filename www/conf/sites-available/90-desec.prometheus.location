@@ -1,0 +1,13 @@
+######
+# Pass requests to Prometheus (require basic authentication)
+######
+location /prometheus/ {
+    expires epoch;
+    etag off;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+
+    auth_basic "Prometheus";
+    auth_basic_user_file /etc/nginx/htpasswd;
+
+    proxy_pass http://prometheus:9090/;
+}
