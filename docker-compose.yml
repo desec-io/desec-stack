@@ -130,6 +130,7 @@ services:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
       rearwww:
+      rearmonitoring_api:
     logging:
       driver: "syslog"
       options:
@@ -293,6 +294,7 @@ services:
     networks:
       rearmonitoring_www:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
+      rearmonitoring_api:
     extra_hosts:
     - prometheus.localhost:${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
     command: [
@@ -391,3 +393,10 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.0/29
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.1
+  rearmonitoring_api:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.8/29
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.9

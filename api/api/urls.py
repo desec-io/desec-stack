@@ -58,4 +58,6 @@ urlpatterns = [
     path('api/v2/', include('desecapi.urls.version_2', namespace='v2')),
     # the DEFAULT version
     path('api/v1/', include('desecapi.urls.version_1', namespace='v1')),
+    # monitoring
+    path('', include('django_prometheus.urls')),
 ]

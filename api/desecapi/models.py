@@ -23,6 +23,7 @@ from django.db import models
 from django.db.models import Manager, Q
 from django.template.loader import get_template
 from django.utils import timezone
+from django_prometheus.models import ExportModelOperationsMixin
 from dns.exception import Timeout
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
@@ -73,7 +74,7 @@ class MyUserManager(BaseUserManager):
         return user
 
 
-class User(AbstractBaseUser):
+class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(
         verbose_name='email address',
@@ -165,7 +166,7 @@ class User(AbstractBaseUser):
         ).send()
 
 
-class Token(rest_framework.authtoken.models.Token):
+class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
     user = models.ForeignKey(
@@ -199,7 +200,7 @@ def get_minimum_ttl_default():
     return settings.MINIMUM_TTL_DEFAULT
 
 
-class Domain(models.Model):
+class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
                             unique=True,
@@ -327,7 +328,7 @@ def get_default_value_mref():
     return "ONDON" + str(time.time())
 
 
-class Donation(models.Model):
+class Donation(ExportModelOperationsMixin('Donation'), models.Model):
     created = models.DateTimeField(default=get_default_value_created)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
@@ -350,7 +351,7 @@ class RRsetManager(Manager):
         return rrset
 
 
-class RRset(models.Model):
+class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True)  # undocumented, used for debugging only
@@ -418,7 +419,7 @@ class RRManager(Manager):
         return ret
 
 
-class RR(models.Model):
+class RR(ExportModelOperationsMixin('RR'), models.Model):
     created = models.DateTimeField(auto_now_add=True)
     rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
     # max_length is determined based on the calculation in
@@ -431,7 +432,7 @@ class RR(models.Model):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)
 
 
-class AuthenticatedAction(models.Model):
+class AuthenticatedAction(ExportModelOperationsMixin('AuthenticatedAction'), models.Model):
     """
     Represents a procedure call on a defined set of arguments.
 
@@ -515,7 +516,7 @@ class AuthenticatedAction(models.Model):
         return self._act()
 
 
-class AuthenticatedUserAction(AuthenticatedAction):
+class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserAction'), AuthenticatedAction):
     """
     Abstract AuthenticatedAction involving an user instance, incorporating the user's id, email, password, and
     is_active flag into the Message Authentication Code state.
@@ -533,7 +534,7 @@ class AuthenticatedUserAction(AuthenticatedAction):
         raise NotImplementedError
 
 
-class AuthenticatedActivateUserAction(AuthenticatedUserAction):
+class AuthenticatedActivateUserAction(ExportModelOperationsMixin('AuthenticatedActivateUserAction'), AuthenticatedUserAction):
     domain = models.CharField(max_length=191)
 
     class Meta:
@@ -547,7 +548,7 @@ class AuthenticatedActivateUserAction(AuthenticatedUserAction):
         self.user.activate()
 
 
-class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
+class AuthenticatedChangeEmailUserAction(ExportModelOperationsMixin('AuthenticatedChangeEmailUserAction'), AuthenticatedUserAction):
     new_email = models.EmailField()
 
     class Meta:
@@ -561,7 +562,7 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
         self.user.change_email(self.new_email)
 
 
-class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
+class AuthenticatedResetPasswordUserAction(ExportModelOperationsMixin('AuthenticatedResetPasswordUserAction'), AuthenticatedUserAction):
     new_password = models.CharField(max_length=128)
 
     class Meta:
@@ -571,7 +572,7 @@ class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
         self.user.change_password(self.new_password)
 
 
-class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
+class AuthenticatedDeleteUserAction(ExportModelOperationsMixin('AuthenticatedDeleteUserAction'), AuthenticatedUserAction):
 
     class Meta:
         managed = False
@@ -585,7 +586,7 @@ def captcha_default_content():
     return ''.join([secrets.choice(alphabet) for _ in range(5)])
 
 
-class Captcha(models.Model):
+class Captcha(ExportModelOperationsMixin('Captcha'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     content = models.CharField(

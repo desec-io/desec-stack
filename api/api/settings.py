@@ -44,12 +44,15 @@ INSTALLED_APPS = (
     'rest_framework',
     'desecapi.apps.AppConfig',
     'corsheaders',
+    'django_prometheus',
 )
 
 MIDDLEWARE = (
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 )
 
 ROOT_URLCONF = 'api.urls'
@@ -59,7 +62,7 @@ WSGI_APPLICATION = 'desecapi.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django_prometheus.db.backends.mysql',
         'NAME': 'desec',
         'USER': 'desec',
         'PASSWORD': os.environ['DESECSTACK_DBAPI_PASSWORD_desec'],
@@ -78,6 +81,7 @@ DATABASES = {
 
 CACHES = {
     'default': {
+        # TODO 'BACKEND': 'django_prometheus.cache.backends.memcached.PyLibMCCache' not supported
         'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
         'LOCATION': 'memcached:11211',
     }
