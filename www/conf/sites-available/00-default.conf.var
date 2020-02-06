@@ -18,3 +18,15 @@ server {
 
 	return 444; # see https://httpstatuses.com/444
 }
+
+######
+# Monitoring
+######
+server {
+	listen ${DESECSTACK_IPV4_REAR_PREFIX16}.8.3:8080;
+	server_name _;
+
+	location = /stub_status {
+	    stub_status;
+	}
+}

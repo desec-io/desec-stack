@@ -16,6 +16,7 @@ services:
     - ./www/html:/var/www/html:ro
     environment:
     - DESECSTACK_DOMAIN
+    - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_WWW_CERTS
     - DESECSTACK_PROMETHEUS_PASSWORD
     depends_on:
@@ -30,10 +31,25 @@ services:
       rearreplication:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.4
       rearmonitoring_www:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.3
     logging:
       driver: "syslog"
       options:
         tag: "desec/www"
+    restart: unless-stopped
+
+  www_monitor:
+    image: nginx/nginx-prometheus-exporter:0.5.0
+    init: true
+    depends_on:
+    - www
+    networks:
+    - rearmonitoring_www
+    command: -nginx.scrape-uri http://www:8080/stub_status
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/www_monitor"
     restart: unless-stopped
 
   dbapi:
