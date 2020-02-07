@@ -18,3 +18,6 @@ scrape_configs:
   - job_name: 'www'
     static_configs:
       - targets: ['www_monitor:9113']
+  - job_name: 'openvpn-server'
+    static_configs:
+      - targets: ['openvpn-server_monitor:9176']

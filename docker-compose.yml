@@ -292,6 +292,7 @@ services:
     - "1194:1194/udp"
     volumes:
     - ./openvpn-server/secrets:/etc/openvpn/secrets:ro
+    - openvpn-server_logs:/var/log/openvpn
     networks:
       rearreplication:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.7.2
@@ -299,6 +300,22 @@ services:
       driver: "syslog"
       options:
         tag: "desec/openvpn-server"
+    restart: unless-stopped
+
+  openvpn-server_monitor:
+    image: kumina/openvpn-exporter:v0.2.2
+    init: true
+    depends_on:
+    - openvpn-server
+    volumes:
+    - openvpn-server_logs:/var/log/openvpn:ro
+    networks:
+    - rearmonitoring_openvpn-server
+    command: -openvpn.status_paths /var/log/openvpn/openvpn-status.log
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/openvpn-server_monitor"
     restart: unless-stopped
 
   prometheus:
@@ -311,6 +328,7 @@ services:
       rearmonitoring_www:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
       rearmonitoring_api:
+      rearmonitoring_openvpn-server:
     extra_hosts:
     - prometheus.localhost:${DESECSTACK_IPV4_REAR_PREFIX16}.8.2
     command: [
@@ -334,6 +352,7 @@ volumes:
   dbapi_mysql:
   dblord_mysql:
   dbmaster_mysql:
+  openvpn-server_logs:
   prometheus:
   rabbitmq_data:
   webapp_dist:
@@ -416,3 +435,10 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.8/29
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.9
+  rearmonitoring_openvpn-server:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.16/29
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.8.17

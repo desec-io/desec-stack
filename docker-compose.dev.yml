@@ -81,6 +81,10 @@ services:
     logging:
       driver: "json-file"
 
+  openvpn-server_monitor:
+    logging:
+      driver: "json-file"
+
   prometheus:
     logging:
       driver: "json-file"
