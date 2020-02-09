@@ -2,7 +2,8 @@
 # Pass API requests to an API server
 ######
 location /api/ {
-    ${PROD_ONLY} limit_req zone=perip-api;
+    # burst=29 is because the rate is 30r/s, and we want to queue no more than one second
+    ${PROD_ONLY} limit_req zone=perip-api burst=29;
 
     expires epoch;
     etag off;
