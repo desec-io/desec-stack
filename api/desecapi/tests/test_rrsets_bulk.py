@@ -142,6 +142,12 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             ]
         )
 
+    def test_bulk_post_accepts_empty_list(self):
+        self.assertResponse(
+            self.client.bulk_post_rr_sets(domain_name=self.my_empty_domain.name, payload=[]),
+            status.HTTP_201_CREATED,
+        )
+
     def test_bulk_patch_fresh_rrsets_need_records(self):
         response = self.client.bulk_patch_rr_sets(self.my_empty_domain.name, payload=self.data_no_records)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
@@ -168,6 +174,14 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
     def test_bulk_patch_does_not_accept_single_objects(self):
         response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data[0])
         self.assertContains(response, 'Expected a list of items but got dict.', status_code=status.HTTP_400_BAD_REQUEST)
+
+    def test_bulk_patch_does_accept_empty_list(self):
+        response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=[])
+        self.assertStatus(response, status.HTTP_200_OK)
+
+    def test_bulk_patch_does_not_accept_empty_payload(self):
+        response = self.client.bulk_patch_rr_sets(domain_name=self.my_empty_domain.name, payload=None)
+        self.assertContains(response, 'No data provided', status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_bulk_patch_full_on_empty_domain(self):
         # Full patch always works
@@ -311,6 +325,14 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=self.data[0])
         self.assertContains(response, 'Expected a list of items but got dict.', status_code=status.HTTP_400_BAD_REQUEST)
 
+    def test_bulk_put_does_accept_empty_list(self):
+        response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=[])
+        self.assertStatus(response, status.HTTP_200_OK)
+
+    def test_bulk_put_does_not_accept_empty_payload(self):
+        response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=None)
+        self.assertContains(response, 'No data provided', status_code=status.HTTP_400_BAD_REQUEST)
+
     def test_bulk_put_does_not_accept_list_of_crap(self):
         response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=['bla'])
         self.assertContains(response, 'Expected a dictionary, but got str.', status_code=status.HTTP_400_BAD_REQUEST)
@@ -371,3 +393,12 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             response = method(domain_name=self.my_empty_domain.name, payload=self.data[0])
             self.assertContains(response, 'Expected a list of items but got dict.',
                                 status_code=status.HTTP_400_BAD_REQUEST)
+
+    def test_bulk_delete_rrsets(self):
+        self.assertStatus(
+            self.client.delete(
+                self.reverse('v1:rrsets', name=self.my_empty_domain.name),
+                data=None,
+            ),
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )

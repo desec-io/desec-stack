@@ -65,10 +65,12 @@ class DesecAPIClient(APIClient):
         )
 
     def post_rr_set(self, domain_name, **kwargs):
-        kwargs.setdefault('ttl', 60)
+        data = kwargs or None
+        if data:
+            data.setdefault('ttl', 60)
         return self.post(
             self.reverse('v1:rrsets', name=domain_name),
-            kwargs,
+            data=data,
         )
 
     def get_rr_sets(self, domain_name, **kwargs):
@@ -849,6 +851,11 @@ class DesecTestCase(MockPDNSTestCase):
             self.fail('Expected to find RR sets with %s, but only got %s.' % (
                 rr_sets_needle, rr_sets_haystack
             ))
+
+    def assertContains(self, response, text, count=None, status_code=200, msg_prefix='', html=False):
+        # convenience method to check the status separately, which yields nicer error messages
+        self.assertStatus(response, status_code)
+        return super().assertContains(response, text, count, status_code, msg_prefix, html)
 
 
 class PublicSuffixMockMixin():

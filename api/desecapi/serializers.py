@@ -227,6 +227,8 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
     @classmethod
     def many_init(cls, *args, **kwargs):
         domain = kwargs.pop('domain')
+        # Note: We are not yet deciding the value of the child's "partial" attribute, as its value depends on whether
+        # the RRSet is created (never partial) or not (partial if PATCH), for each given item (RRset) individually.
         kwargs['child'] = cls(domain=domain)
         return RRsetListSerializer(*args, **kwargs)
 

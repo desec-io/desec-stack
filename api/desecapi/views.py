@@ -30,6 +30,24 @@ from desecapi.permissions import IsDomainOwner, IsOwner, IsVPNClient, WithinDoma
 from desecapi.renderers import PlainTextRenderer
 
 
+class EmptyPayloadMixin:
+    def initialize_request(self, request, *args, **kwargs):
+        request = super().initialize_request(request, *args, **kwargs)
+
+        try:
+            no_data = request.stream is None
+        except:
+            no_data = True
+
+        if no_data:
+            # In this case, data and files are both empty, so we can set request.data=None (instead of the default {}).
+            # This allows distinguishing missing payload from empty dict payload.
+            # See https://github.com/encode/django-rest-framework/pull/7195
+            request._full_data = None
+
+        return request
+
+
 class IdempotentDestroyMixin:
 
     def destroy(self, request, *args, **kwargs):
@@ -174,7 +192,7 @@ class RRsetDetail(IdempotentDestroyMixin, DomainViewMixin, generics.RetrieveUpda
             super().perform_destroy(instance)
 
 
-class RRsetList(DomainViewMixin, generics.ListCreateAPIView, generics.UpdateAPIView):
+class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, generics.UpdateAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
@@ -206,12 +224,13 @@ class RRsetList(DomainViewMixin, generics.ListCreateAPIView, generics.UpdateAPIV
 
     def get_serializer(self, *args, **kwargs):
         kwargs = kwargs.copy()
-        data = kwargs.get('data')
-        if data and 'many' not in kwargs:
-            if self.request.method == 'POST':
-                kwargs['many'] = isinstance(data, list)
+
+        if 'many' not in kwargs:
+            if self.request.method in ['POST']:
+                kwargs['many'] = isinstance(kwargs.get('data'), list)
             elif self.request.method in ['PATCH', 'PUT']:
                 kwargs['many'] = True
+
         return super().get_serializer(domain=self.domain, *args, **kwargs)
 
     def perform_create(self, serializer):
