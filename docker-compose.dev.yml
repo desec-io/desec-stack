@@ -12,6 +12,10 @@ services:
     logging:
       driver: "json-file"
 
+  www_monitor:
+    logging:
+      driver: "json-file"
+
   dbapi:
     logging:
       driver: "json-file"
