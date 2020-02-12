@@ -148,9 +148,19 @@ describe("www/nginx", function () {
             chakram.setRequestHeader('Host', 'desec.' + process.env.DESECSTACK_DOMAIN);
         });
 
-        it.skip("is alive", function () {
+        it.skip("is alive", function () {  // disabled as we receive 503 while webapp is being built
             var response = chakram.get('https://www/');
             return expect(response).to.have.status(200);
+        });
+
+        it("has security headers", function () {
+            var response = chakram.get('https://www/');
+            expect(response).to.have.header('Content-Security-Policy', "default-src 'none'; frame-src 'none'; connect-src 'self'; font-src 'self'; img-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';");
+            expect(response).to.have.header('X-Frame-Options', 'deny');
+            expect(response).to.have.header('X-Content-Type-Options', 'nosniff');
+            expect(response).to.have.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+            expect(response).to.have.header('X-XSS-Protection', '1; mode=block');
+            return chakram.wait();
         });
 
     });
