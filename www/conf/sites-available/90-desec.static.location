@@ -2,8 +2,5 @@
 # Static content for the web app
 #####
 location / {
-    root   /usr/share/nginx/html/;
-    index  index.html;
-    try_files $uri $uri/ /index.html =404;
-    error_page 403 =503 /503.html;
+    include sites-available/90-desec.static.content;
 }

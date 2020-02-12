@@ -8,7 +8,7 @@ services:
     networks:
     - rearwebapp
     volumes:
-    - ./www/90-desec.static.dev.location:/etc/nginx/sites-available/90-desec.static.location  # override webapp access
+    - ./www/90-desec.static.dev.content:/etc/nginx/sites-available/90-desec.static.content  # override webapp access
     logging:
       driver: "json-file"
 
