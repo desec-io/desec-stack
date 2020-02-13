@@ -78,6 +78,20 @@ describe("API v1", function () {
         });
     });
 
+    it("has HSTS header", function () {
+        var response = chakram.get('/');
+        expect(response).to.have.header('Strict-Transport-Security', 'max-age=31536000; includeSubdomains; preload');
+        return chakram.wait();
+    });
+
+    it("has CORS headers", function () {
+        return chakram.options('/', {headers: {'Origin': 'http://foo.example' }}).then(function (response) {
+            expect(response).to.have.header('access-control-allow-origin', '*');
+            expect(response).to.have.header('access-control-allow-headers', /.*authorization.*/);
+            return chakram.wait();
+        });
+    });
+
     describe("user registration", function () {
 
         var captcha;
