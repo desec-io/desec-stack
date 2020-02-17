@@ -30,7 +30,7 @@ from desecapi.permissions import IsDomainOwner, IsOwner, IsVPNClient, WithinDoma
 from desecapi.renderers import PlainTextRenderer
 
 
-class IdempotentDestroy:
+class IdempotentDestroyMixin:
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -41,7 +41,7 @@ class IdempotentDestroy:
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class DomainView:
+class DomainViewMixin:
 
     def initial(self, request, *args, **kwargs):
         # noinspection PyUnresolvedReferences
@@ -53,7 +53,7 @@ class DomainView:
             raise Http404
 
 
-class TokenViewSet(IdempotentDestroy,
+class TokenViewSet(IdempotentDestroyMixin,
                    mixins.CreateModelMixin,
                    mixins.RetrieveModelMixin,
                    mixins.DestroyModelMixin,
@@ -76,7 +76,7 @@ class TokenViewSet(IdempotentDestroy,
         serializer.save(user=self.request.user)
 
 
-class DomainViewSet(IdempotentDestroy,
+class DomainViewSet(IdempotentDestroyMixin,
                     mixins.CreateModelMixin,
                     mixins.RetrieveModelMixin,
                     mixins.DestroyModelMixin,
@@ -133,7 +133,7 @@ class SerialList(generics.ListAPIView):
         return Response(serials)
 
 
-class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyAPIView):
+class RRsetDetail(IdempotentDestroyMixin, DomainViewMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
@@ -174,7 +174,7 @@ class RRsetDetail(IdempotentDestroy, DomainView, generics.RetrieveUpdateDestroyA
             super().perform_destroy(instance)
 
 
-class RRsetList(DomainView, generics.ListCreateAPIView, generics.UpdateAPIView):
+class RRsetList(DomainViewMixin, generics.ListCreateAPIView, generics.UpdateAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
