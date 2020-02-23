@@ -422,9 +422,17 @@ class RRManager(Manager):
 class RR(ExportModelOperationsMixin('RR'), models.Model):
     created = models.DateTimeField(auto_now_add=True)
     rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
-    # max_length is determined based on the calculation in
-    # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
-    content = models.CharField(max_length=4092)
+    # The pdns lmdb backend used on our slaves does not only store the record contents itself, but other metadata (such
+    # as type etc.) Both together have to fit into the lmdb backend's current total limit of 512 bytes per RR, see
+    # https://github.com/PowerDNS/pdns/issues/8012
+    # I found the additional data to be 12 bytes (by trial and error). I believe these are the 12 bytes mentioned here:
+    # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html So we can use 500 bytes for the actual content.
+    # Note: This is a conservative estimate, as record contents may be stored more efficiently depending on their type,
+    # effectively allowing a longer length in "presentation format". For example, A record contents take up 4 bytes,
+    # although the presentation format (usual IPv4 representation) takes up to 15 bytes. Similarly, OPENPGPKEY contents
+    # are base64-decoded before storage in binary format, so a "presentation format" value (which is the value our API
+    # sees) can have up to 668 bytes. Instead of introducing per-type limits, setting it to 500 should always work.
+    content = models.CharField(max_length=500)  #
 
     objects = RRManager()
 

@@ -196,6 +196,19 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.other_domain.name, **data)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
+    def test_create_my_rr_sets_too_long_content(self):
+        def _create_data(length):
+            content_string = 'A' * (length - 2)  # we have two quotes
+            return {'records': [f'"{content_string}"'], 'ttl': 3600, 'type': 'TXT', 'subname': f'name{length}'}
+
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+            response = self.client.post_rr_set(self.my_empty_domain.name, **_create_data(500))
+            self.assertStatus(response, status.HTTP_201_CREATED)
+
+        response = self.client.post_rr_set(self.my_empty_domain.name, **_create_data(501))
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Ensure this field has no more than 500 characters.', str(response.data))
+
     def test_create_my_rr_sets_twice(self):
         data = {'records': ['1.2.3.4'], 'ttl': 3660, 'type': 'A'}
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
