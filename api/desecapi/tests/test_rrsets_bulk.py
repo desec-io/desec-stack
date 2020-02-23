@@ -363,13 +363,10 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             [True, '1.1.1.1'],
             dict(foobar='foobar', asdf='asdf'),
         ]:
-            s = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=[
-                    {'subname': 'a.2', 'ttl': 50, 'type': 'MX', 'records': records}
-                ])
-            self.assertStatus(
-                s,
-                status.HTTP_400_BAD_REQUEST
-            )
+            payload = [{'subname': 'a.2', 'ttl': 3600, 'type': 'MX', 'records': records}]
+            response = self.client.bulk_put_rr_sets(domain_name=self.my_empty_domain.name, payload=payload)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertTrue('records' in response.data[0])
 
     def test_bulk_put_empty_records(self):
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.bulk_domain.name)):
