@@ -256,6 +256,26 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             raise serializers.ValidationError('This field must not be empty when using POST.')
         return value
 
+    def validate(self, attrs):
+        if 'records' in attrs:
+            # There is a 12 byte baseline requirement per record, c.f.
+            # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
+            # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
+            # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
+            # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
+            qname = models.RRset.construct_name(attrs.get('subname', ''), self.domain.name)
+            conservative_total_length = 32 + len(qname) + sum(12 + len(rr['content']) for rr in attrs['records'])
+
+            # Add some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+            conservative_total_length += 256
+
+            excess_length = conservative_total_length - 65535  # max response size
+            if excess_length > 0:
+                raise serializers.ValidationError(f'Total length of RRset exceeds limit by {excess_length} bytes.',
+                                                  code='max_length')
+
+        return attrs
+
     def exists(self, arg):
         if isinstance(arg, models.RRset):
             return arg.records.exists()

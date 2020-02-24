@@ -1,3 +1,4 @@
+from ipaddress import IPv4Network
 import re
 
 from django.conf import settings
@@ -208,6 +209,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.my_empty_domain.name, **_create_data(501))
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Ensure this field has no more than 500 characters.', str(response.data))
+
+    def test_create_my_rr_sets_too_large_rrset(self):
+        network = IPv4Network('127.0.0.0/20')  # size: 4096 IP addresses
+        data = {'records': [str(ip) for ip in network], 'ttl': 3600, 'type': 'A', 'subname': 'name'}
+        response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        excess_length = 28743 + len(self.my_empty_domain.name)
+        self.assertIn(f'Total length of RRset exceeds limit by {excess_length} bytes.', str(response.data))
 
     def test_create_my_rr_sets_twice(self):
         data = {'records': ['1.2.3.4'], 'ttl': 3660, 'type': 'A'}
