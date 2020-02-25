@@ -1,2 +1,0 @@
-cryptography~=2.7
-mysqlclient~=1.4.2.post1

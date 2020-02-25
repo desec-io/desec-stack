@@ -2,16 +2,3 @@
 CREATE DATABASE pdns;
 CREATE USER 'pdns'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%' IDENTIFIED BY '${DESECSTACK_DBMASTER_PASSWORD_pdns}';
 GRANT SELECT, INSERT, UPDATE, DELETE ON pdns.* TO 'pdns'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%';
-
--- Replication Manager
-CREATE USER 'replication-manager'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%' IDENTIFIED BY '${DESECSTACK_DBMASTER_PASSWORD_replication_manager}';
-
--- privileges without GRANT OPTION
-GRANT CREATE USER ON  *.* TO 'replication-manager'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%';
--- The following mysql.* is needed so that this user can GRANT anything to the users it creates. Replacing the wildcard with all (!) specific table names does not work.
-GRANT SELECT, UPDATE ON mysql.* TO 'replication-manager'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%';
-
--- privileges with GRANT OPTION
-GRANT RELOAD, REPLICATION CLIENT, REPLICATION SLAVE ON  *.* TO 'replication-manager'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%' WITH GRANT OPTION;
-GRANT SELECT ON pdns.* TO 'replication-manager'@'${DESECSTACK_IPV4_REAR_PREFIX16}.4.%' WITH GRANT OPTION;
-

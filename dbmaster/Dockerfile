@@ -12,9 +12,5 @@ RUN chown -R mysql:mysql /docker-entrypoint-initdb.d/
 # Additional configuration
 COPY ./51-server.cnf /etc/mysql/conf.d/51-server.cnf
 
-# mountable ssl certificate and key directory
-# (we don't want any keys in this repository)
-VOLUME /etc/ssl/private/
-
 # mountable storage
 VOLUME /var/lib/mysql

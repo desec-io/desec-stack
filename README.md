@@ -6,7 +6,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
-- `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively. The `dbmaster` database is exposed at 3306 for TLS-secured replication.
+- `dbapi`, `dblord`, `dbmaster`: MariaDB database services for `api`, `nslord`, and `nsmaster`, respectively.
 - `www`: nginx instance serving static web site content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
@@ -21,9 +21,7 @@ Although most configuration is contained in this repository, some external depen
 
 1.  We run this software with the `--userland-proxy=false` flag of the `dockerd` daemon, and recommend you do the same.
 
-2.  Set up TLS-secured replication of the `nsmaster` database to feed your PowerDNS slaves. To generate the necessary keys and certificates, follow the instructions at https://dev.mysql.com/doc/refman/5.7/en/creating-ssl-files-using-openssl.html. In the `openssl req -newkey` steps, consider switching to a bigger key size, and add `-subj '/CN=slave.hostname.example'`. (It turned out that StartSSL and Let's Encrypt certificates do not work out of the box.)
-
-    Also, configure certificates for `openvpn-server`:
+2.  Also, configure certificates for `openvpn-server`:
 
     - [Get easy-rsa](https://github.com/OpenVPN/easy-rsa) and follow [this tutorial](https://github.com/OpenVPN/easy-rsa/blob/master/README.quickstart.md).
     - Then, copy `ca.crt`, `server.crt`, and `server.key` to `openvpn-server/secrets/`.
@@ -43,7 +41,6 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
     - certificates
       - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container. This directory is monitored for changes so that nginx can reload when new keys/certificates are provided. **Note:** The reload is done any time something changes in the directory. The relevant files are **not** watched individually.
-      - `DESECSTACK_DBMASTER_CERTS`: `./path/to/certificates` for `dbmaster` container
     - API-related
       - `DESECSTACK_API_ADMIN`: white-space separated list of Django admin email addresses
       - `DESECSTACK_API_DEBUG`: Django debug setting. Must be True (default in `docker-compose.dev.yml`) or False (default otherwise)
@@ -64,12 +61,9 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSLORD_DEFAULT_TTL`: TTL to use by default, including for default NS records
     - nsmaster-related
       - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
-      - `DESECSTACK_DBMASTER_PASSWORD_replication_manager`: mysql password for `replication-master` user (sets up permissions for replication slaves)
       - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the slaves)
       - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
-    - replication-manager related
-      - `DESECSTACK_REPLICATION_MANAGER_CERTS`: a directory where `replication-manager` (to configure slave replication) will dump the slave's TLS key and certificate
     - monitoring-related
       - `DESECSTACK_WATCHDOG_SLAVES`: space-separated list of slave hostnames; used to check correct replication of recent DNS changes
       - `DESECSTACK_PROMETHEUS_PASSWORD`: basic auth password for user `prometheus` at `https://${DESECSTACK_DOMAIN}/prometheus/`
