@@ -1,32 +1,15 @@
 ######
-# Handle update requests without SSL
+# Redirect to SSL
 ######
 server {
-	listen 80;
-	listen [::]:80;
-	server_name update.dedyn.$DESECSTACK_DOMAIN
-	            update6.dedyn.$DESECSTACK_DOMAIN;
-	
-	access_log /var/log/nginx/access.log main;
-	error_log /var/log/nginx/error.log;
-	
-	include global.conf;
-	
-	location ~* \.(ico|png)$ { return 401; }
-	
-	location /nic/checkip.html {
-		add_header Content-Type text/plain;
-		return 200 $remote_addr;
-	}
+        listen 80;
+        server_name update.dedyn.$DESECSTACK_DOMAIN;
 
-	location / {
-		limit_req zone=perip-api;
+        include global.conf;
 
-		include uwsgi_params;
-		rewrite ^(.*)$ /api/v1/dyndns/update?$1 break;
-		uwsgi_param HTTP_HOST $host;
-		uwsgi_pass desecapi;
-	}
+        location / {
+                return 301 https://$host$request_uri;
+        }
 }
 
 ######
