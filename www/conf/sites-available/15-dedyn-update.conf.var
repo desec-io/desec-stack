@@ -20,9 +20,6 @@ server {
 	listen [::]:443 ssl http2;
 	server_name update.dedyn.$DESECSTACK_DOMAIN;
 	
-	access_log /var/log/nginx/access.log main;
-	error_log /var/log/nginx/error.log;
-	
 	ssl_certificate ${CERT_PATH}update.dedyn.${DESECSTACK_DOMAIN}.cer;
 	ssl_certificate_key ${CERT_PATH}update.dedyn.${DESECSTACK_DOMAIN}.key;
 
@@ -47,9 +44,6 @@ server {
 server {
 	listen [::]:443 ssl http2;
 	server_name update6.dedyn.$DESECSTACK_DOMAIN;
-	
-	access_log /var/log/nginx/access.log main;
-	error_log /var/log/nginx/error.log;
 	
 	ssl_certificate ${CERT_PATH}update6.dedyn.${DESECSTACK_DOMAIN}.cer;
 	ssl_certificate_key ${CERT_PATH}update6.dedyn.${DESECSTACK_DOMAIN}.key;
