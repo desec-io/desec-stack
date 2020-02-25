@@ -115,7 +115,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         # ScopedRatesThrottle
         'account_management_active': ['3/min'],  # things with side effect, e.g. sending mail or zone creation on signup
-        'account_management_passive': ['10/min'],  # things like viewing your account or creating/deleting tokens
+        'account_management_passive': ['10/min'],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         'dyndns': ['1/min'],  # dynDNS updates; anything above 1/min is a client misconfiguration
         'dns_api_read': ['5/s', '50/min'],  # DNS API requests that do not involve pdns
         'dns_api_write': ['3/s', '50/min', '200/h'],  # DNS API requests that do involve pdns

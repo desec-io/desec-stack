@@ -589,7 +589,10 @@ class AuthenticatedActionView(generics.GenericAPIView):
     html_url = None
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
-    throttle_scope = 'account_management_active'
+
+    @property
+    def throttle_scope(self):
+        return 'account_management_passive' if self.request.method in SAFE_METHODS else 'account_management_active'
 
     def get_serializer_context(self):
         return {**super().get_serializer_context(), 'code': self.kwargs['code']}
