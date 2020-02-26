@@ -36,7 +36,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NS`: the names of the authoritative name servers, i.e. names pointing to your slave name servers. Minimum 2.
     - network
       - `DESECSTACK_IPV4_REAR_PREFIX16`: IPv4 net, size /16, for assignment of internal container IPv4 addresses. **NOTE:** If you change this in an existing setup, you 
-        need to manually update MySQL grant tables and the `nsmaster` supermaster table to update IP addresses! Better don't do it.
+        need to manually update persisted data structures such as the MySQL grant tables! Better don't do it.
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
     - certificates
@@ -89,9 +89,9 @@ API Versions and Roadmap
 
 deSEC currently maintains the following API versions:
 
-API Version | URL Prefix | Status                                   | Support Ends
------------ | ---------- | ---------------------------------------- | ------------
-Version 1   | `/api/v1/` |  unstable, stable release exp. June 2019 | earliest 6 months after v2 is declared stable
+API Version | URL Prefix | Status    | Support Ends
+----------- | ---------- | --------- | ------------
+Version 1   | `/api/v1/` |  stable   | earliest 6 months after v2 is declared stable
 Version 2   | `/api/v2/` |  unstable
 
 You can find our documentation for all API versions at https://desec.readthedocs.io/. (Select the version of interest in the navigation bar.)
@@ -144,23 +144,9 @@ While there are certainly many ways to get started hacking desec-stack, here is 
        git clone git@github.com:desec-io/desec-stack.git
 
 1. **Obtain Domain Names.** To run desec-stack, this guide uses a subdomain of dedyn.io provided by desec.io.
-    Install the httpie software, `sudo apt install httpie` to run the following commands.
-    1. Register a deSEC user account.
 
-           http POST https://desec.io/api/v1/auth/users/ email:='"you@example.com"' password:='"secret"'
-           http POST https://desec.io/api/v1/auth/token/login/ email:='"you@example.com"' password:='"secret"'
-
-        The deSEC API will reply with an authentication token to the second request, similar to 
-
-           {
-               "auth_token": "i-T3b1h_OI-H9ab8tRS98stGtURe"
-           }
-
-        Setup a shell variable that holds the authentication token for future use:
-
-           TOKEN=i-T3b1h_OI-H9ab8tRS98stGtURe
-
-        Check your email and follow the instructions for completing the registration.
+    1. Register a deSEC user account. Check out the instructions in our [documentation](https://desec.readthedocs.io/),
+       in particular the [Quickstart](https://desec.readthedocs.io/en/latest/quickstart.html) section.
 
     2. Register a dedyn.io subdomain to run your desec-stack on it and set up the IP addresses.
         For this guide, we assume `example.dedyn.io`. Register it with:
@@ -258,8 +244,8 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
        EMAIL=john@example.com
        PASSWORD=insecure
-       http POST https://desec.${DOMAIN}/api/v1/auth/users/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\"
-       TOKEN=$(http POST https://desec.${DOMAIN}/api/v1/auth/token/login/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\" | jq -r .token)
+       # Register account (https://desec.readthedocs.io/en/latest/quickstart.html). Hint: In dev mode, the captcha response contains the plaintext challenge.
+       TOKEN=$(http POST https://desec.${DOMAIN}/api/v1/auth/login/ email:=\"${EMAIL}\" password:=\"${PASSWORD}\" | jq -r .token)
        http POST https://desec.${DOMAIN}/api/v1/domains/ Authorization:"Token ${TOKEN}" name:='"test.example"'
        http POST https://desec.${DOMAIN}/api/v1/domains/test.example/rrsets/ Authorization:"Token ${TOKEN}" type:=\"A\" ttl:=60 records:='["127.0.0.254"]'
 
