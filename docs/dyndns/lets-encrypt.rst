@@ -40,8 +40,8 @@ steps.
    for users not familiar with shell commands, please note that you need to
    remove the ``\`` if you reformat the command to fit on one line.) ::
 
-     certbot --manual --preferred-challenges dns --manual-auth-hook ./hook.sh \
-             -d "YOURDOMAINNAME.dedyn.io" certonly
+     certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
+         --preferred-challenges dns -d "YOURDOMAINNAME.dedyn.io" certonly
 
    Depending on how you installed certbot, you may need to replace ``certbot``
    with ``./certbot-auto`` (assuming that the ``certbot-auto`` executable is
