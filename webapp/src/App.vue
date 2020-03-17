@@ -59,8 +59,9 @@
         <div class="d-sm-flex flex-row align-right py-2">
           <div class="px-2 grey--text text--darken-1">powered by <a class="grey--text" href="//securesystems.de/" style="text-decoration: none">SSE</a></div>
           <div class="px-2"><a href="//github.com/desec-io/desec-stack/">Source Code</a></div>
-          <div class="px-2"><router-link :to="{name: 'impressum'}">Impressum (Legal Notice)</router-link></div>
-          <div class="px-2"><router-link :to="{name: 'privacy-policy'}">Datenschutzerklärung (Privacy Policy)</router-link></div>
+          <div class="px-2"><router-link :to="{name: 'terms'}">Terms of Use</router-link></div>
+          <div class="px-2"><router-link :to="{name: 'privacy-policy'}">Privacy Policy (Datenschutzerklärung)</router-link></div>
+          <div class="px-2"><router-link :to="{name: 'impressum'}">Legal Notice (Impressum)</router-link></div>
         </div>
       </div>
       <div class="grey darken-4 d-md-flex flex-row justify-space-between pa-6">

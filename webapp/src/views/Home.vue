@@ -83,7 +83,7 @@
   </div>
 </template>
 
-<style>
+<style scoped>
   div.triangle-bg {
     border: 80em solid transparent;
     border-right: 60em solid #FFC107;

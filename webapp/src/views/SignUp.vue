@@ -113,7 +113,10 @@
                       tabindex="4"
                 >
                   <template slot="label">
-                    <v-flex>Yes, I agree to the <a @click.stop="privacyPolicy">privacy policy</a>.</v-flex>
+                    <v-flex>
+                      Yes, I agree to the <a @click.stop="open_route('terms')">Terms of Use</a> and
+                      <a @click.stop="open_route('privacy-policy')">Privacy Policy</a>.
+                    </v-flex>
                   </template>
                 </v-checkbox>
               </v-layout>
@@ -184,8 +187,8 @@
       this.initialFocus();
     },
     methods: {
-      async privacyPolicy() {
-        window.open(this.$router.resolve({name: 'privacy-policy'}).href);
+      async open_route(route) {
+        window.open(this.$router.resolve({name: route}).href);
         this.terms = !this.terms; // silly but easy fix for "accidentally" checking the box by clicking the link
       },
       async getCaptcha(focus = false) {
