@@ -228,6 +228,43 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     1. configure an email server host name, user name, and password to deliver emails can be included in `.env`. A convenient option is a MailTrap account.
     2. adjust the network prefixes in `.env` to avoid collisions with other local networks.
 
+    Additionally, the VPN server for the replication network needs to be equipped with a pre-shared key (PSK) and a public key infrastructure (PKI).
+    To generate the PSK, use the openvpn-server container:
+
+        docker-compose run openvpn-server openvpn --genkey --secret /dev/stdout > openvpn-server/secrets/ta.key
+
+    To build the PKI, we recommend [easy RSA](https://github.com/OpenVPN/easy-rsa).
+    **Please note that PKI instructions here are for development deployments only!**
+    **Using this setup for production WILL DEFINITELY result in an INSECURE deployment!**
+    To make it available, clone the repository and link to the executable:
+
+        cd openvpn-server/secrets
+        git clone https://github.com/OpenVPN/easy-rsa.git
+        ln -s easy-rsa/easyrsa3/easyrsa
+
+    In order to create a new PKI,
+
+        ./easyrsa init-pki
+        ./easyrsa build-ca nopass
+
+    To make the new PKI's Certificate Authority available to the OpenVPN server,
+
+        ln -s pki/ca.crt
+
+    To issue a certificate for the OpenVPN server, generate a new key pair, a signing request, and sign the certificate.
+
+         ./easyrsa gen-req server nopass
+         ./easyrsa sign-req client server  # requires interaction
+
+    Make the key and certificate available to OpenVPN server:
+
+        ln -s pki/issued/server.crt
+        ln -s pki/private/server.key
+
+    As the setup of OpenVPN is completed, return to the project directory:
+
+        cd -
+
 1. **Run desec-stack.** To run desec-stack, use
 
        ./dev
