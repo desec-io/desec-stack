@@ -74,9 +74,58 @@
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-8 py-4 text-center">
           <a class="primary--text text--darken-2" href="//securesystems.de/">SSE</a> supports us with development staff
-          and provides deSEC with our global Anycast networking infrastructure for delivering signed DNS data to the
+          and provides deSEC with global Anycast networking infrastructure for delivering signed DNS data to the
           public. We trust them because creating and auditing security solutions is their daily business.
         </v-col>
+      </v-row>
+    </v-container>
+  </v-container>
+  <v-container fluid>
+    <v-container>
+      <v-row align="center" justify="center">
+        <v-card
+          class="mx-auto col-12"
+          color="grey lighten-4"
+        >
+          <v-card-text
+                  class="pt-6"
+                  style="position: relative;"
+          >
+            <h3 class="display-1 mb-2 text--darken-2 grey--text text-center">
+              deSEC Global Anycast Networks
+            </h3>
+            <div class="font-weight-light title mb-2">
+              Global distribution of our frontend servers ensures quick answers to queries, regardless of the user's
+              location on the globe. You can
+              <a :href="'mailto:' + contact_email + '?subject=' + encodeURIComponent(contact_subject) +
+                        '&body=' + encodeURIComponent(contact_body)"
+              >support deSEC</a> by adopting a frontend server to help us cover the cost or adding a frontend server
+              in a corner of the world where there is no frontend yet.
+            </div>
+          </v-card-text>
+          <v-img
+            :src="require('../assets/anycast.worldmap.svg')" alt="World Map of Anycast POPs" contain
+            class="justify-center"
+            style="display: block;"
+          >
+            <v-tooltip bottom v-for="f in frontends" :key="f.host">
+              <template v-slot:activator="{ on }">
+                <v-img
+                  v-on="on"
+                  :src="require('../assets/mapmarker.svg')" alt="Anycast POP" height="2em" width="2em"
+                  :style="{left: f.left, top: f.top}"
+                  style="transform: translate(-50%, -100%); position: absolute; overflow: visible;" contain
+                >
+                </v-img>
+              </template>
+              <span>
+                {{f.name}}
+                <span v-if="f.adopted_by">sponsored by {{f.adopted_by}}</span>
+                <span v-else>has no sponsor, support it now!</span>
+              </span>
+            </v-tooltip>
+          </v-img>
+        </v-card>
       </v-row>
     </v-container>
   </v-container>
@@ -100,6 +149,7 @@
 
 <script>
 import {email_pattern} from "../validation";
+import {EMAIL} from '../env';
 
 export default {
   name: 'home',
@@ -111,11 +161,126 @@ export default {
     },
   },
   data: () => ({
+    contact_email: EMAIL,
+    contact_subject: 'Adopting of a Frontend Server',
+    contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
     email: '',
     email_rules: [
       v => !!email_pattern.test(v || '') || 'Invalid email address.'
     ],
     valid: false,
+    frontends: [
+      {
+        name: 'London (ns2.desec.org)',
+        host: 'lhr-1.b.desec.io',
+        adopted_by: '',
+        left: '45%',
+        top: '20%',
+      },
+      {
+        name: 'Vienna (ns2.desec.org)',
+        host: 'vie-1.b.desec.io',
+        adopted_by: '',
+        left: '50%',
+        top: '24%',
+      },
+      {
+        name: 'Frankfurt (ns1.desec.io)',
+        host: 'fra-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '48.5%',
+        top: '23.5%',
+      },
+      {
+        name: 'Amsterdam (ns1.desec.io)',
+        host: 'ams-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '47%',
+        top: '22%',
+      },
+
+      {
+        name: 'Los Angeles (ns2.desec.org)',
+        host: 'lax-1.b.desec.io',
+        adopted_by: '',
+        left: '6%',
+        top: '32%',
+      },
+      {
+        name: 'New York (ns2.desec.org)',
+        host: 'nyc-1.b.desec.io',
+        adopted_by: '',
+        left: '22%',
+        top: '29%',
+      },
+      {
+        name: 'Dallas, TX (ns1.desec.io)',
+        host: 'dfw-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '13%',
+        top: '34%',
+      },
+
+      {
+        name: 'São Paulo (ns1.desec.io)',
+        host: 'gru-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '29.3%',
+        top: '78%',
+      },
+      {
+        name: 'São Paulo (ns2.desec.org)',
+        host: 'gru-1.b.desec.io',
+        adopted_by: '',
+        left: '28.8%',
+        top: '78.5%',
+      },
+      {
+        name: 'Santiago de Chile (ns2.desec.org)',
+        host: 'scl-1.b.desec.io',
+        adopted_by: '',
+        left: '22%',
+        top: '85%',
+      },
+
+      {
+        name: 'Sydney (ns1.desec.io)',
+        host: 'syd-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '93%',
+        top: '84%',
+      },
+      {
+        name: 'Sydney (ns2.desec.org)',
+        host: 'syd-1.b.desec.io',
+        adopted_by: '',
+        left: '92.5%',
+        top: '84.5%',
+      },
+
+      {
+        name: 'Singapore (ns2.desec.org)',
+        host: 'sin-1.b.desec.io',
+        adopted_by: '',
+        left: '81%',
+        top: '57.5%',
+      },
+      {
+        name: 'Hong Kong (ns1.desec.io)',
+        host: 'hkg-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '84%',
+        top: '43%',
+      },
+
+      {
+        name: 'Johannesburg (ns1.desec.io)',
+        host: 'jnb-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '54%',
+        top: '81%',
+      },
+    ],
     features: [
       {
         href: '#',
@@ -161,8 +326,8 @@ export default {
         href: '#',
         icon: 'mdi-lan',
         title: 'Low-latency Anycast',
-        text: 'We run a global network of 8 high-performance frontend DNS servers (Europe, US, Asia). Your query is '
-              + 'routed to the closest server via Anycast, so clients receive answers as fast as possible.',
+        text: 'We run global networks of high-performance frontend DNS servers located on all continents. Your query '
+              + 'is routed to the closest server via Anycast, so clients receive answers as fast as possible.',
       },
       {
         href: '#',
