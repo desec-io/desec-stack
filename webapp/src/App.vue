@@ -121,6 +121,11 @@ export default {
         'icon': 'mdi-gift-outline',
         'text': 'Donate',
       },
+      'about': {
+        'name': 'about',
+        'icon': 'mdi-umbrella',
+        'text': 'About',
+      },
       'reset-password': {
         'name': 'reset-password',
         'icon': 'mdi-lock-reset',
