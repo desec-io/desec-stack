@@ -195,6 +195,12 @@ SEPA = {
 }
 
 # user management
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8}
+    },
+]
 MINIMUM_TTL_DEFAULT = int(os.environ['DESECSTACK_MINIMUM_TTL_DEFAULT'])
 AUTH_USER_MODEL = 'desecapi.User'
 LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5

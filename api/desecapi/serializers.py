@@ -4,6 +4,7 @@ import re
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 
 from captcha.image import ImageCaptcha
+from django.contrib.auth.password_validation import validate_password
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, OperationalError
 from django.db.models import Model, Q
@@ -562,6 +563,11 @@ class UserSerializer(serializers.ModelSerializer):
                 'allow_null': True,
             }
         }
+
+    def validate_password(self, value):
+        if value is not None:
+            validate_password(value)
+        return value
 
     def create(self, validated_data):
         return models.User.objects.create_user(**validated_data)

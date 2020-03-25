@@ -242,6 +242,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         )
         self.assertEqual(response.data['password'][0].code, 'blank')
 
+    def assertRegistrationFailurePasswordMinLengthResponse(self, response):
+        self.assertContains(
+            response=response,
+            text="This password is too short. It must contain at least 8 characters.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+        self.assertEqual(response.data['password'][0].code, 'password_too_short')
+
     def assertRegistrationFailureDomainUnavailableResponse(self, response, domain):
         self.assertContains(
             response=response,
@@ -529,6 +537,14 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         email = self.random_username()
         self.assertRegistrationFailurePasswordRequiredResponse(
             response=self.register_user(email=email, password='')[2]
+        )
+        self.assertNoEmailSent()
+        self.assertUserDoesNotExist(email)
+
+    def test_registration_password_min_length(self):
+        email = self.random_username()
+        self.assertRegistrationFailurePasswordMinLengthResponse(
+            response=self.register_user(email=email, password='asdf123')[2]
         )
         self.assertNoEmailSent()
         self.assertUserDoesNotExist(email)
