@@ -6,15 +6,22 @@ from django.conf import settings
 from django.core.mail import get_connection, mail_admins
 from django.core.management import BaseCommand
 from django.utils import timezone
-import dns.message, dns.query, dns.rdatatype
+import dns.exception, dns.message, dns.query, dns.rdatatype
 
 from desecapi import pdns
 from desecapi.models import Domain
 
 
 def query_serial(zone, server):
+    """
+    Checks a zone's serial on a server.
+    :return: serial if received; None if the server did not know; False on error
+    """
     query = dns.message.make_query(zone, 'SOA')
-    response = dns.query.tcp(query, server)
+    try:
+        response = dns.query.tcp(query, server, timeout=5)
+    except dns.exception.Timeout:
+        return False
 
     for rrset in response.answer:
         if rrset.rdtype == dns.rdatatype.SOA:
@@ -63,11 +70,17 @@ class Command(BaseCommand):
         outdated_slaves = set()
 
         output = []
+        timeouts = {}
         for zone, local_serial in serials.items():
             outdated_serials = self.find_outdated_servers(zone, local_serial)
-            outdated_slaves.update(outdated_serials.keys())
+            for server, serial in outdated_serials.items():
+                if serial is False:
+                    timeouts.setdefault(server, [])
+                    timeouts[server].append(zone)
+            outdated_serials = {k: serial for k, serial in outdated_serials.items() if serial is not False}
 
             if outdated_serials:
+                outdated_slaves.update(outdated_serials.keys())
                 output.append(f'{zone} ({local_serial}) is outdated on {outdated_serials}')
                 print(output[-1])
                 outdated_zone_count += 1
@@ -77,19 +90,25 @@ class Command(BaseCommand):
         output.append(f'Checked {len(serials)} domains, {outdated_zone_count} were outdated.')
         print(output[-1])
 
-        self.report(outdated_slaves, output)
+        self.report(outdated_slaves, output, timeouts)
 
-    def report(self, outdated_slaves, output):
-        if not outdated_slaves:
+    def report(self, outdated_slaves, output, timeouts):
+        if not outdated_slaves and not timeouts:
             return
 
-        subject = f'ALERT {len(outdated_slaves)} slaves out of sync'
-        message = f'The following {len(outdated_slaves)} slaves are out of sync:\n'
-        for outdated_slave in outdated_slaves:
-            message += f'* {outdated_slave}\n'
-        message += '\n'
-        message += f'Current slave IPs: {self.servers}'
-        message += '\n'
+        subject = f'{timeouts and "CRITICAL ALERT" or "ALERT"} {len(outdated_slaves)} slaves out of sync'
+        message = ''
+
+        if timeouts:
+            message += f'The following servers had timeouts:\n\n{timeouts}\n\n'
+
+        if outdated_slaves:
+            message += f'The following {len(outdated_slaves)} slaves are out of sync:\n'
+            for outdated_slave in outdated_slaves:
+                message += f'* {outdated_slave}\n'
+            message += '\n'
+
+        message += f'Current slave IPs: {self.servers}\n'
         message += '\n'.join(output)
 
         mail_admins(subject, message, connection=get_connection('django.core.mail.backends.smtp.EmailBackend'))
