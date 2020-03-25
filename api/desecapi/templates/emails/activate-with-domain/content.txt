@@ -11,5 +11,7 @@ hours):
 
 After that, please follow the instructions on the confirmation page.
 
+If link has already expired, please register again.
+
 Stay secure,
 Nils
