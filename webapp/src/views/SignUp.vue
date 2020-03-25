@@ -130,7 +130,7 @@
                       :disabled="working"
                       :loading="working"
                       tabindex="5"
-              >Sign up for Beta Account</v-btn>
+              >Sign up for Account</v-btn>
             </v-card-actions>
           </v-card>
         </v-form>

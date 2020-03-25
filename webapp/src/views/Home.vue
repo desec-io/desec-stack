@@ -37,9 +37,8 @@
                     x-large
                     block
                   >
-                    Create Beta Account
+                    Create Account
                   </v-btn>
-                  <p class="mt-4 body-2 grey--text text--darken-1">While currently in beta test, we have reached stable operation and are approaching official launch.</p>
                 </v-col>
               </v-row>
             </v-form>
