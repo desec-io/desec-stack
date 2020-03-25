@@ -26,19 +26,19 @@ pretty-print JSON output, process the data through ``jq``:  ``curl ... | jq .``.
 
 .. toctree::
    :maxdepth: 2
+   :caption: DNS Management
+
+   dns/domains
+   dns/rrsets
+
+
+.. toctree::
+   :maxdepth: 2
    :caption: dynDNS
 
    dyndns/configure
    dyndns/lets-encrypt
    dyndns/update-api
-
-
-.. toctree::
-   :maxdepth: 2
-   :caption: DNS Management
-
-   dns/domains
-   dns/rrsets
 
 
 .. toctree::
