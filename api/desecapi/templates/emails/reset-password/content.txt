@@ -6,7 +6,7 @@ web site, or when you created a new account just now that does not yet
 have a password.
 
 To ensure that the request is legitimate, we need you to confirm it
-using the following link:
+using the following link (valid for {{ link_expiration_hours }} hours):
 
 {{ confirmation_link }}
 

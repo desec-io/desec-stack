@@ -4,7 +4,7 @@ Thank you for registering with deSEC!
 
 As we may need to contact you in the future, you need to verify your
 email address before you can use your account. To do so, please use
-the following link:
+the following link (valid for {{ link_expiration_hours }} hours):
 
 {{ confirmation_link }}
 

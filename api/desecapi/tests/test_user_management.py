@@ -179,7 +179,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             body_contains='Thank you for registering with deSEC!',
             recipient=[recipient],
             reset=reset,
-            pattern=r'following link:\s+([^\s]*)',
+            pattern=r'following link[^:]*:\s+([^\s]*)',
         )
 
     def assertResetPasswordEmail(self, recipient, reset=True):
@@ -188,7 +188,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             body_contains='We received a request to reset the password for your deSEC account.',
             recipient=[recipient],
             reset=reset,
-            pattern=r'following link:\s+([^\s]*)',
+            pattern=r'following link[^:]*:\s+([^\s]*)',
         )
 
     def assertChangeEmailVerificationEmail(self, recipient, reset=True):
@@ -197,7 +197,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             body_contains='You requested to change the email address associated',
             recipient=[recipient],
             reset=reset,
-            pattern=r'following link:\s+([^\s]*)',
+            pattern=r'following link[^:]*:\s+([^\s]*)',
         )
 
     def assertChangeEmailNotificationEmail(self, recipient, reset=True):
@@ -214,7 +214,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             body_contains='confirm once more',
             recipient=[recipient],
             reset=reset,
-            pattern=r'following link:\s+([^\s]*)',
+            pattern=r'following link[^:]*:\s+([^\s]*)',
         )
 
     def assertRegistrationSuccessResponse(self, response):

@@ -1,9 +1,11 @@
 Hi there,
 
-Thank you for registering with deSEC!
+Thank you for registering with deSEC! You are about to register the
+following domain: {{ domain }}
 
-To create your account and register {{ domain }}, please confirm you
-received this email by clicking on the following link:
+To create your account and finish the registration, please confirm you
+received this email by clicking on the following link (valid for {{ link_expiration_hours }}
+hours):
 
 {{ confirmation_link }}
 
