@@ -141,9 +141,14 @@ email address and password to the ``/auth/login/`` endpoint::
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
 If email address and password match our records, the server will reply with
-``201 Created`` and send you the token as part of the response body::
+``200 OK`` and return the token in the ``token`` field of the response body::
 
-    {"auth_token": "i-T3b1h_OI-H9ab8tRS98stGtURe"}
+    {
+        "created": "2018-09-06T09:07:43.762697Z",
+        "id": "8f9cbae2-c862-48a4-b3f0-2cb1a80df168",
+        "token": "f07Q0TRmEb-CRWPe4h64_iV2jbet",
+        "name": "login"
+    }
 
 In case of credential mismatch, the server replies with ``401 Unauthorized``.
 

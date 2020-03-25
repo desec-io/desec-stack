@@ -63,7 +63,7 @@ will reply with ``201 Created`` and the created token in the response body::
     {
         "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
-        "token": "4pnk7u+NHvrEkFzrhFDRTjGFyX+S",
+        "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S",
         "name": "my new token"
     }
 
