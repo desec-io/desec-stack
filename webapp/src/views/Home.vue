@@ -6,7 +6,7 @@
       <v-row align="center">
         <v-col class="col-md-6 col-12 py-8 triangle-fg">
           <h1 class="display-1 font-weight-bold">Modern DNS Hosting for Everyone</h1>
-          <h3 class="subheading mt-2 py-8 font-weight-regular">
+          <h3 class="subheading mt-2 pt-8 font-weight-regular">
             <p>
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
             </p>
@@ -19,6 +19,16 @@
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>
                 <v-col md="9" cols="12">
+                  <v-radio-group
+                          v-model="domainType"
+                          class="justify-center pb-2"
+                          hide-details
+                          row
+                          @change="$router.push({query: {domainType: domainType}})"
+                  >
+                    <v-radio class="pb-2" label="dynDNS account" value="dynDNS" selected></v-radio>
+                    <v-radio class="pb-2" label="Managed DNS account" value="custom"></v-radio>
+                  </v-radio-group>
                   <v-text-field
                     outlined
                     solo
@@ -156,13 +166,19 @@ export default {
   },
   methods: {
     async signup() {
-      if (this.$refs.form.validate()) this.$router.push({name: 'signup', params: this.email !== '' ? {email: this.email} : {}});
+      if (this.$refs.form.validate()) {
+        this.$router.push({name: 'signup', params: this.email ? {email: this.email} : {}, query: {domainType: this.domainType}});
+      }
     },
   },
-  data: () => ({
+  created() {
+    this.domainType = this.$route.query.domainType || 'none';
+  },
+    data: () => ({
     contact_email: EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
     contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
+    domainType: null,
     email: '',
     email_rules: [
       v => !!email_pattern.test(v || '') || 'Invalid email address.'

@@ -47,7 +47,7 @@
           <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
         </span>
       </div>
-      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'signup'}">Create Account</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'signup', query: $route.query}">Create Account</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
     </v-app-bar>
 

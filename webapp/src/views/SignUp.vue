@@ -9,8 +9,9 @@
     >
       <v-col
               cols="12"
-              sm="8"
-              md="6"
+              sm="10"
+              md="8"
+              lg="6"
       >
         <v-form @submit.prevent="signup" ref="form">
           <v-card class="elevation-12 pb-4">
@@ -49,27 +50,37 @@
                       tabindex="1"
               />
 
-              <p class="mt-4 pl-8 heading">
-                To use our <strong>dynDNS service</strong>, enter a domain name here. After sign-up, we will send you
-                instructions on how to configure your dynDNS client, such as you router.<br>
-                If instead you are interested in <strong>general DNS hosting</strong>, please do not provide a domain
-                name. After sign-up, you can login and create a token to use our DNS REST API.
-              </p>
+              <v-radio-group
+                      v-model="domainType"
+                      hint="Your first domain (you can add more later). – To use dynDNS with your custom domain, please get in touch with us."
+                      label="Do you want to set up a domain right away?"
+                      persistent-hint
+                      prepend-icon="mdi-dns"
+              >
+                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
+                <v-radio label="Configure your own domain (Managed DNS)." value="custom" tabindex="2"></v-radio>
+                <v-radio label="No, I'll add one later through the API." value="none" tabindex="2"></v-radio>
+              </v-radio-group>
 
               <v-text-field
                       v-model="domain"
-                      label="DynDNS domain (optional)"
-                      prepend-icon="mdi-dns"
+                      :label="domainType == 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
+                      prepend-icon="mdi-blank"
                       outline
                       required
-                      :disabled="working"
-                      :rules="domain_rules"
+                      :disabled="working || domainType == 'none' || domainType === undefined"
+                      :rules="domainType == 'dynDNS' ? dyn_domain_rules : (domainType == 'custom' ? domain_rules : [])"
                       :error-messages="domain_errors"
-                      :suffix="'.' + LOCAL_PUBLIC_SUFFIXES[0]"
+                      :suffix="domainType == 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
                       @change="domain_errors=[]"
                       class="lowercase"
                       ref="domainField"
-                      tabindex="2"
+                      tabindex="3"
+                      :hint="domainType == 'dynDNS'
+                        ? 'Enter a domain name here. After sign-up, we will send you instructions on how to configure your dynDNS client (such as you router).'
+                        : 'You can also use our REST API to create a domain.'
+                      "
+                      persistent-hint
               />
 
               <v-container class="pa-0">
@@ -88,7 +99,7 @@
                         @keypress="captcha_errors=[]"
                         class="uppercase"
                         ref="captchaField"
-                        tabindex="3"
+                        tabindex="4"
                     />
                   </v-col>
                   <v-col cols="8" sm="auto">
@@ -115,7 +126,7 @@
                       required
                       :disabled="working"
                       :rules="terms_rules"
-                      tabindex="4"
+                      tabindex="5"
                 >
                   <template slot="label">
                     <v-flex>
@@ -134,8 +145,8 @@
                       type="submit"
                       :disabled="working"
                       :loading="working"
-                      tabindex="5"
-              >Sign up for Account</v-btn>
+                      tabindex="6"
+              >Sign up</v-btn>
             </v-card-actions>
           </v-card>
         </v-form>
@@ -181,7 +192,9 @@
 
       /* domain field */
       domain: '',
-      domain_rules: [v => !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Domain names can only contain letters, numbers, underscores (_), dots (.), and dashes (-), and must end in a letter.'],
+      domainType: null,
+      domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Domain names can only contain letters, numbers, underscores (_), dots (.), and dashes (-), and must end with a top-level domain.'],
+      dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, underscores (_), and dashes (-).'],
       domain_errors: [],
     }),
     async mounted() {
@@ -190,6 +203,9 @@
       }
       this.getCaptcha();
       this.initialFocus();
+    },
+    created() {
+      this.domainType = this.$route.query.domainType || 'dynDNS';
     },
     methods: {
       async open_route(route) {
@@ -209,6 +225,9 @@
         }
       },
       async initialFocus() {
+        if(this.$route.query.domainType === undefined) {
+          return;
+        }
         return this.email ? this.$refs.domainField.focus() : this.$refs.emailField.focus();
       },
       async signup() {
@@ -217,7 +236,10 @@
         }
         this.working = true;
         this.errors = [];
-        let domain = this.domain === '' ? undefined : this.domain.toLowerCase() + '.' + this.LOCAL_PUBLIC_SUFFIXES[0];
+        let domain = this.domain === '' ? undefined : this.domain.toLowerCase();
+        if (domain && this.domainType == 'dynDNS') {
+           domain += '.' + this.LOCAL_PUBLIC_SUFFIXES[0];
+        }
         try {
           await HTTP.post('auth/', {
             email: this.email.toLowerCase(),
@@ -268,6 +290,16 @@
           }
         }
         this.working = false;
+      },
+    },
+    watch: {
+      domainType: function() {
+        this.$nextTick(() => {
+          if (this.domainType == 'none') {
+            this.domain = '';
+          }
+          this.$refs.domainField.validate();
+        })
       },
     },
   };
