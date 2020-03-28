@@ -72,8 +72,10 @@
                       tabindex="2"
               />
 
-              <v-layout>
-                <v-text-field
+              <v-container class="pa-0">
+                <v-row dense align="center" class="text-center">
+                  <v-col cols="12" sm="">
+                    <v-text-field
                         v-model="captchaSolution"
                         label="Type CAPTCHA text here"
                         prepend-icon="mdi-account-check"
@@ -87,21 +89,24 @@
                         class="uppercase"
                         ref="captchaField"
                         tabindex="3"
-                />
-                <div class="ml-4 text-center">
-                  <v-progress-circular
+                    />
+                  </v-col>
+                  <v-col cols="8" sm="auto">
+                    <v-progress-circular
                           indeterminate
                           v-if="captchaWorking"
-                  ></v-progress-circular>
-                  <img
+                    ></v-progress-circular>
+                    <img
                           v-if="captcha && !captchaWorking"
                           :src="'data:image/png;base64,'+captcha.challenge"
                           alt="Sign up is also possible by sending an email to our support."
-                  >
-                  <br/>
-                  <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking">New Captcha</v-btn>
-                </div>
-              </v-layout>
+                    >
+                  </v-col>
+                  <v-col cols="4" sm="auto">
+                    <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+                  </v-col>
+                </v-row>
+              </v-container>
 
               <v-layout class="justify-center">
                 <v-checkbox

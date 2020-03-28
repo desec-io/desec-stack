@@ -60,8 +60,10 @@
                                     tabindex="1"
                             />
 
-                            <v-layout>
-                                <v-text-field
+                              <v-container class="pa-0">
+                                <v-row dense align="center" class="text-center">
+                                  <v-col cols="12" sm="">
+                                    <v-text-field
                                             v-model="captchaSolution"
                                             label="Type CAPTCHA text here"
                                             prepend-icon="mdi-account-check"
@@ -74,9 +76,10 @@
                                             @keypress="captcha_errors=[]"
                                             class="uppercase"
                                             ref="captchaField"
-                                            tabindex="2"
-                                />
-                                <div class="ml-4 text-center">
+                                            tabindex="3"
+                                    />
+                                  </v-col>
+                                  <v-col cols="8" sm="auto">
                                     <v-progress-circular
                                             indeterminate
                                             v-if="captchaWorking"
@@ -86,11 +89,12 @@
                                             :src="'data:image/png;base64,'+captcha.challenge"
                                             alt="Passwords can also be reset by sending an email to our support."
                                     >
-                                    <br/>
-                                    <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking">New Captcha
-                                    </v-btn>
-                                </div>
-                            </v-layout>
+                                  </v-col>
+                                  <v-col cols="4" sm="auto">
+                                    <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+                                  </v-col>
+                                </v-row>
+                              </v-container>
                         </v-card-text>
                         <v-card-actions class="justify-center">
                             <v-btn
