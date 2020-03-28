@@ -109,9 +109,9 @@
             </v-expansion-panels>
             <div class="title">Donation Receipts</div>
             <p>
-              deSEC e.V. is registered as charity organization in Germany. If you pay taxes here, you can deduct your
-              donation from your taxes, and we can provide your with a donation receipt for that purpose. Note that for
-              donations below 200 €, no receipt is needed to claim the tax deduction.
+              deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
+              tax-deductible, and we're happy to provide you with a donation receipt for that purpose. Note that for
+              donations below 200 €, no receipt is needed to claim tax deduction.
             </p>
           </v-card-text>
         </v-card>
@@ -132,9 +132,9 @@
               unauthorized access by criminals or government agencies.
             </p>
             <p>
-              Operating our free DNS service reliably incurs significant cost (several thousand euros each month!),
-              mostly for the serious technical infrastructure that is required. Your donation is used to cover these
-              expenses and ensures our service's smooth operation.
+              Reliable operation of our free DNS service incurs significant cost (several thousand euros each month!),
+              both for the serious technical infrastructure that is required as well as for staff. Your donation is
+              used to cover these expenses and ensures our service's smooth operation.
             </p>
             <p>
               We also need your donation to support the future development of our services to make the Internet more
