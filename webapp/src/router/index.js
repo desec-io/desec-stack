@@ -73,7 +73,11 @@ const routes = [
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  scrollBehavior () {
+  scrollBehavior (to, from) {
+    // Skip if destination full path has query parameters and differs in no other way from previous
+    if (from && Object.keys(to.query).length) {
+      if (to.fullPath.split('?')[0] == from.fullPath.split('?')[0]) return;
+    }
     return { x: 0, y: 0 }
   },
   routes
