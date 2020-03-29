@@ -74,8 +74,8 @@ export default {
         title: 'Users Must be Responsive',
         text: 'Users are required to register with an email address and are obliged to read and react to our ' +
                 'emails. For users who do not react or are uncooperative, deSEC reserves the right to disable the ' +
-                'account zone, and/or modify or disable DNS records or zones in order to ensure smooth operation of ' +
-                'deSEC services.',
+                'account and/or zone, and/or modify or disable DNS records or zones in order to ensure smooth ' +
+                'operation of deSEC services.',
       },
       {
         title: 'Expiration of Inactive dynDNS Domains',
