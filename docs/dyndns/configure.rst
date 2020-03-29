@@ -30,7 +30,7 @@ tutorial for all of them. However, most of the time it boils down to enter the
 following details in your router configuration:
 
 - Update Server ``update.dedyn.io``, or Update URL ``https://update.dedyn.io/``
-- Username (your dedyn.io hostname, e.g. yourname.dedyn.io)
+- Username (the full name of the domain you want to update, e.g. yourname.dedyn.io)
 - Hostname (same as your username)
 - Password (as provided when you registered your domain with us)
 
