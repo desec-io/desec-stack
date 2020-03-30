@@ -17,7 +17,10 @@
             <v-icon>{{item.icon}}</v-icon>
           </v-list-item-action>
           <v-list-item-content>
-            <v-list-item-title>{{item.text}}</v-list-item-title>
+            <v-list-item-title>
+              {{item.text}}
+              <v-icon :color="item.post_icon_color" class="text--darken-2" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -36,11 +39,13 @@
       </router-link></v-toolbar-title>
       <v-spacer/>
       <div class="d-none d-md-block">
-        <router-link
-                v-for="(item, key) in menu"
-                :key="key"
-                class="mx-2 primary--text text--darken-2" :to="{name: item.name}"
-        >{{item.text}}</router-link>
+        <span class="mx-2" v-for="(item, key) in menu" :key="key">
+          <router-link
+                  class="primary--text text--darken-2"
+                  :to="{name: item.name}"
+          >{{item.text}}</router-link>
+          <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
+        </span>
       </div>
       <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'signup'}">Create Account</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
@@ -74,7 +79,10 @@
           </p>
         </div>
         <div>
-          <p>Please <router-link :to="{name: 'donate'}">donate</router-link>! 💛</p>
+          <p>
+            Please <router-link :to="{name: 'donate'}">donate</router-link>!
+            <v-icon color="red" class="text--darken-2" dense>mdi-heart</v-icon>
+          </p>
           <p>
             European Bank Account:<br>
             IBAN: DE91&nbsp;8306&nbsp;5408&nbsp;0004&nbsp;1580&nbsp;59<br>
@@ -120,6 +128,8 @@ export default {
         'name': 'donate',
         'icon': 'mdi-gift-outline',
         'text': 'Donate',
+        'post_icon': 'mdi-heart',
+        'post_icon_color': 'red',
       },
       'about': {
         'name': 'about',
