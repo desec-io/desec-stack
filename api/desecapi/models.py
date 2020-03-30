@@ -311,6 +311,11 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             for rrset in self.rrset_set.filter(subname=child_subname, type__in=['NS', 'DS']):
                 rrset.delete()
 
+    def delete(self):
+        ret = super().delete()
+        logger.warning(f'Domain {self.name} deleted (owner: {self.owner.pk})')
+        return ret
+
     def __str__(self):
         return self.name
 
