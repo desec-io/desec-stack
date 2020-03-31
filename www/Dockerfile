@@ -1,4 +1,4 @@
-FROM nginx:stable-alpine
+FROM nginx:mainline-alpine
 
 # Add dependencies for our scripts
 RUN apk add --no-cache bash openssl inotify-tools
