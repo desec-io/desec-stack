@@ -214,6 +214,18 @@ CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
 WATCHDOG_SLAVES = os.environ.get('DESECSTACK_WATCHDOG_SLAVES', '').split()
 WATCHDOG_WINDOW_SEC = 600
 
+# Prometheus (see https://github.com/korfuri/django-prometheus/blob/master/documentation/exports.md)
+#  TODO Switch to PROMETHEUS_METRICS_EXPORT_PORT_RANGE instead of this workaround, which currently necessary to due
+#  https://github.com/korfuri/django-prometheus/issues/215
+try:
+    import uwsgi
+except ImportError:
+    pass  # not running in uwsgi, e.g. management command
+else:
+    import prometheus_client
+    prometheus_client.values.ValueClass = prometheus_client.values.MultiProcessValue(
+        _pidFunc=uwsgi.worker_id)
+
 if DEBUG and not EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
