@@ -34,6 +34,11 @@ const routes = [
     beforeEnter(to) { location.href = to.path },
   },
   {
+    path: '//talk.desec.io/',
+    name: 'talk',
+    beforeEnter(to) { location.href = to.path },
+  },
+  {
     path: '/confirm/:action/:code',
     name: 'confirmation',
     component: () => import(/* webpackChunkName: "signup" */ '../views/Confirmation.vue')

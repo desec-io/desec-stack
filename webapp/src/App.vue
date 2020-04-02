@@ -124,6 +124,11 @@ export default {
         'icon': 'mdi-book-open-page-variant',
         'text': 'API Reference',
       },
+      'talk': {
+        'name': 'talk',
+        'icon': 'mdi-forum-outline',
+        'text': 'Talk',
+      },
       'donate': {
         'name': 'donate',
         'icon': 'mdi-gift-outline',
