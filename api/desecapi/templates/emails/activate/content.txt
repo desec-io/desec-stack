@@ -9,7 +9,14 @@ the following link (valid for {{ link_expiration_hours }} hours):
 {{ confirmation_link }}
 
 After that, please follow the instructions on the confirmation page.
-You can also find our API docs here: https://desec.readthedocs.io/
+If link has already expired, please register again.
+
+Please also take a look at the following resources:
+
+  - Discussion forum: https://talk.desec.io/
+  - Documentation: https://desec.readthedocs.io/
+
+We hope you enjoy deSEC!
 
 Stay secure,
 Nils
