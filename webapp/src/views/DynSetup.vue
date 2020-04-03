@@ -33,7 +33,7 @@
               </div>
             </v-alert>
             <p>
-              Congratulations, you are now the owner of <span class="fixed-width">{{ $route.params.domain }}</span>.
+              Congratulations, you are now the owner of <span class="fixed-width">{{ $route.params.domain }}</span>!
             </p>
             <h2 class="title">Set Up Your Domain</h2>
             <p>
@@ -107,6 +107,10 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
             </v-expansion-panels>
+            <p>
+              Questions? Please check out our forum at <a href="https://talk.desec.io/">talk.desec.io</a>. Chances are
+              that someone had the same question before.
+            </p>
 
             <h2 class="title">Check Domain Status</h2>
             <v-alert type="info" v-if="ips !== undefined && ips.length === 0">
