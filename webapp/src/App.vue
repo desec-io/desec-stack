@@ -26,9 +26,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar
-            app
-    >
+    <v-app-bar app class="white">
       <v-toolbar-title><router-link :to="{name: 'home'}">
         <v-img
                 :src="require('./assets/logo.svg')"
