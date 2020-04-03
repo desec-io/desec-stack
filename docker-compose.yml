@@ -117,7 +117,7 @@ services:
     - celery
     - memcached
     tmpfs:
-    - /var/local/django_metrics:size=500m
+    - /var/local/django_metrics:size=500m,mode=1777
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_NS
