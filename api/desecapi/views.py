@@ -681,7 +681,8 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             })
         else:
             return Response({
-                'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.'
+                'detail': 'Success! Please check the docs for the next steps, https://desec.readthedocs.io/.',
+                'domain': serializers.DomainSerializer(domain, include_keys=True).data,
             })
 
 

@@ -283,10 +283,13 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None, email=None):
         self.assertNoEmailSent()  # do not send email in any case
-        if domain and self.has_local_suffix(domain):
-            text = 'Success! Here is the password'
-        else:
-            text = 'Success! Please check the docs for the next steps'
+        text = 'Success! Please check the docs for the next steps'
+        if domain:
+            has_local_suffix = self.has_local_suffix(domain)
+            if has_local_suffix:
+                text = 'Success! Here is the password'
+            self.assertEqual('keys' in response.data['domain'], not has_local_suffix)
+            self.assertEqual(response.data['domain']['name'], domain)
         self.assertContains(response=response, text=text, status_code=status.HTTP_200_OK)
 
     def assertResetPasswordSuccessResponse(self, response):
@@ -430,7 +433,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if self.has_local_suffix(domain):
             cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
-            cm = self.requests_desec_domain_creation(domain)[:-1]
+            cm = self.requests_desec_domain_creation(domain)
         with self.assertPdnsRequests(cm):
             response = self.client.verify(confirmation_link)
         self.assertRegistrationWithDomainVerificationSuccessResponse(response, domain, email)
