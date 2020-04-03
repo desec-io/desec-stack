@@ -19,8 +19,14 @@ const routes = [
     component: () => import(/* webpackChunkName: "signup" */ '../views/SignUp.vue')
   },
   {
-    path: '/dynsetup/:domain',
-    name: 'dynsetup',
+    path: '/custom-setup/:domain',
+    name: 'customSetup',
+    component: () => import(/* webpackChunkName: "signup" */ '../views/CustomSetup.vue')
+  },
+  {
+    path: '/dyn-setup/:domain',
+    alias: '/dynsetup/:domain',
+    name: 'dynSetup',
     component: () => import(/* webpackChunkName: "signup" */ '../views/DynSetup.vue')
   },
   {

@@ -176,7 +176,7 @@
   });
 
   export default {
-    name: 'CheckSetup',
+    name: 'DynSetup',
     data: () => ({
       working: false,
       domain: undefined,
