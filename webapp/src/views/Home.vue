@@ -19,16 +19,18 @@
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>
                 <v-col md="9" cols="12">
-                  <v-radio-group
-                          v-model="domainType"
-                          class="justify-center pb-2"
-                          hide-details
-                          row
-                          @change="$router.push({query: {domainType: domainType}})"
-                  >
-                    <v-radio class="pb-2" label="dynDNS account" value="dynDNS" selected></v-radio>
-                    <v-radio class="pb-2" label="Managed DNS account" value="custom"></v-radio>
-                  </v-radio-group>
+                  <div class="d-flex align-center flex-column">
+                    <v-radio-group
+                            v-model="domainType"
+                            class="pb-2"
+                            hide-details
+                            row
+                            @change="$router.push({query: {domainType: domainType}})"
+                    >
+                      <v-radio class="pb-2" label="dynDNS account" value="dynDNS"></v-radio>
+                      <v-radio class="pb-2" label="Managed DNS account" value="custom"></v-radio>
+                    </v-radio-group>
+                  </div>
                   <v-text-field
                     outlined
                     solo
