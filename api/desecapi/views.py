@@ -227,11 +227,11 @@ class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, 
 
     def perform_create(self, serializer):
         with PDNSChangeTracker():
-            serializer.save(domain=self.domain)
+            serializer.save()
 
     def perform_update(self, serializer):
         with PDNSChangeTracker():
-            serializer.save(domain=self.domain)
+            serializer.save()
 
 
 class Root(APIView):
@@ -375,7 +375,7 @@ class DynDNS12Update(APIView):
             raise e
 
         with PDNSChangeTracker():
-            serializer.save(domain=domain)
+            serializer.save()
 
         return Response('good', content_type='text/plain')
 
