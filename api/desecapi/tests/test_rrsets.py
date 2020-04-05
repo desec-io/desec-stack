@@ -326,6 +326,15 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', {})
             self.assertStatus(response, status.HTTP_200_OK)
 
+    def test_rr_sets_touched_if_noop(self):
+        for subname in self.SUBNAMES:
+            touched_old = RRset.objects.get(domain=self.my_rr_set_domain, type='A', subname=subname).touched
+            response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', {})
+            self.assertStatus(response, status.HTTP_200_OK)
+
+            touched_new = RRset.objects.get(domain=self.my_rr_set_domain, type='A', subname=subname).touched
+            self.assertGreater(touched_new, touched_old)
+
     def test_partially_update_other_rr_sets(self):
         data = {'records': ['3.2.3.4'], 'ttl': 334}
         for subname in self.SUBNAMES:

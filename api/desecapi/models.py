@@ -370,7 +370,7 @@ class RRsetManager(Manager):
 class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(null=True)  # undocumented, used for debugging only
+    touched = models.DateTimeField(null=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
@@ -415,7 +415,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         return self.construct_name(self.subname, self.domain.name)
 
     def save(self, *args, **kwargs):
-        self.updated = timezone.now()
+        self.touched = timezone.now()
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 

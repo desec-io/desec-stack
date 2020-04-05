@@ -8,6 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, OperationalError
 from django.db.models import Model, Q
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
@@ -299,7 +300,10 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         ttl = validated_data.pop('ttl', None)
         if ttl and instance.ttl != ttl:
             instance.ttl = ttl
-            instance.save()
+            instance.save()  # also updates instance.touched
+        else:
+            # Update instance.touched without triggering post-save signal (no pdns action required)
+            models.RRset.objects.filter(pk=instance.pk).update(touched=timezone.now())
 
         return instance
 
