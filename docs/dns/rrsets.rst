@@ -43,7 +43,8 @@ A JSON object representing an RRset has the following structure::
             "127.0.0.1",
             "127.0.0.2"
         ],
-        "ttl": 3600
+        "ttl": 3600,
+        "touched": "2020-04-06T09:24:09.987436Z"
     }
 
 Field details:
@@ -114,6 +115,14 @@ Field details:
     cannot access the ``SOA``, see `SOA caveat`_.
 
 .. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
+
+``touched``
+    :Access mode: read-only
+
+    Timestamp of when the RRset was last touched (same format as ``created``).
+    This field reflects the most recent write request to the RRset. It is also
+    updated when the write request does not actually change anything (e.g.
+    overwriting a DNS record with identical values).
 
 
 Creating an RRset

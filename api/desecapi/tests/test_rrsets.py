@@ -141,6 +141,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
                     response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
+                    self.assertTrue(all(field in response.data for field in
+                                        ['created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched']))
                     self.assertStatus(response, status.HTTP_201_CREATED)
 
                 # Check for uniqueness on second attempt
