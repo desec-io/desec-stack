@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
-from desecapi.models import RRset
+from desecapi.models import Domain, RRset
 from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
 
@@ -143,6 +143,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
                     self.assertTrue(all(field in response.data for field in
                                         ['created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched']))
+                    self.assertEqual(self.my_empty_domain.touched,
+                                     max(rrset.touched for rrset in self.my_empty_domain.rrset_set.all()))
                     self.assertStatus(response, status.HTTP_201_CREATED)
 
                 # Check for uniqueness on second attempt
@@ -336,6 +338,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
             touched_new = RRset.objects.get(domain=self.my_rr_set_domain, type='A', subname=subname).touched
             self.assertGreater(touched_new, touched_old)
+            self.assertEqual(Domain.objects.get(name=self.my_rr_set_domain.name).touched, touched_new)
 
     def test_partially_update_other_rr_sets(self):
         data = {'records': ['3.2.3.4'], 'ttl': 334}
@@ -431,6 +434,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)):
                 response = self.client.delete_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
                 self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+                domain = Domain.objects.get(name=self.my_rr_set_domain.name)
+                self.assertEqual(domain.touched, domain.published)
 
             response = self.client.delete_rr_set(self.my_rr_set_domain.name, subname=subname, type_='A')
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)

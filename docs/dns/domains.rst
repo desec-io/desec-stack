@@ -34,7 +34,8 @@ A JSON object representing a domain has the following structure::
         ],
         "minimum_ttl": 3600,
         "name": "example.com",
-        "published": "2018-09-18T17:21:38.348112Z"
+        "published": "2018-09-18T17:21:38.348112Z",
+        "touched": "2018-09-18T17:21:38.348112Z"
     }
 
 Field details:
@@ -93,6 +94,17 @@ Field details:
     As we publish record modifications immediately, this indicates the
     point in time of the last successful write request to a domain's
     ``rrsets/`` endpoint.
+
+``touched``
+    :Access mode: read-only
+
+    Timestamp of when the domain's DNS records have last been touched. Equal to
+    the maximum of the domain's ``published`` field and all :ref:`RRset <RRset
+    object>` ``touched`` values.
+
+    This usually is the same as ``published``, unless there have been RRset
+    write operations that did not trigger publication, such as rewriting an
+    RRset with identical values.
 
 
 Creating a Domain

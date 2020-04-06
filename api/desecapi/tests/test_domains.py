@@ -216,6 +216,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertTrue(all(field in response.data for field in
+                                    ['created', 'published', 'name', 'keys', 'minimum_ttl', 'touched']))
                 self.assertEqual(len(mail.outbox), 0)
                 self.assertTrue(isinstance(response.data['keys'], list))
 
