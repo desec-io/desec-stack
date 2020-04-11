@@ -2,6 +2,7 @@ FROM ubuntu:bionic
 
 RUN apt-get update && apt-get install -y \
 		dnsutils \
+		iptables \
 		net-tools \
 		dirmngr gnupg \
 	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
