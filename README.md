@@ -43,6 +43,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container. This directory is monitored for changes so that nginx can reload when new keys/certificates are provided. **Note:** The reload is done any time something changes in the directory. The relevant files are **not** watched individually.
     - API-related
       - `DESECSTACK_API_ADMIN`: white-space separated list of Django admin email addresses
+      - `DESECSTACK_API_AUTHACTION_VALIDITY`: number of hours for which authenticated action links (e.g. email verification) should be considered valid (default: 0)
       - `DESECSTACK_API_DEBUG`: Django debug setting. Must be True (default in `docker-compose.dev.yml`) or False (default otherwise)
       - `DESECSTACK_API_SEPA_CREDITOR_ID`: SEPA creditor ID for donations
       - `DESECSTACK_API_EMAIL_HOST`: when sending email, use this mail server
