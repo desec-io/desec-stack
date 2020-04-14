@@ -3,8 +3,18 @@
 ######
 server {
         listen 80;
-        server_name update.dedyn.$DESECSTACK_DOMAIN
-                    update6.dedyn.$DESECSTACK_DOMAIN;
+        listen [::]:80;
+        server_name update.dedyn.$DESECSTACK_DOMAIN;
+
+        include global.conf;
+
+        location / {
+                return 301 https://$host$request_uri;
+        }
+}
+server {
+        listen [::]:80;
+        server_name update6.dedyn.$DESECSTACK_DOMAIN;
 
         include global.conf;
 
