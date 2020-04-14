@@ -65,20 +65,20 @@ export default {
   data: () => ({
     terms_of_use: [
       {
-        title: 'Keep Server Load Low',
+        title: '§1 Keep Server Load Low',
         text: 'Only send update requests when there is something to update, and use reasonable TTLs. Accounts ' +
                 'that cause extraordinarily high load or cost may be disabled or throttled. Account ' +
                 'holders will be asked for cooperation to resolve the issue.',
       },
       {
-        title: 'Users Must be Responsive',
+        title: '§2 Users Must be Responsive',
         text: 'Users are required to register with an email address and are obliged to read and react to our ' +
                 'emails. For users who do not react or are uncooperative, deSEC reserves the right to disable the ' +
                 'account and/or zone, and/or modify or disable DNS records or zones in order to ensure smooth ' +
                 'operation of deSEC services.',
       },
       {
-        title: 'Expiration of Inactive dynDNS Domains',
+        title: '§3 Expiration of Inactive dynDNS Domains',
         text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
                 'deleted after a warning with 4 weeks notice. Owners can prevent deletion by updating DNS ' +
                 'information. Deleted domains will undergo retention until associated certificates as recorded in ' +
@@ -86,21 +86,21 @@ export default {
                 'registers the name again.',
       },
       {
-        title: 'Domains with Illegal Activity',
+        title: '§4 Domains with Illegal Activity',
         text: 'Domains that are used for illegal activity such as spam, scam, malware, phishing, etc. will be ' +
                 'disabled immediately and permanently, and owners will be held liable. deSEC will cooperate with ' +
                 'law enforcement to assist prosecution of illegal activity. In most cases, German and European Union ' +
                 'legislation will apply.',
       },
       {
-        title: 'Clients Will Need Updates',
+        title: '§5 Clients Will Need Updates',
         text: 'In order to ensure surpassing security and usability, deSEC will keep the provided services up to ' +
                 'date as technology evolves. We explicitly do not guarantee that old client software keeps on ' +
                 'working forever. Breaking changes will usually be announced weeks ahead, but time-critical changes ' +
                 'may come with a shorter or even no grace period.',
       },
       {
-        title: 'No Warranty',
+        title: '§6 No Warranty',
         text: 'deSEC does not guarantee availability for its free services. Functionality of all services is ' +
                 'provided on a best-effort basis. In particular, Quality of Service, even on a low level, and ' +
                 'fitness for a particular purpose are not assured.',
