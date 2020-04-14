@@ -105,6 +105,17 @@ export default {
                 'provided on a best-effort basis. In particular, Quality of Service, even on a low level, and ' +
                 'fitness for a particular purpose are not assured.',
       },
+      {
+        title: '§7 Fineprint',
+        text: 'If a provision of this agreement is or becomes legally invalid or if there is any gap that needs to ' +
+                'be filled, the validity of the remainder of the agreement shall not be affected thereby. Invalid ' +
+                'provisions shall be replaced by common consent with such provisions which come as close as possible ' +
+                'to the intended result of the invalid provision. In the event of gaps such provision shall come ' +
+                'into force by common consent which comes as close as possible to the intended result of the ' +
+                'agreement, should the matter have been considered in advance. Any changes of or amendments to this ' +
+                'Agreement must be in writing to become effective. ' +
+                'The exclusive court of jurisdiction for both parties is Berlin, Germany.',
+      },
     ],
   })
 }
