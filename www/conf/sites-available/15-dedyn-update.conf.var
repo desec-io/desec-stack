@@ -3,7 +3,8 @@
 ######
 server {
         listen 80;
-        server_name update.dedyn.$DESECSTACK_DOMAIN;
+        server_name update.dedyn.$DESECSTACK_DOMAIN
+                    update6.dedyn.$DESECSTACK_DOMAIN;
 
         include global.conf;
 
