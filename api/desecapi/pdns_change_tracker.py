@@ -1,4 +1,4 @@
-import random
+import secrets
 import socket
 
 from django.conf import settings
@@ -82,7 +82,7 @@ class PDNSChangeTracker:
             return True
 
         def pdns_do(self):
-            salt = '%016x' % random.randrange(16 ** 16)
+            salt = '%016x' % secrets.randbelow(16 ** 16)
             _pdns_post(
                 NSLORD, '/zones?rrsets=false',
                 {
