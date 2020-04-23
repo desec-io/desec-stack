@@ -4,6 +4,9 @@
 echo "waiting for dependencies ..."
 ./wait
 
+# set permissions for Django metrics (docker-compose.yml setting does not work, see #333)
+chmod 1777 /var/local/django_metrics
+
 # start cron
 # Start child process that starts grand-child process.
 # After the child process's death, the grand-child will be adopted by init.
