@@ -9,7 +9,6 @@ import uuid
 from base64 import urlsafe_b64encode
 from datetime import timedelta
 from hashlib import sha256
-from os import urandom
 
 import psl_dns
 import rest_framework.authtoken.models
@@ -179,7 +178,7 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     plain = None
 
     def generate_key(self):
-        self.plain = urlsafe_b64encode(urandom(21)).decode()
+        self.plain = urlsafe_b64encode(secrets.token_bytes(21)).decode()
         self.key = Token.make_hash(self.plain)
         return self.key
 
