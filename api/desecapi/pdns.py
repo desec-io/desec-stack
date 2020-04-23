@@ -6,7 +6,9 @@ import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 
+from desecapi import metrics
 from desecapi.exceptions import PDNSException, PDNSValidationError, RequestEntityTooLarge
+
 
 NSLORD = object()
 NSMASTER = object()
@@ -43,7 +45,7 @@ def _pdns_request(method, *, server, path, data=None):
         raise PDNSValidationError(response=r)
     elif r.status_code not in range(200, 300):
         raise PDNSException(response=r)
-
+    metrics.get('desecapi_pdns_request_success').labels(method, r.status_code).inc()
     return r
 
 
@@ -81,6 +83,7 @@ def get_keys(domain):
     Retrieves a dict representation of the DNSSEC key information
     """
     r = _pdns_get(NSLORD, '/zones/%s/cryptokeys' % pdns_id(domain.name))
+    metrics.get('desecapi_pdns_keys_fetched').inc()
     return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
             for key in r.json()
             if key['active'] and key['keytype'] in ['csk', 'ksk']]

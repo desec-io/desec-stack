@@ -6,7 +6,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from desecapi import metrics
 from desecapi.exceptions import PDNSException
+
 
 
 def exception_handler(exc, context):
@@ -22,8 +24,10 @@ def exception_handler(exc, context):
                      exc_info=exc, stack_info=False)
 
         # Gracefully let clients know that we cannot connect to the database
-        return Response({'detail': 'Please try again later.'},
+        response =  Response({'detail': 'Please try again later.'},
                         status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        metrics.get('desecapi_database_unavailable').inc()
+        return response
 
     # Catch DB exception and log an extra error for additional context
     if isinstance(exc, OperationalError):

@@ -8,6 +8,8 @@ from cryptography.hazmat.backends import default_backend
 from django.conf import settings
 from django.utils.encoding import force_bytes
 
+from desecapi import metrics
+
 
 def _derive_urlsafe_key(*, label, context):
     backend = default_backend()
@@ -26,12 +28,16 @@ def retrieve_key(*, label, context):
 
 def encrypt(data, *, context):
     key = retrieve_key(label=b'crypt', context=context)
-    return Fernet(key=key).encrypt(data)
+    value = Fernet(key=key).encrypt(data)
+    metrics.get('desecapi_key_encryption_success').labels(context).inc()
+    return value
 
 
 def decrypt(token, *, context, ttl=None):
     key = retrieve_key(label=b'crypt', context=context)
     try:
-        return Fernet(key=key).decrypt(token, ttl=ttl)
+        value = Fernet(key=key).decrypt(token, ttl=ttl)
+        metrics.get('desecapi_key_decryption_success').labels(context).inc()
+        return value
     except InvalidToken:
         raise ValueError

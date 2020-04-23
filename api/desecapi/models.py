@@ -28,7 +28,9 @@ from dns.exception import Timeout
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
+from desecapi import metrics
 from desecapi import pdns
+
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -159,13 +161,15 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         footer = get_template('emails/footer.txt').render()
 
         logger.warning(f'Queuing email for user account {self.pk} (reason: {reason})')
-        return EmailMessage(
+        num_queued = EmailMessage(
             subject=get_template(f'emails/{reason}/subject.txt').render(context).strip(),
             body=content + footer,
             from_email=get_template('emails/from.txt').render(),
             to=[recipient or self.email],
             connection=get_connection(lane=lanes[reason], debug={'user': self.pk, 'reason': reason})
         ).send()
+        metrics.get('desecapi_messages_queued').labels(reason, self.pk, lanes[reason]).observe(num_queued)
+        return num_queued
 
 
 class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
@@ -306,10 +310,12 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             RRset.objects.create(domain=self, subname=child_subname, type='NS', ttl=3600, contents=settings.DEFAULT_NS)
             RRset.objects.create(domain=self, subname=child_subname, type='DS', ttl=300,
                                  contents=[ds for k in child_keys for ds in k['ds']])
+            metrics.get('desecapi_autodelegation_created').inc()
         else:
             # Domain not real: remove delegation
             for rrset in self.rrset_set.filter(subname=child_subname, type__in=['NS', 'DS']):
                 rrset.delete()
+            metrics.get('desecapi_autodelegation_deleted').inc()
 
     def delete(self):
         ret = super().delete()
@@ -598,7 +604,9 @@ class AuthenticatedDeleteUserAction(ExportModelOperationsMixin('AuthenticatedDel
 
 def captcha_default_content():
     alphabet = (string.ascii_uppercase + string.digits).translate({ord(c): None for c in 'IO0'})
-    return ''.join([secrets.choice(alphabet) for _ in range(5)])
+    content = ''.join([secrets.choice(alphabet) for _ in range(5)])
+    metrics.get('desecapi_captcha_content_created').inc()
+    return content
 
 
 class Captcha(ExportModelOperationsMixin('Captcha'), models.Model):

@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 import desecapi.authentication as auth
-from desecapi import serializers, models
+from desecapi import metrics, models, serializers
 from desecapi.exceptions import ConcurrencyException
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
@@ -352,6 +352,7 @@ class DynDNS12Update(APIView):
         domain = self._find_domain(request)
 
         if domain is None:
+            metrics.get('desecapi_dynDNS12_domain_not_found').inc()
             raise NotFound('nohost')
 
         ipv4 = self._find_ip_v4(request)

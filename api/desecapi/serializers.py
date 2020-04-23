@@ -13,7 +13,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
-from desecapi import crypto, models
+from desecapi import crypto, metrics, models
 from desecapi.exceptions import ConcurrencyException
 
 
@@ -224,7 +224,9 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         # Note: We are not yet deciding the value of the child's "partial" attribute, as its value depends on whether
         # the RRSet is created (never partial) or not (partial if PATCH), for each given item (RRset) individually.
         kwargs['child'] = cls(domain=domain)
-        return RRsetListSerializer(*args, **kwargs)
+        serializer = RRsetListSerializer(*args, **kwargs)
+        metrics.get('desecapi_rrset_list_serializer').inc()
+        return serializer
 
     def get_fields(self):
         fields = super().get_fields()

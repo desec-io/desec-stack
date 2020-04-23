@@ -1,6 +1,8 @@
 from rest_framework import throttling
 from rest_framework.settings import api_settings
 
+from desecapi import metrics
+
 
 class ScopedRatesThrottle(throttling.ScopedRateThrottle):
     """
@@ -38,7 +40,9 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
             if len(history) >= num_requests:
                 # Prepare variables used by the Throttle's wait() method that gets called by APIView.check_throttles()
                 self.num_requests, self.duration, self.key, self.history = num_requests, duration, key, history
-                return self.throttle_failure()
+                response = self.throttle_failure()
+                metrics.get('desecapi_throttle_failure').labels(request.method, self.scope, request.user.pk).inc()
+                return response
             self.history[key] = history
         return self.throttle_success()
 

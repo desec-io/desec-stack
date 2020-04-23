@@ -6,6 +6,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
 
+from desecapi import metrics
 from desecapi.exceptions import PDNSValidationError
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id, \
@@ -73,8 +74,10 @@ class PDNSChangeTracker:
             raise NotImplementedError()
 
         def update_catalog(self, delete=False):
-            return _pdns_patch(NSMASTER, '/zones/' + pdns_id(settings.CATALOG_ZONE),
+            content = _pdns_patch(NSMASTER, '/zones/' + pdns_id(settings.CATALOG_ZONE),
                                {'rrsets': [construct_catalog_rrset(zone=self.domain_name, delete=delete)]})
+            metrics.get('desecapi_pdns_catalog_updated').inc()
+            return content
 
     class CreateDomain(PDNSChange):
         @property
