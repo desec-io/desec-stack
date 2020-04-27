@@ -50,6 +50,7 @@
                 :disabled="working"
                 :rules="email_rules"
                 :error-messages="email_errors"
+                tabindex="1"
                 @change="email_errors=[]"
               />
               <v-text-field
@@ -61,12 +62,14 @@
                 required
                 :disabled="working"
                 :rules="password_rules"
+                tabindex="2"
                 @click:append="() => (hide_password = !hide_password)"
               />
               <v-layout class="justify-center">
                 <v-checkbox
                   v-model="useSessionStorage"
                   label="Keep credentials for entire browser session (session storage)"
+                  tabindex="3"
                 />
               </v-layout>
             </v-card-text>
@@ -74,8 +77,10 @@
               <v-btn
                 type="submit"
                 color="primary"
+                depressed
                 :disabled="!valid || working"
                 :loading="working"
+                tabindex="4"
               >
                 Log In
               </v-btn>
@@ -84,6 +89,7 @@
                 text
                 color="primary"
                 :to="{name: 'reset-password', params: email ? {email: email} : {}}"
+                tabindex="5"
               >
                 Forgot password
               </v-btn>
