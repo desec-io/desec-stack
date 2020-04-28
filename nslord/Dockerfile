@@ -23,7 +23,7 @@ RUN mkdir -p /opt
 ADD pdns /opt/pdns/
 RUN cd /opt/pdns/ \
     && autoreconf -vi \
-    && ./configure --with-modules=gmysql --without-lua --disable-lua-records \
+    && ./configure --with-modules=gmysql --disable-lua-records \
     && make \
     && make install
 
