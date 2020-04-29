@@ -11,6 +11,11 @@ class TokenTestCase(DomainOwnerTestCase):
         self.token2 = self.create_token(self.owner, name='testtoken')
         self.other_token = self.create_token(self.user)
 
+    def test_token_last_used(self):
+        self.assertIsNone(Token.objects.get(pk=self.token.id).last_used)
+        self.client.get(self.reverse('v1:root'))
+        self.assertIsNotNone(Token.objects.get(pk=self.token.id).last_used)
+
     def test_list_tokens(self):
         response = self.client.get(self.reverse('v1:token-list'))
         self.assertStatus(response, status.HTTP_200_OK)
@@ -36,6 +41,7 @@ class TokenTestCase(DomainOwnerTestCase):
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_200_OK)
+        self.assertTrue(all(field in response.data for field in ['created', 'id', 'last_used', 'name']))
         self.assertFalse(any(field in response.data for field in ['token', 'key', 'value']))
 
     def test_retrieve_other_token(self):
@@ -56,14 +62,12 @@ class TokenTestCase(DomainOwnerTestCase):
     def test_create_token(self):
         n = len(Token.objects.filter(user=self.owner).all())
 
-        response = self.client.post(self.reverse('v1:token-list'))
-        self.assertStatus(response, status.HTTP_201_CREATED)
-        self.assertTrue(all(field in response.data for field in ['id', 'created', 'token', 'name']))
-        self.assertEqual(response.data['name'], '')
+        datas = [{}, {'name': ''}, {'name': 'foobar'}]
+        for data in datas:
+            response = self.client.post(self.reverse('v1:token-list'), data=data)
+            self.assertStatus(response, status.HTTP_201_CREATED)
+            self.assertTrue(all(field in response.data for field in ['id', 'created', 'token', 'name']))
+            self.assertEqual(response.data['name'], data.get('name', ''))
+            self.assertIsNone(response.data['last_used'])
 
-        response = self.client.post(self.reverse('v1:token-list'), data={'name': 'foobar'})
-        self.assertStatus(response, status.HTTP_201_CREATED)
-        self.assertTrue(all(field in response.data for field in ['id', 'created', 'token', 'name']))
-        self.assertEqual(response.data['name'], 'foobar')
-
-        self.assertEqual(len(Token.objects.filter(user=self.owner).all()), n + 2)
+        self.assertEqual(len(Token.objects.filter(user=self.owner).all()), n + len(datas))

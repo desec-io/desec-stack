@@ -50,8 +50,8 @@ class TokenSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'name', 'token',)
-        read_only_fields = ('created', 'token', 'id')
+        fields = ('id', 'created', 'last_used', 'name', 'token',)
+        read_only_fields = ('id', 'created', 'last_used', 'token')
 
     def __init__(self, *args, include_plain=False, **kwargs):
         self.include_plain = include_plain

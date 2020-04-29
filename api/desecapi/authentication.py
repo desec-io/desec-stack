@@ -1,6 +1,7 @@
 import base64
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
+from django.utils import timezone
 from rest_framework import exceptions, HTTP_HEADER_ENCODING
 from rest_framework.authentication import (
     BaseAuthentication,
@@ -17,7 +18,10 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
 
     def authenticate_credentials(self, key):
         key = Token.make_hash(key)
-        return super().authenticate_credentials(key)
+        user, token = super().authenticate_credentials(key)
+        token.last_used = timezone.now()
+        token.save()
+        return user, token
 
 
 class BasicTokenAuthentication(BaseAuthentication):

@@ -178,7 +178,8 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
         User, related_name='auth_tokens',
         on_delete=models.CASCADE, verbose_name="User"
     )
-    name = models.CharField("Name", max_length=64, default="")
+    name = models.CharField('Name', blank=True, max_length=64)
+    last_used = models.DateTimeField(null=True, blank=True)
     plain = None
 
     def generate_key(self):

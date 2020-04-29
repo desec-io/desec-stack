@@ -19,13 +19,12 @@ To retrieve a list of currently valid tokens, issue a ``GET`` request::
     curl -X GET https://desec.io/api/v1/auth/tokens/ \
         --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
-The server will respond with a list of token objects, each containing a
-timestamp when the token was created (note the ``Z`` indicating the UTC
-timezone) and a UUID to identify that token. Furthermore, each token can
-carry a name that is of no operational relevance to the API (it is meant
-for user reference only). Certain API operations (such as login) will
-automatically populate the ``name`` field with values such as "login" or
-"dyndns".
+The server will respond with a list of token objects, each containing
+timestamps of when the token was created and last used (or ``null``; note the
+``Z`` indicating UTC timezone), and a UUID to identify that token. Furthermore,
+each token can carry a name that has no operational meaning (it is meant for
+user reference only). Certain API operations will automatically populate the
+``name`` field with suitable values such as "login" or "dyndns".
 
 ::
 
@@ -33,11 +32,13 @@ automatically populate the ``name`` field with values such as "login" or
         {
             "created": "2018-09-06T07:05:54.080564Z",
             "id": "3159e485-5499-46c0-ae2b-aeb84d627a8e",
-            "name": "login"
+            "last_used": "2019-04-29T18:01:09.894594Z",
+            "name": "login",
         },
         {
             "created": "2018-09-06T08:53:26.428396Z",
             "id": "76d6e39d-65bc-4ab2-a1b7-6e94eee0a534",
+            "last_used": null,
             "name": ""
         }
     ]
@@ -63,6 +64,7 @@ will reply with ``201 Created`` and the created token in the response body::
     {
         "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
+        "last_used": null,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S",
         "name": "my new token"
     }
