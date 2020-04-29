@@ -57,19 +57,18 @@ class BasicTokenAuthentication(BaseAuthentication):
     def authenticate_credentials(self, basic):
         invalid_token_message = 'Invalid basic auth token'
         try:
-            user, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
-            key = Token.make_hash(key)
-            token = self.model.objects.get(key=key)
-            domain_names = token.user.domains.values_list('name', flat=True)
-            if user not in ['', token.user.email] and not user.lower() in domain_names:
+            username, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
+            user, token = TokenAuthentication().authenticate_credentials(key)
+            domain_names = user.domains.values_list('name', flat=True)
+            if username not in ['', user.email] and not username.lower() in domain_names:
                 raise Exception
         except Exception:
             raise exceptions.AuthenticationFailed(invalid_token_message)
 
-        if not token.user.is_active:
+        if not user.is_active:
             raise exceptions.AuthenticationFailed(invalid_token_message)
 
-        return token.user, token
+        return user, token
 
     def authenticate_header(self, request):
         return 'Basic'
@@ -97,13 +96,12 @@ class URLParamAuthentication(BaseAuthentication):
         return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
 
     def authenticate_credentials(self, _, key):
-        key = Token.make_hash(key)
         try:
-            token = self.model.objects.get(key=key)
+            user, token = TokenAuthentication().authenticate_credentials(key)
         except self.model.DoesNotExist:
             raise exceptions.AuthenticationFailed('badauth')
 
-        if not token.user.is_active:
+        if not user.is_active:
             raise exceptions.AuthenticationFailed('badauth')
 
         return token.user, token
