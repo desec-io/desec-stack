@@ -21,11 +21,11 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             self.client.set_credentials_basic_auth(username, token)
             self.assertDynDNS12Status(code)
 
-        assertDynDNS12AuthenticationStatus('', self.token, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(self.owner.get_username(), self.token, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(self.my_domain.name, self.token, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token, HTTP_401_UNAUTHORIZED)
-        assertDynDNS12AuthenticationStatus('wrong', self.token, HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus('', self.token.plain, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(self.owner.get_username(), self.token.plain, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(self.my_domain.name, self.token.plain, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token.plain, HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus('wrong', self.token.plain, HTTP_401_UNAUTHORIZED)
         assertDynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
         assertDynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
 
@@ -52,6 +52,6 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         self.assertStatus(self._get_domains(), code)
 
     def test_token_case_sensitive(self):
-        self.assertAuthenticationStatus(HTTP_200_OK, self.token)
-        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.upper())
-        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.lower())
+        self.assertAuthenticationStatus(HTTP_200_OK, self.token.plain)
+        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.plain.upper())
+        self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.plain.lower())

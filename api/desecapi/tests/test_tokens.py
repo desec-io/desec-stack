@@ -17,7 +17,7 @@ class TokenTestCase(DomainOwnerTestCase):
         self.assertEqual(len(response.data), 2)
         self.assertIn('id', response.data[0])
         self.assertFalse(any(field in response.data[0] for field in ['token', 'key', 'value']))
-        self.assertNotContains(response, self.token)
+        self.assertNotContains(response, self.token.plain)
 
     def test_delete_my_token(self):
         token_id = Token.objects.get(user=self.owner, name='testtoken').id
