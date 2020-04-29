@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "mocha": "~3.5.0",
-    "jquery": "~3.4.1",
+    "jquery": "~3.5.0",
     "jsdom": "~11.1.0",
     "atob": "^2.0.3",
     "btoa": "^1.1.2",
