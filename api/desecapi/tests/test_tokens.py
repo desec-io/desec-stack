@@ -52,12 +52,12 @@ class TokenTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_update_my_token(self):
-        token_id = Token.objects.get(user=self.user).id
-        url = self.reverse('v1:token-detail', pk=token_id)
+        url = self.reverse('v1:token-detail', pk=self.token.id)
 
         for method in [self.client.patch, self.client.put]:
-            response = method(url, data={'name': 'foobar'})
-            self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
+            response = method(url, data={'name': method.__name__})
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data['name'], method.__name__)
 
     def test_create_token(self):
         n = len(Token.objects.filter(user=self.owner).all())

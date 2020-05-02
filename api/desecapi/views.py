@@ -9,9 +9,7 @@ from django.core.mail import EmailMessage
 from django.http import Http404
 from django.shortcuts import redirect
 from django.template.loader import get_template
-from rest_framework import generics
-from rest_framework import mixins
-from rest_framework import status
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import (NotAcceptable, NotFound, PermissionDenied, ValidationError)
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
@@ -19,7 +17,6 @@ from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet
 
 import desecapi.authentication as auth
 from desecapi import metrics, models, serializers
@@ -71,12 +68,7 @@ class DomainViewMixin:
             raise Http404
 
 
-class TokenViewSet(IdempotentDestroyMixin,
-                   mixins.CreateModelMixin,
-                   mixins.RetrieveModelMixin,
-                   mixins.DestroyModelMixin,
-                   mixins.ListModelMixin,
-                   GenericViewSet):
+class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = serializers.TokenSerializer
     permission_classes = (IsAuthenticated,)
     throttle_scope = 'account_management_passive'
@@ -99,7 +91,7 @@ class DomainViewSet(IdempotentDestroyMixin,
                     mixins.RetrieveModelMixin,
                     mixins.DestroyModelMixin,
                     mixins.ListModelMixin,
-                    GenericViewSet):
+                    viewsets.GenericViewSet):
     serializer_class = serializers.DomainSerializer
     permission_classes = (IsAuthenticated, IsOwner, WithinDomainLimitOnPOST)
     lookup_field = 'name'
