@@ -135,10 +135,10 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     For desec-stack, [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) are required.
     Further tools that are required to start hacking are git and curl.
     Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
-    jq, httpie, libmysqlclient-dev, python3-dev (>= 3.7) and python3-venv (>= 3.7) are useful if you want to follow this guide.
-    To install everything you need for this guide except docker and docker-compose, use
+    jq, httpie, libmariadbclient-dev, python3-dev (>= 3.7) and python3-venv (>= 3.7) are useful if you want to follow this guide.
+    The webapp requires nodejs. To install everything you need for this guide except docker and docker-compose, use
 
-       sudo apt install curl git httpie jq libmysqlclient-dev python3.7-dev python3.7-venv
+       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs python3.7-dev python3.7-venv
 
 1. **Get the code.** Clone this repository to your favorite location.
 
@@ -232,7 +232,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     Additionally, the VPN server for the replication network needs to be equipped with a pre-shared key (PSK) and a public key infrastructure (PKI).
     To generate the PSK, use the openvpn-server container:
 
-        docker-compose run openvpn-server openvpn --genkey --secret /dev/stdout > openvpn-server/secrets/ta.key
+        docker-compose build openvpn-server && docker-compose run openvpn-server openvpn --genkey --secret /dev/stdout > openvpn-server/secrets/ta.key
 
     To build the PKI, we recommend [easy RSA](https://github.com/OpenVPN/easy-rsa).
     **Please note that PKI instructions here are for development deployments only!**
@@ -265,6 +265,12 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     As the setup of OpenVPN is completed, return to the project directory:
 
         cd -
+
+1. **Install webapp dependencies.** To install the dependencies for the web site and GUI, run
+
+       cd webapp/
+       npm install
+       cd -
 
 1. **Run desec-stack.** To run desec-stack, use
 
@@ -328,7 +334,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     1. Open the project root directory `desec-stack` in PyCharm and select File › Settings.
         1. In Project: desec-stack › Project Structure, mark the `api/` folder as a source folder.
-        2. In Project: desec-stack › Project Interpreter, add a new interpreter. Choose "existing environment" and select `api/api/venv/bin/python3` from the project root.
+        2. In Project: desec-stack › Project Interpreter, add a new interpreter. Choose "existing environment" and select `api/venv/bin/python3` from the project root.
         3. In Languages & Frameworks › Django, enable the Django support and set the Django project root to `api/`.
 
     1. From the PyCharm menu, select Run › Edit Configurations and select the "Django tests" template from the list.
