@@ -1,6 +1,7 @@
 allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
 api=yes
 api-key=${DESECSTACK_NSLORD_APIKEY}
+default-api-rectify=no
 default-soa-edit=INCREMENT-WEEKS
 default-soa-mail=get.desec.io
 default-soa-name=set.an.example
