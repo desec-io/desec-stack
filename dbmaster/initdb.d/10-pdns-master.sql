@@ -6,7 +6,7 @@ CREATE TABLE domains (
   master                VARCHAR(128) DEFAULT NULL,
   last_check            INT DEFAULT NULL,
   type                  VARCHAR(6) NOT NULL,
-  notified_serial       INT DEFAULT NULL,
+  notified_serial       INT UNSIGNED DEFAULT NULL,
   account               VARCHAR(40) CHARACTER SET 'utf8' DEFAULT NULL,
   PRIMARY KEY (id)
 ) Engine=InnoDB CHARACTER SET 'latin1';
@@ -22,7 +22,6 @@ CREATE TABLE records (
   content               VARCHAR(64000) DEFAULT NULL,
   ttl                   INT DEFAULT NULL,
   prio                  INT DEFAULT NULL,
-  change_date           INT DEFAULT NULL,
   disabled              TINYINT(1) DEFAULT 0,
   ordername             VARCHAR(255) BINARY DEFAULT NULL,
   auth                  TINYINT(1) DEFAULT 1,
@@ -73,6 +72,7 @@ CREATE TABLE cryptokeys (
   domain_id             INT NOT NULL,
   flags                 INT NOT NULL,
   active                BOOL,
+  published             BOOL DEFAULT 1,
   content               TEXT,
   PRIMARY KEY(id)
 ) Engine=InnoDB CHARACTER SET 'latin1';
