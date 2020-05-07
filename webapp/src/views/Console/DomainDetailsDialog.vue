@@ -28,7 +28,7 @@
         </p>
         <v-layout flex align-end>
           <div class="caption font-weight-medium">NS records</div>
-          <v-spacer></v-spacer>
+          <!--v-spacer></v-spacer>
           <div v-if="copied != 'ns'">
             <v-icon
                     small
@@ -37,7 +37,7 @@
                     v-clipboard:error="() => (copied = '')"
             >mdi-content-copy</v-icon>
           </div>
-          <div v-else>copied! <v-icon small>mdi-check</v-icon></div>
+          <div v-else>copied! <v-icon small>mdi-check</v-icon></div-->
         </v-layout>
         <pre
                 class="mb-3 pa-3"
@@ -49,7 +49,7 @@
         <div v-if="ds.length > 0">
           <v-layout flex align-end>
             <div class="caption font-weight-medium">DS records</div>
-            <v-spacer></v-spacer>
+            <!--v-spacer></v-spacer>
             <div v-if="copied != 'ds'">
               <v-icon
                       small
@@ -58,7 +58,7 @@
                       v-clipboard:error="() => (copied = '')"
               >mdi-content-copy</v-icon>
             </div>
-            <div v-else>copied! <v-icon small>mdi-check</v-icon></div>
+            <div v-else>copied! <v-icon small>mdi-check</v-icon></div-->
           </v-layout>
           <pre
                   class="mb-3 pa-3"
