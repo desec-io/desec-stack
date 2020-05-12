@@ -58,6 +58,32 @@
           >
             {{ item.text }}
           </v-tab>
+          <v-spacer></v-spacer>
+          <v-menu
+                  bottom
+                  left
+          >
+            <template v-slot:activator="{ on }">
+              <v-btn
+                      text
+                      class="align-self-center mr-4"
+                      v-on="on"
+              >
+                more
+                <v-icon right>mdi-menu-down</v-icon>
+              </v-btn>
+            </template>
+
+            <v-list class="grey lighten-3">
+              <v-list-item
+                      v-for="(item, key) in tabmenumore"
+                      :key="key"
+                      :to="{name: item.name}"
+              >
+                {{ item.text }}
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </v-tabs>
       </template>
     </v-app-bar>
@@ -176,6 +202,12 @@ export default {
       'tokens': {
         'name': 'tokens',
         'text': 'Token Management',
+      },
+    },
+    tabmenumore: {
+      'change-email': {
+        'name': 'change-email',
+        'text': 'Change Email Address',
       },
     },
   }),

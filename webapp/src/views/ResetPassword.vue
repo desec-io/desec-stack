@@ -124,7 +124,7 @@
   });
 
   export default {
-    name: 'SignUp',
+    name: 'ResetPassword',
     data: () => ({
       valid: false,
       working: false,

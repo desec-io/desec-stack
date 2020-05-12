@@ -58,6 +58,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "signup" */ '../views/ResetPassword.vue')
   },
   {
+    path: '/change-email/:email?',
+    name: 'change-email',
+    component: () => import(/* webpackChunkName: "account" */ '../views/ChangeEmail.vue'),
+    meta: {guest: false},
+  },
+  {
     path: '/donate/',
     name: 'donate',
     component: () => import('../views/Donate.vue')
@@ -138,15 +144,11 @@ router.beforeEach((to, from, next) => {
   } else {
     if (store.state.authenticated) {
       // Log in state was present, but not needed for the current page
-      if (recovered) {
-        // user restored a previous session
-        // redirect her to the home page for authorized users
-        next({
-          name: 'DomainList'
-        })
+      // User restored a previous session. If navigation to home, divert to home page for authorized users
+      if (recovered && to.name == 'home') {
+        next({name: 'domains'})
       } else {
         // user navigated to a page that doesn't require auth
-        // from within the current session (without session restore)
         // to bias on the safe side we log out
         logout()
       }
