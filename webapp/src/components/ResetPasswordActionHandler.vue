@@ -12,6 +12,7 @@
                 hint="At least 8 characters"
                 autocomplete="new-password"
                 @click:append="show = !show"
+                tabindex="1"
         ></v-text-field>
         <v-btn
                 depressed
@@ -19,6 +20,7 @@
                 type="submit"
                 :disabled="working || !valid"
                 :loading="working"
+                tabindex="2"
         >Submit</v-btn>
     </div>
     <v-alert type="success" v-else>
@@ -39,7 +41,6 @@
         min: v => (v !== undefined && v.length >= 8) || 'Min 8 characters',
       },
       show: false,
-      working: false,
     }),
   };
 </script>
