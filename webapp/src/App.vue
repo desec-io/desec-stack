@@ -209,6 +209,10 @@ export default {
         'name': 'change-email',
         'text': 'Change Email Address',
       },
+      'delete-account': {
+        'name': 'delete-account',
+        'text': 'Delete Account',
+      },
     },
   }),
   methods: {

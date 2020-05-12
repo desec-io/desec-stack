@@ -64,6 +64,12 @@ const routes = [
     meta: {guest: false},
   },
   {
+    path: '/delete-account/',
+    name: 'delete-account',
+    component: () => import(/* webpackChunkName: "account" */ '../views/DeleteAccount.vue'),
+    meta: {guest: false},
+  },
+  {
     path: '/donate/',
     name: 'donate',
     component: () => import('../views/Donate.vue')
