@@ -131,13 +131,21 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             'ORG',
             '--BLAH.example.com',
             '_ASDF.jp',
+            '_example.com', '_.example.com',
+            '-dedyn.io', '--dedyn.io', '-.dedyn123.io',
+            'exam_ple.com',
+            'too.long.x012345678901234567890123456789012345678901234567890123456789012.com',
+            '-foobar.example.com',
+            '_foobar.example.com',
+            'hyphen-.example.com',
         ]:
             with self.assertRaises(ValidationError):
                 Domain(owner=self.owner, name=name).save()
         for name in [
-            '_example.com', '_.example.com',
-            '-dedyn.io', '--dedyn.io', '-.dedyn123.io',
-            'foobar.io', 'exam_ple.com',
+            'org',
+            'foobar.io',
+            'hyphens--------------------hyphens-hyphens.com',
+            'max.length.x01234567890123456789012345678901234567890123456789012345678901.com',
         ]:
             with self.assertPdnsRequests(
                 self.requests_desec_domain_creation(name=name)[:-1]  # no serializer, no cryptokeys API call
@@ -204,7 +212,6 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa',
             'very.long.domain.name.' + self.random_domain_name(),
             self.random_domain_name(),
-            'very.long.domain.name.with_underscore.' + self.random_domain_name(),
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
@@ -239,11 +246,9 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             ' ' + self.random_domain_name(),
             self.random_domain_name() + '  ',
         ]:
-            self.assertResponse(
-                self.client.post(self.reverse('v1:domain-list'), {'name': name}),
-                status.HTTP_400_BAD_REQUEST,
-                {'name': ['Invalid value (not a DNS name).']},
-            )
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertTrue("Domain names must be labels separated dots. Labels" in response.data['name'][0])
 
     def test_create_public_suffixes(self):
         for name in self.PUBLIC_SUFFIXES:
@@ -283,7 +288,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         for name in ['1.2.3..4.test.dedyn.io', 'test..de', '*.' + self.random_domain_name(), 'a' * 64 + '.bla.test']:
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertTrue("Invalid value (not a DNS name)." in response.data['name'][0])
+            self.assertTrue("Domain names must be labels separated dots. Labels" in response.data['name'][0])
 
     def test_create_domain_other_parent(self):
         name = 'something.' + self.other_domain.name
