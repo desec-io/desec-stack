@@ -32,11 +32,13 @@ following details in your router configuration:
 - Update Server ``update.dedyn.io``, or Update URL ``https://update.dedyn.io/``
 - Username (the full name of the domain you want to update, e.g. yourname.dedyn.io)
 - Hostname (same as your username)
-- Password (as provided when you registered your domain with us)
+- Token (long random string for authorization)
 
-**Advanced API users only:** The dynDNS password technically is an API token.
-If you also use our REST API, make sure to use a token for this purpose. Do not
-enter your account password when setting up your domain!
+**Advanced API users:** The dynDNS token technically is a regular API token.
+You can also use the token to make requests to our REST API. (Currently, all
+tokens are equally powerful, i.e. a token used for dynDNS updates can also be
+used to perform other kinds of API operations. Token scoping is on our
+roadmap.)
 
 IPv6 Support
 ************
@@ -77,7 +79,7 @@ start the configuration process.
 In the configuration process, select "other" dynamic DNS service provider, and
 enter ``update.dedyn.io`` as the dynamic DNS server. Next, tell ddclient to use
 the "dyndns2" protocol to perform updates. Afterwards, enter the username and
-password that you received during registration. Last, tell ddclient how to
+the token that you received during registration. Last, tell ddclient how to
 detect your IP address, your domain name and the update interval.
 
 **Note:** As of the time of this writing, ddclient does not use an encrypted
@@ -89,7 +91,7 @@ Manual configuration (other systems)
 ************************************
 After installing ddclient, you can start with a ``ddclient.conf`` configuration
 file similar to this one, with the three placeholders replaced by your domain
-name and password::
+name and your token::
 
   protocol=dyndns2
   # "use=cmd" and the curl command is one way of doing this; other ways exist
@@ -97,7 +99,7 @@ name and password::
   ssl=yes
   server=update.dedyn.io
   login=[domain]
-  password='[password]'
+  password='[token]'
   [domain]
 
 For more information, check out `these

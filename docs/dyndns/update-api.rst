@@ -20,23 +20,35 @@ connections.
 
 Authentication
 **************
-You can authenticate your client in several ways:
+You can authenticate your client in several ways. If authentication fails, the
+API will return a ``401 Unauthorized`` status code.
 
-- Preferred method: HTTP Basic Authentication. Encode your username and
-  password as provided upon registration in the ``Authorization: Basic ...``
-  header. This is the method virtually all dynDNS clients use out of the box.
+Preferred method: HTTP Basic Authentication (with token)
+--------------------------------------------------------
+Encode your username and token (provided during registration) in the
+``Authorization: Basic ...`` header. This is the method virtually all dynDNS
+clients use out of the box.
 
-- REST API method: HTTP Token Authentication. Send an ``Authorization: Token
-  ...`` header along with your request, where ``...`` is an API token issued
-  for this purpose. This method is used by our REST API as well.
+**Important:** If you dynDNS client asks for a *password*, do not enter your
+account password (if you have one). Instead, enter your token!
 
-- Set the ``username`` and ``password`` query string parameters (``GET
-  ?username=...&password=...``). We **strongly discourage** using this
-  method, but provide it as an emergency solution for situations where folks
-  need to deal with old and/or crappy clients.
+REST API method: HTTP Token Authentication
+------------------------------------------
+Send an ``Authorization: Token  ...`` header along with your request, where
+``...`` is the token issued at registration (or manually created later).
 
-If we cannot authenticate you, the API will return a ``401 Unauthorized``
-status code.
+Query string method (discouraged)
+---------------------------------
+Set the ``username`` and ``password`` query string parameters (``GET
+?username=...&password=...``).
+
+**Important:** We **strongly discourage** using this method as it comes with a
+subtle disadvantage: We log all HTTP request URLs for a few days to facilitate
+debugging. As a consequence, this method will cause your secret token to end
+up in our log files in clear text. The method is provided as an emergency
+solution where folks need to deal with old and/or crappy clients. If this is
+the case, we suggest looking for another client.
+
 
 Determine Hostname
 ******************

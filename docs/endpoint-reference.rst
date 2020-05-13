@@ -27,19 +27,19 @@ for :ref:`managing users <manage-account>` and :ref:`tokens <manage-tokens>`.
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create new token                            |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/tokens/:id/``                     | ``GET``    | Retrieve token                              |
+| ...\ ``/auth/tokens/{id}/``                    | ``GET``    | Retrieve token                              |
 |                                                +------------+---------------------------------------------+
 |                                                | ``DELETE`` | Delete token                                |
 +------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/captcha/``                             | ``POST``   | Obtain captcha                              |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/activate-account/:code/``            | ``POST``   | Confirm email address for new account       |
+| ...\ ``/v/activate-account/{code}/``           | ``POST``   | Confirm email address for new account       |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/reset-password/:code/``              | ``POST``   | Confirm password reset                      |
+| ...\ ``/v/reset-password/{code}/``             | ``POST``   | Confirm password reset                      |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/change-email/:code/``                | ``POST``   | Confirm email address change                |
+| ...\ ``/v/change-email/{code}/``               | ``POST``   | Confirm email address change                |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/v/delete-account/:code/``              | ``POST``   | Confirm account deletion                    |
+| ...\ ``/v/delete-account/{code}/``             | ``POST``   | Confirm account deletion                    |
 +------------------------------------------------+------------+---------------------------------------------+
 
 The following table summarizes basic information about the deSEC API endpoints used
@@ -53,13 +53,13 @@ Information <manage-rrsets>`.
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/:name/``                               | ``GET``    | Retrieve a specific domain                  |
+| ...\ ``/{name}/``                              | ``GET``    | Retrieve a specific domain                  |
 |                                                +------------+---------------------------------------------+
 |                                                | ``PATCH``  | Modify a domain (deprecated)                |
 |                                                +------------+---------------------------------------------+
 |                                                | ``DELETE`` | Delete a domain                             |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/:name/rrsets/``                        | ``GET``    | Retrieve all RRsets from ``domain``, filter |
+| ...\ ``/{name}/rrsets/``                       | ``GET``    | Retrieve all RRsets from ``domain``, filter |
 |                                                |            | by ``subname`` or ``type`` query parameter  |
 |                                                +------------+---------------------------------------------+
 |                                                | ``POST``   | Create one or more RRsets                   |
@@ -68,11 +68,11 @@ Information <manage-rrsets>`.
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Create, modify or delete one or more RRsets |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/:name/rrsets/@/:type/``                |            | Access an RRset at the zone apex            |
+| ...\ ``/{name}/rrsets/@/{type}/``              |            | Access an RRset at the zone apex            |
 +------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/:name/rrsets/:subname/:type/``         | ``GET``    | Retrieve a specific RRset                   |
+| ...\ ``/{name}/rrsets/{subname}/{type}/``      | ``GET``    | Retrieve a specific RRset                   |
 |                                                +------------+---------------------------------------------+
-| ...\ ``/:name/rrsets/:subname.../:type/``      | ``PATCH``  | Modify an RRset                             |
+| ...\ ``/{name}/rrsets/{subname}.../{type}/``   | ``PATCH``  | Modify an RRset                             |
 |                                                +------------+---------------------------------------------+
 |                                                | ``PUT``    | Replace an RRset                            |
 |                                                +------------+---------------------------------------------+

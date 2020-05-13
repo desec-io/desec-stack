@@ -31,8 +31,8 @@ steps.
    script, so that it can write the Let's Encrypt challenge to the DNS on your
    behalf. To do so, edit the ``.dedynauth`` file to look something like::
 
-    DEDYN_TOKEN=your token / dynDNS password
-    DEDYN_NAME=yourdomain.dedyn.io
+    DEDYN_TOKEN=[your token]  # remove brackets
+    DEDYN_NAME=[yourdomain].dedyn.io  # remove brackets
 
 #. **Run certbot.** To obtain your certificate, run certbot in manual mode as
    follows. (For a detailed explanation, please refer to the certbot manual.)

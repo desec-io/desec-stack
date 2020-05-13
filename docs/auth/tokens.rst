@@ -42,7 +42,7 @@ automatically populate the ``name`` field with values such as "login" or
         }
     ]
 
-You can also retrieve an individual token by appending ``:id/`` to the URL,
+You can also retrieve an individual token by appending ``{id}/`` to the URL,
 for example in order to look up a token's name or creation timestamp.
 
 
@@ -74,10 +74,10 @@ Delete Tokens
 `````````````
 
 To delete an existing token by its ID via the token management endpoints, issue a
-``DELETE`` request on the token's endpoint, replacing ``:id`` with the
+``DELETE`` request on the token's endpoint, replacing ``{id}`` with the
 token ``id`` value::
 
-    curl -X DELETE https://desec.io/api/v1/auth/tokens/:id/ \
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/ \
         --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
 
 The server will reply with ``204 No Content``, even if the token was not found.

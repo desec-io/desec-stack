@@ -156,7 +156,7 @@ Retrieving a Specific Domain
 To retrieve a domain with a specific name, issue a ``GET`` request with the
 ``name`` appended to the ``domains/`` endpoint, like this::
 
-    curl -X GET https://desec.io/api/v1/domains/:name/ \
+    curl -X GET https://desec.io/api/v1/domains/{name}/ \
         --header "Authorization: Token {token}"
 
 This will return only one domain (i.e., the response is not a JSON array).
