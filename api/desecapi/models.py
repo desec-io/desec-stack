@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import binascii
 import json
 import logging
 import re
@@ -11,6 +12,7 @@ from datetime import timedelta
 from functools import cached_property
 from hashlib import sha256
 
+import dns
 import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
@@ -24,13 +26,15 @@ from django.db.models import Manager, Q
 from django.template.loader import get_template
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
+from dns import rdata, rdataclass, rdatatype
 from dns.exception import Timeout
+from dns.rdtypes import ANY, IN
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
 from desecapi import metrics
 from desecapi import pdns
-
+from desecapi.dns import LongQuotedTXT, OPENPGPKEY
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -415,6 +419,31 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
         managed = False
 
 
+# RR set types: the good, the bad, and the ugly
+# known, but unsupported types
+RR_SET_TYPES_UNSUPPORTED = {
+    'ALIAS',  # Requires signing at the frontend, hence unsupported in desec-stack
+    'DNAME',  # "do not combine with DNSSEC", https://doc.powerdns.com/authoritative/settings.html#dname-processing
+    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/9055 TODO enable support
+    'KEY',  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
+    'WKS',  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
+}
+# restricted types are managed in use by the API, and cannot directly be modified by the API client
+RR_SET_TYPES_AUTOMATIC = {
+    # corresponding functionality is automatically managed:
+    'CDNSKEY', 'CDS', 'DNSKEY', 'KEY', 'NSEC', 'NSEC3', 'OPT', 'RRSIG',
+    # automatically managed by the API:
+    'NSEC3PARAM', 'SOA'
+}
+# backend types are types that are the types supported by the backend(s)
+RR_SET_TYPES_BACKEND = pdns.SUPPORTED_RRSET_TYPES
+# validation types are types supported by the validation backend, currently: dnspython
+RR_SET_TYPES_VALIDATION = set(ANY.__all__) | set(IN.__all__)
+# manageable types are directly managed by the API client
+RR_SET_TYPES_MANAGEABLE = \
+        (RR_SET_TYPES_BACKEND & RR_SET_TYPES_VALIDATION) - RR_SET_TYPES_UNSUPPORTED - RR_SET_TYPES_AUTOMATIC
+
+
 class RRsetManager(Manager):
     def create(self, contents=None, **kwargs):
         rrset = super().create(**kwargs)
@@ -456,9 +485,6 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
 
     objects = RRsetManager()
 
-    DEAD_TYPES = ('ALIAS', 'DNAME')
-    RESTRICTED_TYPES = ('SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT')
-
     class Meta:
         unique_together = (("domain", "subname", "type"),)
 
@@ -473,6 +499,91 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     def save(self, *args, **kwargs):
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
+
+    def clean_records(self, records_presentation_format):
+        """
+        Validates the records belonging to this set. Validation rules follow the DNS specification; some types may
+        incur additional validation rules.
+
+        Raises ValidationError if violation of DNS specification is found.
+
+        Returns a set of records in canonical presentation format.
+
+        :param records_presentation_format: iterable of records in presentation format
+        """
+        rdtype = rdatatype.from_text(self.type)
+        errors = []
+
+        def _error_msg(record, detail):
+            return f'Record content of {self.type} {self.name} invalid: \'{record}\': {detail}'
+
+        records_canonical_format = set()
+        for r in records_presentation_format:
+            try:
+                r_canonical_format = RR.canonical_presentation_format(r, rdtype)
+            except binascii.Error:
+                # e.g., odd-length string
+                errors.append(_error_msg(r, 'Cannot parse hexadecimal or base64 record contents'))
+            except dns.exception.SyntaxError as e:
+                # e.g., A/127.0.0.999
+                if 'quote' in e.args[0]:
+                    errors.append(_error_msg(r, f'Data for {self.type} records must be given using quotation marks.'))
+                else:
+                    errors.append(_error_msg(r, f'Record content malformed: {",".join(e.args)}'))
+            except dns.name.NeedAbsoluteNameOrOrigin:
+                errors.append(_error_msg(r, 'Hostname must be fully qualified (i.e., end in a dot: "example.com.")'))
+            except ValueError:
+                # e.g., string ("asdf") cannot be parsed into int on base 10
+                errors.append(_error_msg(r, 'Cannot parse record contents'))
+            except AssertionError:
+                # e.g., HINFO token too long, cf. https://github.com/rthalley/dnspython/issues/493
+                errors.append(_error_msg(r, 'Invalid record content'))
+            except Exception as e:
+                # TODO see what exceptions raise here for faulty input
+                raise e
+            else:
+                if r_canonical_format in records_canonical_format:
+                    errors.append(_error_msg(r, f'Duplicate record content: this is identical to '
+                                                f'\'{r_canonical_format}\''))
+                else:
+                    records_canonical_format.add(r_canonical_format)
+
+        if any(errors):
+            raise ValidationError(errors)
+
+        return records_canonical_format
+
+    def save_records(self, records):
+        """
+        Updates this RR set's resource records, discarding any old values.
+
+        Records are expected in presentation format and are converted to canonical
+        presentation format (e.g., 127.00.0.1 will be converted to 127.0.0.1).
+        Raises if a invalid set of records is provided.
+
+        This method triggers the following database queries:
+        - two SELECT queries for comparison of old with new records
+        - for each removed record, one DELETE query
+        - if one or more records were added, a total of one INSERT query
+
+        Changes are saved to the database immediately.
+
+        :param records: list of records in presentation format
+        """
+        records = self.clean_records(records)
+
+        # Remove RRs that we didn't see in the new list
+        removed_rrs = self.records.exclude(content__in=records)  # one SELECT
+        for rr in removed_rrs:
+            rr.delete()  # one DELETE query
+
+        # Figure out which entries in records have not changed
+        unchanged_rrs = self.records.filter(content__in=records)  # one SELECT
+        unchanged_content = [unchanged_rr.content for unchanged_rr in unchanged_rrs]
+        added_content = filter(lambda c: c not in unchanged_content, records)
+
+        rrs = [RR(rrset=self, content=content) for content in added_content]
+        RR.objects.bulk_create(rrs)  # One INSERT
 
     def __str__(self):
         return '<RRSet %s domain=%s type=%s subname=%s>' % (self.pk, self.domain.name, self.type, self.subname)
@@ -493,19 +604,49 @@ class RRManager(Manager):
 class RR(ExportModelOperationsMixin('RR'), models.Model):
     created = models.DateTimeField(auto_now_add=True)
     rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
-    # The pdns lmdb backend used on our slaves does not only store the record contents itself, but other metadata (such
-    # as type etc.) Both together have to fit into the lmdb backend's current total limit of 512 bytes per RR, see
-    # https://github.com/PowerDNS/pdns/issues/8012
-    # I found the additional data to be 12 bytes (by trial and error). I believe these are the 12 bytes mentioned here:
-    # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html So we can use 500 bytes for the actual content.
-    # Note: This is a conservative estimate, as record contents may be stored more efficiently depending on their type,
-    # effectively allowing a longer length in "presentation format". For example, A record contents take up 4 bytes,
-    # although the presentation format (usual IPv4 representation) takes up to 15 bytes. Similarly, OPENPGPKEY contents
-    # are base64-decoded before storage in binary format, so a "presentation format" value (which is the value our API
-    # sees) can have up to 668 bytes. Instead of introducing per-type limits, setting it to 500 should always work.
-    content = models.CharField(max_length=500)  #
+    content = models.TextField()
 
     objects = RRManager()
+
+    @staticmethod
+    def canonical_presentation_format(any_presentation_format, type_):
+        """
+        Converts any valid presentation format for a RR into it's canonical presentation format.
+        Raises if provided presentation format is invalid.
+        """
+        if type_ in (dns.rdatatype.TXT, dns.rdatatype.SPF):
+            # for TXT record, we slightly deviate from RFC 1035 and allow tokens that are longer than 255 byte.
+            cls = LongQuotedTXT
+        elif type_ == dns.rdatatype.OPENPGPKEY:
+            cls = OPENPGPKEY
+        else:
+            # For all other record types, let dnspython decide
+            cls = rdata
+
+        wire = cls.from_text(
+            rdclass=rdataclass.IN,
+            rdtype=type_,
+            tok=dns.tokenizer.Tokenizer(any_presentation_format),
+            relativize=False
+        ).to_digestable()
+
+        # The pdns lmdb backend used on our frontends does not only store the record contents itself, but other metadata
+        # (such as type etc.) Both together have to fit into the lmdb backend's current total limit of 512 bytes per RR.
+        # I found the additional data to be 12 bytes (by trial and error). I believe these are the 12 bytes mentioned
+        # here: https://lists.isc.org/pipermail/bind-users/2008-April/070137.html So we can use 500 bytes for the actual
+        # content stored in wire format.
+        # This check can be relaxed as soon as lmdb supports larger records,
+        # cf. https://github.com/desec-io/desec-slave/issues/34 and https://github.com/PowerDNS/pdns/issues/8012
+        if len(wire) > 500:
+            raise ValidationError(f'Ensure this value has no more than 500 byte in wire format (it has {len(wire)}).')
+
+        return cls.from_wire(
+            rdclass=rdataclass.IN,
+            rdtype=rdatatype.from_text(type_),
+            wire=dns.wiredata.maybe_wrap(wire),
+            current=0,
+            rdlen=len(wire)
+        ).to_text()
 
     def __str__(self):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)

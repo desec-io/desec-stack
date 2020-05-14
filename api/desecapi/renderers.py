@@ -25,9 +25,15 @@ class PlainTextRenderer(renderers.BaseRenderer):
             except (TypeError, AttributeError):
                 pass
 
+            try:
+                return '; '.join([f'{err.code}: {err}' for err in data])
+            except (TypeError, AttributeError):
+                pass
+
             raise ValueError('Expected response.data to be one of the following:\n'
                              '- a dict with error details in response.data[\'detail\'],\n'
                              '- a list with at least one element that has error details in element[\'detail\'];\n'
+                             '- a list with all elements being ErrorDetail instances;\n'
                              'but got %s:\n\n%s' % (type(response.data), response.data))
 
         return data

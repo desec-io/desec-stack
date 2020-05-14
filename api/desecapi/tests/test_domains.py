@@ -347,7 +347,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
         with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
-            self.client.post(self.reverse('v1:domain-list'), {'name': name})
+            with self.assertRaises(ValueError):
+                self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_punycode(self):

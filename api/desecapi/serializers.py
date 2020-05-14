@@ -6,6 +6,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 from captcha.image import ImageCaptcha
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.password_validation import validate_password
+import django.core.exceptions
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, OperationalError
 from django.db.models import Model, Q
@@ -245,12 +246,15 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     @staticmethod
     def validate_type(value):
-        if value in models.RRset.DEAD_TYPES:
-            raise serializers.ValidationError(f'The {value} RRset type is currently unsupported.')
-        if value in models.RRset.RESTRICTED_TYPES:
-            raise serializers.ValidationError(f'You cannot tinker with the {value} RRset.')
-        if value.startswith('TYPE'):
-            raise serializers.ValidationError('Generic type format is not supported.')
+        if value not in models.RR_SET_TYPES_MANAGEABLE:
+            # user cannot manage this type, let's try to tell her the reason
+            if value in models.RR_SET_TYPES_AUTOMATIC:
+                raise serializers.ValidationError(f'You cannot tinker with the {value} RR set. It is managed '
+                                                  f'automatically.')
+            elif value.startswith('TYPE'):
+                raise serializers.ValidationError('Generic type format is not supported.')
+            else:
+                raise serializers.ValidationError(f'The {value} RR set type is currently unsupported.')
         return value
 
     def validate_records(self, value):
@@ -317,27 +321,14 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         """
         Updates this RR set's resource records, discarding any old values.
 
-        To do so, two large select queries and one query per changed (added or removed) resource record are needed.
-
-        Changes are saved to the database immediately.
-
         :param rrset: the RRset at which we overwrite all RRs
         :param rrs: list of RR representations
         """
         record_contents = [rr['content'] for rr in rrs]
-
-        # Remove RRs that we didn't see in the new list
-        removed_rrs = rrset.records.exclude(content__in=record_contents)  # one SELECT
-        for rr in removed_rrs:
-            rr.delete()  # one DELETE query
-
-        # Figure out which entries in record_contents have not changed
-        unchanged_rrs = rrset.records.filter(content__in=record_contents)  # one SELECT
-        unchanged_content = [unchanged_rr.content for unchanged_rr in unchanged_rrs]
-        added_content = filter(lambda c: c not in unchanged_content, record_contents)
-
-        rrs = [models.RR(rrset=rrset, content=content) for content in added_content]
-        models.RR.objects.bulk_create(rrs)  # One INSERT
+        try:
+            rrset.save_records(record_contents)
+        except django.core.exceptions.ValidationError as e:
+            raise serializers.ValidationError(e.messages, code='record-content')
 
 
 class RRsetListSerializer(serializers.ListSerializer):

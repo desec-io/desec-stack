@@ -1,14 +1,24 @@
-from hashlib import sha1
 import json
 import re
+from hashlib import sha1
 
 import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 
 from desecapi import metrics
-from desecapi.exceptions import PDNSException, PDNSValidationError, RequestEntityTooLarge
+from desecapi.exceptions import PDNSException, RequestEntityTooLarge
 
+SUPPORTED_RRSET_TYPES = {
+    # https://doc.powerdns.com/authoritative/appendices/types.html
+    # "major" types
+    'A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CDNSKEY', 'CDS', 'CNAME', 'DNSKEY', 'DNAME', 'DS', 'HINFO', 'KEY',
+    'LOC', 'MX', 'NAPTR', 'NS', 'NSEC', 'NSEC3', 'NSEC3PARAM', 'OPENPGPKEY', 'PTR', 'RP', 'RRSIG', 'SOA', 'SPF',
+    'SSHFP', 'SRV', 'TLSA', 'SMIMEA', 'TXT', 'URI',
+
+    # "additional" types, without obsolete ones
+    'DHCID', 'DLV', 'EUI48', 'EUI64', 'IPSECKEY', 'KX', 'MINFO', 'MR', 'RKEY', 'WKS',
+}
 
 NSLORD = object()
 NSMASTER = object()
@@ -41,9 +51,7 @@ def _pdns_request(method, *, server, path, data=None):
         raise RequestEntityTooLarge
 
     r = requests.request(method, _config[server]['base_url'] + path, data=data, headers=_config[server]['headers'])
-    if r.status_code == PDNSValidationError.pdns_code:
-        raise PDNSValidationError(response=r)
-    elif r.status_code not in range(200, 300):
+    if r.status_code not in range(200, 300):
         raise PDNSException(response=r)
     metrics.get('desecapi_pdns_request_success').labels(method, r.status_code).inc()
     return r

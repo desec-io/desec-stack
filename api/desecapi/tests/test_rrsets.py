@@ -1,12 +1,13 @@
 from ipaddress import IPv4Network
 import re
+from itertools import product
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
-from desecapi.models import Domain, RRset
+from desecapi.models import Domain, RRset, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
 from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
 
@@ -167,11 +168,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 {'subname': subname, 'records': ['10 example.com.'], 'ttl': 60, 'type': 'txt'}
             ] + [
                 {'subname': subname, 'records': ['10 example.com.'], 'ttl': 60, 'type': type_}
-                for type_ in self.DEAD_TYPES
+                for type_ in self.UNSUPPORTED_TYPES
             ] + [
                 {'subname': subname, 'records': ['set.an.example. get.desec.io. 2584 10800 3600 604800 60'],
                  'ttl': 60, 'type': type_}
-                for type_ in self.RESTRICTED_TYPES
+                for type_ in self.AUTOMATIC_TYPES
             ]:
                 response = self.client.post_rr_set(self.my_domain.name, **data)
                 self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
@@ -201,18 +202,41 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.other_domain.name, **data)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
+    @staticmethod
+    def _create_test_txt_record(record, type_='TXT'):
+        return {'records': [f'{record}'], 'ttl': 3600, 'type': type_, 'subname': f'name{len(record)}'}
+
+    def test_create_my_rr_sets_chunk_too_long(self):
+        for l, t in product([1, 255, 256, 498], ['TXT', 'SPF']):
+            with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+                response = self.client.post_rr_set(
+                    self.my_empty_domain.name,
+                    **self._create_test_txt_record(f'"{"A" * l}"', t)
+                )
+                self.assertStatus(response, status.HTTP_201_CREATED)
+            with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
+                self.client.delete_rr_set(self.my_empty_domain.name, type_=t, subname=f'name{l+2}')
+
     def test_create_my_rr_sets_too_long_content(self):
-        def _create_data(length):
-            content_string = 'A' * (length - 2)  # we have two quotes
-            return {'records': [f'"{content_string}"'], 'ttl': 3600, 'type': 'TXT', 'subname': f'name{length}'}
+        for t in ['SPF', 'TXT']:
+            response = self.client.post_rr_set(
+                self.my_empty_domain.name,
+                # record of wire length 501 bytes in chunks of max 255 each (RFC 4408)
+                **self._create_test_txt_record(f'"{"A" * 255}" "{"A" * 244}"', t)
+            )
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(
+                'Ensure this value has no more than 500 byte in wire format (it has 501).',
+                str(response.data)
+            )
 
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(self.my_empty_domain.name)):
-            response = self.client.post_rr_set(self.my_empty_domain.name, **_create_data(500))
+            response = self.client.post_rr_set(
+                self.my_empty_domain.name,
+                # record of wire length 500 bytes in chunks of max 255 each (RFC 4408)
+                ** self._create_test_txt_record(f'"{"A" * 255}" "{"A" * 243}"')
+            )
             self.assertStatus(response, status.HTTP_201_CREATED)
-
-        response = self.client.post_rr_set(self.my_empty_domain.name, **_create_data(501))
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Ensure this field has no more than 500 characters.', str(response.data))
 
     def test_create_my_rr_sets_too_large_rrset(self):
         network = IPv4Network('127.0.0.0/20')  # size: 4096 IP addresses
@@ -232,6 +256,15 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_my_rr_sets_duplicate_content(self):
+        for records in [
+            ['127.0.0.1', '127.00.0.1'],
+            # TODO add more examples
+        ]:
+            data = {'records': records, 'ttl': 3660, 'type': 'A'}
+            response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+            self.assertContains(response, 'Duplicate', status_code=status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_upper_case(self):
         for subname in ['asdF', 'cAse', 'asdf.FOO', '--F', 'ALLCAPS']:
             data = {'records': ['1.2.3.4'], 'ttl': 60, 'type': 'A', 'subname': subname}
@@ -243,13 +276,189 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.my_empty_domain.name)
         self.assertContains(response, 'No data provided', status_code=status.HTTP_400_BAD_REQUEST)
 
+    def test_create_my_rr_sets_canonical_content(self):
+        # TODO fill in more examples
+        datas = [
+            # record type: (non-canonical input, canonical output expectation)
+            ('A', ('127.0.000.1', '127.0.0.1')),
+            ('AAAA', ('0000::0000:0001', '::1')),
+            ('AFSDB', ('02 turquoise.FEMTO.edu.', '2 turquoise.femto.edu.')),
+            ('CAA', ('0128 "issue" "letsencrypt.org"', '128 issue "letsencrypt.org"')),
+            ('CERT', ('06 00 00 sadfdd==', '6 0 0 sadfdQ==')),
+            ('CNAME', ('EXAMPLE.COM.', 'example.com.')),
+            ('DHCID', ('xxxx', 'xxxx')),
+            ('DLV', ('6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
+                     '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520'.lower())),
+            ('DLV', ('6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
+                     '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520'.lower())),
+            ('DS', ('6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
+                    '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520'.lower())),
+            ('DS', ('6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
+                    '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520'.lower())),
+            ('EUI48', ('AA-BB-CC-DD-EE-FF', 'aa-bb-cc-dd-ee-ff')),
+            ('EUI64', ('AA-BB-CC-DD-EE-FF-aa-aa', 'aa-bb-cc-dd-ee-ff-aa-aa')),
+            ('HINFO', ('cpu os', '"cpu" "os"')),
+            ('HINFO', ('"cpu" "os"', '"cpu" "os"')),
+            # ('IPSECKEY', ('01 00 02 . ASDFAA==', '1 0 2 . ASDFAF==')),
+            # ('IPSECKEY', ('01 00 02 . 00000w==', '1 0 2 . 000000==')),
+            ('KX', ('010 example.com.', '10 example.com.')),
+            ('LOC', ('023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m',
+                     '23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m')),
+            ('MX', ('10 010.1.1.1.', '10 010.1.1.1.')),
+            ('MX', ('010 010.1.1.2.', '10 010.1.1.2.')),
+            ('NAPTR', ('100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.',
+                       '100 50 "s" "z3950+I2L+I2C" "" _z3950._tcp.gatech.edu.')),
+            ('NS', ('EXaMPLE.COM.', 'example.com.')),
+            ('OPENPGPKEY', ('mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tS xLFJYhX+uabSgMrhOqUizJhkLx82',
+                            'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82')),
+            ('PTR', ('EXAMPLE.COM.', 'example.com.')),
+            ('RP', ('hostmaster.EXAMPLE.com. .', 'hostmaster.example.com. .')),
+            # ('SMIMEA', ('3 01 0 aaBBccddeeff', '3 1 0 aabbccddeeff')),
+            ('SPF', ('"v=spf1 ip4:10.1" ".1.1 ip4:127" ".0.0.0/16 ip4:192.168.0.0/27 include:example.com -all"',
+                     '"v=spf1 ip4:10.1" ".1.1 ip4:127" ".0.0.0/16 ip4:192.168.0.0/27 include:example.com -all"')),
+            ('SPF', ('"foo" "bar"', '"foo" "bar"')),
+            ('SPF', ('"foobar"', '"foobar"')),
+            ('SRV', ('0 000 0 .', '0 0 0 .')),
+            # ('SRV', ('100 1 5061 EXAMPLE.com.', '100 1 5061 example.com.')),  # TODO fixed in dnspython 5c58601
+            ('SRV', ('100 1 5061 example.com.', '100 1 5061 example.com.')),
+            ('SSHFP', ('2 2 aabbccEEddff', '2 2 aabbcceeddff')),
+            ('TLSA', ('3 0001 1 000AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', '3 1 1 000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')),
+            ('TXT', ('"foo" "bar"', '"foo" "bar"')),
+            ('TXT', ('"foobar"', '"foobar"')),
+            ('TXT', ('"foo" "" "bar"', '"foo" "" "bar"')),
+            ('TXT', ('"" "" "foo" "" "bar"', '"" "" "foo" "" "bar"')),
+            ('URI', ('10 01 "ftp://ftp1.example.com/public"', '10 1 "ftp://ftp1.example.com/public"')),
+        ]
+        for t, (record, canonical_record) in datas:
+            if not record:
+                continue
+            data = {'records': [record], 'ttl': 3660, 'type': t, 'subname': ''}
+            with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+                response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+                self.assertStatus(response, status.HTTP_201_CREATED)
+                self.assertEqual(canonical_record, response.data['records'][0],
+                                 f'For RR set type {t}, expected \'{canonical_record}\' to be the canonical form of '
+                                 f'\'{record}\', but saw \'{response.data["records"][0]}\'.')
+            with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+                response = self.client.delete_rr_set(self.my_empty_domain.name, subname='', type_=t)
+                self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+        self.assertAllSupportedRRSetTypes(set(t for t, _ in datas))
+
+    def test_create_my_rr_sets_known_type_benign(self):
+        # TODO fill in more examples
+        datas = {
+            'A': ['127.0.0.1', '127.0.0.2'],
+            'AAAA': ['::1', '::2'],
+            'AFSDB': ['2 turquoise.femto.edu.'],
+            'CAA': ['128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"', '1 issue "letsencrypt.org"'],
+            'CERT': ['6 0 0 sadfdd=='],
+            'CNAME': ['example.com.'],
+            'DHCID': ['aaaaaaaaaaaa', 'aa aaa  aaaa a a a'],
+            'DLV': ['39556 13 1 aabbccddeeff'],
+            'DS': ['39556 13 1 aabbccddeeff'],
+            'EUI48': ['aa-bb-cc-dd-ee-ff', 'AA-BB-CC-DD-EE-FF'],
+            'EUI64': ['aa-bb-cc-dd-ee-ff-00-11', 'AA-BB-CC-DD-EE-FF-00-11'],
+            'HINFO': ['"ARMv8-A" "Linux"'],
+            # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
+            'KX': ['4 example.com.', '28 io.'],
+            'LOC': ['23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m'],
+            'MX': ['10 example.com.', '20 1.1.1.1.'],
+            'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+            'NS': ['ns1.example.com.'],
+            'OPENPGPKEY': [
+                'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete
+                'YWFh\xf0\x9f\x92\xa9YWFh',  # valid as non-alphabet bytes will be ignored
+            ],
+            'PTR': ['example.com.', '*.example.com.'],
+            'RP': ['hostmaster.example.com. .'],
+            # 'SMIMEA': ['3 1 0 aabbccddeeff'],
+            'SPF': ['"v=spf1 include:example.com ~all"',
+                    '"v=spf1 ip4:10.1.1.1 ip4:127.0.0.0/16 ip4:192.168.0.0/27 include:example.com -all"',
+                    '"spf2.0/pra,mfrom ip6:2001:558:fe14:76:68:87:28:0/120 -all"'],
+            'SRV': ['0 0 0 .', '100 1 5061 example.com.'],
+            'SSHFP': ['2 2 aabbcceeddff'],
+            'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
+            'TXT': ['"foobar"', '"foo" "bar"', '"“红色联合”对“四·二八兵团”总部大楼的攻击已持续了两天"', '"new\\010line"'
+                    '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 👓 🕶 🥽 🥼 🌂 🧵"'],
+            'URI': ['10 1 "ftp://ftp1.example.com/public"'],
+        }
+        self.assertAllSupportedRRSetTypes(set(datas.keys()))
+        for t, records in datas.items():
+            for r in records:
+                data = {'records': [r], 'ttl': 3660, 'type': t, 'subname': ''}
+                with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+                    response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+                    self.assertStatus(response, status.HTTP_201_CREATED)
+                with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+                    response = self.client.delete_rr_set(self.my_empty_domain.name, subname='', type_=t)
+                    self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+
+    def test_create_my_rr_sets_known_type_invalid(self):
+        # TODO fill in more examples
+        datas = {
+            # recordtype: [list of examples expected to be rejected, individually]
+            'A': ['127.0.0.999', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
+            'AAAA': ['::g', '1:1:1:1:1:1:1:1:', '1:1:1:1:1:1:1:1:1'],
+            'AFSDB': ['example.com.', '1 1', '1 de'],
+            'CAA': ['43235 issue "letsencrypt.org"'],
+            'CERT': ['6 0 sadfdd=='],
+            'CNAME': ['example.com', '10 example.com.'],
+            'DHCID': ['x', 'xx', 'xxx'],
+            'DLV': ['-34 13 1 aabbccddeeff'],
+            'DS': ['-34 13 1 aabbccddeeff'],
+            'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
+            'EUI64': ['aa-bb-cc-dd-ee-ff-gg-11', 'AA-BB-C C-DD-EE-FF-00-11'],
+            'HINFO': ['"ARMv8-A"', f'"a" "{"b"*256}"'],
+            # 'IPSECKEY': [],
+            'KX': ['-1 example.com', '10 example.com'],
+            'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
+            'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.'],
+            'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu',
+                      '100  50  "s"     ""  _z3950._tcp.gatech.edu.',
+                      '100  50  3 2  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+            'NS': ['ns1.example.com', '127.0.0.1'],
+            'OPENPGPKEY': ['1 2 3'],
+            'PTR': ['"example.com."', '10 *.example.com.'],
+            'RP': ['hostmaster.example.com.', '10 foo.'],
+            # 'SMIMEA': ['3 1 0 aGVsbG8gd29ybGQh'],
+            'SPF': ['"v=spf1', 'v=spf1 include:example.com ~all'],
+            'SRV': ['0 0 0 0', '100 5061 example.com.'],
+            'SSHFP': ['aabbcceeddff'],
+            'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
+            'TXT': ['foob"ar', 'v=spf1 include:example.com ~all', '"foo\nbar"', '"\x00" "NUL byte yo"'],
+            'URI': ['"1" "2" "3"'],
+        }
+        self.assertAllSupportedRRSetTypes(set(datas.keys()))
+        for t, records in datas.items():
+            for r in records:
+                data = {'records': [r], 'ttl': 3660, 'type': t, 'subname': ''}
+                response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+                self.assertNotContains(response, 'Duplicate', status_code=status.HTTP_400_BAD_REQUEST)
+
+    def test_create_my_rr_sets_txt_splitting(self):
+        for t in ['TXT', 'SPF']:
+            for l in [200, 255, 256, 300, 400]:
+                data = {'records': [f'"{"a"*l}"'], 'ttl': 3660, 'type': t, 'subname': f'x{l}'}
+                with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+                    response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+                    self.assertStatus(response, status.HTTP_201_CREATED)
+                response = self.client.get_rr_set(self.my_empty_domain.name, f'x{l}', t)
+                num_tokens = response.data['records'][0].count(' ') + 1
+                num_tokens_expected = l // 256 + 1
+                self.assertEqual(num_tokens, num_tokens_expected,
+                                 f'For a {t} record with a token of length of {l}, expected to see '
+                                 f'{num_tokens_expected} tokens in the canonical format, but saw {num_tokens}.')
+                self.assertEqual("".join(r.strip('" ') for r in response.data['records'][0]), 'a'*l)
+
     def test_create_my_rr_sets_unknown_type(self):
-        for _type in ['AA', 'ASDF']:
-            with self.assertPdnsRequests(
-                    self.request_pdns_zone_update_unknown_type(name=self.my_domain.name, unknown_types=_type)
-            ):
-                response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=3660, type=_type)
-                self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        for _type in ['AA', 'ASDF'] + list(RR_SET_TYPES_AUTOMATIC | RR_SET_TYPES_UNSUPPORTED):
+            response = self.client.post_rr_set(self.my_domain.name, records=['1234'], ttl=3660, type=_type)
+            self.assertContains(
+                response,
+                text='managed automatically' if _type in RR_SET_TYPES_AUTOMATIC else 'type is currently unsupported',
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
 
     def test_create_my_rr_sets_insufficient_ttl(self):
         ttl = settings.MINIMUM_TTL_DEFAULT - 1
@@ -270,7 +479,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertEqual(response.data['ttl'], 3620)
 
     def test_retrieve_my_rr_sets_restricted_types(self):
-        for type_ in self.RESTRICTED_TYPES:
+        for type_ in self.AUTOMATIC_TYPES:
             response = self.client.get_rr_sets(self.my_domain.name, type=type_)
             self.assertStatus(response, status.HTTP_403_FORBIDDEN)
             response = self.client.get_rr_sets(self.my_domain.name, type=type_, subname='')

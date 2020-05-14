@@ -17,7 +17,8 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
-from desecapi.models import User, Domain, Token, RRset, RR, psl
+from desecapi.models import User, Domain, Token, RRset, RR, psl, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED, \
+    RR_SET_TYPES_MANAGEABLE
 
 
 class DesecAPIClient(APIClient):
@@ -343,38 +344,6 @@ class MockPDNSTestCase(APITestCase):
             'body': None,
         }
 
-    @classmethod
-    def request_pdns_zone_update_unknown_type(cls, name=None, unknown_types=None):
-        def request_callback(r, _, response_headers):
-            body = json.loads(r.parsed_body)
-            if not unknown_types or body['rrsets'][0]['type'] in unknown_types:
-                return [
-                    422, response_headers,
-                    json.dumps({'error': 'Mocked error. Unknown RR type %s.' % body['rrsets'][0]['type']})
-                ]
-            else:
-                return [200, response_headers, None]
-
-        request = cls.request_pdns_zone_update(name)
-        # noinspection PyTypeChecker
-        request['body'] = request_callback
-        request.pop('status')
-        return request
-
-    @classmethod
-    def request_pdns_zone_update_invalid_rr(cls, name=None):
-        def request_callback(r, _, response_headers):
-            return [
-                422, response_headers,
-                json.dumps({'error': 'Mocked error. Considering RR content invalid.'})
-            ]
-
-        request = cls.request_pdns_zone_update(name)
-        # noinspection PyTypeChecker
-        request['body'] = request_callback
-        request.pop('status')
-        return request
-
     def request_pdns_zone_update_assert_body(self, name: str = None, updated_rr_sets: Union[List[RRset], Dict] = None):
         if updated_rr_sets is None:
             updated_rr_sets = []
@@ -665,6 +634,9 @@ class DesecTestCase(MockPDNSTestCase):
     AUTO_DELEGATION_DOMAINS = settings.LOCAL_PUBLIC_SUFFIXES
     PUBLIC_SUFFIXES = {'de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no',
                        'kota.aichi.jp', 's3.amazonaws.com', 'wildcard.ck'}
+    SUPPORTED_RR_SET_TYPES = {'A', 'AAAA', 'AFSDB', 'CAA', 'CERT', 'CNAME', 'DHCID', 'DLV', 'DS', 'EUI48', 'EUI64',
+                              'HINFO', 'KX', 'LOC', 'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SPF', 'SRV',
+                              'SSHFP', 'TLSA', 'TXT', 'URI'}
 
     admin = None
     auto_delegation_domains = None
@@ -859,8 +831,14 @@ class DesecTestCase(MockPDNSTestCase):
     def assertContains(self, response, text, count=None, status_code=200, msg_prefix='', html=False):
         # convenience method to check the status separately, which yields nicer error messages
         self.assertStatus(response, status_code)
+        # same for the substring check
+        self.assertIn(text, response.content.decode(response.charset),
+                      f'Could not find {text} in the following response:\n{response.content.decode(response.charset)}')
         return super().assertContains(response, text, count, status_code, msg_prefix, html)
 
+    def assertAllSupportedRRSetTypes(self, types):
+        self.assertEqual(types, self.SUPPORTED_RR_SET_TYPES, 'Either some RR types given are unsupported, or not all '
+                                                             'supported RR types were in the given set.')
 
 class PublicSuffixMockMixin():
     def _mock_get_public_suffix(self, domain_name, public_suffixes=None):
@@ -988,16 +966,9 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
 
 
 class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
-    DEAD_TYPES = ['ALIAS', 'DNAME']
-    RESTRICTED_TYPES = ['SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT']
-
-    # see https://doc.powerdns.com/md/types/
-    PDNS_RR_TYPES = ['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CDNSKEY', 'CDS', 'CNAME', 'DNSKEY', 'DNAME', 'DS',
-                     'HINFO', 'KEY', 'LOC', 'MX', 'NAPTR', 'NS', 'NSEC', 'NSEC3', 'NSEC3PARAM', 'OPENPGPKEY', 'PTR',
-                     'RP', 'RRSIG', 'SOA', 'SPF', 'SSHFP', 'SRV', 'TKEY', 'TSIG', 'TLSA', 'SMIMEA', 'TXT', 'URI']
-    ALLOWED_TYPES = ['A', 'AAAA', 'AFSDB', 'CAA', 'CERT', 'CDNSKEY', 'CDS', 'CNAME', 'DS', 'HINFO', 'KEY', 'LOC', 'MX',
-                     'NAPTR', 'NS', 'NSEC', 'NSEC3', 'OPENPGPKEY', 'PTR', 'RP', 'SPF', 'SSHFP', 'SRV', 'TKEY', 'TSIG',
-                     'TLSA', 'SMIMEA', 'TXT', 'URI']
+    UNSUPPORTED_TYPES = RR_SET_TYPES_UNSUPPORTED
+    AUTOMATIC_TYPES = RR_SET_TYPES_AUTOMATIC
+    ALLOWED_TYPES = RR_SET_TYPES_MANAGEABLE
 
     SUBNAMES = ['foo', 'bar.baz', 'q.w.e.r.t', '*', '*.foobar', '_', '-foo.test', '_bar']
 

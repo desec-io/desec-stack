@@ -7,7 +7,6 @@ from django.db.transaction import atomic
 from django.utils import timezone
 
 from desecapi import metrics
-from desecapi.exceptions import PDNSValidationError
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id, \
     construct_catalog_rrset
@@ -262,9 +261,6 @@ class PDNSChangeTracker:
                 change.api_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
-            except PDNSValidationError as e:
-                self.transaction.__exit__(type(e), e, e.__traceback__)
-                raise e
             except Exception as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
                 exc = ValueError(f'For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}')

@@ -2,7 +2,7 @@ from django.core.management import BaseCommand, CommandError
 from django.db import transaction
 
 from desecapi import pdns
-from desecapi.models import Domain, RRset, RR
+from desecapi.models import Domain, RRset, RR, RR_SET_TYPES_AUTOMATIC
 
 
 class Command(BaseCommand):
@@ -40,7 +40,7 @@ class Command(BaseCommand):
         rrsets = []
         rrs = []
         for rrset_data in pdns.get_rrset_datas(domain):
-            if rrset_data['type'] in RRset.RESTRICTED_TYPES:
+            if rrset_data['type'] in RR_SET_TYPES_AUTOMATIC:
                 continue
             records = rrset_data.pop('records')
             rrset = RRset(**rrset_data)

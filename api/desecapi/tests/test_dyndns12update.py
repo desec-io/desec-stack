@@ -130,10 +130,9 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             'hostname': self.my_domain.name,
             'myip': '10.2.3.4asdf',
         }
-        with self.assertPdnsRequests(self.request_pdns_zone_update_invalid_rr()):
-            response = self.client.get(self.reverse('v1:dyndns12update'), params)
+        response = self.client.get(self.reverse('v1:dyndns12update'), params)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Mocked error. Considering RR content invalid.', str(response.data))
+        self.assertIn('Record content malformed', str(response.data))
 
     def test_ddclient_dyndns2_v6_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338

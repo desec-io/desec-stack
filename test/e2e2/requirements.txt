@@ -1,2 +1,4 @@
 pytest
+pytest-xdist
 requests
+dnspython

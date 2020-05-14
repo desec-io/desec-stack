@@ -200,7 +200,7 @@ class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, 
 
             if value is not None:
                 # TODO consider moving this
-                if filter_field == 'type' and value in models.RRset.RESTRICTED_TYPES:
+                if filter_field == 'type' and value in models.RR_SET_TYPES_AUTOMATIC:
                     raise PermissionDenied("You cannot tinker with the %s RRset." % value)
 
                 rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})

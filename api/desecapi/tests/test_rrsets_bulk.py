@@ -136,8 +136,8 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
                 {},
                 {'ttl': ['This field is required.']},
                 {'records': ['This field is required.']},
-                {'type': ['You cannot tinker with the SOA RRset.']},
-                {'type': ['You cannot tinker with the OPT RRset.']},
+                {'type': ['You cannot tinker with the SOA RR set. It is managed automatically.']},
+                {'type': ['You cannot tinker with the OPT RR set. It is managed automatically.']},
                 {'type': ['Generic type format is not supported.']},
             ]
         )
