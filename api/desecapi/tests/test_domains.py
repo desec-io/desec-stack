@@ -330,7 +330,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         psl_cm = self.get_psl_context_manager(UnsupportedRule)
         with psl_cm, self.assertPdnsRequests():
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-            self.assertStatus(response, status.HTTP_503_SERVICE_UNAVAILABLE)
+            self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def test_create_domain_policy(self):
         for name in ['1.2.3..4.test.dedyn.io', 'test..de', '*.' + self.random_domain_name(), 'a' * 64 + '.bla.test']:
