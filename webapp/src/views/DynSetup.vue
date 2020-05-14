@@ -167,10 +167,9 @@
 
 <script>
   import axios from 'axios';
-  import {LOCAL_PUBLIC_SUFFIXES} from '../env';
 
   const HTTP = axios.create({
-    baseURL: '/api/v1/',
+    baseURL: process.env.VUE_APP_API_BASE_URL,
     headers: {
     },
   });
@@ -183,7 +182,7 @@
       errors: [],
       ips: undefined,
       token: undefined,
-      LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+      LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(','),
       lastChanged: undefined,
     }),
     async mounted() {

@@ -212,7 +212,7 @@ services:
     - ./webapp/:/usr/src/app/
     - webapp_dist:/usr/src/app/dist
     working_dir: /usr/src/app/
-    command: bash -c "cat src/env.js.template | envsubst > src/env.js && npm install && npm run build -- --no-clean"
+    command: bash -c "cat .env.example | envsubst > .env && npm install && npm run build -- --no-clean"
     logging:
       driver: "syslog"
       options:

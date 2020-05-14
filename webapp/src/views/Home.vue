@@ -160,7 +160,6 @@
 
 <script>
 import {email_pattern} from "../validation";
-import {EMAIL} from '../env';
 
 export default {
   name: 'home',
@@ -177,7 +176,7 @@ export default {
     this.domainType = this.$route.query.domainType || 'none';
   },
     data: () => ({
-    contact_email: EMAIL,
+    contact_email: process.env.VUE_APP_EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
     contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
     domainType: null,

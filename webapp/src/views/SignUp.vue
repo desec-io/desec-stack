@@ -157,11 +157,10 @@
 
 <script>
   import axios from 'axios';
-  import {LOCAL_PUBLIC_SUFFIXES} from '../env';
   import {domain_pattern, email_pattern} from '../validation';
 
   const HTTP = axios.create({
-    baseURL: '/api/v1/',
+    baseURL: process.env.VUE_APP_API_BASE_URL,
     headers: {
     },
   });
@@ -174,7 +173,7 @@
       captchaWorking: true,
       errors: [],
       captcha: null,
-      LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+      LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(','),
 
       /* email field */
       email: '',
@@ -194,7 +193,7 @@
       domain: '',
       domainType: null,
       domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Domain names can only contain letters, numbers, underscores (_), dots (.), and dashes (-), and must end with a top-level domain.'],
-      dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, underscores (_), and dashes (-).'],
+      dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + this.LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, underscores (_), and dashes (-).'],
       domain_errors: [],
     }),
     async mounted() {

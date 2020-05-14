@@ -1,13 +1,12 @@
 <script>
   import GenericActionHandler from "./GenericActionHandler"
-  import {LOCAL_PUBLIC_SUFFIXES} from '../env';
 
   export default {
     name: 'ActivateAccountActionHandler',
     extends: GenericActionHandler,
     data: () => ({
       auto_submit: true,
-      LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+      LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(','),
     }),
     watch: {
       success(value) {

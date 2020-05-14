@@ -21,12 +21,12 @@
     </v-alert>
     <v-form v-if="!done" @submit.prevent="donate" ref="form">
       <v-alert :value="!!(errors && errors.length)" type="error">
-        <div v-if="errors.length > 1">
+        <ul v-if="errors.length > 1">
           <li v-for="error of errors" :key="error.message" >
             <b>{{ error.message }}</b>
             {{ error }}
           </li>
-        </div>
+        </ul>
         <div v-else>
           {{ errors[0] }}
         </div>
@@ -101,10 +101,9 @@
 <script>
   import axios from 'axios';
   import {email_pattern} from '../validation';
-  import {DESECSTACK_API_SEPA_CREDITOR_ID, DESECSTACK_API_SEPA_CREDITOR_NAME} from "../env";
 
   const HTTP = axios.create({
-    baseURL: '/api/v1/',
+    baseURL: process.env.VUE_APP_API_BASE_URL,
     headers: {
     },
   });
@@ -118,8 +117,8 @@
       errors: [],
 
       /* from env */
-      creditorid: DESECSTACK_API_SEPA_CREDITOR_ID,
-      creditorname: DESECSTACK_API_SEPA_CREDITOR_NAME,
+      creditorid: process.env.VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID,
+      creditorname: process.env.VUE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME,
 
       /* account holder name field */
       name: '',
