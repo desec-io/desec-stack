@@ -151,7 +151,7 @@ export default {
             }
           } else {
             // 5xx
-            this.errors = ['Something went wrong at the server, but we currently do not know why. The customer support was already notified.'];
+            this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
           }
         } else if (error.request) {
           this.errors = ['Cannot contact our servers. Are you offline?'];
@@ -172,7 +172,7 @@ export default {
         if (error.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
-          this.reset_errors = ['Something went wrong at the server, but we currently do not know why. The customer support was already notified.'];
+          this.reset_errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
         } else if (error.request) {
           this.reset_errors = ['Cannot contact our servers. Are you offline?'];
         } else {

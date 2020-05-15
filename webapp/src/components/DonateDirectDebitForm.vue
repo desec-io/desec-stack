@@ -191,7 +191,7 @@
               }
             } else {
               // 5xx
-              this.errors = ['Something went wrong at the server, but we currently do not know why. The customer support was already notified.'];
+              this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
             }
           } else if (error.request) {
             this.errors = ['Cannot contact our servers. Are you offline?'];
