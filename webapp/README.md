@@ -1,4 +1,4 @@
-# deSEC Frontend
+# deSEC Webapp
 
 This folder contains the vuejs code for the desec.io domain management frontend.
 
