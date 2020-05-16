@@ -1,6 +1,7 @@
 FROM python:3.8-buster
 
 RUN apt-get update && apt-get install -y \
+        # updating this list may require updating /README.md
 		gcc \
 		gettext \
 		default-mysql-client default-libmysqlclient-dev \
