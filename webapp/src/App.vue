@@ -171,6 +171,11 @@ export default {
         'icon': 'mdi-book-open-page-variant',
         'text': 'API Reference',
       },
+      'roadmap': {
+        'name': 'roadmap',
+        'icon': 'mdi-road-variant',
+        'text': 'Roadmap',
+      },
       'talk': {
         'name': 'talk',
         'icon': 'mdi-forum-outline',

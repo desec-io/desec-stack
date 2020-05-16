@@ -75,6 +75,11 @@ const routes = [
     component: () => import('../views/Donate.vue')
   },
   {
+    path: '//github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc',
+    name: 'roadmap',
+    beforeEnter(to) { location.href = to.path },
+  },
+  {
     path: '/impressum/',
     name: 'impressum',
     component: () => import('../views/Impressum.vue')
