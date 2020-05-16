@@ -195,8 +195,11 @@ While there are certainly many ways to get started hacking desec-stack, here is 
            --config-dir certbot/config --logs-dir certbot/logs --work-dir certbot/work \
            --manual --text --preferred-challenges dns \
            --manual-auth-hook ~/bin/desec_certbot_hook.sh \
+           --manual-cleanup-hook ~/bin/desec_certbot_hook.sh \
            --server https://acme-v02.api.letsencrypt.org/directory \
-           -d "*.${DOMAIN}" certonly
+           -d "*.${DOMAIN}" -d "update.dedyn.${DOMAIN}" -d "update4.dedyn.$DOMAIN" -d "update6.dedyn.$DOMAIN" \
+           -d "checkip.dedyn.${DOMAIN}" -d "checkipv4.dedyn.${DOMAIN}" -d "checkipv6.dedyn.${DOMAIN}" \
+           certonly
 
     Note that the definition of config, logs and work dir are only necessary if you do not want to run certbot as root.
     Verifying the DNS challenge takes a while, so allow this command to take a couple of minutes.
@@ -255,7 +258,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     To issue a certificate for the OpenVPN server, generate a new key pair, a signing request, and sign the certificate.
 
          ./easyrsa gen-req server nopass
-         ./easyrsa sign-req client server  # requires interaction
+         ./easyrsa sign-req server server  # requires interaction
 
     Make the key and certificate available to OpenVPN server:
 
