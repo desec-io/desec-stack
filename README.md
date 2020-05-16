@@ -130,15 +130,15 @@ Development: Getting Started Guide
 As desec-stack utilizes a number of different technologies and software packages, it requires some effort to setup a stack ready for development.
 While there are certainly many ways to get started hacking desec-stack, here is one way to do it.
 
-1. **Requirements.** This guide is intended and tested on Ubuntu 18.04.
+1. **Requirements.** This guide is intended and tested on Ubuntu 20.20.
     However, many other Linux distributions will also do fine.
     For desec-stack, [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) are required.
     Further tools that are required to start hacking are git and curl.
     Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
-    jq, httpie, libmariadbclient-dev, python3-dev (>= 3.7) and python3-venv (>= 3.7) are useful if you want to follow this guide.
+    jq, httpie, libmariadbclient-dev, python3-dev (>= 3.8) and python3-venv (>= 3.8) are useful if you want to follow this guide.
     The webapp requires nodejs. To install everything you need for this guide except docker and docker-compose, use
 
-       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs python3.7-dev python3.7-venv libmemcached-dev
+       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs python3-dev python3-venv libmemcached-dev
 
 1. **Get the code.** Clone this repository to your favorite location.
 
@@ -312,7 +312,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
         In the project root,
 
            cd api
-           python3.7 -m venv venv
+           python3 -m venv venv
            source venv/bin/activate
            pip install wheel
            pip install -r requirements.txt
