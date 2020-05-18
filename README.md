@@ -138,7 +138,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     jq, httpie, libmariadbclient-dev, python3-dev (>= 3.8) and python3-venv (>= 3.8) are useful if you want to follow this guide.
     The webapp requires nodejs. To install everything you need for this guide except docker and docker-compose, use
 
-       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs python3-dev python3-venv libmemcached-dev
+       sudo apt install certbot curl git httpie jq libmariadbclient-dev nodejs npm python3-dev python3-venv libmemcached-dev
 
 1. **Get the code.** Clone this repository to your favorite location.
 
