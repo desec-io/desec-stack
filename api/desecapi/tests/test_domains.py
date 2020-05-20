@@ -101,20 +101,31 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.assertRegistrable('b.a.public.suffix', user_a)
 
     def test_cant_register_ancestors_of_registered_domains(self):
+        user_a = self.create_user()
+        user_b = self.create_user()
+
         with self.mock(
             global_public_suffixes={'public.suffix'},
             local_public_suffixes={'public.suffix'},
         ):
             # let A own c.b.a.public.suffix
-            user_a = self.create_user()
             self.assertRegistrable('c.b.a.public.suffix', user_a)
             self.create_domain(owner=user_a, name='c.b.a.public.suffix')
+
             # user B shall not register b.a.public.suffix or a.public.suffix, but A may
-            user_b = self.create_user()
             self.assertNotRegistrable('b.a.public.suffix', user_b)
             self.assertNotRegistrable('a.public.suffix', user_b)
             self.assertRegistrable('b.a.public.suffix', user_a)
             self.assertRegistrable('a.public.suffix', user_a)
+
+            # let A own _acme-challenge.foobar.public.suffix
+            self.assertRegistrable('_acme-challenge.foobar.public.suffix', user_a)
+            self.create_domain(owner=user_a, name='_acme-challenge.foobar.public.suffix')
+
+            # user B shall not register foobar.public.suffix, but A may
+            user_b = self.create_user()
+            self.assertNotRegistrable('foobar.public.suffix', user_b)
+            self.assertRegistrable('foobar.public.suffix', user_a)
 
     def test_can_register_public_suffixes_under_private_domains(self):
         with self.mock(
@@ -164,20 +175,21 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             'ORG',
             '--BLAH.example.com',
             '_ASDF.jp',
-            '_example.com', '_.example.com',
-            '-dedyn.io', '--dedyn.io', '-.dedyn123.io',
-            'exam_ple.com',
             'too.long.x012345678901234567890123456789012345678901234567890123456789012.com',
-            '-foobar.example.com',
-            '_foobar.example.com',
-            'hyphen-.example.com',
         ]:
             with self.assertRaises(ValidationError):
                 Domain(owner=self.owner, name=name).save()
+
         for name in [
             'org',
             'foobar.io',
             'hyphens--------------------hyphens-hyphens.com',
+            '_example.com', '_.example.com',
+            'exam_ple.com',
+            '-dedyn.io', '--dedyn.io', '-.dedyn123.io',
+            '_foobar.example.com',
+            '-foobar.example.com',
+            'hyphen-.example.com',
             'max.length.x01234567890123456789012345678901234567890123456789012345678901.com',
         ]:
             with self.assertPdnsRequests(

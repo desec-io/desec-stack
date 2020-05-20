@@ -196,10 +196,9 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
 validate_domain_name = [
     validate_lower,
     RegexValidator(
-        # TODO See how far this validation can be relaxed (allow for non-hostname domains?)
-        regex=r'^(([a-z0-9][a-z0-9-]{0,61}[a-z0-9]|[a-z0-9])\.)*[a-z]{1,63}$',
-        message='Domain names must be labels separated by dots. Labels may consist of up to 63 hyphens, digits, and '
-                'letters, and must not start or end with a hyphen. The last label may only contain letters.',
+        regex=r'^(([a-z0-9_-]{1,63})\.)*[a-z]{1,63}$',
+        message='Domain names must be labels separated by dots. Labels may consist of up to 63 letters, digits, '
+                'hyphens, and underscores. The last label may only contain letters.',
         code='invalid_domain_name',
         flags=re.IGNORECASE
     )
