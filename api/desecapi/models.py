@@ -8,6 +8,7 @@ import string
 import time
 import uuid
 from datetime import timedelta
+from functools import cached_property
 from hashlib import sha256
 
 import psl_dns
@@ -219,21 +220,8 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
     _keys = None
 
-    def is_registrable(self):
-        """
-        Returns False in any of the following cases:
-        (a) the domain name is under .internal,
-        (b) the domain_name appears on the public suffix list,
-        (c) the domain is descendant to a zone that belongs to any user different from the given one,
-            unless it's parent is a public suffix, either through the Internet PSL or local settings.
-        Otherwise, True is returned.
-        """
-        if self.name != self.name.lower():
-            raise ValueError
-
-        if f'.{self.name}'.endswith('.internal'):
-            return False
-
+    @cached_property
+    def public_suffix(self):
         try:
             public_suffix = psl.get_public_suffix(self.name)
             is_public_suffix = psl.is_public_suffix(self.name)
@@ -248,34 +236,59 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             # and makes sure admins are notified.
             raise e
 
-        if not is_public_suffix:
-            # Take into account that any of the parent domains could be a local public suffix. To that
-            # end, identify the longest local public suffix that is actually a suffix of domain_name.
-            # Then, override the global PSL result.
-            for local_public_suffix in settings.LOCAL_PUBLIC_SUFFIXES:
-                has_local_public_suffix_parent = ('.' + self.name).endswith('.' + local_public_suffix)
-                if has_local_public_suffix_parent and len(local_public_suffix) > len(public_suffix):
-                    public_suffix = local_public_suffix
-                    is_public_suffix = (public_suffix == self.name)
+        if is_public_suffix:
+            return public_suffix
 
-        if is_public_suffix and self.name not in settings.LOCAL_PUBLIC_SUFFIXES:
-            return False
+        # Take into account that any of the parent domains could be a local public suffix. To that
+        # end, identify the longest local public suffix that is actually a suffix of domain_name.
+        for local_public_suffix in settings.LOCAL_PUBLIC_SUFFIXES:
+            has_local_public_suffix_parent = ('.' + self.name).endswith('.' + local_public_suffix)
+            if has_local_public_suffix_parent and len(local_public_suffix) > len(public_suffix):
+                public_suffix = local_public_suffix
 
+        return public_suffix
+
+    def is_covered_by_foreign_zone(self):
         # Generate a list of all domains connecting this one and its public suffix.
         # If another user owns a zone with one of these names, then the requested
         # domain is unavailable because it is part of the other user's zone.
-        private_components = self.name.rsplit(public_suffix, 1)[0].rstrip('.')
+        private_components = self.name.rsplit(self.public_suffix, 1)[0].rstrip('.')
         private_components = private_components.split('.') if private_components else []
-        private_components += [public_suffix]
-        private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components) - 1)]
-        assert is_public_suffix or self.name == private_domains[0]
+        private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components))]
+        private_domains = [f'{private_domain}.{self.public_suffix}' for private_domain in private_domains]
+        assert self.name == next(iter(private_domains), self.public_suffix)
 
-        # Deny registration for non-local public suffixes and for domains covered by other users' zones
+        # Determine whether domain is covered by other users' zones
         try:
             owner = self.owner
         except Domain.owner.RelatedObjectDoesNotExist:
             owner = None
-        return not Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner)).exists()
+        return Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner)).exists()
+
+    def is_registrable(self):
+        """
+        Returns False in any of the following cases:
+        (a) the domain name is under .internal,
+        (b) the domain_name appears on the public suffix list,
+        (c) the domain is descendant to a zone that belongs to any user different from the given one,
+            unless it's parent is a public suffix, either through the Internet PSL or local settings.
+        Otherwise, True is returned.
+        """
+        self.clean()  # ensure .name is a domain name
+
+        # .internal is reserved
+        if f'.{self.name}'.endswith('.internal'):
+            return False
+
+        # Public suffixes can only be registered if they are local
+        if self.name == self.public_suffix and self.name not in settings.LOCAL_PUBLIC_SUFFIXES:
+            return False
+
+        # Domains covered by another user's zone can't be registered
+        if self.is_covered_by_foreign_zone():
+            return False
+
+        return True
 
     @property
     def keys(self):
