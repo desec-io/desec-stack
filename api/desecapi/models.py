@@ -259,19 +259,17 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
         assert self.name == next(iter(private_domains), self.public_suffix)
 
         # Determine whether domain is covered by other users' zones
-        try:
-            owner = self.owner
-        except Domain.owner.RelatedObjectDoesNotExist:
-            owner = None
-        return Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner)).exists()
+        return Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=self._owner_or_none)).exists()
+
+    def covers_foreign_zone(self):
+        # Note: This is not completely accurate: Ideally, we should only consider zones with identical public suffix.
+        # (If a public suffix lies in between, it's ok.) However, as there could be many descendant zones, the accurate
+        # check is expensive, so currently not implemented (PSL lookups for each of them).
+        return Domain.objects.filter(Q(name__endswith=f'.{self.name}') & ~Q(owner=self._owner_or_none)).exists()
 
     def is_registrable(self):
         """
-        Returns False in any of the following cases:
-        (a) the domain name is under .internal,
-        (b) the domain_name appears on the public suffix list,
-        (c) the domain is descendant to a zone that belongs to any user different from the given one,
-            unless it's parent is a public suffix, either through the Internet PSL or local settings.
+        Returns False if the domain name is reserved, a public suffix, or covered by / covers another user's domain.
         Otherwise, True is returned.
         """
         self.clean()  # ensure .name is a domain name
@@ -286,6 +284,10 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
         # Domains covered by another user's zone can't be registered
         if self.is_covered_by_foreign_zone():
+            return False
+
+        # Domains that would cover another user's zone can't be registered
+        if self.covers_foreign_zone():
             return False
 
         return True
@@ -309,6 +311,13 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     @property
     def is_locally_registrable(self):
         return self.parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
+
+    @property
+    def _owner_or_none(self):
+        try:
+            return self.owner
+        except Domain.owner.RelatedObjectDoesNotExist:
+            return None
 
     @property
     def parent_domain_name(self):

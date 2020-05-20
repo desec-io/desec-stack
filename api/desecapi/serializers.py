@@ -541,7 +541,7 @@ class DomainSerializer(serializers.ModelSerializer):
         user = user if not isinstance(user, AnonymousUser) else None
         if not models.Domain(name=domain_name, owner=user).is_registrable():
             raise serializers.ValidationError(
-                'This domain name is unavailable because it is already taken, or disallowed by policy.',
+                'This domain name conflicts with an existing zone, or is disallowed by policy.',
                 code='name_unavailable'
             )
 

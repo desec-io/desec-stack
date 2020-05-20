@@ -60,6 +60,10 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.assertRegistrable('something.else')
 
     def test_can_register_local_public_suffix(self):
+        # Avoid side effects from existing domains (such as dedyn.io.example.com being covered by the .com test below)
+        # Existing domains depend on environment variables. We may want to make the tests "stand-alone" at some point.
+        Domain.objects.filter(name__in=self.AUTO_DELEGATION_DOMAINS).delete()
+
         local_public_suffixes = ['something.else', 'our.public.suffix', 'com', 'com.uk']
         with self.mock(
             global_public_suffixes=['com', 'de', 'xxx', 'com.uk'],
@@ -82,6 +86,22 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             user_b = self.create_user()
             self.assertNotRegistrable('b.a.public.suffix', user_b)
             self.assertRegistrable('b.a.public.suffix', user_a)
+
+    def test_cant_register_ancestors_of_registered_domains(self):
+        with self.mock(
+            global_public_suffixes={'public.suffix'},
+            local_public_suffixes={'public.suffix'},
+        ):
+            # let A own c.b.a.public.suffix
+            user_a = self.create_user()
+            self.assertRegistrable('c.b.a.public.suffix', user_a)
+            self.create_domain(owner=user_a, name='c.b.a.public.suffix')
+            # user B shall not register b.a.public.suffix or a.public.suffix, but A may
+            user_b = self.create_user()
+            self.assertNotRegistrable('b.a.public.suffix', user_b)
+            self.assertNotRegistrable('a.public.suffix', user_b)
+            self.assertRegistrable('b.a.public.suffix', user_a)
+            self.assertRegistrable('a.public.suffix', user_a)
 
     def test_can_register_public_suffixes_under_private_domains(self):
         with self.mock(
