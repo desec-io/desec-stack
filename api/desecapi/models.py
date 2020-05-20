@@ -13,7 +13,7 @@ import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, AnonymousUser
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import RegexValidator
@@ -218,8 +218,7 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
     _keys = None
 
-    @classmethod
-    def is_registrable(cls, domain_name: str, user: User):
+    def is_registrable(self):
         """
         Returns False in any of the following cases:
         (a) the domain name is under .internal,
@@ -228,18 +227,18 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             unless it's parent is a public suffix, either through the Internet PSL or local settings.
         Otherwise, True is returned.
         """
-        if domain_name != domain_name.lower():
+        if self.name != self.name.lower():
             raise ValueError
 
-        if f'.{domain_name}'.endswith('.internal'):
+        if f'.{self.name}'.endswith('.internal'):
             return False
 
         try:
-            public_suffix = psl.get_public_suffix(domain_name)
-            is_public_suffix = psl.is_public_suffix(domain_name)
+            public_suffix = psl.get_public_suffix(self.name)
+            is_public_suffix = psl.is_public_suffix(self.name)
         except (Timeout, NoNameservers):
-            public_suffix = domain_name.rpartition('.')[2]
-            is_public_suffix = ('.' not in domain_name)  # TLDs are public suffixes
+            public_suffix = self.name.rpartition('.')[2]
+            is_public_suffix = ('.' not in self.name)  # TLDs are public suffixes
         except psl_dns.exceptions.UnsupportedRule as e:
             # It would probably be fine to treat this as a non-public suffix (with the TLD acting as the
             # public suffix and setting both public_suffix and is_public_suffix accordingly).
@@ -253,26 +252,29 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             # end, identify the longest local public suffix that is actually a suffix of domain_name.
             # Then, override the global PSL result.
             for local_public_suffix in settings.LOCAL_PUBLIC_SUFFIXES:
-                has_local_public_suffix_parent = ('.' + domain_name).endswith('.' + local_public_suffix)
+                has_local_public_suffix_parent = ('.' + self.name).endswith('.' + local_public_suffix)
                 if has_local_public_suffix_parent and len(local_public_suffix) > len(public_suffix):
                     public_suffix = local_public_suffix
-                    is_public_suffix = (public_suffix == domain_name)
+                    is_public_suffix = (public_suffix == self.name)
 
-        if is_public_suffix and domain_name not in settings.LOCAL_PUBLIC_SUFFIXES:
+        if is_public_suffix and self.name not in settings.LOCAL_PUBLIC_SUFFIXES:
             return False
 
         # Generate a list of all domains connecting this one and its public suffix.
         # If another user owns a zone with one of these names, then the requested
         # domain is unavailable because it is part of the other user's zone.
-        private_components = domain_name.rsplit(public_suffix, 1)[0].rstrip('.')
+        private_components = self.name.rsplit(public_suffix, 1)[0].rstrip('.')
         private_components = private_components.split('.') if private_components else []
         private_components += [public_suffix]
         private_domains = ['.'.join(private_components[i:]) for i in range(0, len(private_components) - 1)]
-        assert is_public_suffix or domain_name == private_domains[0]
+        assert is_public_suffix or self.name == private_domains[0]
 
         # Deny registration for non-local public suffixes and for domains covered by other users' zones
-        user = user if not isinstance(user, AnonymousUser) else None
-        return not cls.objects.filter(Q(name__in=private_domains) & ~Q(owner=user)).exists()
+        try:
+            owner = self.owner
+        except Domain.owner.RelatedObjectDoesNotExist:
+            owner = None
+        return not Domain.objects.filter(Q(name__in=private_domains) & ~Q(owner=owner)).exists()
 
     @property
     def keys(self):

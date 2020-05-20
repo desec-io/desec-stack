@@ -4,6 +4,7 @@ import re
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 
 from captcha.image import ImageCaptcha
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, OperationalError
@@ -537,7 +538,8 @@ class DomainSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def raise_if_domain_unavailable(domain_name: str, user: models.User):
-        if not models.Domain.is_registrable(domain_name, user):
+        user = user if not isinstance(user, AnonymousUser) else None
+        if not models.Domain(name=domain_name, owner=user).is_registrable():
             raise serializers.ValidationError(
                 'This domain name is unavailable because it is already taken, or disallowed by policy.',
                 code='name_unavailable'
