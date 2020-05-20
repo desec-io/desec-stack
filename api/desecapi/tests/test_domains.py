@@ -54,19 +54,19 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             global_public_suffixes=['com', 'de', 'xxx', 'com.uk'],
             local_public_suffixes=['something.else'],
         ):
+            self.assertNotRegistrable('tld')
             self.assertNotRegistrable('xxx')
             self.assertNotRegistrable('com.uk')
             self.assertRegistrable('something.else')
 
     def test_can_register_local_public_suffix(self):
+        local_public_suffixes = ['something.else', 'our.public.suffix', 'com', 'com.uk']
         with self.mock(
             global_public_suffixes=['com', 'de', 'xxx', 'com.uk'],
-            local_public_suffixes=['something.else', 'our.public.suffix', 'com', 'com.uk'],
+            local_public_suffixes=local_public_suffixes,
         ):
-            self.assertRegistrable('something.else')
-            self.assertRegistrable('out.public.suffix')
-            self.assertRegistrable('com')
-            self.assertRegistrable('com.uk')
+            for local_public_suffix in local_public_suffixes:
+                self.assertRegistrable(local_public_suffix)
             self.assertRegistrable('foo.bar.com')
 
     def test_cant_register_descendants_of_children_of_public_suffixes(self):
