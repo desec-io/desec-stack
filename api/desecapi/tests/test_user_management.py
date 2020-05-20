@@ -261,7 +261,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertRegistrationFailureDomainInvalidResponse(self, response, domain):
         self.assertContains(
             response=response,
-            text="Domain names must be labels separated dots. Labels",
+            text="Domain names must be labels separated by dots. Labels",
             status_code=status.HTTP_400_BAD_REQUEST,
             msg_prefix=str(response.data)
         )

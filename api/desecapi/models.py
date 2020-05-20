@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import secrets
 import string
 import time
@@ -194,12 +195,12 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
 validate_domain_name = [
     validate_lower,
     RegexValidator(
-        # TODO See how far this validation can be relaxed
+        # TODO See how far this validation can be relaxed (allow for non-hostname domains?)
         regex=r'^(([a-z0-9][a-z0-9-]{0,61}[a-z0-9]|[a-z0-9])\.)*[a-z]{1,63}$',
-        message='Domain names must be labels separated dots. Labels may only use hyphens, digits, and lowercase '
-                'letters, must not start or end with a hyphen, and must not exceed 63 byte. The last label may only '
-                'have lowercase letters.',
-        code='invalid_domain_name'
+        message='Domain names must be labels separated by dots. Labels may consist of up to 63 hyphens, digits, and '
+                'letters, and must not start or end with a hyphen. The last label may only contain letters.',
+        code='invalid_domain_name',
+        flags=re.IGNORECASE
     )
 ]
 

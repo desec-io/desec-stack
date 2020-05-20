@@ -250,7 +250,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         ]:
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertTrue("Domain names must be labels separated dots. Labels" in response.data['name'][0])
+            self.assertTrue("Domain names must be labels separated by dots. Labels" in response.data['name'][0])
 
     def test_create_public_suffixes(self):
         for name in self.PUBLIC_SUFFIXES:
@@ -290,7 +290,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         for name in ['1.2.3..4.test.dedyn.io', 'test..de', '*.' + self.random_domain_name(), 'a' * 64 + '.bla.test']:
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertTrue("Domain names must be labels separated dots. Labels" in response.data['name'][0])
+            self.assertTrue("Domain names must be labels separated by dots. Labels" in response.data['name'][0])
 
     def test_create_domain_other_parent(self):
         name = 'something.' + self.other_domain.name
@@ -332,6 +332,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             'backslash\\inthemiddle.at',
             '@atsign.com',
             'at@sign.com',
+            'UPPER.case',
+            'case.UPPER',
         ]:
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
