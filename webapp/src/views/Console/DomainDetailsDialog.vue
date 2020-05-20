@@ -107,7 +107,6 @@
 </template>
 
 <script>
-import { DESECSTACK_NS, LOCAL_PUBLIC_SUFFIXES } from '@/env';
 import { timeAgo } from '@/utils';
 
 export default {
@@ -127,7 +126,7 @@ export default {
     },
     ns: {
       type: Array,
-      default: () => DESECSTACK_NS.split(' '),
+      default: () => process.env.VUE_APP_DESECSTACK_NS.split(' '),
     },
     ips: {
       type: Array,
@@ -144,7 +143,7 @@ export default {
   },
   data: () => ({
     copied: '',
-    LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+    LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
     timeAgo: timeAgo,
   }),
   methods: {

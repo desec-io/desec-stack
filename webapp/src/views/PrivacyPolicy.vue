@@ -93,11 +93,10 @@
 </template>
 
 <script>
-  import {EMAIL} from '../env';
   export default {
     name: 'Impressum',
     data: () => ({
-      email: EMAIL,
+      email: process.env.VUE_APP_EMAIL,
       privacy_policy: [
         {
           title: 'Visiting this Website',
