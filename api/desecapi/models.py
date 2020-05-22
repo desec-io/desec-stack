@@ -273,13 +273,20 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
         Otherwise, True is returned.
         """
         self.clean()  # ensure .name is a domain name
+        private_generation = self.name.count('.') - self.public_suffix.count('.')
+        assert private_generation >= 0
 
         # .internal is reserved
         if f'.{self.name}'.endswith('.internal'):
             return False
 
         # Public suffixes can only be registered if they are local
-        if self.name == self.public_suffix and self.name not in settings.LOCAL_PUBLIC_SUFFIXES:
+        if private_generation == 0 and self.name not in settings.LOCAL_PUBLIC_SUFFIXES:
+            return False
+
+        # Disallow _acme-challenge.dedyn.io and the like. Rejects reserved direct children of public suffixes.
+        reserved_prefixes = ('_', 'autoconfig.', 'autodiscover.',)
+        if private_generation == 1 and any(self.name.startswith(prefix) for prefix in reserved_prefixes):
             return False
 
         # Domains covered by another user's zone can't be registered

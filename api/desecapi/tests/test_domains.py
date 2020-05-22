@@ -73,6 +73,19 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
                 self.assertRegistrable(local_public_suffix)
             self.assertRegistrable('foo.bar.com')
 
+    def test_cant_register_reserved_children_of_public_suffix(self):
+        global_public_suffixes = ['global.public.suffix']
+        local_public_suffixes = ['local.public.suffix']
+        reserved_labels = ['_acme-challenge', '_tcp', '_foobar', 'autodiscover', 'autoconfig']
+        with self.mock(
+            global_public_suffixes=global_public_suffixes,
+            local_public_suffixes=local_public_suffixes,
+        ):
+            for suffix in local_public_suffixes + global_public_suffixes:
+                for label in reserved_labels:
+                    self.assertNotRegistrable(f'{label}.{suffix}')
+                    self.assertRegistrable(f'{label}.sub.{suffix}')
+
     def test_cant_register_descendants_of_children_of_public_suffixes(self):
         with self.mock(
             global_public_suffixes={'public.suffix'},
