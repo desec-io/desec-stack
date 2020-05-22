@@ -6,7 +6,6 @@ import secrets
 import string
 import time
 import uuid
-from base64 import urlsafe_b64encode
 from datetime import timedelta
 from hashlib import sha256
 
@@ -380,7 +379,7 @@ class RRsetManager(Manager):
 class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
-    touched = models.DateTimeField(null=True)
+    touched = models.DateTimeField(auto_now=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
@@ -425,7 +424,6 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         return self.construct_name(self.subname, self.domain.name)
 
     def save(self, *args, **kwargs):
-        self.touched = timezone.now()
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 
