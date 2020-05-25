@@ -57,7 +57,7 @@ to set up IPv4 and IPv6 by using both update servers in an alternating fashion.
 To update both your IPv4 and IPv6 address at the same time, most routers need
 to be configured with an update URL that provides both IP addresses. For
 Fritz!Box devices, for example, the URL reads:
-``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>`` (Note that the
+``https://update.dedyn.io/?username=<domain>hostname=<domain>&password=<passwd>&myipv4=<ipaddr>&myipv6=<ip6addr>`` (Note that the
 placeholders in this URL must remain unchanged; your router will substitute
 them automatically. To find out the placeholder names for your router, please
 refer to the manual of your device.)
