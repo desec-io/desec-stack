@@ -17,6 +17,7 @@ WORKDIR /usr/src/app
 COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install -r requirements.txt && rm -rf /root/.cache/
+RUN pip freeze
 
 RUN mkdir /root/cronhook
 ADD ["cronhook/crontab", "cronhook/start-cron.sh", "/root/cronhook/"]

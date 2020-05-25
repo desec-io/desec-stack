@@ -157,8 +157,9 @@
 
 <script>
   import axios from 'axios';
-  import {LOCAL_PUBLIC_SUFFIXES} from '../env';
   import {domain_pattern, email_pattern} from '../validation';
+
+  const LOCAL_PUBLIC_SUFFIXES = process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

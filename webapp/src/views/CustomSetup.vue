@@ -98,14 +98,12 @@
 </template>
 
 <script>
-  import { DESECSTACK_NS } from '@/env';
-
   export default {
     name: 'CustomSetup',
     data: () => ({
       copied: '',
       dsList: [],
-      nsList: DESECSTACK_NS.split(' '),
+      nsList: process.env.VUE_APP_DESECSTACK_NS.split(' '),
     }),
     async mounted() {
       let keys = this.$route.params.keys;
