@@ -62,7 +62,7 @@ placeholders in this URL must remain unchanged; your router will substitute
 them automatically. To find out the placeholder names for your router, please
 refer to the manual of your device. Please remember that including login credentials
 directly in the URL like this will lead to credentials ending up in log files 
-(URLs are logged for a few days) - which is why HTTP Basic authentication is recommended.)
+(URLs are logged for a few days) - which is why :ref:`http-basic-authentication` is recommended.)
 
 Option 2: Use ddclient
 ``````````````````````
