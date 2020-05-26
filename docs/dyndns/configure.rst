@@ -60,7 +60,9 @@ Fritz!Box devices, for example, the URL reads:
 ``https://update.dedyn.io/?username=<domain>&hostname=<domain>&password=<passwd>&myipv4=<ipaddr>&myipv6=<ip6addr>`` (Note that the
 placeholders in this URL must remain unchanged; your router will substitute
 them automatically. To find out the placeholder names for your router, please
-refer to the manual of your device.)
+refer to the manual of your device. Please remember that including login credentials
+directly in the URL like this will lead to credentials ending up in log files 
+(URLs are logged for a few days) - which is why HTTP Basic authentication is recommended.)
 
 Option 2: Use ddclient
 ``````````````````````
