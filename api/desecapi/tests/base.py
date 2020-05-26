@@ -170,13 +170,15 @@ class AssertRequestsContextManager:
     def _find_matching_request(pattern, requests):
         for request in requests:
             if pattern['method'] == request[0] and pattern['uri'].match(request[1]):
+                if pattern.get('payload') and pattern['payload'] not in request[2]:
+                    continue
                 return request
         return None
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # organize seen requests in a primitive data structure
         seen_requests = [
-            (r.command, 'http://%s%s' % (r.headers['Host'], r.path)) for r in httpretty.latest_requests
+            (r.command, 'http://%s%s' % (r.headers['Host'], r.path), r.parsed_body) for r in httpretty.latest_requests
         ]
         httpretty.reset()
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
@@ -289,13 +291,14 @@ class MockPDNSTestCase(APITestCase):
             return [x.rstrip('.') + '.' for x in arg]
 
     @classmethod
-    def request_pdns_zone_create(cls, ns):
+    def request_pdns_zone_create(cls, ns, **kwargs):
         return {
             'method': 'POST',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
             'status': 201,
             'body': None,
             'match_querystring': True,
+            **kwargs
         }
 
     def request_pdns_zone_create_assert_name(self, ns, name):
@@ -766,8 +769,9 @@ class DesecTestCase(MockPDNSTestCase):
 
     @classmethod
     def requests_desec_domain_creation(cls, name=None):
+        soa_content = 'set.an.example. get.desec.io. 1 1209600 1209600 2419200 3600'
         return [
-            cls.request_pdns_zone_create(ns='LORD'),
+            cls.request_pdns_zone_create(ns='LORD', payload=soa_content),
             cls.request_pdns_zone_create(ns='MASTER'),
             cls.request_pdns_update_catalog(),
             cls.request_pdns_zone_axfr(name=name),
