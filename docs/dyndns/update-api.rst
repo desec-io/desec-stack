@@ -23,6 +23,8 @@ Authentication
 You can authenticate your client in several ways. If authentication fails, the
 API will return a ``401 Unauthorized`` status code.
 
+.. _http-basic-authentication:
+
 Preferred method: HTTP Basic Authentication (with token)
 --------------------------------------------------------
 Encode your username and token (provided during registration) in the
