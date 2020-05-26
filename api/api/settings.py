@@ -224,7 +224,7 @@ except ImportError:
 else:
     import prometheus_client
     prometheus_client.values.ValueClass = prometheus_client.values.MultiProcessValue(
-        _pidFunc=uwsgi.worker_id)
+        process_identifier=uwsgi.worker_id)
 
 if DEBUG and not EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'

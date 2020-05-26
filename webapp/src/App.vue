@@ -151,7 +151,6 @@
 </template>
 
 <script>
-import {EMAIL} from './env';
 import router from './router';
 import {logout} from './utils';
 
@@ -159,7 +158,7 @@ export default {
   name: 'App',
   data: () => ({
     drawer: false,
-    email: EMAIL,
+    email: process.env.VUE_APP_EMAIL,
     menu: {
       'home': {
         'name': 'home',

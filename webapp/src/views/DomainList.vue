@@ -1,5 +1,4 @@
 <script>
-import {LOCAL_PUBLIC_SUFFIXES} from '@/env';
 import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList';
 import DomainDetailsDialog from '@/views/Console/DomainDetailsDialog';
@@ -82,7 +81,7 @@ export default {
           let ds = d.keys.map(key => key.ds);
           ds = ds.concat.apply([], ds)
           this.extraComponentBind = {'name': d.name, 'ds': ds, 'published': d.published, 'is-new': isNew};
-          if (LOCAL_PUBLIC_SUFFIXES.some((suffix) => d.name.endsWith(`.${suffix}`))) {
+          if (process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ').some((suffix) => d.name.endsWith(`.${suffix}`))) {
             this.extraComponentBind['ips'] = [];
             await withWorking(this.error, async (o) => {
               let urlRRset = `${url}/rrsets/?subname=&type=`;
