@@ -211,6 +211,7 @@ services:
     - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME=${DESECSTACK_API_SEPA_CREDITOR_NAME}
     - VUE_APP_LOCAL_PUBLIC_SUFFIXES=dedyn.${DESECSTACK_DOMAIN}
     - VUE_APP_EMAIL=support@desec.${DESECSTACK_DOMAIN}
+    - VUE_APP_API_BASE_URL=/api/v1/
     volumes:
     - ./webapp/:/usr/src/app/
     - webapp_dist:/usr/src/app/dist

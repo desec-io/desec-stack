@@ -162,7 +162,7 @@
   const LOCAL_PUBLIC_SUFFIXES = process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
   const HTTP = axios.create({
-    baseURL: '/api/v1/',
+    baseURL: process.env.VUE_APP_API_BASE_URL,
     headers: {
     },
   });

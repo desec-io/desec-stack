@@ -1,34 +1,17 @@
-# webapp
+# deSEC Webapp
 
-## Project setup
-```
-npm install
-```
+This folder contains the Vue.js code for the desec.io domain management webapp.
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## Development
 
-### Compiles and minifies for production
-```
-npm run build
-```
+To get the frontend up and running locally, all you have to do is:
 
-### Run your unit tests
-```
-npm run test:unit
-```
-
-### Run your end-to-end tests
-```
-npm run test:e2e
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+1. Switch into the webapp folder: `cd webapp`
+2. Install the javascript libraries: `npm install`
+3. Create the file `.env`:
+   ```.env
+   VUE_APP_API_BASE_URL = "https://desec.io/api/v1/"
+   VUE_APP_LOCAL_PUBLIC_SUFFIXES = dedyn.,
+   ```
+4. **Optional**: To have hot reload work correctly, comment out line 6 in `vue.config.js`: `// public: '...`
+5. Run the dev server: `npm run serve`

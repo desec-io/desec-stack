@@ -4,7 +4,7 @@ import en from 'javascript-time-ago/locale/en';
 import store from './store';
 
 export const HTTP = axios.create({
-  baseURL: '/api/v1/',
+  baseURL: process.env.VUE_APP_API_BASE_URL,
   headers: {
   },
 });

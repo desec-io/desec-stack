@@ -103,7 +103,7 @@
   import {email_pattern} from '../validation';
 
   const HTTP = axios.create({
-    baseURL: '/api/v1/',
+    baseURL: process.env.VUE_APP_API_BASE_URL,
     headers: {
     },
   });
