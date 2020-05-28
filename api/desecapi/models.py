@@ -551,8 +551,6 @@ class AuthenticatedAction(ExportModelOperationsMixin('AuthenticatedAction'), mod
 
         :return: List of values to be signed.
         """
-        # TODO consider adding a "last change" attribute of the user to the state to avoid code
-        #  re-use after the the state has been changed and changed back.
         name = '.'.join([self.__module__, self.__class__.__qualname__])
         return [name]
 
@@ -591,10 +589,9 @@ class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserActio
 
     @property
     def _state_fields(self):
+        # TODO consider adding a "last change" attribute of the user to the state to avoid code
+        #  re-use after the the state has been changed and changed back.
         return super()._state_fields + [str(self.user.id), self.user.email, self.user.password, self.user.is_active]
-
-    def _act(self):
-        raise NotImplementedError
 
 
 class AuthenticatedActivateUserAction(ExportModelOperationsMixin('AuthenticatedActivateUserAction'), AuthenticatedUserAction):
