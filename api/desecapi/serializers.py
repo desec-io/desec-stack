@@ -758,3 +758,20 @@ class AuthenticatedDeleteUserActionSerializer(AuthenticatedBasicUserActionSerial
 
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedDeleteUserAction
+
+
+class AuthenticatedDomainBasicUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    domain = serializers.PrimaryKeyRelatedField(
+        queryset=models.Domain.objects.all(),
+        error_messages={'does_not_exist': 'This domain does not exist.'},
+    )
+
+    class Meta:
+        model = models.AuthenticatedDomainBasicUserAction
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('domain',)
+
+
+class AuthenticatedRenewDomainBasicUserActionSerializer(AuthenticatedDomainBasicUserActionSerializer):
+
+    class Meta(AuthenticatedDomainBasicUserActionSerializer.Meta):
+        model = models.AuthenticatedRenewDomainBasicUserAction

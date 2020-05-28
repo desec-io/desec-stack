@@ -210,6 +210,12 @@ def get_minimum_ttl_default():
 
 
 class Domain(ExportModelOperationsMixin('Domain'), models.Model):
+
+    class RenewalState(models.IntegerChoices):
+        FRESH = 1
+        NOTIFIED = 2
+        WARNED = 3
+
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=191,
                             unique=True,
@@ -217,6 +223,8 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
+    renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.FRESH)
+    renewal_changed = models.DateTimeField(auto_now_add=True)
     _keys = None
 
     @cached_property
@@ -652,6 +660,40 @@ class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
 
     def _act(self):
         self.user.delete()
+
+
+class AuthenticatedDomainBasicUserAction(AuthenticatedBasicUserAction):
+    """
+    Abstract AuthenticatedUserAction involving an domain instance, incorporating the domain's id, name as well as the
+    owner ID into the Message Authentication Code state.
+    """
+    domain = models.ForeignKey(Domain, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+
+    @property
+    def _state_fields(self):
+        return super()._state_fields + [
+            str(self.domain.id),  # ensures the domain object is identical
+            self.domain.name,  # exclude renamed domains
+            str(self.domain.owner.id),  # exclude transferred domains
+        ]
+
+
+class AuthenticatedRenewDomainBasicUserAction(AuthenticatedDomainBasicUserAction):
+
+    class Meta:
+        managed = False
+
+    @property
+    def _state_fields(self):
+        return super()._state_fields + [str(self.domain.renewal_changed)]
+
+    def _act(self):
+        self.domain.renewal_state = Domain.RenewalState.FRESH
+        self.domain.renewal_changed = timezone.now()
+        self.domain.save(update_fields=['renewal_state', 'renewal_changed'])
 
 
 def captcha_default_content():
