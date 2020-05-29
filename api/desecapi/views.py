@@ -579,7 +579,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
     """
     action = None
     authentication_classes = (auth.AuthenticatedBasicUserActionAuthentication,)
-    html_url = None
+    html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
 
@@ -712,6 +712,14 @@ class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
 
     def finalize(self):
         return Response({'detail': 'All your data has been deleted. Bye bye, see you soon! <3'})
+
+
+class AuthenticatedRenewDomainBasicUserActionView(AuthenticatedActionView):
+    html_url = '/confirm/renew-domain/{code}/'
+    serializer_class = serializers.AuthenticatedRenewDomainBasicUserActionSerializer
+
+    def finalize(self):
+        return Response({'detail': f'We recorded that your domain {self.action.domain} is still in use.'})
 
 
 class CaptchaView(generics.CreateAPIView):
