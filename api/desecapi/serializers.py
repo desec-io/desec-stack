@@ -688,7 +688,10 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         except KeyError:
             raise serializers.ValidationError({'code': ['This field is required.']})
         except ValueError:
-            raise serializers.ValidationError({'code': ['Invalid code.']})
+            validity = settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
+            raise serializers.ValidationError({
+                'code': [f'This code is invalid, most likely because it expired (validity: {validity}).']
+            })
 
         # add extra fields added by the user
         unpacked_data.update(**data)

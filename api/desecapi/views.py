@@ -612,7 +612,10 @@ class AuthenticatedActionView(generics.GenericAPIView):
         try:
             self.action = serializer.Meta.model(**serializer.validated_data)
         except ValueError:  # this happens when state cannot be verified
-            raise ValidationError('Invalid code.')
+            ex = ValidationError('This action cannot be carried out because another operation has been performed, '
+                                 'invalidating this one. (Are you trying to perform this action twice?)')
+            ex.status_code = status.HTTP_409_CONFLICT
+            raise ex
 
         self.action.act()
         return self.finalize()

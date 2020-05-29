@@ -372,14 +372,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertVerificationFailureInvalidCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Invalid code.",
-            status_code=status.HTTP_400_BAD_REQUEST
+            text="This action cannot be carried out because another operation has been performed",
+            status_code=status.HTTP_409_CONFLICT
         )
 
     def assertVerificationFailureExpiredCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="Invalid code.",
+            text="This code is invalid, most likely because it expired (validity: ",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
