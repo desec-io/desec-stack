@@ -140,6 +140,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     def send_email(self, reason, context=None, recipient=None):
         fast_lane = 'email_fast_lane'
         slow_lane = 'email_slow_lane'
+        immediate_lane = 'email_immediate_lane'
         lanes = {
             'activate': slow_lane,
             'activate-with-domain': slow_lane,
@@ -160,7 +161,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         content += f'\nSupport Reference: user_id = {self.pk}\n'
         footer = get_template('emails/footer.txt').render()
 
-        logger.warning(f'Queuing email for user account {self.pk} (reason: {reason})')
+        logger.warning(f'Queuing email for user account {self.pk} (reason: {reason}, lane: {lanes[reason]})')
         num_queued = EmailMessage(
             subject=get_template(f'emails/{reason}/subject.txt').render(context).strip(),
             body=content + footer,

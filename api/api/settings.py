@@ -182,6 +182,7 @@ CELERY_TASK_TIME_LIMIT = 30
 TASK_CONFIG = {  # The first entry is the default queue
     'email_slow_lane': {'rate_limit': '3/m'},
     'email_fast_lane': {'rate_limit': '1/s'},
+    'email_immediate_lane': {'rate_limit': None},
 }
 
 # pdns accepts request payloads of this size.
