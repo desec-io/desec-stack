@@ -559,27 +559,25 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         Raises if a invalid set of records is provided.
 
         This method triggers the following database queries:
-        - two SELECT queries for comparison of old with new records
-        - for each removed record, one DELETE query
-        - if one or more records were added, a total of one INSERT query
+        - one DELETE query
+        - one SELECT query for comparison of old with new records
+        - one INSERT query, if one or more records were added
 
         Changes are saved to the database immediately.
 
         :param records: list of records in presentation format
         """
-        records = self.clean_records(records)
+        new_records = self.clean_records(records)
 
-        # Remove RRs that we didn't see in the new list
-        removed_rrs = self.records.exclude(content__in=records)  # one SELECT
-        for rr in removed_rrs:
-            rr.delete()  # one DELETE query
+        # Delete RRs that are not in the new record list from the DB
+        self.records.exclude(content__in=new_records).delete()  # one DELETE
 
-        # Figure out which entries in records have not changed
-        unchanged_rrs = self.records.filter(content__in=records)  # one SELECT
-        unchanged_content = [unchanged_rr.content for unchanged_rr in unchanged_rrs]
-        added_content = filter(lambda c: c not in unchanged_content, records)
+        # Retrieve all remaining RRs from the DB
+        unchanged_records = set(r.content for r in self.records.all())  # one SELECT
 
-        rrs = [RR(rrset=self, content=content) for content in added_content]
+        # Save missing RRs from the new record list to the DB
+        added_records = new_records - unchanged_records
+        rrs = [RR(rrset=self, content=content) for content in added_records]
         RR.objects.bulk_create(rrs)  # One INSERT
 
     def __str__(self):
