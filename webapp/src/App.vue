@@ -89,6 +89,33 @@
     </v-app-bar>
 
     <v-content>
+      <v-banner v-for="alert in $store.state.alerts" :key="alert.id">
+        <v-icon
+          slot="icon"
+          color="warning"
+          size="36"
+        >
+          {{ alert.icon }}
+        </v-icon>
+        {{ alert.teaser }}
+        <template v-slot:actions>
+          <v-btn
+            color="primary"
+            text
+            :href="alert.href"
+            v-if="alert.href"
+          >
+            {{ alert.button || 'More' }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            text
+            @click="$store.commit('unalert', alert.id)"
+          >
+            Hide
+          </v-btn>
+        </template>
+      </v-banner>
       <v-progress-linear
               :active="$store.getters.working"
               :indeterminate="$store.getters.working"
