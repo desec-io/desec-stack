@@ -174,8 +174,13 @@ export default {
   },
   created() {
     this.domainType = this.$route.query.domainType || 'none';
+    for (let news of this.breaking_news) {
+      if (new Date() >= news.start && new Date() < news.end) {
+        this.$store.commit('alert', news);
+      }
+    }
   },
-    data: () => ({
+  data: () => ({
     contact_email: process.env.VUE_APP_EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
     contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
@@ -357,6 +362,18 @@ export default {
         icon: 'mdi-file-certificate',
         title: "Let's Encrypt Integration",
         text: "We provide easy integration with Let's Encrypt and their certbot tool.",
+      },
+    ],
+    breaking_news: [
+      {
+        id: 'news-20200604001',
+        start: new Date(Date.UTC(2020, 6 - 1, 4)),  // first day of showing
+        end: new Date(Date.UTC(2020, 6 - 1, 7)),  // first day of not showing
+        icon: 'mdi-heart-broken',
+        teaser: 'DNS operations experienced a partial service disruption on June 4, 2020, starting at 12am UTC. ' +
+                'The issue was resolved at 7am UTC.',
+        button: 'Learn More',
+        href: '//talk.desec.io/t/service-disruption-on-june-4-2020/98',
       },
     ],
   })
