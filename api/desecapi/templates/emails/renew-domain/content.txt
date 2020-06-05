@@ -1,0 +1,32 @@
+Hi there,
+
+You are the owner of the following domain name(s):
+
+{% for domain in domains %}
+  * {{ domain.name }}
+{% endfor %}
+
+We noticed that the DNS information of the above domain(s) have not
+received any updates for more than 6 months.
+
+As explained in our Terms and Conditions (https://desec.io/terms),
+we regularly purge inactive domains (as indicated by the absence of
+DNS updates). This allows us to free up resources for active deSEC
+users.
+
+The above domain name(s) are scheduled for deletion on
+{{ deletion_date|date:"F j, Y" }}. If there are no other domains in
+your account, we will also delete your account on this date.
+
+To retain your domain name (and account), either change a DNS record
+before that date, or click the following link(s) (valid for {{ link_expiration_hours }} hours):
+
+{% for domain in domains %}
+  * {{ domain.name }}
+    {{ domain.confirmation_link }}
+{% endfor %}
+
+In case you have questions, feel free to contact us!
+
+Stay secure,
+The deSEC Team

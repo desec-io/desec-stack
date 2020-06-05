@@ -156,6 +156,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
             'reset-password': fast_lane,
             'delete-user': fast_lane,
             'domain-dyndns': fast_lane,
+            'renew-domain': immediate_lane,
         }
         if reason not in lanes:
             raise ValueError(f'Cannot send email to user {self.pk} without a good reason: {reason}')
