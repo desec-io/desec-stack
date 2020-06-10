@@ -100,12 +100,11 @@ class PDNSChangeTracker:
                         # SOA RRset TTL: 300 (used as TTL for negative replies including NSEC3 records)
                         'ttl': 300,
                         'records': [{
-                            # SOA refresh: 2 weeks (our replication doesn't rely on this, and a high value keeps our
-                            #   frontends from asking all the time)
+                            # SOA refresh: 1 day (only needed for nslord --> nsmaster replication after RRSIG rotation)
                             # SOA retry = refresh
                             # SOA expire: 4 weeks (all signatures will have expired anyways)
                             # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
-                            'content': 'set.an.example. get.desec.io. 1 1209600 1209600 2419200 3600',
+                            'content': 'set.an.example. get.desec.io. 1 86400 86400 2419200 3600',
                             'disabled': False
                         }],
                     }],

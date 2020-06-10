@@ -769,7 +769,7 @@ class DesecTestCase(MockPDNSTestCase):
 
     @classmethod
     def requests_desec_domain_creation(cls, name=None):
-        soa_content = 'set.an.example. get.desec.io. 1 1209600 1209600 2419200 3600'
+        soa_content = 'set.an.example. get.desec.io. 1 86400 86400 2419200 3600'
         return [
             cls.request_pdns_zone_create(ns='LORD', payload=soa_content),
             cls.request_pdns_zone_create(ns='MASTER'),
