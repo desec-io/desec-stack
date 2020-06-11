@@ -1,8 +1,11 @@
+import time
+
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.utils import timezone
 
-from desecapi import models
+from desecapi import models, serializers
+from desecapi.pdns_change_tracker import PDNSChangeTracker
 
 
 class Command(BaseCommand):
@@ -18,6 +21,29 @@ class Command(BaseCommand):
         models.User.objects.filter(is_active=False, last_login__exact=None,
                             created__lt=timezone.now() - settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE).delete()
 
+    @staticmethod
+    def update_healthcheck_timestamp():
+        try:
+            domain = models.Domain.objects.get(name='internal-timestamp.desec.test')
+        except models.Domain.DoesNotExist:
+            # Fail silently. If external alerting is configured, it will catch the problem; otherwise, we don't need it.
+            return
+
+        instances = domain.rrset_set.filter(subname='', type='TXT').all()
+        timestamp = int(time.time())
+        data = [{
+            'subname': '',
+            'type': 'TXT',
+            'ttl': '3600',
+            'records': [f'"{timestamp}"']
+        }]
+        serializer = serializers.RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
+        serializer.is_valid(raise_exception=True)
+        with PDNSChangeTracker():
+            serializer.save()
+
+
     def handle(self, *args, **kwargs):
         self.delete_expired_captchas()
         self.delete_never_activated_users()
+        self.update_healthcheck_timestamp()
