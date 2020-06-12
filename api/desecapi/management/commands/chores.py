@@ -23,25 +23,28 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_healthcheck_timestamp():
+        name = 'internal-timestamp.desec.test'
         try:
-            domain = models.Domain.objects.get(name='internal-timestamp.desec.test')
+            domain = models.Domain.objects.get(name=name)
         except models.Domain.DoesNotExist:
             # Fail silently. If external alerting is configured, it will catch the problem; otherwise, we don't need it.
+            print(f'{name} zone is not configured; skipping TXT record update')
             return
 
         instances = domain.rrset_set.filter(subname='', type='TXT').all()
         timestamp = int(time.time())
+        content = f'"{timestamp}"'
         data = [{
             'subname': '',
             'type': 'TXT',
             'ttl': '3600',
-            'records': [f'"{timestamp}"']
+            'records': [content]
         }]
         serializer = serializers.RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
         serializer.is_valid(raise_exception=True)
         with PDNSChangeTracker():
             serializer.save()
-
+        print(f'TXT {name} updated to {content}')
 
     def handle(self, *args, **kwargs):
         self.delete_expired_captchas()
