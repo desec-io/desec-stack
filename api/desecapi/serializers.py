@@ -447,7 +447,7 @@ class RRsetListSerializer(serializers.ListSerializer):
         def is_empty(data_item):
             return data_item.get('records', None) == []
 
-        query = Q()
+        query = Q(pk__in=[])  # start out with an always empty query, see https://stackoverflow.com/q/35893867/6867099
         for item in validated_data:
             query |= Q(type=item['type'], subname=item['subname'])  # validation has ensured these fields exist
         instance = instance.filter(query)
@@ -457,7 +457,7 @@ class RRsetListSerializer(serializers.ListSerializer):
 
         if data_index.keys() | instance_index.keys() != data_index.keys():
             raise ValueError('Given set of known RRsets (`instance`) is not a subset of RRsets referred to in'
-                             '`validated_data`. While this would produce a correct result, this is illegal due to its'
+                             ' `validated_data`. While this would produce a correct result, this is illegal due to its'
                              ' inefficiency.')
 
         everything = instance_index.keys() | data_index.keys()
