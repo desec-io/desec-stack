@@ -267,7 +267,7 @@ class PDNSChangeTracker:
                 raise e
             except Exception as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
-                exc = ValueError(f'For changes {list(map(str, changes))}, {type(e)} occured when applying {change}')
+                exc = ValueError(f'For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}')
                 raise exc from e
 
         self.transaction.__exit__(None, None, None)
