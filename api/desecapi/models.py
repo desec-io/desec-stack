@@ -495,7 +495,7 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)
 
 
-class AuthenticatedAction(ExportModelOperationsMixin('AuthenticatedAction'), models.Model):
+class AuthenticatedAction(models.Model):
     """
     Represents a procedure call on a defined set of arguments.
 
@@ -577,7 +577,7 @@ class AuthenticatedAction(ExportModelOperationsMixin('AuthenticatedAction'), mod
         return self._act()
 
 
-class AuthenticatedBasicUserAction(ExportModelOperationsMixin('AuthenticatedBasicUserAction'), AuthenticatedAction):
+class AuthenticatedBasicUserAction(AuthenticatedAction):
     """
     Abstract AuthenticatedAction involving a user instance.
     """
@@ -591,7 +591,7 @@ class AuthenticatedBasicUserAction(ExportModelOperationsMixin('AuthenticatedBasi
         return super()._state_fields + [str(self.user.id)]
 
 
-class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserAction'), AuthenticatedBasicUserAction):
+class AuthenticatedUserAction(AuthenticatedBasicUserAction):
     """
     Abstract AuthenticatedBasicUserAction, incorporating the user's id, email, password, and is_active flag into the
     Message Authentication Code state.
@@ -607,7 +607,7 @@ class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserActio
         return super()._state_fields + [self.user.email, self.user.password, self.user.is_active]
 
 
-class AuthenticatedActivateUserAction(ExportModelOperationsMixin('AuthenticatedActivateUserAction'), AuthenticatedUserAction):
+class AuthenticatedActivateUserAction(AuthenticatedUserAction):
     domain = models.CharField(max_length=191)
 
     class Meta:
@@ -621,7 +621,7 @@ class AuthenticatedActivateUserAction(ExportModelOperationsMixin('AuthenticatedA
         self.user.activate()
 
 
-class AuthenticatedChangeEmailUserAction(ExportModelOperationsMixin('AuthenticatedChangeEmailUserAction'), AuthenticatedUserAction):
+class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
     new_email = models.EmailField()
 
     class Meta:
@@ -635,7 +635,7 @@ class AuthenticatedChangeEmailUserAction(ExportModelOperationsMixin('Authenticat
         self.user.change_email(self.new_email)
 
 
-class AuthenticatedResetPasswordUserAction(ExportModelOperationsMixin('AuthenticatedResetPasswordUserAction'), AuthenticatedUserAction):
+class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
     new_password = models.CharField(max_length=128)
 
     class Meta:
@@ -645,7 +645,7 @@ class AuthenticatedResetPasswordUserAction(ExportModelOperationsMixin('Authentic
         self.user.change_password(self.new_password)
 
 
-class AuthenticatedDeleteUserAction(ExportModelOperationsMixin('AuthenticatedDeleteUserAction'), AuthenticatedUserAction):
+class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
 
     class Meta:
         managed = False
