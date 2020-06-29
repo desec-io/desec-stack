@@ -577,10 +577,9 @@ class AuthenticatedAction(ExportModelOperationsMixin('AuthenticatedAction'), mod
         return self._act()
 
 
-class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserAction'), AuthenticatedAction):
+class AuthenticatedBasicUserAction(ExportModelOperationsMixin('AuthenticatedBasicUserAction'), AuthenticatedAction):
     """
-    Abstract AuthenticatedAction involving an user instance, incorporating the user's id, email, password, and
-    is_active flag into the Message Authentication Code state.
+    Abstract AuthenticatedAction involving a user instance.
     """
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
 
@@ -589,9 +588,23 @@ class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserActio
 
     @property
     def _state_fields(self):
+        return super()._state_fields + [str(self.user.id)]
+
+
+class AuthenticatedUserAction(ExportModelOperationsMixin('AuthenticatedUserAction'), AuthenticatedBasicUserAction):
+    """
+    Abstract AuthenticatedBasicUserAction, incorporating the user's id, email, password, and is_active flag into the
+    Message Authentication Code state.
+    """
+
+    class Meta:
+        managed = False
+
+    @property
+    def _state_fields(self):
         # TODO consider adding a "last change" attribute of the user to the state to avoid code
         #  re-use after the the state has been changed and changed back.
-        return super()._state_fields + [str(self.user.id), self.user.email, self.user.password, self.user.is_active]
+        return super()._state_fields + [self.user.email, self.user.password, self.user.is_active]
 
 
 class AuthenticatedActivateUserAction(ExportModelOperationsMixin('AuthenticatedActivateUserAction'), AuthenticatedUserAction):

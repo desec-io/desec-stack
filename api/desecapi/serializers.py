@@ -707,7 +707,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         raise ValueError
 
 
-class AuthenticatedUserActionSerializer(AuthenticatedActionSerializer):
+class AuthenticatedBasicUserActionSerializer(AuthenticatedActionSerializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=models.User.objects.all(),
         error_messages={'does_not_exist': 'This user does not exist.'},
@@ -715,21 +715,21 @@ class AuthenticatedUserActionSerializer(AuthenticatedActionSerializer):
     )
 
     class Meta:
-        model = models.AuthenticatedUserAction
+        model = models.AuthenticatedBasicUserAction
         fields = AuthenticatedActionSerializer.Meta.fields + ('user',)
 
 
-class AuthenticatedActivateUserActionSerializer(AuthenticatedUserActionSerializer):
+class AuthenticatedActivateUserActionSerializer(AuthenticatedBasicUserActionSerializer):
 
-    class Meta(AuthenticatedUserActionSerializer.Meta):
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedActivateUserAction
-        fields = AuthenticatedUserActionSerializer.Meta.fields + ('domain',)
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('domain',)
         extra_kwargs = {
             'domain': {'default': None, 'allow_null': True}
         }
 
 
-class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedUserActionSerializer):
+class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedBasicUserActionSerializer):
     new_email = serializers.EmailField(
         validators=[
             CustomFieldNameUniqueValidator(
@@ -741,20 +741,20 @@ class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedUserActionSerial
         required=True,
     )
 
-    class Meta(AuthenticatedUserActionSerializer.Meta):
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedChangeEmailUserAction
-        fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_email',)
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('new_email',)
 
 
-class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedUserActionSerializer):
+class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedBasicUserActionSerializer):
     new_password = serializers.CharField(write_only=True)
 
-    class Meta(AuthenticatedUserActionSerializer.Meta):
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedResetPasswordUserAction
-        fields = AuthenticatedUserActionSerializer.Meta.fields + ('new_password',)
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('new_password',)
 
 
-class AuthenticatedDeleteUserActionSerializer(AuthenticatedUserActionSerializer):
+class AuthenticatedDeleteUserActionSerializer(AuthenticatedBasicUserActionSerializer):
 
-    class Meta(AuthenticatedUserActionSerializer.Meta):
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedDeleteUserAction

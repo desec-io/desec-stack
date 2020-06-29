@@ -10,7 +10,7 @@ from rest_framework.authentication import (
     BasicAuthentication)
 
 from desecapi.models import Token
-from desecapi.serializers import AuthenticatedUserActionSerializer, EmailPasswordSerializer
+from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPasswordSerializer
 
 
 class TokenAuthentication(RestFrameworkTokenAuthentication):
@@ -120,7 +120,7 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
         return self.authenticate_credentials(serializer.data['email'], serializer.data['password'], request)
 
 
-class AuthenticatedActionAuthentication(BaseAuthentication):
+class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
     """
     Authenticates a request based on whether the serializer determines the validity of the given verification code
     and additional data (using `serializer.is_valid()`). The serializer's input data will be determined by (a) the
@@ -130,7 +130,7 @@ class AuthenticatedActionAuthentication(BaseAuthentication):
     """
     def authenticate(self, request):
         view = request.parser_context['view']
-        serializer = AuthenticatedUserActionSerializer(data=request.data, context=view.get_serializer_context())
+        serializer = AuthenticatedBasicUserActionSerializer(data=request.data, context=view.get_serializer_context())
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data['user'], None
 

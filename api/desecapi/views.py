@@ -578,7 +578,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
     this class. If the `serializer.is_valid`, `act` is called on the action object.
     """
     action = None
-    authentication_classes = (auth.AuthenticatedActionAuthentication,)
+    authentication_classes = (auth.AuthenticatedBasicUserActionAuthentication,)
     html_url = None
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
