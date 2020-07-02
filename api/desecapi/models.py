@@ -137,6 +137,12 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         self.save()
         self.send_email('password-change-confirmation')
 
+    def delete(self):
+        pk = self.pk
+        ret = super().delete()
+        logger.warning(f'User {pk} deleted')
+        return ret
+
     def send_email(self, reason, context=None, recipient=None):
         fast_lane = 'email_fast_lane'
         slow_lane = 'email_slow_lane'
