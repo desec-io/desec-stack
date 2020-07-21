@@ -88,7 +88,7 @@
       </template>
     </v-app-bar>
 
-    <v-content>
+    <v-main>
       <v-banner v-for="alert in $store.state.alerts" :key="alert.id">
         <v-icon
           slot="icon"
@@ -124,7 +124,7 @@
               style="z-index: 3"
       ></v-progress-linear>
       <router-view/>
-    </v-content>
+    </v-main>
     <v-footer
       class="d-flex flex-column align-stretch pa-0 white--text text--darken-1 elevation-12"
     >

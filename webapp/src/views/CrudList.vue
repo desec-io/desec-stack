@@ -9,7 +9,7 @@
             color="error"
             multi-line
             vertical
-            :timeout="0"
+            :timeout="-1"
           >
             {{ errors[errors.length - 1] }}
             <v-btn @click="snackbar = false">
@@ -18,7 +18,7 @@
           </v-snackbar>
           <v-snackbar
             v-model="snackbarInfo"
-            :timeout="0"
+            :timeout="-1"
           >
             <span v-html="snackbarInfoText"></span>
             <v-btn
@@ -396,7 +396,7 @@ export default {
         const result = {};
         let key;
         for (key in obj) {
-          if (obj.hasOwnProperty(key) && !predicate(obj[key])) {
+          if (Object.prototype.hasOwnProperty.call(obj, key) && !predicate(obj[key])) {
             result[key] = obj[key];
           }
         }
@@ -529,7 +529,7 @@ export default {
         this.destroyDialogError = e;
       } else if (this.createDialog) {
         // see if e contains field-specific errors
-        if (Object.keys(e).every(key => this.columns.hasOwnProperty(key))) {
+        if (Object.keys(e).every(key => Object.prototype.hasOwnProperty.call(this.columns, key))) {
           // assume we obtained field-specific error(s),
           // so let's assign them to the input fields
           for (const c in e) {
@@ -554,7 +554,7 @@ export default {
      */
     resourcePath(p, obj, marker) {
       for (const property in obj) {
-        if (obj.hasOwnProperty(property)) {
+        if (Object.prototype.hasOwnProperty.call(obj, property)) {
           p = p.replace(`${marker}{${property}}`, obj[property]);
         }
       }
