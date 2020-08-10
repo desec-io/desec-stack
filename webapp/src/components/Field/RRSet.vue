@@ -31,6 +31,7 @@ import RecordCNAME from './RecordCNAME.vue';
 import RecordNS from './RecordNS.vue';
 import RecordMX from './RecordMX.vue';
 import RecordSRV from './RecordSRV.vue';
+import RecordTXT from './RecordTXT.vue';
 
 export default {
   name: 'RRSet',
@@ -42,6 +43,7 @@ export default {
     RecordMX,
     RecordNS,
     RecordSRV,
+    RecordTXT,
   },
   props: {
     value: {
