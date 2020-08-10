@@ -307,6 +307,7 @@ import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
 import Record from '@/components/Field/Record';
 import RRSet from '@/components/Field/RRSet';
+import TTL from '@/components/Field/TTL';
 
 // safely access deeply nested objects
 const safeget = (path, object) => path.reduce((xs, x) => ((xs && xs[x]) ? xs[x] : null), object);
@@ -320,6 +321,7 @@ export default {
     GenericText,
     Record,
     RRSet,
+    TTL,
   },
   data() { return {
     createDialog: false,

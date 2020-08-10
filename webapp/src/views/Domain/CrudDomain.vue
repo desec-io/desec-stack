@@ -1,5 +1,6 @@
 <script>
 import CrudList from '@/views/CrudList';
+import {HTTP, withWorking} from "@/utils"
 
 export default {
   name: 'CrudDomain',
@@ -7,6 +8,7 @@ export default {
   data: function () {
     const self = this;
     return {
+      minimumTTL: 60,
       fullWidth: true,
       createable: true,
       updatable: true,
@@ -31,6 +33,7 @@ export default {
           sortable: true,
           value: 'type',
           readonly: true,
+          required: true,
           datatype: 'RRSetType',
           searchable: true,
           writeOnCreate: true,
@@ -62,13 +65,14 @@ export default {
         },
         ttl: {
           name: 'item.ttl',
-          text: 'TTL',
+          text: 'TTL (seconds)',
           align: 'left',
           sortable: true,
           value: 'ttl',
           readonly: false,
-          datatype: 'GenericText', // TODO TTL is not a String
-          fieldProps: () => ({ type: 'number' }),
+          required: true,
+          datatype: 'TTL',
+          fieldProps: () => ({ min: self.minimumTTL }),
           searchable: true,
           width: '130px',
         },
@@ -96,6 +100,14 @@ export default {
         type: 'A', subname: '', records: [''], ttl: 3600,
       }),
     }
+  },
+  async created() {
+    const self = this;
+    const url = self.resourcePath('domains/::{domain}/', self.$route.params, '::');
+    await withWorking(this.error, () => HTTP
+        .get(url)
+        .then(r => self.minimumTTL = r.data['minimum_ttl'])
+    );
   },
 };
 </script>

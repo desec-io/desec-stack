@@ -1,19 +1,22 @@
 <template>
-  <v-combobox
+  <v-text-field
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
     :value="value"
-    :items="types"
+    type="number"
+    :min="min"
+    :placeholder="required ? '' : '(optional)'"
     :required="required"
-    :rules="[v => !required || !!v || 'Required.']"
+    :rules="[v => !required || !!v || 'Required.', v => v >= min || `Value must be ${min} or greater.`]"
     @input="input($event)"
+    @keyup="keyup($event)"
   />
 </template>
 
 <script>
 export default {
-  name: 'RRSetType',
+  name: 'TTL',
   props: {
     disabled: {
       type: Boolean,
@@ -27,6 +30,10 @@ export default {
       type: String,
       required: false,
     },
+    min: {
+      type: Number,
+      default: 3600,
+    },
     readonly: {
       type: Boolean,
       required: false,
@@ -36,34 +43,17 @@ export default {
       default: false,
     },
     value: {
-      type: String,
+      type: [String, Number],
       required: true,
     },
   },
-  data: () => ({
-    types: [
-      'A',
-      'AAAA',
-      'MX',
-      'CNAME',
-      'TXT',
-      'SPF',
-      'CAA',
-      'TLSA',
-      'OPENPGPKEY',
-      'PTR',
-      'SRV',
-      'DS',
-    ],
-  }),
   methods: {
     input(event) {
       this.$emit('input', event);
     },
+    keyup(event) {
+      this.$emit('keyup', event);
+    },
   },
 };
 </script>
-
-<style>
-
-</style>
