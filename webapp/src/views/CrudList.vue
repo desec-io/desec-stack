@@ -101,6 +101,7 @@
                       <v-alert
                               :value="createDialogError"
                               type="error"
+                              style="overflow: auto"
                       >
                         {{ errors[errors.length - 1] }}
                       </v-alert>

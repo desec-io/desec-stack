@@ -5,6 +5,7 @@
             v-for="(item, index) in valueMap"
             :key="item.id"
             :content="item.content"
+            :error-messages="errorMessages[index] ? errorMessages[index].content : []"
             :hide-label="index > 0"
             :append-icon="value.length > 1 ? 'mdi-close' : ''"
             ref="inputFields"
@@ -46,6 +47,10 @@ export default {
     RecordTXT,
   },
   props: {
+    errorMessages: {
+      type: Array,
+      default: () => [],
+    },
     value: {
       type: Array,
       required: true,

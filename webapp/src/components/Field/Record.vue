@@ -11,7 +11,7 @@
         :label="hideLabel ? '' : field.label"
         :class="hideLabel ? 'pt-0' : ''"
         placeholder=" "
-        :hide-details="!content.length || (!$v.fields.$each[index].$invalid && !$v.fields[index].$invalid)"
+        :hide-details="!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid)"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
         :style="{ width: fieldWidth(index) }"
@@ -33,6 +33,7 @@
         aria-hidden="true"
         style="opacity: 0; position: absolute; width: auto; white-space: pre; z-index: -1"
       />
+      {{ errorMessages.join(' ') }}
     </div>
   </v-layout>
 </template>
@@ -48,6 +49,10 @@ export default {
     content: {
       type: String,
       required: true,
+    },
+    errorMessages: {
+      type: Array,
+      default: () => [],
     },
     hideLabel: {
       type: Boolean,
