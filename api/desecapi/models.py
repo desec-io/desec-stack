@@ -188,29 +188,6 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         return num_queued
 
 
-class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    key = models.CharField("Key", max_length=128, db_index=True, unique=True)
-    user = models.ForeignKey(
-        User, related_name='auth_tokens',
-        on_delete=models.CASCADE, verbose_name="User"
-    )
-    name = models.CharField('Name', blank=True, max_length=64)
-    last_used = models.DateTimeField(null=True, blank=True)
-    perm_manage_tokens = models.BooleanField(default=False)
-
-    plain = None
-
-    def generate_key(self):
-        self.plain = secrets.token_urlsafe(21)
-        self.key = Token.make_hash(self.plain)
-        return self.key
-
-    @staticmethod
-    def make_hash(plain):
-        return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
-
-
 validate_domain_name = [
     validate_lower,
     RegexValidator(
@@ -402,6 +379,29 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
     class Meta:
         ordering = ('created',)
+
+
+class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    key = models.CharField("Key", max_length=128, db_index=True, unique=True)
+    user = models.ForeignKey(
+        User, related_name='auth_tokens',
+        on_delete=models.CASCADE, verbose_name="User"
+    )
+    name = models.CharField('Name', blank=True, max_length=64)
+    last_used = models.DateTimeField(null=True, blank=True)
+    perm_manage_tokens = models.BooleanField(default=False)
+
+    plain = None
+
+    def generate_key(self):
+        self.plain = secrets.token_urlsafe(21)
+        self.key = Token.make_hash(self.plain)
+        return self.key
+
+    @staticmethod
+    def make_hash(plain):
+        return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
 
 
 def get_default_value_created():
