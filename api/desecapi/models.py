@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import binascii
+import ipaddress
 import json
 import logging
 import re
@@ -19,7 +20,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.contrib.postgres.constraints import ExclusionConstraint
-from django.contrib.postgres.fields import CIEmailField, RangeOperators
+from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import RegexValidator
@@ -33,6 +34,7 @@ from dns import rdata, rdataclass, rdatatype
 from dns.exception import Timeout
 from dns.rdtypes import ANY, IN
 from dns.resolver import NoNameservers
+from netfields import CidrAddressField, NetManager
 from rest_framework.exceptions import APIException
 
 from desecapi import metrics
@@ -401,6 +403,18 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     @staticmethod
     def make_hash(plain):
         return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
+
+
+# TODO Prometheus mixin
+class TokenPolicy(models.Model):
+    @staticmethod
+    def _subnets_default():
+        return [ipaddress.IPv4Network('0.0.0.0/0'), ipaddress.IPv6Network('::/0')]
+
+    token = models.OneToOneField(Token, on_delete=models.CASCADE, primary_key=True, related_name='policy')
+    subnets = ArrayField(CidrAddressField(), default=_subnets_default.__func__)
+
+    objects = NetManager()
 
 
 class Donation(ExportModelOperationsMixin('Donation'), models.Model):

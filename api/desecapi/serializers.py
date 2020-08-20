@@ -11,6 +11,7 @@ import django.core.exceptions
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from django.utils import timezone
+from netfields import rest_framework as netfields_rf
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
@@ -47,17 +48,52 @@ class CaptchaSolutionSerializer(serializers.Serializer):
         return attrs
 
 
+class TokenPolicySerializer(serializers.ModelSerializer):
+    subnets = serializers.ListField(child=netfields_rf.CidrAddressField(), required=False)
+
+    class Meta:
+        model = models.TokenPolicy
+        fields = ('subnets',)
+
+
 class TokenSerializer(serializers.ModelSerializer):
     token = serializers.ReadOnlyField(source='plain')
+    policy = TokenPolicySerializer(allow_null=True, default=None)
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'token',)
+        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'policy', 'token',)
         read_only_fields = ('id', 'created', 'last_used', 'token')
 
     def __init__(self, *args, include_plain=False, **kwargs):
         self.include_plain = include_plain
         return super().__init__(*args, **kwargs)
+
+    def create(self, validated_data):
+        policy_data = validated_data.pop('policy')
+        token = super().create(validated_data)
+        if policy_data is not None:
+            policy = models.TokenPolicy.objects.create(token=token, **policy_data)
+        return token
+
+    def update(self, instance, validated_data):
+        try:
+            policy_data = validated_data.pop('policy')
+        except KeyError:
+            pass  # policy unchanged
+        else:
+            policy = getattr(instance, 'policy', None)
+            if policy_data is None:  # TODO allowed?
+                try:
+                    policy.delete()
+                except (AttributeError, models.Token.policy.RelatedObjectDoesNotExist):
+                    pass
+                instance.policy = None
+            else:
+                serializer = TokenPolicySerializer(instance=policy, data=policy_data, context=self.context)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(token=instance)
+        return super().update(instance, validated_data)
 
     def get_fields(self):
         fields = super().get_fields()
