@@ -29,10 +29,22 @@ A JSON object representing a token has the following structure::
         "last_used": null,
         "name": "my new token",
         "perm_manage_tokens": false,
+        "allowed_subnets": [
+            "0.0.0.0/0",
+            "::/0"
+        ],
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
 Field details:
+
+``allowed_subnets``
+    :Access mode: read, write
+    :Type: Array of IPs or IP subnets
+
+    Exhaustive list of IP addresses or subnets clients must connect from in
+    order to successfully authenticate with the token.  Both IPv4 and IPv6 are
+    supported.  Defaults to ``0.0.0.0/0, ::/0`` (no restriction).
 
 ``created``
     :Access mode: read-only
@@ -106,6 +118,10 @@ Note that the name and other fields are optional.  The server will reply with
         "last_used": null,
         "name": "my new token",
         "perm_manage_tokens": false,
+        "allowed_subnets": [
+            "0.0.0.0/0",
+            "::/0"
+        ],
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -121,6 +137,11 @@ to delete a token.
 
 If you require tokens with extra permissions, you can provide the desired
 configuration during creation:
+
+- ``allowed_subnets``:  In this field, you can list the IP addresses (or
+  subnets) that clients must connect from in order to use the token.  If not
+  provided, access is not restricted based on the IP address.  Both IPv4 and
+  IPv6 are supported.
 
 - ``perm_manage_tokens``:  If set to ``true``, the token can be used to
   authorize token management operations (as described in this chapter).

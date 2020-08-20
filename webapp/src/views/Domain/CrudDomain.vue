@@ -59,6 +59,7 @@ export default {
           sortable: false,
           value: 'records',
           readonly: false,
+          required: true,
           datatype: 'RecordList',
           fieldProps: rrSet => ({ type: rrSet.type || 'A' }),
           searchable: true,

@@ -1,3 +1,5 @@
+from ipaddress import IPv4Network
+
 from rest_framework import status
 
 from desecapi.models import Token
@@ -24,6 +26,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         self.assertEqual(len(response.data), 2)
         self.assertIn('id', response.data[0])
         self.assertFalse(any(field in response.data[0] for field in ['token', 'key', 'value']))
+        self.assertFalse(any(token.encode() in response.content for token in [self.token.plain, self.token2.plain,]))
         self.assertNotContains(response, self.token.plain)
 
     def test_delete_my_token(self):
@@ -43,9 +46,10 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_200_OK)
-        self.assertTrue(all(field in response.data for field in ['created', 'id', 'last_used', 'name',
-                                                                 'perm_manage_tokens']))
-        self.assertFalse(any(field in response.data for field in ['token', 'key', 'value']))
+        self.assertEqual(
+            set(response.data.keys()),
+            {'id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets'}
+        )
 
     def test_retrieve_other_token(self):
         token_id = Token.objects.get(user=self.user).id
@@ -58,9 +62,11 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         url = self.reverse('v1:token-detail', pk=self.token.id)
 
         for method in [self.client.patch, self.client.put]:
-            response = method(url, data={'name': method.__name__})
+            data = {'name': method.__name__, 'allowed_subnets': ['127.0.0.0/8']}
+            response = method(url, data=data)
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(Token.objects.get(pk=self.token.id).name, method.__name__)
+            self.assertEqual(Token.objects.get(pk=self.token.id).allowed_subnets, [IPv4Network('127.0.0.0/8')])
 
         # Revoke token management permission
         response = self.client.patch(url, data={'perm_manage_tokens': False})
@@ -73,12 +79,22 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
     def test_create_token(self):
         n = len(Token.objects.filter(user=self.owner).all())
 
-        datas = [{}, {'name': ''}, {'name': 'foobar'}]
+        datas = [
+            {},
+            {'name': '', 'perm_manage_tokens': True},
+            {'name': 'foobar'},
+            {'allowed_subnets': ['1.2.3.32/28', 'bade::affe/128']},
+        ]
         for data in datas:
             response = self.client.post(self.reverse('v1:token-list'), data=data)
             self.assertStatus(response, status.HTTP_201_CREATED)
-            self.assertTrue(all(field in response.data for field in ['id', 'created', 'token', 'name']))
+            self.assertEqual(
+                set(response.data.keys()),
+                {'id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets', 'token'}
+            )
             self.assertEqual(response.data['name'], data.get('name', ''))
+            self.assertEqual(response.data['allowed_subnets'], data.get('allowed_subnets', ['0.0.0.0/0', '::/0']))
+            self.assertEqual(response.data['perm_manage_tokens'], data.get('perm_manage_tokens', False))
             self.assertIsNone(response.data['last_used'])
 
         self.assertEqual(len(Token.objects.filter(user=self.owner).all()), n + len(datas))
@@ -121,8 +137,10 @@ class TokenForbiddenTestCase(DomainOwnerTestCase):
     def test_update_my_token(self):
         url = self.reverse('v1:token-detail', pk=self.token.id)
         for method in [self.client.patch, self.client.put]:
-            response = method(url, data={'name': method.__name__})
-            self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+            datas = [{'name': method.__name__}, {'allowed_subnets': ['127.0.0.0/8']}]
+            for data in datas:
+                response = method(url, data=data)
+                self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
     def test_create_token(self):
         datas = [{}, {'name': ''}, {'name': 'foobar'}]

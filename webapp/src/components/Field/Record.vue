@@ -10,12 +10,14 @@
         v-model="field.value"
         :label="hideLabel ? '' : field.label"
         :class="hideLabel ? 'pt-0' : ''"
-        placeholder=" "
+        :disabled="disabled"
+        :readonly="readonly"
+        :placeholder="required ? ' ' : '(optional)'"
         :hide-details="!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid)"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
         :style="{ width: fieldWidth(index) }"
-        :append-icon="index == fields.length-1 ? appendIcon : ''"
+        :append-icon="index == fields.length-1 && !readonly && !disabled ? appendIcon : ''"
         @click:append="$emit('remove', $event)"
         @input="inputHandler()"
         @paste.prevent="pasteHandler($event)"
@@ -39,7 +41,7 @@
 </template>
 
 <script>
-import { required } from 'vuelidate/lib/validators';
+import { required as requiredValidator } from 'vuelidate/lib/validators';
 
 export default {
   name: 'Record',
@@ -53,6 +55,18 @@ export default {
     errorMessages: {
       type: Array,
       default: () => [],
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    readonly: {
+      type: Boolean,
+      default: false,
+    },
+    required: {
+      type: Boolean,
+      default: true,
     },
     hideLabel: {
       type: Boolean,
@@ -85,7 +99,7 @@ export default {
     const validations = {
       fields: {
         $each: {
-          value: { required },
+          value: this.required ? { requiredValidator } : {},
         },
       },
     };

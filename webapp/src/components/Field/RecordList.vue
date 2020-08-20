@@ -8,6 +8,9 @@
             :error-messages="errorMessages[index] ? errorMessages[index].content : []"
             :hide-label="index > 0"
             :append-icon="value.length > 1 ? 'mdi-close' : ''"
+            :disabled="disabled"
+            :readonly="readonly"
+            :required="required"
             ref="inputFields"
             @update:content="$set(value, index, $event)"
             @input.native="$emit('dirty', $event)"
@@ -20,6 +23,7 @@
             color="grey"
             small
             text
+            v-if="!readonly && !disabled"
     ><v-icon>mdi-plus</v-icon> add another value</v-btn>
     <!--div><code style="white-space: normal">{{ value }}</code></div-->
   </div>
@@ -34,6 +38,7 @@ import RecordNS from './Record/NS.vue';
 import RecordMX from './Record/MX.vue';
 import RecordSRV from './Record/SRV.vue';
 import RecordTXT from './Record/TXT.vue';
+import RecordSubnet from './Record/Subnet.vue';
 
 export default {
   name: 'RecordList',
@@ -46,15 +51,28 @@ export default {
     RecordNS,
     RecordSRV,
     RecordTXT,
+    RecordSubnet,
   },
   props: {
     errorMessages: {
       type: Array,
       default: () => [],
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    readonly: {
+      type: Boolean,
+      default: false,
+    },
+    required: {
+      type: Boolean,
+      default: true,
+    },
     value: {
       type: Array,
-      required: true,
+      default: () => [],
     },
     type: {
       type: String,
@@ -65,7 +83,7 @@ export default {
     const self = this;
     return {
       removals: 0,
-      types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS'],
+      types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS', 'Subnet'],
       addHandler: ($event) => {
         self.$emit('dirty', $event);
         self.value.push('');  /* eslint-disable-line vue/no-mutating-props */

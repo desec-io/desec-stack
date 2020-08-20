@@ -11,6 +11,7 @@ import django.core.exceptions
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from django.utils import timezone
+from netfields import rest_framework as netfields_rf
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
@@ -48,11 +49,12 @@ class CaptchaSolutionSerializer(serializers.Serializer):
 
 
 class TokenSerializer(serializers.ModelSerializer):
+    allowed_subnets = serializers.ListField(child=netfields_rf.CidrAddressField(), required=False)
     token = serializers.ReadOnlyField(source='plain')
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'token',)
+        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets', 'token',)
         read_only_fields = ('id', 'created', 'last_used', 'token')
 
     def __init__(self, *args, include_plain=False, **kwargs):

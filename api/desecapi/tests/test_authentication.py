@@ -1,3 +1,5 @@
+import json
+
 from rest_framework.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 
 from desecapi.tests.base import DynDomainOwnerTestCase
@@ -43,15 +45,36 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
 
 class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
 
-    def _get_domains(self):
-        with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
-            return self.client.get(self.reverse('v1:domain-list'))
+    def assertAuthenticationStatus(self, code, token=None, **kwargs):
+        self.client.set_credentials_token_auth(token or self.token.plain)
 
-    def assertAuthenticationStatus(self, code=HTTP_200_OK, token=''):
-        self.client.set_credentials_token_auth(token)
-        self.assertStatus(self._get_domains(), code)
+        # only forward REMOTE_ADDR if not None
+        if kwargs.get('REMOTE_ADDR') is None:
+            kwargs.pop('REMOTE_ADDR', None)
+
+        response = self.client.get(self.reverse('v1:root'), **kwargs)
+        body = json.dumps({'detail': 'Invalid token.'}) if code == HTTP_401_UNAUTHORIZED else None
+        self.assertResponse(response, code, body)
 
     def test_token_case_sensitive(self):
-        self.assertAuthenticationStatus(HTTP_200_OK, self.token.plain)
+        self.assertAuthenticationStatus(HTTP_200_OK)
         self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.plain.upper())
         self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, self.token.plain.lower())
+
+    def test_token_subnets(self):
+        datas = [  # Format: allowed_subnets, status, client_ip | None, [client_ip, ...]
+            ([], HTTP_401_UNAUTHORIZED, None),
+            (['127.0.0.1'], HTTP_200_OK, None),
+            (['1.2.3.4'], HTTP_401_UNAUTHORIZED, None),
+            (['1.2.3.4'], HTTP_200_OK, '1.2.3.4'),
+            (['1.2.3.0/24'], HTTP_200_OK, '1.2.3.4'),
+            (['1.2.3.0/24'], HTTP_401_UNAUTHORIZED, 'bade::affe'),
+            (['bade::/64'], HTTP_200_OK, 'bade::affe'),
+            (['bade::/64', '1.2.3.0/24'], HTTP_200_OK, 'bade::affe', '1.2.3.66'),
+        ]
+
+        for allowed_subnets, status, client_ips in ((*data[:2], data[2:]) for data in datas):
+            self.token.allowed_subnets = allowed_subnets
+            self.token.save()
+            for client_ip in client_ips:
+                self.assertAuthenticationStatus(status, REMOTE_ADDR=client_ip)

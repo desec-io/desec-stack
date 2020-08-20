@@ -378,6 +378,7 @@ export default {
     // callbacks
     itemIsReadOnly: () => false,
     postcreate: this.close,
+    precreate: () => undefined,
     dirtyHandler: (e) => e.target.closest('tr').classList.add('orange', 'lighten-5'),
     keyupHandler: (e) => {
       // Intercept Enter key
@@ -515,6 +516,7 @@ export default {
         this.createDialogWorking = true;
         this.createDialogError = false;
         this.createDialogSuccess = false;
+        this.precreate();
         const url = this.resourcePath(
                 this.resourcePath(this.paths.create, this.$route.params, '::'),
                 this.createDialogItem,

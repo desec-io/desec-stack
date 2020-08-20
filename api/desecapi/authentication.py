@@ -1,4 +1,5 @@
 import base64
+from ipaddress import ip_address
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.utils import timezone
@@ -15,6 +16,31 @@ from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPa
 
 class TokenAuthentication(RestFrameworkTokenAuthentication):
     model = Token
+
+    def authenticate(self, request):
+        try:
+            user, token = super().authenticate(request)
+        except TypeError:  # TypeError: cannot unpack non-iterable NoneType object
+            return None  # unauthenticated
+
+        # REMOTE_ADDR is populated by the environment of the wsgi-request [1], which in turn is set up by nginx as per
+        # uwsgi_params [2]. The value of $remote_addr finally is given by the network connection [3].
+        # [1]: https://github.com/django/django/blob/stable/3.1.x/django/core/handlers/wsgi.py#L77
+        # [2]: https://github.com/desec-io/desec-stack/blob/62820ad/www/conf/sites-available/90-desec.api.location.var#L11
+        # [3]: https://nginx.org/en/docs/http/ngx_http_core_module.html#var_remote_addr
+        # While the request.META dictionary contains a mixture of values from various sources, HTTP headers have keys
+        # with the HTTP_ prefix. Client addresses can therefore not be spoofed through headers.
+        # In case the stack is run behind an application proxy, the address will be the proxy's address. Extracting the
+        # real client address is currently not supported. For further information on this case, see
+        # https://www.django-rest-framework.org/api-guide/throttling/#how-clients-are-identified
+        client_ip = ip_address(request.META.get('REMOTE_ADDR'))
+
+        # This can likely be done within Postgres with django-postgres-extensions (client_ip <<= ANY allowed_subnets).
+        # However, the django-postgres-extensions package is unmaintained, and the GitHub repo has been archived.
+        if not any(client_ip in subnet for subnet in token.allowed_subnets):
+            raise exceptions.AuthenticationFailed('Invalid token.')
+
+        return user, token
 
     def authenticate_credentials(self, key):
         key = Token.make_hash(key)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import binascii
+import ipaddress
 import json
 import logging
 import re
@@ -19,7 +20,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.contrib.postgres.constraints import ExclusionConstraint
-from django.contrib.postgres.fields import CIEmailField, RangeOperators
+from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import RegexValidator
@@ -33,6 +34,7 @@ from dns import rdata, rdataclass, rdatatype
 from dns.exception import Timeout
 from dns.rdtypes import ANY, IN
 from dns.resolver import NoNameservers
+from netfields import CidrAddressField, NetManager
 from rest_framework.exceptions import APIException
 
 from desecapi import metrics
@@ -381,6 +383,10 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
 
 class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
+    @staticmethod
+    def _allowed_subnets_default():
+        return [ipaddress.IPv4Network('0.0.0.0/0'), ipaddress.IPv6Network('::/0')]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
     user = models.ForeignKey(
@@ -390,8 +396,10 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     name = models.CharField('Name', blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
+    allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
 
     plain = None
+    objects = NetManager()
 
     def generate_key(self):
         self.plain = secrets.token_urlsafe(21)

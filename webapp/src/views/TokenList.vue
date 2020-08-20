@@ -45,6 +45,20 @@ export default {
             datatype: 'GenericText',
             searchable: true,
           },
+          allowed_subnets: {
+            name: 'item.allowed_subnets',
+            text: 'Client subnets',
+            textCreate: 'Allowed client subnets',
+            align: 'left',
+            sortable: true,
+            value: 'allowed_subnets',
+            readonly: false,
+            required: false,
+            writeOnCreate: true,
+            datatype: 'RecordList',
+            fieldProps: () => ({ type: 'Subnet' }),
+            searchable: true,
+          },
           perm_manage_tokens: {
             name: 'item.perm_manage_tokens',
             text: 'Can manage tokens',
@@ -84,10 +98,24 @@ export default {
           delete: 'auth/tokens/:{id}/',
           update: 'auth/tokens/:{id}/',
         },
-        itemDefaults: () => ({ name: '' }),
+        itemDefaults: () => ({
+          name: '', allowed_subnets: [''], 'perm_manage_tokens': false,
+        }),
         itemIsReadOnly: (item) => item.id == store.state.token.id,
         postcreate: () => false,  // do not close dialog
+        precreate() {
+          this.createDialogItem.allowed_subnets = this.createDialogItem.allowed_subnets.filter(subnet => subnet.length);
+          if (this.createDialogItem.allowed_subnets.length == 0) {
+            delete this.createDialogItem.allowed_subnets;
+          }
+        },
     }
   },
 };
 </script>
+
+<style scoped>
+    >>> td {
+        vertical-align: top;
+    }
+</style>
