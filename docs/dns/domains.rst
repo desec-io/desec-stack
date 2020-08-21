@@ -85,6 +85,10 @@ Field details:
     characters as well as hyphens ``-`` and underscores ``_`` (except at the
     beginning of the name).  The maximum length is 191.
 
+    Internationalized domain names (IDN) currently are supported through their
+    Punycode representation only (labels beginning with ``xn--``).  Converters
+    are available on the net, for example at https://www.punycoder.com/.
+
 ``published``
     :Access mode: read-only
 

@@ -257,6 +257,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             '0.8.0.0.0.1.c.a.2.4.6.0.c.e.e.d.4.4.0.1.a.0.1.0.8.f.4.0.1.0.a.2.ip6.arpa',
             'very.long.domain.name.' + self.random_domain_name(),
             self.random_domain_name(),
+            'xn--90aeeb7afyklt.xn--p1ai',
         ]:
             with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
