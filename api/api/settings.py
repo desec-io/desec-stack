@@ -117,8 +117,8 @@ REST_FRAMEWORK = {
         'account_management_active': ['3/min'],  # things with side effect, e.g. sending mail or zone creation on signup
         'account_management_passive': ['10/min'],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         'dyndns': ['1/min'],  # dynDNS updates; anything above 1/min is a client misconfiguration
-        'dns_api_read': ['5/s', '50/min'],  # DNS API requests that do not involve pdns
-        'dns_api_write': ['3/s', '50/min', '200/h'],  # DNS API requests that do involve pdns
+        'dns_api_read': ['10/s', '50/min'],  # DNS API requests that do not involve pdns
+        'dns_api_write': ['6/s', '50/min', '200/h'],  # DNS API requests that do involve pdns
         # UserRateThrottle
         'user': '1000/d',  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },
