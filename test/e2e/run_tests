@@ -1,4 +1,0 @@
-#!/bin/bash
-for collection in collections/*.json; do
-	newman run $collection --insecure --global-var desecstack_domain=$DESECSTACK_DOMAIN
-done
