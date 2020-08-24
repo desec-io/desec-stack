@@ -62,6 +62,18 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
         docker-compose down -v
 
+    - name: Run e2e2 Tests
+      run: |
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 bash -c "./apiwait 45 && python3 -m pytest -vv ."
+
+    - name: e2e2 Tests Logs and Cleanup
+      if: always()
+      run: |
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml logs
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
+        docker-compose down -v
+
     - name: Run API Tests
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
