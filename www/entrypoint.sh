@@ -44,7 +44,8 @@ if [ ! -z "$FILES_MISSING" ] ; then
                 -x509 \
                 -days 1\
                 -out $DOMAIN.cer \
-                -subj "/C=DE/ST=Berlin/L=Berlin/O=deSEC/OU=autocert/CN=$DOMAIN"
+                -subj "/C=DE/ST=Berlin/L=Berlin/O=deSEC/OU=autocert/CN=$DOMAIN" \
+                -addext "subjectAltName = DNS:$DOMAIN"
 
         done
 
