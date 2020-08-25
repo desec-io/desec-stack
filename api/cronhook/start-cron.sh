@@ -3,5 +3,5 @@
 
 printenv >> /etc/environment
 touch /var/log/cron.log
-cron
+crond -b -L /var/log/cron.log
 tail -F -v /var/log/cron.log

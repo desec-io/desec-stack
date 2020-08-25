@@ -1,22 +1,17 @@
-FROM python:3.8-buster
+FROM python:3.8-alpine
 
-RUN apt-get update && apt-get install -y \
-        # updating this list may require updating /README.md
-		gcc \
-		gettext \
-		default-mysql-client default-libmysqlclient-dev \
-		libmemcached-dev \
-		postgresql-client libpq-dev \
-		sqlite3 \
-		cron \
-	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache bash dcron sqlite
 
 RUN mkdir /usr/src/app
 WORKDIR /usr/src/app
 
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_NO_CACHE_DIR=1
+
 COPY requirements.txt /usr/src/app/
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install -r requirements.txt && rm -rf /root/.cache/
+RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev mariadb-connector-c-dev jpeg-dev zlib-dev \
+    && pip install -r requirements.txt \
+    && apk --no-cache del gcc
 RUN pip freeze
 
 RUN mkdir /root/cronhook
