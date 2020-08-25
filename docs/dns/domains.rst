@@ -5,8 +5,10 @@ Domain Management
 
 Domain management is done through the ``/api/v1/domains/`` endpoint.  The
 following sections describe how to create, list, modify, and delete domains
-using JSON objects.  The structure of the JSON objects is detailed in the next
-section.
+using JSON objects.
+
+All operations are subject to rate limiting.  For details, see
+:ref:`rate-limits`.
 
 
 .. _`domain object`:

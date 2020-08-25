@@ -103,7 +103,7 @@ REST_FRAMEWORK = {
         'desecapi.throttling.ScopedRatesThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
-    'DEFAULT_THROTTLE_RATES': {
+    'DEFAULT_THROTTLE_RATES': {  # When changing rate limits, make sure to keep docs/rate-limits.rst consistent
         # ScopedRatesThrottle
         'account_management_active': ['3/min'],  # things with side effect, e.g. sending mail or zone creation on signup
         'account_management_passive': ['10/min'],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens

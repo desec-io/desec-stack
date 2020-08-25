@@ -100,3 +100,6 @@ Update Response
 If successful, the server will return a response with status ``200 OK`` and
 ``good`` as the body (as per the dyndns2 protocol specification). For error
 status codes, see above.
+
+dynDNS updates are subject to rate limiting.  For details, see
+:ref:`rate-limits`.

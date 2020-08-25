@@ -52,6 +52,7 @@ of the `curl` call, like this::
    :caption: API Summary
 
    endpoint-reference
+   rate-limits
    lifecycle
 
 

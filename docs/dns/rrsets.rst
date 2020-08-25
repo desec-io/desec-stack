@@ -25,6 +25,9 @@ that don't exist or you don't own, the API responds with a ``404 Not Found``
 status code.  For a quick overview of the available endpoints, methods, and
 operations, see :ref:`endpoint-reference`.
 
+All operations are subject to rate limiting.  For details, see
+:ref:`rate-limits`.
+
 
 .. _`RRset object`:
 
