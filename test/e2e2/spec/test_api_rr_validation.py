@@ -72,7 +72,7 @@ VALID_RECORDS_CANONICAL = {
 
 
 VALID_RECORDS_NON_CANONICAL = {
-    'A': ['127.0.000.3'],
+    'A': ['127.0.0.3'],
     'AAAA': ['0000::0000:0003'],
     'AFSDB': ['03 turquoise.FEMTO.edu.'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
@@ -121,7 +121,7 @@ VALID_RECORDS_NON_CANONICAL = {
 
 
 INVALID_RECORDS = {
-    'A': ['127.0.0.999', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
+    'A': ['127.0.0.999', '127.000.0.01', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
     'AAAA': ['::g', '1:1:1:1:1:1:1:1:', '1:1:1:1:1:1:1:1:1'],
     'AFSDB': ['example.com.', '1 1', '1 de'],
     'CAA': ['43235 issue "letsencrypt.org"'],

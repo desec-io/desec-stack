@@ -535,9 +535,6 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
             except ValueError:
                 # e.g., string ("asdf") cannot be parsed into int on base 10
                 errors.append(_error_msg(r, 'Cannot parse record contents'))
-            except AssertionError:
-                # e.g., HINFO token too long, cf. https://github.com/rthalley/dnspython/issues/493
-                errors.append(_error_msg(r, 'Invalid record content'))
             except Exception as e:
                 # TODO see what exceptions raise here for faulty input
                 raise e
@@ -640,13 +637,13 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
         if len(wire) > 500:
             raise ValidationError(f'Ensure this value has no more than 500 byte in wire format (it has {len(wire)}).')
 
-        return cls.from_wire(
-            rdclass=rdataclass.IN,
-            rdtype=rdatatype.from_text(type_),
-            wire=dns.wiredata.maybe_wrap(wire),
-            current=0,
-            rdlen=len(wire)
-        ).to_text()
+        parser = dns.wire.Parser(wire, current=0)
+        with parser.restrict_to(len(wire)):
+            return cls.from_wire_parser(
+                rdclass=rdataclass.IN,
+                rdtype=type_,
+                parser=parser,
+            ).to_text()
 
     def __str__(self):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)

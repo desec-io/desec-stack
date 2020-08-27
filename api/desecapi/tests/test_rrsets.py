@@ -258,10 +258,10 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_create_my_rr_sets_duplicate_content(self):
         for records in [
-            ['127.0.0.1', '127.00.0.1'],
+            ['::1', '0::1'],
             # TODO add more examples
         ]:
-            data = {'records': records, 'ttl': 3660, 'type': 'A'}
+            data = {'records': records, 'ttl': 3660, 'type': 'AAAA'}
             response = self.client.post_rr_set(self.my_empty_domain.name, **data)
             self.assertContains(response, 'Duplicate', status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -280,7 +280,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         # TODO fill in more examples
         datas = [
             # record type: (non-canonical input, canonical output expectation)
-            ('A', ('127.0.000.1', '127.0.0.1')),
+            ('A', ('127.0.0.1', '127.0.0.1')),
             ('AAAA', ('0000::0000:0001', '::1')),
             ('AFSDB', ('02 turquoise.FEMTO.edu.', '2 turquoise.femto.edu.')),
             ('CAA', ('0128 "issue" "letsencrypt.org"', '128 issue "letsencrypt.org"')),
@@ -397,7 +397,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         # TODO fill in more examples
         datas = {
             # recordtype: [list of examples expected to be rejected, individually]
-            'A': ['127.0.0.999', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
+            'A': ['127.0.0.999', '127.000.0.01', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
             'AAAA': ['::g', '1:1:1:1:1:1:1:1:', '1:1:1:1:1:1:1:1:1'],
             'AFSDB': ['example.com.', '1 1', '1 de'],
             'CAA': ['43235 issue "letsencrypt.org"'],
