@@ -751,28 +751,26 @@ class DesecTestCase(MockPDNSTestCase):
         ]
 
     @classmethod
-    def requests_desec_domain_deletion(cls, name=None):
-        return [
-            cls.request_pdns_zone_delete(name=name, ns='LORD'),
-            cls.request_pdns_zone_delete(name=name, ns='MASTER'),
+    def requests_desec_domain_deletion(cls, domain):
+        requests = [
+            cls.request_pdns_zone_delete(name=domain.name, ns='LORD'),
+            cls.request_pdns_zone_delete(name=domain.name, ns='MASTER'),
             cls.request_pdns_update_catalog(),
         ]
+
+        if domain.is_locally_registrable:
+            delegate_at = cls._find_auto_delegation_zone(domain.name)
+            requests += [
+                cls.request_pdns_zone_update(name=delegate_at),
+                cls.request_pdns_zone_axfr(name=delegate_at),
+            ]
+
+        return requests
 
     @classmethod
     def requests_desec_domain_creation_auto_delegation(cls, name=None):
         delegate_at = cls._find_auto_delegation_zone(name)
         return cls.requests_desec_domain_creation(name=name) + [
-            cls.request_pdns_zone_update(name=delegate_at),
-            cls.request_pdns_zone_axfr(name=delegate_at),
-        ]
-
-    @classmethod
-    def requests_desec_domain_deletion_auto_delegation(cls, name=None):
-        delegate_at = cls._find_auto_delegation_zone(name)
-        return [
-            cls.request_pdns_zone_delete(name=name, ns='LORD'),
-            cls.request_pdns_zone_delete(name=name, ns='MASTER'),
-            cls.request_pdns_update_catalog(),
             cls.request_pdns_zone_update(name=delegate_at),
             cls.request_pdns_zone_axfr(name=delegate_at),
         ]

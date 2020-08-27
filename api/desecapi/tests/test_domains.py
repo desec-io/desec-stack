@@ -211,7 +211,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
 
-        with self.assertPdnsRequests(self.requests_desec_domain_deletion()):
+        with self.assertPdnsRequests(self.requests_desec_domain_deletion(self.my_domain)):
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
             self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
@@ -401,7 +401,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
         with self.assertPdnsRequests(
-            self.requests_desec_domain_deletion_auto_delegation(name=self.my_domain.name)
+            self.requests_desec_domain_deletion(domain=self.my_domain)
         ):
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)

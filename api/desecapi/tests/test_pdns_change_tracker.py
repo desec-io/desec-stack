@@ -498,12 +498,12 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
 
     def test_delete_single(self):
         for domain in self.domains:
-            with self.assertPdnsRequests(self.requests_desec_domain_deletion(domain.name)), PDNSChangeTracker():
+            with self.assertPdnsRequests(self.requests_desec_domain_deletion(domain)), PDNSChangeTracker():
                 domain.delete()
 
     def test_delete_multiple(self):
         with self.assertPdnsRequests([
-            self.requests_desec_domain_deletion(domain.name) for domain in reversed(self.domains)
+            self.requests_desec_domain_deletion(domain) for domain in reversed(self.domains)
         ], expect_order=False), PDNSChangeTracker():
             for domain in self.domains:
                 domain.delete()

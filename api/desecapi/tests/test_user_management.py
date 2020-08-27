@@ -996,7 +996,7 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
             domain.renewal_changed = timezone.now() - timedelta(days=7)
             domain.save()
 
-            with self.assertPdnsRequests(self.requests_desec_domain_deletion_auto_delegation(name=domain.name)):
+            with self.assertPdnsRequests(self.requests_desec_domain_deletion(domain=domain)):
                  call_command('scavenge-unused')
             self.assertFalse(Domain.objects.filter(pk=domain.pk).exists())
 
