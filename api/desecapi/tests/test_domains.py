@@ -276,6 +276,10 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertContainsRRSets(response.data, [dict(subname='', records=settings.DEFAULT_NS, type='NS')])
 
+            domain = Domain.objects.get(name=name)
+            self.assertFalse(domain.is_locally_registrable)
+            self.assertEqual(domain.renewal_state, Domain.RenewalState.IMMORTAL);
+
     def test_create_api_known_domain(self):
         url = self.reverse('v1:domain-list')
 
@@ -423,6 +427,10 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
                 response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
                 self.assertFalse(mail.outbox)  # do not send email
+
+            domain = Domain.objects.get(name=name)
+            self.assertTrue(domain.is_locally_registrable)
+            self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH);
 
     def test_domain_limit(self):
         url = self.reverse('v1:domain-list')

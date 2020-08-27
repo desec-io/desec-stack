@@ -224,6 +224,7 @@ def get_minimum_ttl_default():
 class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
     class RenewalState(models.IntegerChoices):
+        IMMORTAL = 0
         FRESH = 1
         NOTIFIED = 2
         WARNED = 3
@@ -235,9 +236,14 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
-    renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.FRESH)
+    renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)
     _keys = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.pk is None and kwargs.get('renewal_state') is None and self.is_locally_registrable:
+            self.renewal_state = Domain.RenewalState.FRESH
 
     @cached_property
     def public_suffix(self):

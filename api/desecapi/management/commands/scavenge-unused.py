@@ -21,11 +21,7 @@ notice_days_warn = 7
 
 
 class Command(BaseCommand):
-    base_queryset = models.Domain.objects.filter(reduce(
-        operator.or_,
-        (Q(name__endswith=f'.{lps}') for lps in settings.LOCAL_PUBLIC_SUFFIXES),
-        Q(pk__in=[])  # always-false default
-    ))
+    base_queryset = models.Domain.objects.exclude(renewal_state=models.Domain.RenewalState.IMMORTAL)
 
     @classmethod
     def renew_touched_domains(cls):

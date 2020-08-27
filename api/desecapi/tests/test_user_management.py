@@ -878,7 +878,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
 
 class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
-    DYN = True
+    DYN = False
 
     def setUp(self):
         super().setUp()
@@ -900,20 +900,20 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
             status_code=status.HTTP_200_OK
         )
 
-    def test_renew_domain_non_local_public_child(self):
-        user = User.objects.get(email=self.email)
-        domain = self.create_domain(owner=user)
+    def test_renew_domain_immortal(self):
+        domain = self.my_domains[0]
+        domain.renewal_state = Domain.RenewalState.IMMORTAL
+        domain.save()
         for days in [182, 184]:
             domain.published = timezone.now() - timedelta(days=days)
             domain.renewal_changed = domain.published
             domain.save()
 
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
             call_command('scavenge-unused')
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
+            self.assertEqual(len(mail.outbox), 0)
+            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.IMMORTAL)
             self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_changed, domain.renewal_changed)
             self.assertEqual(Domain.objects.get(pk=domain.pk).published, domain.published)
-            self.assertEqual(len(mail.outbox), 0)
 
     def test_renew_domain_recently_published(self):
         domain = self.my_domains[0]
@@ -935,6 +935,7 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         domain = self.my_domains[0]
         domain.published = timezone.now() - timedelta(days=182)
         domain.renewal_changed = domain.published
+        domain.renewal_state = Domain.RenewalState.FRESH
         domain.save()
 
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
@@ -946,6 +947,7 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         domain = self.my_domains[0]
         domain.published = timezone.now() - timedelta(days=183)
         domain.renewal_changed = domain.published
+        domain.renewal_state = Domain.RenewalState.FRESH
         domain.save()
 
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
@@ -961,8 +963,10 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
         self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
 
+        # Check that other domains aren't affected
+        self.assertGreater(len(self.my_domains), 1)
         for domain in self.my_domains[1:]:
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
+            self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
             self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_changed, domain.renewal_changed)
 
     def test_renew_domain_notified_21_days(self):
@@ -984,13 +988,17 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
         self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
 
+        # Check that other domains aren't affected
+        self.assertGreater(len(self.my_domains), 1)
         for domain in self.my_domains[1:]:
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
+            self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
             self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_changed, domain.renewal_changed)
 
     def test_renew_domain_warned_7_days(self):
-        while self.my_domains:
-            domain = self.my_domains.pop()
+        domains = self.my_domains[:]  # copy list so we can modify it later without side effects
+        self.assertGreaterEqual(len(domains), 2)
+        while domains:
+            domain = domains.pop()
             domain.published = timezone.now() - timedelta(days=183+28)
             domain.renewal_state = Domain.RenewalState.WARNED
             domain.renewal_changed = timezone.now() - timedelta(days=7)
@@ -1001,7 +1009,11 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
             self.assertFalse(Domain.objects.filter(pk=domain.pk).exists())
 
             # User gets deleted when last domain is purged
-            self.assertEqual(User.objects.filter(pk=self.owner.pk).exists(), bool(self.my_domains))
+            self.assertEqual(User.objects.filter(pk=self.owner.pk).exists(), bool(domains))
 
-            for domain in self.my_domains:
-                self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
+            # Check that other domains are not affected
+            for domain in domains:
+                self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
+
+class RenewDynTestCase(RenewTestCase):
+    DYN = True
