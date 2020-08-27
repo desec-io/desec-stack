@@ -469,7 +469,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         validators=[
             validate_lower,
             RegexValidator(
-                regex=r'^([*]|(([*][.])?[a-z0-9_.-]*))$',
+                regex=r'^([*]|(([*][.])?([a-z0-9_-]+[.])*[a-z0-9_-]+))$',
                 message='Subname can only use (lowercase) a-z, 0-9, ., -, and _, '
                         'may start with a \'*.\', or just be \'*\'.',
                 code='invalid_subname'

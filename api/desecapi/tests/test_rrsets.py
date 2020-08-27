@@ -272,6 +272,17 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertIn('Subname can only use (lowercase)', str(response.data))
 
+    def test_create_my_rr_sets_subname_too_many_dots(self):
+        for subname in ['dottest.', '.dottest', 'dot..test']:
+            data = {'subname': subname, 'records': ['10 example.com.'], 'ttl': 3600, 'type': 'MX'}
+            response = self.client.post_rr_set(self.my_domain.name, **data)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+        response = self.client.get_rr_sets(self.my_domain.name)
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertRRSetsCount(response.data, [data], count=0)
+
+
     def test_create_my_rr_sets_empty_payload(self):
         response = self.client.post_rr_set(self.my_empty_domain.name)
         self.assertContains(response, 'No data provided', status_code=status.HTTP_400_BAD_REQUEST)
