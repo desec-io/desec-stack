@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 import string
 from json import JSONDecodeError
 from typing import Optional, Tuple, Iterable, Callable
@@ -64,7 +65,10 @@ class DeSECAPIV1Client:
         # (2) against the default certificate store, if /autocert is not available
         # (this is usually the case when run outside a docker container)
         self.verify = True
-        self.verify_alt = f'/autocert/desec.{os.environ["DESECSTACK_DOMAIN"]}.cer'
+        self.verify_alt = [
+            f'/autocert/desec.{os.environ["DESECSTACK_DOMAIN"]}.cer',
+            f'/autocert/get.desec.{os.environ["DESECSTACK_DOMAIN"]}.cer',
+        ]
 
     @staticmethod
     def _filter_response_output(output: dict) -> dict:
@@ -75,17 +79,28 @@ class DeSECAPIV1Client:
         return output
 
     def _do_request(self, *args, **kwargs):
-        try:
-            return requests.request(*args, **kwargs, verify=self.verify)
-        except SSLError:
-            self.verify, self.verify_alt = self.verify_alt, self.verify
-            return requests.request(*args, **kwargs, verify=self.verify)  # if problem persists, let it raise
+        verify_list = [self.verify] + self.verify_alt
+        exc = None
+        for verify in verify_list:
+            try:
+                reply = requests.request(*args, **kwargs, verify=verify)
+            except SSLError as e:
+                print(f'API <<< SSL could not verify against "{verify}"')
+                exc = e
+            else:
+                # note verification preference for next time
+                self.verify = verify
+                self.verify_alt = verify_list
+                self.verify_alt.remove(self.verify)
+                return reply
+        print(f'API <<< SSL could not be verified against any verification method')
+        raise exc
 
     def _request(self, method: str, *, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
         if data is not None:
             data = json.dumps(data)
 
-        url = self.base_url + path
+        url = self.base_url + path if re.match(r'^https?://', path) is None else path
 
         print(f"API >>> {method} {url}")
         if data:
