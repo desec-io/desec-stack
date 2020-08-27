@@ -1,4 +1,5 @@
 import time
+from socket import gethostbyname
 
 from django.conf import settings
 from django.core.mail import get_connection, mail_admins
@@ -60,7 +61,7 @@ class Command(BaseCommand):
         timestamps = []
         qname = dns.name.from_text(name)
         query = dns.message.make_query(qname, dns.rdatatype.TXT)
-        server = 'ns1.desec.io'
+        server = gethostbyname('ns1.desec.io')
         response = None
         try:
             response = dns.query.tcp(query, server, timeout=5)
