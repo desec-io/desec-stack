@@ -1,6 +1,6 @@
 import logging
 
-from django.db.utils import OperationalError
+from django.db.utils import IntegrityError, OperationalError
 from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 from rest_framework.response import Response
@@ -22,23 +22,16 @@ def exception_handler(exc, context):
         logger.error('{} Supplementary Information'.format(exc.__class__),
                      exc_info=exc, stack_info=False)
 
-    def _500():
-        _log()
+    def _409():
+        return Response({'detail': f'Conflict: {exc}'}, status=status.HTTP_409_CONFLICT)
 
-        # Let clients know that there is a problem
-        response = Response({'detail': 'Internal Server Error. We\'re on it!'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return response
+    def _500():
+        return Response({'detail': "Internal Server Error. We're on it!"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _503():
-        _log()
+        return Response({'detail': 'Please try again later.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        # Let clients know that there is a temporary problem
-        response = Response({'detail': 'Please try again later.'},
-                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        return response
-
-    # Catch DB exception and log an extra error for additional context
+    # Catch DB OperationalError and log an extra error for additional context
     if (
         isinstance(exc, OperationalError) and
         isinstance(exc.args, (list, dict, tuple)) and
@@ -52,22 +45,21 @@ def exception_handler(exc, context):
             2026,  # SSL connection error
         )
     ):
+        _log()
         metrics.get('desecapi_database_unavailable').inc()
         return _503()
 
-    # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
-    if isinstance(exc, OSError):
-        # TODO add metrics
-        return _500()
+    handlers = {
+        IntegrityError: _409,
+        OSError: _500,  # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
+        UnsupportedRule: _500,  # The PSL encountered an unsupported rule
+        PDNSException: _500,  # nslord/nsmaster returned an error
+    }
 
-    # The PSL encountered an unsupported rule
-    if isinstance(exc, UnsupportedRule):
-        # TODO add metrics
-        return _500()
-
-    # nslord/nsmaster returned an error
-    if isinstance(exc, PDNSException):
-        # TODO add metrics
-        return _500()
+    for exception_class, handler in handlers.items():
+        if isinstance(exc, exception_class):
+            _log()
+            # TODO add metrics
+            return handler()
 
     return drf_exception_handler(exc, context)

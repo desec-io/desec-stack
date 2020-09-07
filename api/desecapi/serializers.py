@@ -8,7 +8,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.password_validation import validate_password
 import django.core.exceptions
 from django.core.validators import MinValueValidator
-from django.db import IntegrityError, OperationalError
 from django.db.models import Model, Q
 from django.utils import timezone
 from rest_framework import serializers
@@ -17,7 +16,6 @@ from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, 
 
 from api import settings
 from desecapi import crypto, metrics, models
-from desecapi.exceptions import ConcurrencyException
 
 
 class CaptchaSerializer(serializers.ModelSerializer):
@@ -466,29 +464,19 @@ class RRsetListSerializer(serializers.ListSerializer):
 
         ret = []
 
-        try:
-            for subname, type_ in created:
-                ret.append(self.child.create(
-                    validated_data=data_index[(subname, type_)]
-                ))
+        for subname, type_ in created:
+            ret.append(self.child.create(
+                validated_data=data_index[(subname, type_)]
+            ))
 
-            for subname, type_ in updated:
-                ret.append(self.child.update(
-                    instance=instance_index[(subname, type_)],
-                    validated_data=data_index[(subname, type_)]
-                ))
+        for subname, type_ in updated:
+            ret.append(self.child.update(
+                instance=instance_index[(subname, type_)],
+                validated_data=data_index[(subname, type_)]
+            ))
 
-            for subname, type_ in deleted:
-                instance_index[(subname, type_)].delete()
-
-        # time of check (does it exist?) and time of action (create vs update) are different,
-        # so for parallel requests, we can get integrity errors due to duplicate keys.
-        # We knew how to handle this with MySQL, but after switching for Postgres, we don't.
-        # Re-raise it so we get an email based on which we can learn and improve error handling.
-        except OperationalError as e:
-            raise e
-        except (IntegrityError, models.RRset.DoesNotExist) as e:
-            raise ConcurrencyException from e
+        for subname, type_ in deleted:
+            instance_index[(subname, type_)].delete()
 
         return ret
 
