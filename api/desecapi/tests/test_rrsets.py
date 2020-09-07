@@ -135,6 +135,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 {'subname': subname, 'records': ['1.2.3.4'], 'ttl': 3660, 'type': 'A'},
                 {'subname': '' if subname is None else subname, 'records': ['desec.io.'], 'ttl': 36900, 'type': 'PTR'},
                 {'subname': '' if subname is None else subname, 'ttl': 3650, 'type': 'TXT', 'records': ['"foo"']},
+                {'subname': f'{subname}.cname'.lower(), 'ttl': 3600, 'type': 'CNAME', 'records': ['example.com.']},
             ]:
                 # Try POST with missing subname
                 if data['subname'] is None:
@@ -142,11 +143,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
                     response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
+                    self.assertStatus(response, status.HTTP_201_CREATED)
                     self.assertTrue(all(field in response.data for field in
                                         ['created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched']))
                     self.assertEqual(self.my_empty_domain.touched,
                                      max(rrset.touched for rrset in self.my_empty_domain.rrset_set.all()))
-                    self.assertStatus(response, status.HTTP_201_CREATED)
 
                 # Check for uniqueness on second attempt
                 response = self.client.post_rr_set(domain_name=self.my_empty_domain.name, **data)
@@ -185,6 +186,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         data = {'subname': '', 'ttl': 3600, 'type': 'CNAME', 'records': ['foobar.com.']}
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
         self.assertContains(response, 'CNAME RRset cannot have empty subname', status_code=status.HTTP_400_BAD_REQUEST)
+
+    def test_create_my_rr_sets_cname_exclusivity(self):
+        self.create_rr_set(self.my_domain, ['1.2.3.4'], type='A', ttl=3600, subname='a')
+        self.create_rr_set(self.my_domain, ['example.com.'], type='CNAME', ttl=3600, subname='cname')
+
+        # Can't add a CNAME where something else is
+        data = {'subname': 'a', 'ttl': 3600, 'type': 'CNAME', 'records': ['foobar.com.']}
+        response = self.client.post_rr_set(self.my_domain.name, **data)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+        # Can't add something else where a CNAME is
+        data = {'subname': 'cname', 'ttl': 3600, 'type': 'A', 'records': ['4.3.2.1']}
+        response = self.client.post_rr_set(self.my_domain.name, **data)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_without_records(self):
         for subname in ['', 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:

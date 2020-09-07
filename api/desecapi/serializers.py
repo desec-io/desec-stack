@@ -1,4 +1,5 @@
 import binascii
+import copy
 import json
 import re
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
@@ -15,7 +16,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
-from desecapi import crypto, metrics, models
+from desecapi import crypto, metrics, models, validators
 
 
 class CaptchaSerializer(serializers.ModelSerializer):
@@ -237,10 +238,20 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return fields
 
     def get_validators(self):
-        return [UniqueTogetherValidator(
-            self.domain.rrset_set, ('subname', 'type'),
-            message='Another RRset with the same subdomain and type exists for this domain.'
-        )]
+        return [
+            UniqueTogetherValidator(
+                self.domain.rrset_set,
+                ('subname', 'type'),
+                message='Another RRset with the same subdomain and type exists for this domain.',
+            ),
+            validators.ExclusionConstraintValidator(
+                self.domain.rrset_set,
+                ('subname',),
+                exclusion_condition=('type', 'CNAME',),
+                message='RRset with conflicting type present: database ({types}).'
+                        ' (No other RRsets are allowed alongside CNAME.)',
+            ),
+        ]
 
     @staticmethod
     def validate_type(value):
@@ -338,7 +349,22 @@ class RRsetListSerializer(serializers.ListSerializer):
 
     @staticmethod
     def _key(data_item):
-        return data_item.get('subname', None), data_item.get('type', None)
+        return data_item.get('subname'), data_item.get('type')
+
+    @staticmethod
+    def _types_by_position_string(conflicting_indices_by_type):
+        types_by_position = {}
+        for type_, conflict_positions in conflicting_indices_by_type.items():
+            for position in conflict_positions:
+                types_by_position.setdefault(position, []).append(type_)
+        # Sort by position, None at the end
+        types_by_position = dict(sorted(types_by_position.items(), key=lambda x: (x[0] is None, x)))
+        db_conflicts = types_by_position.pop(None, None)
+        if db_conflicts: types_by_position['database'] = db_conflicts
+        for position, types in types_by_position.items():
+            types_by_position[position] = ', '.join(sorted(types))
+        types_by_position = [f'{position} ({types})' for position, types in types_by_position.items()]
+        return ', '.join(types_by_position)
 
     def to_internal_value(self, data):
         if not isinstance(data, list):
@@ -365,22 +391,48 @@ class RRsetListSerializer(serializers.ListSerializer):
             # Validate item type before using anything from it
             if not isinstance(item, dict):
                 self.fail('invalid', datatype=type(item).__name__)
-            key = self._key(item)
-            items = indices.setdefault(key[0], {}).setdefault(key[1], set())
+            s, t = self._key(item)  # subname, type
+            # Construct an index of the RRsets in `data` by `s` and `t`. As (subname, type) may be given multiple times
+            # (although invalid), we make indices[s][t] a set to properly keep track. We also check and record RRsets
+            # which are known in the database (once per subname), using index `None` (for checking CNAME exclusivity).
+            if s not in indices:
+                types = self.child.domain.rrset_set.filter(subname=s).values_list('type', flat=True)
+                indices[s] = {type_: {None} for type_ in types}
+            items = indices[s].setdefault(t, set())
             items.add(idx)
+
+        collapsed_indices = copy.deepcopy(indices)
+        for idx, item in enumerate(data):
+            if item.get('records') == []:
+                s, t = self._key(item)
+                collapsed_indices[s][t] -= {idx, None}
 
         # Iterate over all rows in the data given
         for idx, item in enumerate(data):
             try:
                 # see if other rows have the same key
-                key = self._key(item)
-                if len(indices[key[0]][key[1]]) > 1:
+                s, t = self._key(item)
+                data_indices = indices[s][t] - {None}
+                if len(data_indices) > 1:
                     raise serializers.ValidationError({
                         'non_field_errors': [
                             'Same subname and type as in position(s) %s, but must be unique.' %
-                            ', '.join(map(str, indices[key[0]][key[1]] - {idx}))
+                            ', '.join(map(str, data_indices - {idx}))
                         ]
                     })
+
+                # see if other rows violate CNAME exclusivity
+                if item.get('records') != []:
+                    conflicting_indices_by_type = {k: v for k, v in collapsed_indices[s].items()
+                                                   if (k == 'CNAME') != (t == 'CNAME')}
+                    if any(conflicting_indices_by_type.values()):
+                        types_by_position = self._types_by_position_string(conflicting_indices_by_type)
+                        raise serializers.ValidationError({
+                            'non_field_errors': [
+                                f'RRset with conflicting type present: {types_by_position}.'
+                                ' (No other RRsets are allowed alongside CNAME.)'
+                            ]
+                        })
 
                 # determine if this is a partial update (i.e. PATCH):
                 # we allow partial update if a partial update method (i.e. PATCH) is used, as indicated by self.partial,
@@ -466,6 +518,12 @@ class RRsetListSerializer(serializers.ListSerializer):
 
         ret = []
 
+        # The above algorithm makes sure that created, updated, and deleted are disjoint. Thus, no "override cases"
+        # (such as: an RRset should be updated and delete, what should be applied last?) need to be considered.
+        # We apply deletion first to get any possible CNAME exclusivity collisions out of the way.
+        for subname, type_ in deleted:
+            instance_index[(subname, type_)].delete()
+
         for subname, type_ in created:
             ret.append(self.child.create(
                 validated_data=data_index[(subname, type_)]
@@ -476,9 +534,6 @@ class RRsetListSerializer(serializers.ListSerializer):
                 instance=instance_index[(subname, type_)],
                 validated_data=data_index[(subname, type_)]
             ))
-
-        for subname, type_ in deleted:
-            instance_index[(subname, type_)].delete()
 
         return ret
 
