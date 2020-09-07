@@ -18,11 +18,14 @@ import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.fields import RangeOperators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Manager, Q
+from django.db.models.expressions import RawSQL
 from django.template.loader import get_template
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
@@ -490,6 +493,16 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     objects = RRsetManager()
 
     class Meta:
+        constraints = [
+            ExclusionConstraint(
+                name='cname_exclusivity',
+                expressions=[
+                    ('domain', RangeOperators.EQUAL),
+                    ('subname', RangeOperators.EQUAL),
+                    (RawSQL("int4(type = 'CNAME')", ()), RangeOperators.NOT_EQUAL),
+                ],
+            ),
+        ]
         unique_together = (("domain", "subname", "type"),)
 
     @staticmethod
