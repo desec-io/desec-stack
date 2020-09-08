@@ -50,6 +50,11 @@ jobs:
         docker-compose build
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build test-e2e
 
+    - name: Check for missing migrations
+      run: |
+        docker-compose -f docker-compose.yml run -T api python manage.py makemigrations --check
+        docker-compose -f docker-compose.yml down -v
+
     - name: Run e2e Tests
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml run -T test-e2e bash -c "./apiwait 45 && mocha ./spec"
