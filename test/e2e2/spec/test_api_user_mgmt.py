@@ -24,6 +24,9 @@ def test_register(api_anon: DeSECAPIV1Client):
 
 def test_register2(api_user: DeSECAPIV1Client):
     user = api_user.get("/auth/account/").json()
-    assert user["email"] == api_user.email
+
+    # Verify that email address local part is stored as provided, and hostname is lowercased
+    email_name, domain_part = api_user.email.strip().rsplit('@', 1)
+    assert user["email"] == email_name + '@' + domain_part.lower()
     assert api_user.headers['Authorization'].startswith('Token ')
     assert len(api_user.headers['Authorization']) > len('Token ') + 10
