@@ -14,12 +14,16 @@ import requests
 from requests.exceptions import SSLError
 
 
+def random_mixed_case_string(n):
+    k = random.randint(1, n-1)
+    s = random.choices(string.ascii_lowercase, k=k) + random.choices(string.ascii_uppercase, k=n-k)
+    random.shuffle(s)
+    return ''.join(s)
+
+
 @pytest.fixture()
 def random_email() -> Callable[[], str]:
-    return lambda: (
-        "".join(random.choice(string.ascii_letters) for _ in range(10))
-        + "@desec.test"
-    )
+    return lambda: f'{random_mixed_case_string(10)}@{random_mixed_case_string(10)}.desec.test'
 
 
 @pytest.fixture()
