@@ -19,7 +19,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.contrib.postgres.constraints import ExclusionConstraint
-from django.contrib.postgres.fields import RangeOperators
+from django.contrib.postgres.fields import CIEmailField, RangeOperators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import RegexValidator
@@ -85,9 +85,8 @@ class MyUserManager(BaseUserManager):
 
 class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField(
+    email = CIEmailField(
         verbose_name='email address',
-        max_length=191,
         unique=True,
     )
     is_active = models.BooleanField(default=True)
