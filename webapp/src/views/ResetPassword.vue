@@ -174,7 +174,7 @@
         this.errors = [];
         try {
           await HTTP.post('auth/account/reset-password/', {
-            email: this.email.toLowerCase(),
+            email: this.email,
             captcha: {
               id: this.captcha.id,
               solution: this.captchaSolution,

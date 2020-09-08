@@ -243,7 +243,7 @@
         }
         try {
           await HTTP.post('auth/', {
-            email: this.email.toLowerCase(),
+            email: this.email,
             password: null,
             captcha: {
               id: this.captcha.id,
