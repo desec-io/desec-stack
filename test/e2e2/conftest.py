@@ -57,7 +57,6 @@ class DeSECAPIV1Client:
         self.email = None
         self.password = None
         self.domains = []
-        self.verify = True
 
         # We support two certificate verification methods
         # (1) against self-signed certificates, if /autocert path is present
@@ -151,11 +150,13 @@ class DeSECAPIV1Client:
         )
 
     def login(self, email: str, password: str) -> requests.Response:
-        token = self.post(
+        response = self.post(
             "/auth/login/", data={"email": email, "password": password}
         )
-        self.headers["Authorization"] = f'Token {token.json()["token"]}'
-        return token
+        token = response.json().get('token')
+        if token is not None:
+            self.headers["Authorization"] = f'Token {response.json()["token"]}'
+        return response
 
     def domain_list(self) -> requests.Response:
         return self.get("/domains/")
@@ -195,12 +196,12 @@ def api_anon() -> DeSECAPIV1Client:
 
 
 @pytest.fixture()
-def api_user(api_anon, random_email, random_password) -> DeSECAPIV1Client:
+def api_user(random_email, random_password) -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account (zero domains, one token). Authorization header
     is preconfigured, email address and password are randomly chosen.
     """
-    api = api_anon
+    api = DeSECAPIV1Client()
     email = random_email()
     password = random_password()
     api.register(email, password)
