@@ -1,6 +1,4 @@
 import datetime
-from functools import reduce
-import operator
 
 from django.conf import settings
 from django.core.mail import get_connection, mail_admins

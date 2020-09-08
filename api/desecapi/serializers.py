@@ -638,6 +638,7 @@ class CustomFieldNameUniqueValidator(UniqueValidator):
 
 class AuthenticatedActionSerializer(serializers.ModelSerializer):
     state = serializers.CharField()  # serializer read-write, but model read-only field
+    validity_period = settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
 
     class Meta:
         model = models.AuthenticatedAction
@@ -650,11 +651,10 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         return urlsafe_b64encode(payload_enc).decode()
 
     @classmethod
-    def _unpack_code(cls, code):
+    def _unpack_code(cls, code, *, ttl):
         try:
             payload_enc = urlsafe_b64decode(code.encode())
-            payload = crypto.decrypt(payload_enc, context='desecapi.serializers.AuthenticatedActionSerializer',
-                                     ttl=settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE.total_seconds())
+            payload = crypto.decrypt(payload_enc, context='desecapi.serializers.AuthenticatedActionSerializer', ttl=ttl)
             return json.loads(payload.decode())
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
@@ -668,16 +668,25 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         data = data.copy()  # avoid side effect from .pop
+
+        # calculate code TTL
+        validity_period = self.context.get('validity_period', self.validity_period)
         try:
-            # decode from single string
-            unpacked_data = self._unpack_code(self.context['code'])
+            ttl = validity_period.total_seconds()
+        except AttributeError:
+            ttl = None  # infinite
+
+        # decode from single string
+        try:
+            unpacked_data = self._unpack_code(self.context['code'], ttl=ttl)
         except KeyError:
             raise serializers.ValidationError({'code': ['This field is required.']})
         except ValueError:
-            validity = settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
-            raise serializers.ValidationError({
-                'code': [f'This code is invalid, most likely because it expired (validity: {validity}).']
-            })
+            if ttl is None:
+                msg = 'This code is invalid.'
+            else:
+                msg = f'This code is invalid, possibly because it expired (validity: {validity_period}).'
+            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: msg, 'code': 'invalid_code'})
 
         # add extra fields added by the user
         unpacked_data.update(**data)
@@ -758,6 +767,7 @@ class AuthenticatedDomainBasicUserActionSerializer(AuthenticatedBasicUserActionS
 
 
 class AuthenticatedRenewDomainBasicUserActionSerializer(AuthenticatedDomainBasicUserActionSerializer):
+    validity_period = None
 
     class Meta(AuthenticatedDomainBasicUserActionSerializer.Meta):
         model = models.AuthenticatedRenewDomainBasicUserAction

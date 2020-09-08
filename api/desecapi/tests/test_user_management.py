@@ -384,7 +384,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertVerificationFailureExpiredCodeResponse(self, response):
         return self.assertContains(
             response=response,
-            text="This code is invalid, most likely because it expired (validity: ",
+            text="This code is invalid, possibly because it expired (validity: ",
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
@@ -427,7 +427,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if tampered_domain is not None:
             path = urlparse(confirmation_link).path
             code = resolve(path).kwargs.get('code')
-            data = AuthenticatedActionSerializer._unpack_code(code)
+            data = AuthenticatedActionSerializer._unpack_code(code, ttl=None)
             data['domain'] = tampered_domain
             tampered_code = AuthenticatedActionSerializer._pack_code(data)
             confirmation_link = confirmation_link.replace(code, tampered_code)
@@ -959,9 +959,12 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         pattern = r'following link[^:]*:\s+\* ' + domain.name.replace('.', r'\.') + r'\s+([^\s]*)'
         confirmation_link = self.assertRenewDomainEmail(domain.owner.email, body_contains, pattern)
         self.assertConfirmationLinkRedirect(confirmation_link)
-        self.assertRenewDomainVerificationSuccessResponse(self.client.verify(confirmation_link))
+
+        # Use link after 14 days
+        with mock.patch('time.time', return_value=time.time() + 86400*14):
+            self.assertRenewDomainVerificationSuccessResponse(self.client.verify(confirmation_link))
+            self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
-        self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
 
         # Check that other domains aren't affected
         self.assertGreater(len(self.my_domains), 1)
@@ -984,9 +987,12 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         pattern = r'following link[^:]*:\s+\* ' + domain.name.replace('.', r'\.') + r'\s+([^\s]*)'
         confirmation_link = self.assertRenewDomainEmail(domain.owner.email, body_contains, pattern)
         self.assertConfirmationLinkRedirect(confirmation_link)
-        self.assertRenewDomainVerificationSuccessResponse(self.client.verify(confirmation_link))
+
+        # Use link after 6 days
+        with mock.patch('time.time', return_value=time.time() + 86400*6):
+            self.assertRenewDomainVerificationSuccessResponse(self.client.verify(confirmation_link))
+            self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
         self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.FRESH)
-        self.assertLess(timezone.now() - Domain.objects.get(pk=domain.pk).renewal_changed, timedelta(seconds=1))
 
         # Check that other domains aren't affected
         self.assertGreater(len(self.my_domains), 1)

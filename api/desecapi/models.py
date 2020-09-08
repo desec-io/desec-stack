@@ -166,8 +166,6 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
             raise ValueError(f'Cannot send email to user {self.pk} without a good reason: {reason}')
 
         context = context or {}
-        context.setdefault('link_expiration_hours',
-                           settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE // timedelta(hours=1))
         content = get_template(f'emails/{reason}/content.txt').render(context)
         content += f'\nSupport Reference: user_id = {self.pk}\n'
         footer = get_template('emails/footer.txt').render()

@@ -19,7 +19,7 @@ The above domain name(s) are scheduled for deletion on
 your account, we will also delete your account on this date.
 
 To retain your domain name (and account), either change a DNS record
-before that date, or click the following link(s) (valid for {{ link_expiration_hours }} hours):
+before that date, or click the following link(s):
 
 {% for domain in domains %}
   * {{ domain.name }}

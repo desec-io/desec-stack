@@ -1,5 +1,6 @@
 import base64
 import binascii
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import user_logged_in
@@ -25,6 +26,13 @@ from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.permissions import IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimitOnPOST
 from desecapi.renderers import PlainTextRenderer
+
+
+def generate_confirmation_link(request, action_serializer, viewname, **kwargs):
+    action = action_serializer.Meta.model(**kwargs)
+    action_data = action_serializer(action).data
+    confirmation_link = reverse(viewname, request=request, args=[action_data['code']])
+    return confirmation_link, action_serializer.validity_period
 
 
 class EmptyPayloadMixin:
@@ -447,10 +455,12 @@ class AccountCreateView(generics.CreateAPIView):
             # send email if needed
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
-                action = models.AuthenticatedActivateUserAction(user=user, domain=domain)
-                verification_code = serializers.AuthenticatedActivateUserActionSerializer(action).data['code']
+                link, validity_period = generate_confirmation_link(request,
+                                                                   serializers.AuthenticatedActivateUserActionSerializer,
+                                                                   'confirm-activate-account', user=user, domain=domain)
                 user.send_email('activate-with-domain' if domain else 'activate', context={
-                    'confirmation_link': reverse('confirm-activate-account', request=request, args=[verification_code]),
+                    'confirmation_link': link,
+                    'link_expiration_hours': validity_period // timedelta(hours=1),
                     'domain': domain,
                 })
 
@@ -480,10 +490,12 @@ class AccountDeleteView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         if self.request.user.domains.exists():
             return self.response_still_has_domains
-        action = models.AuthenticatedDeleteUserAction(user=self.request.user)
-        verification_code = serializers.AuthenticatedDeleteUserActionSerializer(action).data['code']
+        link, validity_period = generate_confirmation_link(request,
+                                                           serializers.AuthenticatedDeleteUserActionSerializer,
+                                                           'confirm-delete-account', user=self.request.user)
         request.user.send_email('delete-user', context={
-            'confirmation_link': reverse('confirm-delete-account', request=request, args=[verification_code])
+            'confirmation_link': link,
+            'link_expiration_hours': validity_period // timedelta(hours=1),
         })
 
         return Response(data={'detail': 'Please check your mailbox for further account deletion instructions.'},
@@ -530,10 +542,12 @@ class AccountChangeEmailView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
 
-        action = models.AuthenticatedChangeEmailUserAction(user=request.user, new_email=new_email)
-        verification_code = serializers.AuthenticatedChangeEmailUserActionSerializer(action).data['code']
+        link, validity_period = generate_confirmation_link(request,
+                                                           serializers.AuthenticatedChangeEmailUserActionSerializer,
+                                                           'confirm-change-email', user=request.user, new_email=new_email)
         request.user.send_email('change-email', recipient=new_email, context={
-            'confirmation_link': reverse('confirm-change-email', request=request, args=[verification_code]),
+            'confirmation_link': link,
+            'link_expiration_hours': validity_period // timedelta(hours=1),
             'old_email': request.user.email,
             'new_email': new_email,
         })
@@ -565,10 +579,12 @@ class AccountResetPasswordView(generics.GenericAPIView):
 
     @staticmethod
     def send_reset_token(user, request):
-        action = models.AuthenticatedResetPasswordUserAction(user=user)
-        verification_code = serializers.AuthenticatedResetPasswordUserActionSerializer(action).data['code']
+        link, validity_period = generate_confirmation_link(request,
+                                                           serializers.AuthenticatedResetPasswordUserActionSerializer,
+                                                           'confirm-reset-password', user=user)
         user.send_email('reset-password', context={
-            'confirmation_link': reverse('confirm-reset-password', request=request, args=[verification_code])
+            'confirmation_link': link,
+            'link_expiration_hours': validity_period // timedelta(hours=1),
         })
 
 
@@ -588,7 +604,11 @@ class AuthenticatedActionView(generics.GenericAPIView):
         return 'account_management_passive' if self.request.method in SAFE_METHODS else 'account_management_active'
 
     def get_serializer_context(self):
-        return {**super().get_serializer_context(), 'code': self.kwargs['code']}
+        return {
+            **super().get_serializer_context(),
+            'code': self.kwargs['code'],
+            'validity_period': self.get_serializer_class().validity_period,
+        }
 
     def perform_authentication(self, request):
         # Delay authentication until request.auth or request.user is first accessed.
