@@ -30,3 +30,16 @@ def test_register2(api_user: DeSECAPIV1Client):
     assert user["email"] == email_name + '@' + domain_part.lower()
     assert api_user.headers['Authorization'].startswith('Token ')
     assert len(api_user.headers['Authorization']) > len('Token ') + 10
+
+
+def test_register_login_email_case_variation(api_user: DeSECAPIV1Client, api_anon: DeSECAPIV1Client):
+    # Invert email casing
+    email2 = ''.join(l.lower() if l.isupper() else l.upper() for l in api_user.email)
+    password2 = "foobar13"
+
+    # Try registering an account (should always return success, even if address with any casing is taken)
+    assert api_anon.register(email2, password2)[1].json() == {"detail": "Welcome!"}
+
+    # Verify that login is possible regardless of email spelling, but only with the first user's password
+    assert api_anon.login(email2, password2).status_code == 403
+    assert "token" in api_anon.login(email2, api_user.password).json()

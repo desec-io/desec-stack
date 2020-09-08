@@ -89,6 +89,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         verbose_name='email address',
         max_length=191,
         unique=True,
+        db_index=False,  # may replace manual migration 0006_email_case, cf. https://code.djangoproject.com/ticket/24082
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
