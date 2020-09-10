@@ -200,11 +200,10 @@ validate_domain_name = [
 ]
 
 
-def get_minimum_ttl_default():
-    return settings.MINIMUM_TTL_DEFAULT
-
-
 class Domain(ExportModelOperationsMixin('Domain'), models.Model):
+    @staticmethod
+    def _minimum_ttl_default():
+        return settings.MINIMUM_TTL_DEFAULT
 
     class RenewalState(models.IntegerChoices):
         IMMORTAL = 0
@@ -218,7 +217,7 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
                             validators=validate_domain_name)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
-    minimum_ttl = models.PositiveIntegerField(default=get_minimum_ttl_default)
+    minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)
     _keys = None
@@ -404,27 +403,27 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
         return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
 
 
-def get_default_value_created():
-    return timezone.now()
-
-
-def get_default_value_due():
-    return timezone.now() + timedelta(days=7)
-
-
-def get_default_value_mref():
-    return "ONDON" + str(time.time())
-
-
 class Donation(ExportModelOperationsMixin('Donation'), models.Model):
-    created = models.DateTimeField(default=get_default_value_created)
+    @staticmethod
+    def _created_default():
+        return timezone.now()
+
+    @staticmethod
+    def _due_default():
+        return timezone.now() + timedelta(days=7)
+
+    @staticmethod
+    def _mref_default():
+        return "ONDON" + str(time.time())
+
+    created = models.DateTimeField(default=_created_default.__func__)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
     bic = models.CharField(max_length=11, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     message = models.CharField(max_length=255, blank=True)
-    due = models.DateTimeField(default=get_default_value_due)
-    mref = models.CharField(max_length=32, default=get_default_value_mref)
+    due = models.DateTimeField(default=_due_default.__func__)
+    mref = models.CharField(max_length=32, default=_mref_default.__func__)
     email = models.EmailField(max_length=255, blank=True)
 
     class Meta:
