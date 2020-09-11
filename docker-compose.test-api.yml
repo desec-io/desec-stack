@@ -8,3 +8,16 @@ services:
     logging:
       driver: "json-file"
     restart: "no"
+
+  dbapi:
+    ports:
+    - "127.0.0.1:5432:5432"
+    volumes:
+    - dbapi_postgres_test:/var/lib/postgresql/data
+    - ./dbapi/pg_hba_test.conf:/usr/local/src/pg_hba.conf:ro
+    environment:
+    - DESECSTACK_API_TEST=TRUE
+    restart: "no"
+
+volumes:
+  dbapi_postgres_test:

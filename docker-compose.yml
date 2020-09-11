@@ -62,7 +62,6 @@ services:
     - dbapi_postgres:/var/lib/postgresql/data
     - ./dbapi/pg_hba.conf:/usr/local/src/pg_hba.conf:ro
     environment:
-    - DESECSTACK_IPV4_REAR_PREFIX16
     - POSTGRES_DB=desec
     - POSTGRES_HOST_AUTH_METHOD=reject
     - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256

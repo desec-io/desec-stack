@@ -324,11 +324,18 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
            set -a && source ../.env && set +a
 
-        Second, the API needs to be configured to use a local database instead of the dbapi host.
-        (dbapi, of course, is unavailable outside the docker-compose application.)
-        We have configured a test database in `settings_quick_test.py`. To use this configuration instead of the default `settings.py`, set the following environment variable:
+        Second, to make the tests run efficiently, a couple of settings are different from the production system:
+        passwords are hashed using a fast (but insecure!) method, rate limits are switched off, and so on.
+        To use the fast settings in your shell, run
 
            export DJANGO_SETTINGS_MODULE=api.settings_quick_test
+
+        Third, the API needs a postgres database to run the tests. To serve as a test database,
+        the `dbapi` container can be started using a test configuration which exposes the database at
+        `127.0.0.1`. In order to let Django know that the database is at `127.0.0.1` instead of the
+        usual `dbapi`, set an additional environment variable:
+
+           export DESECSTACK_DJANGO_TEST=1
 
         Finally, you can manage Django using the `manage.py` CLI.
         As an example, to run the tests, use
@@ -342,9 +349,15 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     1. From the PyCharm menu, select Run › Edit Configurations and select the "Django tests" template from the list.
         1. Open the Environment Variables dialog. Copy the contents of the `.env` file and paste it here.
-        2. Fill the Custom Settings field with the path to the `settings_quick_test` module.
+        2. Add an environment variable with the name `DESECSTACK_DJANGO_TEST` and the value `1`.
+        3. Fill the Custom Settings field with the path to the `settings_quick_test` module.
+        4. At the bottom in the "Before launch" sections, add an "External tool" with the following settings:
+           - Name: `Postgres Test Container`
+           - Program: `docker-compose`
+           - Arguments: `-f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi`
 
     1. To see if the test configuration is working, right click on the api folder in the project view and select Run Test.
+       (Note that the first attempt may fail in case the `dbapi` container does not start up fast enough. In that case, just try again.)
 
     1. To use code inspection, click on Inspect Code… in PyCharm's Code menu and add a local custom scope with the following pattern:
 
