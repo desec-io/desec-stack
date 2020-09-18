@@ -131,7 +131,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             status.HTTP_400_BAD_REQUEST,
             [
                 {'type': ['This field is required.']},
-                {'ttl': [f'Ensure this value is greater than or equal to {settings.MINIMUM_TTL_DEFAULT}.']},
+                {'ttl': [f'Ensure this value is greater than or equal to {self.my_empty_domain.minimum_ttl}.']},
                 {'subname': ['This field is required.']},
                 {},
                 {'ttl': ['This field is required.']},
