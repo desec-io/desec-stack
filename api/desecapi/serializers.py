@@ -360,23 +360,25 @@ class RRsetListSerializer(serializers.ListSerializer):
             known_instances = {(x.subname, x.type): x for x in self.instance}
         except TypeError:  # in case self.instance is None (as during POST)
             known_instances = {}
-        indices_by_key = {}
+        indices = {}
         for idx, item in enumerate(data):
             # Validate item type before using anything from it
             if not isinstance(item, dict):
                 self.fail('invalid', datatype=type(item).__name__)
-            items = indices_by_key.setdefault(self._key(item), set())
+            s, t = self._key(item)  # subname, type
+            items = indices.setdefault(s, {}).setdefault(t, set())
             items.add(idx)
 
         # Iterate over all rows in the data given
         for idx, item in enumerate(data):
             try:
                 # see if other rows have the same key
-                if len(indices_by_key[self._key(item)]) > 1:
+                s, t = self._key(item)
+                if len(indices[s][t]) > 1:
                     raise serializers.ValidationError({
                         'non_field_errors': [
                             'Same subname and type as in position(s) %s, but must be unique.' %
-                            ', '.join(map(str, indices_by_key[self._key(item)] - {idx}))
+                            ', '.join(map(str, indices[s][t] - {idx}))
                         ]
                     })
 
