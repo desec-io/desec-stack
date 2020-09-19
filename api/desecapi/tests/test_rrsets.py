@@ -282,10 +282,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertRRSetsCount(response.data, [data], count=0)
 
-
     def test_create_my_rr_sets_empty_payload(self):
         response = self.client.post_rr_set(self.my_empty_domain.name)
         self.assertContains(response, 'No data provided', status_code=status.HTTP_400_BAD_REQUEST)
+
+    def test_create_my_rr_sets_cname_two_records(self):
+        data = {'subname': 'sub', 'records': ['example.com.', 'example.org.'], 'ttl': 3600, 'type': 'CNAME'}
+        response = self.client.post_rr_set(self.my_domain.name, **data)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_canonical_content(self):
         # TODO fill in more examples
