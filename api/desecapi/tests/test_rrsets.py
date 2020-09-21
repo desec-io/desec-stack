@@ -181,6 +181,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertRRSetsCount(response.data, [data], count=0)
 
+    def test_create_my_rr_sets_cname_at_apex(self):
+        data = {'subname': '', 'ttl': 3600, 'type': 'CNAME', 'records': ['foobar.com.']}
+        response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertContains(response, 'CNAME RRset cannot have empty subname', status_code=status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_without_records(self):
         for subname in ['', 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:
             for data in [
@@ -347,7 +352,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for t, (record, canonical_record) in datas:
             if not record:
                 continue
-            data = {'records': [record], 'ttl': 3660, 'type': t, 'subname': ''}
+            data = {'records': [record], 'ttl': 3660, 'type': t, 'subname': 'test'}
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
                 response = self.client.post_rr_set(self.my_empty_domain.name, **data)
                 self.assertStatus(response, status.HTTP_201_CREATED)
@@ -355,7 +360,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                                  f'For RR set type {t}, expected \'{canonical_record}\' to be the canonical form of '
                                  f'\'{record}\', but saw \'{response.data["records"][0]}\'.')
             with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
-                response = self.client.delete_rr_set(self.my_empty_domain.name, subname='', type_=t)
+                response = self.client.delete_rr_set(self.my_empty_domain.name, subname='test', type_=t)
                 self.assertStatus(response, status.HTTP_204_NO_CONTENT)
         self.assertAllSupportedRRSetTypes(set(t for t, _ in datas))
 
@@ -400,12 +405,12 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertAllSupportedRRSetTypes(set(datas.keys()))
         for t, records in datas.items():
             for r in records:
-                data = {'records': [r], 'ttl': 3660, 'type': t, 'subname': ''}
+                data = {'records': [r], 'ttl': 3660, 'type': t, 'subname': 'test'}
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
                     response = self.client.post_rr_set(self.my_empty_domain.name, **data)
                     self.assertStatus(response, status.HTTP_201_CREATED)
                 with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
-                    response = self.client.delete_rr_set(self.my_empty_domain.name, subname='', type_=t)
+                    response = self.client.delete_rr_set(self.my_empty_domain.name, subname='test', type_=t)
                     self.assertStatus(response, status.HTTP_204_NO_CONTENT)
 
     def test_create_my_rr_sets_known_type_invalid(self):

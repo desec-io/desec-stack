@@ -518,8 +518,11 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         rdtype = rdatatype.from_text(self.type)
         errors = []
 
-        if self.type == 'CNAME' and len(records_presentation_format) > 1:
-            errors.append('RRset of type CNAME cannot have multiple records.')
+        if self.type == 'CNAME':
+            if self.subname == '':
+                errors.append('CNAME RRset cannot have empty subname.')
+            if len(records_presentation_format) > 1:
+                errors.append('RRset of type CNAME cannot have multiple records.')
 
         def _error_msg(record, detail):
             return f'Record content of {self.type} {self.name} invalid: \'{record}\': {detail}'
