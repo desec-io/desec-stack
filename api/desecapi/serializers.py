@@ -96,17 +96,12 @@ class Validator:
 class ReadOnlyOnUpdateValidator(Validator):
 
     message = 'Can only be written on create.'
+    requires_context = True
 
-    def set_context(self, serializer_field):
-        """
-        This hook is called by the serializer instance,
-        prior to the validation call being made.
-        """
-        self.field_name = serializer_field.source_attrs[-1]
-        self.instance = getattr(serializer_field.parent, 'instance', None)
-
-    def __call__(self, value):
-        if isinstance(self.instance, Model) and value != getattr(self.instance, self.field_name):
+    def __call__(self, value, serializer_field):
+        field_name = serializer_field.source_attrs[-1]
+        instance = getattr(serializer_field.parent, 'instance', None)
+        if isinstance(instance, Model) and value != getattr(instance, field_name):
             raise serializers.ValidationError(self.message, code='read-only-on-update')
 
 
@@ -166,21 +161,20 @@ class NonBulkOnlyDefault:
     operations.
     Implementation inspired by CreateOnlyDefault.
     """
+    requires_context = True
+
     def __init__(self, default):
         self.default = default
 
-    def set_context(self, serializer_field):
-        # noinspection PyAttributeOutsideInit
-        self.is_many = getattr(serializer_field.root, 'many', False)
-        if callable(self.default) and hasattr(self.default, 'set_context') and not self.is_many:
-            # noinspection PyUnresolvedReferences
-            self.default.set_context(serializer_field)
-
-    def __call__(self):
-        if self.is_many:
+    def __call__(self, serializer_field):
+        is_many = getattr(serializer_field.root, 'many', False)
+        if is_many:
             raise serializers.SkipField()
         if callable(self.default):
-            return self.default()
+            if getattr(self.default, 'requires_context', False):
+                return self.default(serializer_field)
+            else:
+                return self.default()
         return self.default
 
     def __repr__(self):
