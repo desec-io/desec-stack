@@ -1,7 +1,7 @@
-from conftest import DeSECAPIV1Client
+from conftest import DeSECAPIV1Client, random_domainname
 
 
-def test_create(api_user: DeSECAPIV1Client, random_domainname):
+def test_create(api_user: DeSECAPIV1Client):
     assert len(api_user.domain_list()) == 0
     assert api_user.domain_create(random_domainname()).status_code == 201
     assert len(api_user.domain_list()) == 1

@@ -17,6 +17,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
+from desecapi import replication
 from desecapi.models import User, Domain, Token, RRset, RR, psl, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED, \
     RR_SET_TYPES_MANAGEABLE
 
@@ -140,7 +141,8 @@ class AssertRequestsContextManager:
             else:
                 yield i
 
-    def __init__(self, test_case, expected_requests, single_expectation_single_request=True, expect_order=True):
+    def __init__(self, test_case, expected_requests, single_expectation_single_request=True, expect_order=True,
+                 exit_hook=None):
         """
         Initialize a context that checks for made HTTP requests.
 
@@ -158,6 +160,7 @@ class AssertRequestsContextManager:
         self.single_expectation_single_request = single_expectation_single_request
         self.expect_order = expect_order
         self.old_httpretty_entries = None
+        self.exit_hook = exit_hook
 
     def __enter__(self):
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
@@ -176,6 +179,10 @@ class AssertRequestsContextManager:
         return None
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # call exit hook
+        if callable(self.exit_hook):
+            self.exit_hook()
+
         # organize seen requests in a primitive data structure
         seen_requests = [
             (r.command, 'http://%s%s' % (r.headers['Host'], r.path), r.parsed_body) for r in httpretty.latest_requests
@@ -467,18 +474,24 @@ class MockPDNSTestCase(APITestCase):
             'priority': 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
         }
 
-    def assertPdnsRequests(self, *expected_requests, expect_order=True):
+    def __init__(self, methodName: str = ...) -> None:
+        super().__init__(methodName)
+        self._mock_replication = None
+
+    def assertPdnsRequests(self, *expected_requests, expect_order=True, exit_hook=None):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
         Unmet expectations will fail the test.
         Args:
             *expected_requests: List of expected requests.
             expect_order: If True (default), the order of observed requests is checked.
+            exit_hook: If given a callable, it is called when the context manager exits.
         """
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=expected_requests,
             expect_order=expect_order,
+            exit_hook=exit_hook,
         )
 
     def assertPdnsNoRequestsBut(self, *expected_requests):
@@ -549,6 +562,9 @@ class MockPDNSTestCase(APITestCase):
                             for hashed in Token.objects.filter(user=user).values_list('key', flat=True)))
         self.assertEqual(len(Token.make_hash(plain).split('$')), 4)
 
+    def assertReplication(self, name):
+        replication.update.delay.assert_called_with(name)
+
     @classmethod
     def setUpTestData(cls):
         httpretty.enable(allow_net_connect=False)
@@ -580,6 +596,7 @@ class MockPDNSTestCase(APITestCase):
         httpretty.disable()
 
     def setUp(self):
+        # configure mocks for nslord
         def request_callback(r, _, response_headers):
             try:
                 request = json.loads(r.parsed_body)
@@ -617,6 +634,15 @@ class MockPDNSTestCase(APITestCase):
                     status=599,
                     priority=-100,
                 )
+
+        # configure mocks for replication
+        self._mock_replication = mock.patch('desecapi.replication.update.delay', return_value=None, wraps=None)
+        self._mock_replication.start()
+
+    def tearDown(self) -> None:
+        if self._mock_replication:
+            self._mock_replication.stop()
+        super().tearDown()
 
 
 class DesecTestCase(MockPDNSTestCase):

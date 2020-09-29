@@ -49,6 +49,7 @@ jobs:
         cd $GITHUB_WORKSPACE
         docker-compose build
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build test-e2e
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
 
     - name: Check for missing migrations
       run: |
@@ -57,7 +58,7 @@ jobs:
 
     - name: Run e2e2 Tests
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 bash -c "./apiwait 300 && python3 -m pytest -vv ."
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv ."
 
     - name: e2e2 Tests Logs and Cleanup
       if: always()

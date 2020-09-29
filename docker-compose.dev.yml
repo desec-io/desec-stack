@@ -50,10 +50,16 @@ services:
       driver: "json-file"
 
   rabbitmq:
+    ports:
+    - "15672:15672"
     logging:
       driver: "json-file"
 
-  celery:
+  celery-email:
+    logging:
+      driver: "json-file"
+
+  celery-replication:
     logging:
       driver: "json-file"
 

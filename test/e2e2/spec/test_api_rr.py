@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import pytest
 
-from conftest import DeSECAPIV1Client, NSClient
+from conftest import DeSECAPIV1Client, query_replication, NSLordClient, assert_eventually
 
 
 def generate_params(dict_value_lists_by_type: dict) -> List[Tuple[str, str]]:
@@ -347,7 +347,7 @@ def test_soundness():
 
 
 @pytest.mark.parametrize("rr_type,value", generate_params(VALID_RECORDS_CANONICAL))
-def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
+def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, rr_type: str, value: str):
     domain_name = api_user_domain.domain
     expected = set()
     subname = 'a'
@@ -357,12 +357,13 @@ def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSCl
     if value is not None:
         assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
         expected.add(value)
-    rrset = ns_lord.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
+    rrset = NSLordClient.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
     assert rrset == expected
+    assert_eventually(lambda: query_replication(domain_name, subname, rr_type) == expected)
 
 
 @pytest.mark.parametrize("rr_type,value", generate_params(VALID_RECORDS_NON_CANONICAL))
-def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
+def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, rr_type: str, value: str):
     domain_name = api_user_domain.domain
     expected = set()
     subname = 'a'
@@ -372,8 +373,9 @@ def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: 
     if value is not None:
         assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
         expected.add(value)
-    rrset = ns_lord.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
+    rrset = NSLordClient.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
     assert len(rrset) == len(expected)
+    assert_eventually(lambda: len(query_replication(domain_name, subname, rr_type)) == len(expected))
 
 
 @pytest.mark.parametrize("rr_type,value", INVALID_RECORDS_PARAMS)
@@ -381,22 +383,24 @@ def test_create_invalid(api_user_domain: DeSECAPIV1Client, rr_type: str, value: 
     assert api_user_domain.rr_set_create(api_user_domain.domain, rr_type, [value]).status_code == 400
 
 
-def test_create_long_subname(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient):
-    assert api_user_domain.rr_set_create(api_user_domain.domain, "AAAA", ["::1"], subname="a"*63).status_code == 201
-    assert ns_lord.query(f"{'a'*63}.{api_user_domain.domain}", "AAAA") == {"::1"}
+def test_create_long_subname(api_user_domain: DeSECAPIV1Client):
+    subname = 'a' * 63
+    assert api_user_domain.rr_set_create(api_user_domain.domain, "AAAA", ["::1"], subname=subname).status_code == 201
+    assert NSLordClient.query(f"{subname}.{api_user_domain.domain}", "AAAA") == {"::1"}
+    assert_eventually(lambda: query_replication(api_user_domain.domain, subname, "AAAA") == {"::1"})
 
 
-def test_add_remove_DNSKEY(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient):
+def test_add_remove_DNSKEY(api_user_domain: DeSECAPIV1Client):
     domain_name = api_user_domain.domain
     auto_dnskeys = api_user_domain.get_key_params(domain_name, 'DNSKEY')
 
     # After adding another DNSKEY, we expect it to be part of the nameserver's response (along with the automatic ones)
     value = '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg=='
     assert api_user_domain.rr_set_create(domain_name, 'DNSKEY', [value], subname='').status_code == 201
-    rrset = ns_lord.query(f'{domain_name}'.strip('.'), 'DNSKEY')
-    assert rrset == auto_dnskeys | {value}
+    assert NSLordClient.query(domain_name, 'DNSKEY') == auto_dnskeys | {value}
+    assert_eventually(lambda: query_replication(domain_name, '', 'DNSKEY') == auto_dnskeys | {value})
 
     # After deleting it, we expect that the automatically managed ones are still there
     assert api_user_domain.rr_set_delete(domain_name, "DNSKEY", subname='').status_code == 204
-    rrset = ns_lord.query(f'{domain_name}'.strip('.'), 'DNSKEY')
-    assert rrset == auto_dnskeys
+    assert NSLordClient.query(domain_name, 'DNSKEY') == auto_dnskeys
+    assert_eventually(lambda: query_replication(domain_name, '', 'DNSKEY') == auto_dnskeys)

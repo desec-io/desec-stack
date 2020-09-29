@@ -19,10 +19,16 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         cls.full_domain = Domain.objects.create(owner=cls.user, name=cls.random_domain_name())
 
     def assertPdnsZoneUpdate(self, name, rr_sets):
-        return self.assertPdnsRequests([
-            self.request_pdns_zone_update_assert_body(name, rr_sets),
-            self.request_pdns_zone_axfr(name),
-        ])
+        def _assert_replication():
+            self.assertReplication(name)
+
+        return self.assertPdnsRequests(
+            [
+                self.request_pdns_zone_update_assert_body(name, rr_sets),
+                self.request_pdns_zone_axfr(name),
+            ],
+            exit_hook=_assert_replication,
+        )
 
     def test_rrset_does_not_exist_exception(self):
         tracker = PDNSChangeTracker()

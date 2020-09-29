@@ -11,6 +11,32 @@ services:
   api:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    # faketime setup
+    - LD_PRELOAD=/lib/libfaketime.so
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    volumes:
+    - faketime:/etc/faketime/:ro
+
+  celery-email:
+    environment:
+    - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    # faketime setup
+    - LD_PRELOAD=/lib/libfaketime.so
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    volumes:
+    - faketime:/etc/faketime/:ro
+
+  celery-replication:
+    environment:
+    - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    # faketime setup
+    - LD_PRELOAD=/lib/libfaketime.so
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    volumes:
+    - faketime:/etc/faketime/:ro
 
   nslord:
     networks:
@@ -18,6 +44,15 @@ services:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.129 # make nslord available for test-e2e
     environment:
     - DESECSTACK_NSLORD_CACHE_TTL=0
+    # faketime setup
+    - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    ports:
+    - "5311:53"
+    - "5311:53/udp"
+    volumes:
+    - faketime:/etc/faketime/:ro
 
   test-e2e2:
     build: test/e2e2
@@ -29,8 +64,14 @@ services:
     - DESECSTACK_IPV6_SUBNET
     - DESECSTACK_IPV6_ADDRESS
     - DESECSTACK_NSLORD_DEFAULT_TTL
+    # faketime setup
+    - LD_PRELOAD=/lib/libfaketime.so
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
     volumes:
     - autocert:/autocert/:ro
+    - zones:/zones:ro
+    - faketime:/etc/faketime/:rw
     mac_address: 06:42:ac:10:00:7f
     depends_on:
     - www
@@ -53,3 +94,4 @@ services:
 
 volumes:
   autocert:
+  faketime:

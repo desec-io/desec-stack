@@ -370,3 +370,22 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     From this point on, you are set up to use most of PyCharm's convenience features.
 
     1. For PyCharm's Python Console, the environment variables of your `.env` file and `DJANGO_SETTINGS_MODULE=api.settings_quick_test` need to be configured in Settings › Build, Execution, Deployment › Console › Django Console. (Note that if you need to work with the database, you need to initialize it first by running all migrations; otherwise, the model tables will be missing from the database.)
+
+
+## Debugging
+
+### RabbitMQ
+
+To access message queue information of RabbitMQ, use the RabbitMQ management plugin. First, port 15672 of the RabbitMQ
+container needs to be exposed (default when using `docker-compose.dev.yml`). Then, inside the container, create a user
+that can access the RabbitMQ data:
+
+```
+rabbitmq-plugins enable rabbitmq_management
+rabbitmqctl add_user admin admin
+rabbitmqctl set_user_tags admin administrator
+rabbitmqctl set_permissions admin '.*' '.*' '.*'
+```
+
+Then the web-based management interface will be available at http://localhost:15672 with user `admin` and password
+`admin`.

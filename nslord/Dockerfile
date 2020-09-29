@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y \
 		dnsutils \
 		net-tools \
 		dirmngr gnupg \
+		faketime \
 	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu bionic-auth-44 main' \

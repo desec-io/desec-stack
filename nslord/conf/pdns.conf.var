@@ -1,4 +1,4 @@
-allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
+allow-axfr-ips=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12,${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
 api=yes
 api-key=${DESECSTACK_NSLORD_APIKEY}
 default-api-rectify=no

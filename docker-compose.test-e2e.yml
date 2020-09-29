@@ -5,14 +5,10 @@ services:
   www:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
-    logging:
-      driver: "json-file"
 
   api:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
-    logging:
-      driver: "json-file"
 
   nslord:
     networks:
@@ -20,16 +16,6 @@ services:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.129 # make nslord available for test-e2e
     environment:
     - DESECSTACK_NSLORD_CACHE_TTL=0
-    logging:
-      driver: "json-file"
-
-  nsmaster:
-    logging:
-      driver: "json-file"
-
-  memcached:
-    logging:
-      driver: "json-file"
 
   test-e2e:
     build: test/e2e
@@ -59,5 +45,3 @@ services:
     - "update.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
     - "www.dedyn.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
     - "www.desec.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
-    logging:
-      driver: "json-file"

@@ -3,16 +3,25 @@ import os
 import random
 import re
 import string
+import time
+import warnings
+from datetime import datetime
 from json import JSONDecodeError
-from typing import Optional, Tuple, Iterable, Callable
+from typing import Optional, Tuple, Iterable
 
 import dns
 import dns.name
 import dns.query
 import dns.rdtypes.svcbbase
+import dns.zone
 import pytest
 import requests
 from requests.exceptions import SSLError
+from urllib3.exceptions import InsecureRequestWarning
+
+
+def tsprint(s, *args, **kwargs):
+    print(f"{datetime.now().strftime('%d-%b (%H:%M:%S)')} {s}", *args, **kwargs)
 
 
 def _strip_quotes_decorator(func):
@@ -37,27 +46,23 @@ def random_mixed_case_string(n):
     return ''.join(s)
 
 
-@pytest.fixture()
-def random_email() -> Callable[[], str]:
-    return lambda: f'{random_mixed_case_string(10)}@{random_mixed_case_string(10)}.desec.test'
+def random_email() -> str:
+    return f'{random_mixed_case_string(10)}@{random_mixed_case_string(10)}.desec.test'
 
 
-@pytest.fixture()
-def random_password() -> Callable[[], str]:
-    return lambda: "".join(random.choice(string.ascii_letters) for _ in range(16))
+def random_password() -> str:
+    return "".join(random.choice(string.ascii_letters) for _ in range(16))
 
 
-@pytest.fixture()
-def random_domainname() -> Callable[[], str]:
-    return lambda: (
+def random_domainname() -> str:
+    return (
         "".join(random.choice(string.ascii_lowercase) for _ in range(16))
         + ".test"
     )
 
 
-@pytest.fixture()
-def random_local_public_suffix_domainname() -> Callable[[], str]:
-    return lambda: (
+def random_local_public_suffix_domainname() -> str:
+    return (
         "".join(random.choice(string.ascii_lowercase) for _ in range(16))
         + ".dedyn."
         + os.environ['DESECSTACK_DOMAIN']
@@ -106,12 +111,20 @@ class DeSECAPIV1Client:
 
     def _do_request(self, *args, **kwargs):
         verify_list = [self.verify] + self.verify_alt
+        # do not verify SSL if we're in faketime (cert will be expired!?)
+        if faketime_get() != '+0d':
+            verify_list = [False]
+
         exc = None
         for verify in verify_list:
             try:
-                reply = requests.request(*args, **kwargs, verify=verify)
+                with warnings.catch_warnings():
+                    if verify_list == [False]:
+                        # Supress insecurity warning if we do not want to verify
+                        warnings.filterwarnings('ignore', category=InsecureRequestWarning)
+                    reply = requests.request(*args, **kwargs, verify=verify)
             except SSLError as e:
-                print(f'API <<< SSL could not verify against "{verify}"')
+                tsprint(f'API <<< SSL could not verify against "{verify}"')
                 exc = e
             else:
                 # note verification preference for next time
@@ -119,7 +132,7 @@ class DeSECAPIV1Client:
                 self.verify_alt = verify_list
                 self.verify_alt.remove(self.verify)
                 return reply
-        print(f'API <<< SSL could not be verified against any verification method')
+        tsprint(f'API <<< SSL could not be verified against any verification method')
         raise exc
 
     def _request(self, method: str, *, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
@@ -128,9 +141,9 @@ class DeSECAPIV1Client:
 
         url = self.base_url + path if re.match(r'^https?://', path) is None else path
 
-        print(f"API >>> {method} {url}")
+        tsprint(f"API >>> {method} {url}")
         if data:
-            print(f"API >>> {type(data)}: {data}")
+            tsprint(f"API >>> {type(data)}: {self._shorten(data)}")
 
         response = self._do_request(
             method,
@@ -140,20 +153,30 @@ class DeSECAPIV1Client:
             **kwargs,
         )
 
-        print(f"API <<< {response.status_code}")
+        tsprint(f"API <<< {response.status_code}")
         if response.text:
             try:
-                print(f"API <<< {self._filter_response_output(response.json())}")
+                tsprint(f"API <<< {self._shorten(str(self._filter_response_output(response.json())))}")
             except JSONDecodeError:
-                print(f"API <<< {response.text}")
+                tsprint(f"API <<< {response.text}")
 
         return response
+
+    @staticmethod
+    def _shorten(s: str):
+        if len(s) < 200:
+            return s
+        else:
+            return s[:50] + '...' + s[-50:]
 
     def get(self, path: str, **kwargs) -> requests.Response:
         return self._request("GET", path=path, **kwargs)
 
     def post(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
         return self._request("POST", path=path, data=data, **kwargs)
+
+    def patch(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+        return self._request("PATCH", path=path, data=data, **kwargs)
 
     def delete(self, path: str, **kwargs) -> requests.Response:
         return self._request("DELETE", path=path, **kwargs)
@@ -183,6 +206,11 @@ class DeSECAPIV1Client:
         token = response.json().get('token')
         if token is not None:
             self.headers["Authorization"] = f'Token {response.json()["token"]}'
+            self.patch(  # make token last forever
+                f"/auth/tokens/{response.json().get('id')}/",
+                data={'max_unused_period': None, 'max_age': None}
+            )
+
         return response
 
     def domain_list(self) -> requests.Response:
@@ -213,6 +241,9 @@ class DeSECAPIV1Client:
                 "records": records,
             }
         )
+
+    def rr_set_create_bulk(self, domain_name: str, data: list) -> requests.Response:
+        return self.patch(f"/domains/{domain_name}/rrsets/", data=data)
 
     def rr_set_delete(self, domain_name: str, rr_type: str, subname: str = '') -> requests.Response:
         return self.delete(f"/domains/{domain_name}/rrsets/{subname}.../{rr_type}/")
@@ -246,7 +277,7 @@ def api_anon() -> DeSECAPIV1Client:
 
 
 @pytest.fixture()
-def api_user(random_email, random_password) -> DeSECAPIV1Client:
+def api_user() -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account (zero domains, one token). Authorization header
     is preconfigured, email address and password are randomly chosen.
@@ -260,7 +291,7 @@ def api_user(random_email, random_password) -> DeSECAPIV1Client:
 
 
 @pytest.fixture()
-def api_user_domain(api_user, random_domainname) -> DeSECAPIV1Client:
+def api_user_domain(api_user) -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account that owns a domain with random name. The domain has
     no records other than the default ones.
@@ -272,22 +303,23 @@ def api_user_domain(api_user, random_domainname) -> DeSECAPIV1Client:
 class NSClient:
     where = None
 
-    def query(self, qname: str, qtype: str):
-        print(f'DNS >>> {qname}/{qtype} @{self.where}')
+    @classmethod
+    def query(cls, qname: str, qtype: str):
+        tsprint(f'DNS >>> {qname}/{qtype} @{cls.where}')
         qname = dns.name.from_text(qname)
         qtype = dns.rdatatype.from_text(qtype)
         answer = dns.query.tcp(
             q=dns.message.make_query(qname, qtype),
-            where=self.where,
+            where=cls.where,
             timeout=2
         )
         try:
             section = dns.message.AUTHORITY if qtype == dns.rdatatype.from_text('NS') else dns.message.ANSWER
             response = answer.find_rrset(section, qname, dns.rdataclass.IN, qtype)
-            print(f'DNS <<< {response}')
+            tsprint(f'DNS <<< {response}')
             return {i.to_text() for i in response.items}
         except KeyError:
-            print('DNS <<< !!! not found !!! Complete Answer below:\n' + answer.to_text())
+            tsprint('DNS <<< !!! not found !!! Complete Answer below:\n' + answer.to_text())
             return {}
 
 
@@ -295,6 +327,80 @@ class NSLordClient(NSClient):
     where = os.environ["DESECSTACK_IPV4_REAR_PREFIX16"] + '.0.129'
 
 
-@pytest.fixture()
-def ns_lord() -> NSLordClient:
-    return NSLordClient()
+def query_replication(zone: str, qname: str, qtype: str, covers: str = None):
+    if qtype == 'RRSIG':
+        assert covers, 'If querying RRSIG, covers parameter must be set to a RR type, e.g. SOA.'
+    else:
+        assert not covers
+        covers = dns.rdatatype.NONE
+
+    zonefile = os.path.join('/zones', zone + '.zone')
+    zone = dns.name.from_text(zone, origin=dns.name.root)
+    qname = dns.name.from_text(qname, origin=zone)
+
+    if not os.path.exists(zonefile):
+        tsprint(f'RPL <<< Zone file for {zone} not found '
+                f'(number of zones: {len(list(filter(lambda f: f.endswith(".zone"), os.listdir("/zones"))))})')
+        return None
+
+    try:
+        tsprint(f'RPL >>> {qname}/{qtype} in {zone}')
+        z = dns.zone.from_file(f=zonefile, origin=zone, relativize=False)
+        v = {i.to_text() for i in z.find_rrset(qname, qtype, covers=covers).items}
+        tsprint(f'RPL <<< {v}')
+        return v
+    except KeyError:
+        tsprint(f'RPL <<< RR Set {qname}/{qtype} not found')
+        return {}
+    except dns.zone.NoSOA:
+        tsprint(f'RPL <<< Zone {zone} not found')
+        return None
+
+
+def return_eventually(expression: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
+                      retry_on: Tuple[type] = (Exception,)):
+    if not callable(expression):
+        raise ValueError('Expression given not callable. Did you forget "lambda:"?')
+
+    wait = min_pause
+    started = datetime.now()
+    while True:
+        try:
+            return expression()
+        except retry_on as e:
+            if (datetime.now() - started).total_seconds() > timeout:
+                tsprint(f'{expression.__code__} failed with {e}, no more retries')
+                raise e
+            time.sleep(wait)
+            wait = min(2 * wait, max_pause)
+
+
+def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5) -> None:
+    def _assert():
+        assert assertion()
+    return_eventually(_assert, min_pause, max_pause, timeout, retry_on=(AssertionError,))
+
+
+def faketime(t: str):
+    print('FAKETIME', t)
+    with open('/etc/faketime/faketime.rc', 'w') as f:
+        f.write(t + '\n')
+
+
+def faketime_get():
+    try:
+        with open('/etc/faketime/faketime.rc', 'r') as f:
+            return f.readline().strip()
+    except FileNotFoundError:
+        return '+0d'
+
+
+def faketime_add(days: int):
+    assert days >= 0
+
+    current_faketime = faketime_get()
+    assert current_faketime[0] == '+'
+    assert current_faketime[-1] == 'd'
+    current_days = int(current_faketime[1:-1])
+
+    faketime(f'+{current_days + days:n}d')
