@@ -161,7 +161,6 @@ class AssertRequestsContextManager:
 
     def __enter__(self):
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME should depend on self.expected_requests
-        self.expected_requests = self.expected_requests
         # noinspection PyProtectedMember
         self.old_httpretty_entries = httpretty._entries.copy()  # FIXME accessing private properties of httpretty
         for request in self.expected_requests:
@@ -297,7 +296,7 @@ class MockPDNSTestCase(APITestCase):
             'method': 'POST',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
             'status': 201,
-            'body': None,
+            'body': '',
             'match_querystring': True,
             **kwargs
         }
@@ -332,7 +331,7 @@ class MockPDNSTestCase(APITestCase):
             'method': 'DELETE',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, ns=ns, id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
-            'body': None,
+            'body': '',
         }
 
     @classmethod
@@ -341,7 +340,7 @@ class MockPDNSTestCase(APITestCase):
             'method': 'PATCH',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
-            'body': None,
+            'body': '',
         }
 
     def request_pdns_zone_update_assert_body(self, name: str = None, updated_rr_sets: Union[List[RRset], Dict] = None):
@@ -455,7 +454,7 @@ class MockPDNSTestCase(APITestCase):
             'method': 'PUT',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONE_AXFR, ns='MASTER', id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
-            'body': None,
+            'body': '',
         }
 
     @classmethod
@@ -464,7 +463,7 @@ class MockPDNSTestCase(APITestCase):
             'method': 'PATCH',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, ns='MASTER', id=cls._pdns_zone_id_heuristic('catalog.internal')),
             'status': 204,
-            'body': None,
+            'body': '',
             'priority': 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
         }
 
