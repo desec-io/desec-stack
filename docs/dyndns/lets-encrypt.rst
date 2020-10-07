@@ -27,12 +27,18 @@ steps.
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/hook.sh
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/.dedynauth
 
+#. **Get a token.** you need to obtain a token for using the API. To get the token use the email address you used when setting up your desec.io account. To get a token run the following curl command: 
+
+     curl -X POST https://desec.io/api/v1/auth/login/ --header "Content-Type: application/json" \
+         --data @- <<< '{"email": "your-email-address@example.com", "password": "your-desec.io-account-password-here"}'
+
+
 #. **Configuration.** You need to provide your dedyn.io credentials to the hook
    script, so that it can write the Let's Encrypt challenge to the DNS on your
    behalf. To do so, edit the ``.dedynauth`` file to look something like::
 
-    DEDYN_TOKEN=[your token]  # remove brackets
-    DEDYN_NAME=[yourdomain].dedyn.io  # remove brackets
+    DEDYN_TOKEN=[your token]  # remove brackets, token from above step
+    DEDYN_NAME=[yourdomain.example.com]  # remove brackets, add your domain to your desec.io account first
 
 #. **Run certbot.** To obtain your certificate, run certbot in manual mode as
    follows. (For a detailed explanation, please refer to the certbot manual.)
@@ -42,6 +48,13 @@ steps.
 
      certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
          --preferred-challenges dns -d "YOURDOMAINNAME.dedyn.io" certonly
+         
+   You can also use certbot to get wildcart certificates like so:
+   
+     certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
+         --preferred-challenges dns -d "example.com" -d "*.example.com" certonly
+
+   to make the process headless you can add ``--manual-public-ip-logging-ok -n``.
 
    Depending on how you installed certbot, you may need to replace ``certbot``
    with ``./certbot-auto`` (assuming that the ``certbot-auto`` executable is
