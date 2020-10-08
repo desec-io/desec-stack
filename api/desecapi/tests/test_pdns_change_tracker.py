@@ -456,6 +456,7 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
         self.domains = []
 
     def setUp(self):
+        super().setUp()
         self.empty_domain = Domain.objects.create(name=self.random_domain_name(), owner=self.user)
         self.simple_domain = Domain.objects.create(name=self.random_domain_name(), owner=self.user)
         self.full_domain = Domain.objects.create(name=self.random_domain_name(), owner=self.user)
