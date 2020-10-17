@@ -365,16 +365,6 @@ export default {
       },
     ],
     breaking_news: [
-      {
-        id: 'news-20200604001',
-        start: new Date(Date.UTC(2020, 6 - 1, 4)),  // first day of showing
-        end: new Date(Date.UTC(2020, 6 - 1, 7)),  // first day of not showing
-        icon: 'mdi-heart-broken',
-        teaser: 'DNS operations experienced a partial service disruption on June 4, 2020, starting at 12am UTC. ' +
-                'The issue was resolved at 7am UTC.',
-        button: 'Learn More',
-        href: '//talk.desec.io/t/service-disruption-on-june-4-2020/98',
-      },
     ],
   })
 }
