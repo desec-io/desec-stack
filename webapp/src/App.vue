@@ -101,7 +101,7 @@
         <template v-slot:actions>
           <v-btn
             color="primary"
-            text
+            depressed
             :href="alert.href"
             v-if="alert.href"
           >
