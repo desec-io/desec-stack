@@ -365,6 +365,16 @@ export default {
       },
     ],
     breaking_news: [
+      {
+        id: 'news-20201017001',
+        start: new Date(Date.UTC(2020, 10 - 1, 17)),  // first day of showing
+        end: new Date(Date.UTC(2020, 10 - 1, 20)),  // first day of not showing
+        icon: 'mdi-heart-broken',
+        teaser: 'deSEC API and web services have been unavailable on 17 Oct 2020 starting at 4:26 am UTC and resumed ' +
+            'normal operations at 10:13 am UTC. DNS operations continued throughout.',
+        button: 'deSEC Status Details',
+        href: '//desec-status.net/',
+      },
     ],
   })
 }
