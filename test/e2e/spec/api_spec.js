@@ -24,7 +24,7 @@ describe("API Versioning", function () {
         it("maintains the requested version " + version, function() {
             chakram.get('/' + version + '/').then(function (response) {
                 expect(response).to.have.schema(schemas.rootNoLogin);
-                let regex = new RegExp('http://[^/]+/api/' + version + '/auth/', 'g')
+                let regex = new RegExp('https://[^/]+/api/' + version + '/auth/login/', 'g')
                 expect(response.body.login).to.match(regex);
                 return chakram.wait();
             });
