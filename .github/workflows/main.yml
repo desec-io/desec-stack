@@ -63,19 +63,19 @@ jobs:
       if: always()
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml logs
+        grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
         docker-compose down -v
 
     - name: Run e2e2 Tests
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 bash -c "./apiwait 45 && python3 -m pytest -vv ."
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 bash -c "./apiwait 300 && python3 -m pytest -vv ."
 
     - name: e2e2 Tests Logs and Cleanup
       if: always()
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml logs
+        grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
         docker-compose down -v
 
@@ -87,6 +87,6 @@ jobs:
       if: always()
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml logs
+        grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
         docker-compose down -v
