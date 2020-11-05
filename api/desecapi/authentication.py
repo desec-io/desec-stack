@@ -10,7 +10,7 @@ from rest_framework.authentication import (
     TokenAuthentication as RestFrameworkTokenAuthentication,
     BasicAuthentication)
 
-from desecapi.models import Token, TokenPolicy
+from desecapi.models import Token
 from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPasswordSerializer
 
 
@@ -23,18 +23,11 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
         except TypeError:  # TypeError: cannot unpack non-iterable NoneType object
             return None  # unauthenticated
 
-        try:
-            policy = TokenPolicy.objects.get(token=token)
-        except TokenPolicy.DoesNotExist:
-            # tokens without a policy are considered globally valid
-            pass
-        else:
-            client_ip = ip_address(request.META.get('REMOTE_ADDR'))
-            # This can likely be done on the database level with django-postgres-extensions (client_ip <<= ANY subnets).
-            # However, the django-postgres-extensions package is unmaintained, and the GitHub repo has been archived.
-            if not any(client_ip in subnet for subnet in policy.subnets):
-                # TODO expose reason?
-                raise exceptions.AuthenticationFailed('Invalid token.')
+        client_ip = ip_address(request.META.get('REMOTE_ADDR'))
+        # This can likely be done within Postgres with django-postgres-extensions (client_ip <<= ANY allowed_subnets).
+        # However, the django-postgres-extensions package is unmaintained, and the GitHub repo has been archived.
+        if not any(client_ip in subnet for subnet in token.allowed_subnets):
+            raise exceptions.AuthenticationFailed('Invalid token.')
 
         return user, token
 

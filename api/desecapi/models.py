@@ -383,6 +383,10 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
 
 class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
+    @staticmethod
+    def _allowed_subnets_default():
+        return [ipaddress.IPv4Network('0.0.0.0/0'), ipaddress.IPv6Network('::/0')]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
     user = models.ForeignKey(
@@ -392,8 +396,10 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     name = models.CharField('Name', blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
+    allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
 
     plain = None
+    objects = NetManager()
 
     def generate_key(self):
         self.plain = secrets.token_urlsafe(21)
@@ -403,18 +409,6 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     @staticmethod
     def make_hash(plain):
         return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
-
-
-# TODO Prometheus mixin
-class TokenPolicy(models.Model):
-    @staticmethod
-    def _subnets_default():
-        return [ipaddress.IPv4Network('0.0.0.0/0'), ipaddress.IPv6Network('::/0')]
-
-    token = models.OneToOneField(Token, on_delete=models.CASCADE, primary_key=True, related_name='policy')
-    subnets = ArrayField(CidrAddressField(), default=_subnets_default.__func__)
-
-    objects = NetManager()
 
 
 class Donation(ExportModelOperationsMixin('Donation'), models.Model):
