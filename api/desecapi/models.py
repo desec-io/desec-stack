@@ -84,6 +84,10 @@ class MyUserManager(BaseUserManager):
 
 
 class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
+    @staticmethod
+    def _limit_domains_default():
+        return settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = CIEmailField(
         verbose_name='email address',
@@ -92,7 +96,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
-    limit_domains = models.IntegerField(default=settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT, null=True, blank=True)
+    limit_domains = models.IntegerField(default=_limit_domains_default.__func__, null=True, blank=True)
 
     objects = MyUserManager()
 

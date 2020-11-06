@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True)),
                 ('is_admin', models.BooleanField(default=False)),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('limit_domains', models.IntegerField(blank=True, default=5, null=True)),
+                ('limit_domains', models.IntegerField(blank=True, default=desecapi.models.User._limit_domains_default, null=True)),
             ],
             options={
                 'abstract': False,
