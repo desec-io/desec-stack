@@ -197,6 +197,8 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     )
     name = models.CharField('Name', blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
+    perm_manage_tokens = models.BooleanField(default=False)
+
     plain = None
 
     def generate_key(self):

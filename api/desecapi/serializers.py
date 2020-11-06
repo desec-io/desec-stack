@@ -52,7 +52,7 @@ class TokenSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'last_used', 'name', 'token',)
+        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'token',)
         read_only_fields = ('id', 'created', 'last_used', 'token')
 
     def __init__(self, *args, include_plain=False, **kwargs):

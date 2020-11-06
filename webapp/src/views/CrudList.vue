@@ -306,6 +306,7 @@ import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
 import Record from '@/components/Field/Record';
 import RRSet from '@/components/Field/RRSet';
+import SwitchBox from '@/components/Field/SwitchBox';
 import TTL from '@/components/Field/TTL';
 
 // safely access deeply nested objects
@@ -316,6 +317,7 @@ export default {
   components: {
     RRSetType,
     TimeAgo,
+    SwitchBox,
     Code,
     GenericText,
     Record,

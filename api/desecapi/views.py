@@ -24,7 +24,7 @@ from desecapi import metrics, models, serializers
 from desecapi.exceptions import ConcurrencyException
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimitOnPOST
+from desecapi.permissions import ManageTokensPermission, IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimitOnPOST
 from desecapi.renderers import PlainTextRenderer
 
 
@@ -78,7 +78,7 @@ class DomainViewMixin:
 
 class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = serializers.TokenSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, ManageTokensPermission,)
     throttle_scope = 'account_management_passive'
 
     def get_queryset(self):
@@ -510,7 +510,7 @@ class AccountLoginView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         user = self.request.user
 
-        token = models.Token.objects.create(user=user, name="login")
+        token = models.Token.objects.create(user=user, name="login", perm_manage_tokens=True)
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
         data = serializers.TokenSerializer(token, include_plain=True).data

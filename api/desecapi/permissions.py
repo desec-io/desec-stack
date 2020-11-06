@@ -32,6 +32,12 @@ class IsVPNClient(permissions.BasePermission):
         return ip in IPv4Network('10.8.0.0/24')
 
 
+class ManageTokensPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        return request.auth.perm_manage_tokens
+
+
 class WithinDomainLimitOnPOST(permissions.BasePermission):
     """
     Permission that requires that the user still has domain limit quota available, if the request is using POST.
