@@ -177,7 +177,7 @@ A JSON object representing your user account will be returned::
         "created": "2019-10-16T18:09:17.715702Z",
         "email": "youremailaddress@example.com",
         "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
-        "limit_domains": 5
+        "limit_domains": 15
     }
 
 Field details:
