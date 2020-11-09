@@ -33,6 +33,7 @@
           <!-- The Actual Table -->
           <v-data-table
                   :headers="headers"
+                  :item-class="(item) => itemIsReadOnly(item) ? 'text--disabled grey lighten-4' : ''"
                   :items="rows"
                   :search="search"
                   :custom-filter="filterSearchableCols"
@@ -169,7 +170,8 @@
               <component
                 :is="column.datatype"
                 :key="id"
-                :readonly="column.readonly || $store.getters.working"
+                :readonly="column.readonly"
+                :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
                 v-model="itemFieldProps.item[column.value]"
                 v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
                 @keyup="keyupHandler"
@@ -182,7 +184,7 @@
               >
                 <v-btn
                         v-for="action in actions"
-                        :disabled="$store.getters.working"
+                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
                         :key="action.key"
                         color="grey"
                         icon
@@ -192,7 +194,7 @@
                 </v-btn>
                 <v-btn
                         v-if="updatable"
-                        :disabled="$store.getters.working"
+                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
                         color="grey"
                         class="hover-green"
                         icon
@@ -202,7 +204,7 @@
                 </v-btn>
                 <v-btn
                         v-if="destroyable"
-                        :disabled="$store.getters.working"
+                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
                         color="grey"
                         class="hover-red"
                         icon
@@ -375,6 +377,7 @@ export default {
     // object
     itemDefaults: () => ({}),
     // callbacks
+    itemIsReadOnly: () => false,
     postcreate: () => (undefined),
     keyupHandler: (e) => {
       // Intercept Enter key
@@ -609,5 +612,8 @@ export default {
   }
   >>> tbody tr > :hover {
     cursor: pointer;
+  }
+  >>> tbody tr.text--disabled > :hover {
+    cursor: auto;
   }
 </style>

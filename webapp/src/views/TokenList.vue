@@ -72,6 +72,7 @@ export default {
           update: 'auth/tokens/:{id}/',
         },
         itemDefaults: () => ({ name: '' }),
+        itemIsReadOnly: (item) => item.id == store.state.token.id,
         postcreate(d) { this.snackbarInfoText = `Your new token is: <code>${d.token}</code><br />It is only displayed once.`; },
     }
   },
