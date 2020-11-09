@@ -17,7 +17,8 @@ export default {
         },
         texts: {
           banner: () => ('Any API Token can be used to perform any DNS operation on any domain in this account. Token scoping is on our roadmap.'),
-          create: () => ('Names are purely for your own convenience and carry no technical meaning.'),
+          create: () => ('<p>You can create a new API token here. The token is displayed after submitting this form.</p><p><strong>Warning:</strong> Be sure to protect your tokens appropriately! Knowledge of an API token allows performing actions on your behalf.</p>'),
+          createSuccess: (item) => `Your new token is: <code>${item.token}</code><br />It is only displayed once.`,
           destroy: d => (d.name ? `Delete token with name "${d.name}" and ID ${d.id}?` : `Delete unnamed token with ID ${d.id}?`),
           destroyInfo: () => ('This operation is permanent. Any devices using this token will no longer be able to authenticate.'),
           destroyWarning: d => (d.id == store.state.token.id ? 'This is your current session token. Deleting it will invalidate the session.' : ''),
@@ -25,7 +26,7 @@ export default {
         columns: {
           id: {
             name: 'item.id',
-            text: 'ID',
+            text: 'Identifier',
             align: 'left',
             value: 'id',
             readonly: true,
@@ -35,7 +36,7 @@ export default {
           name: {
             name: 'item.name',
             text: 'Name',
-            textCreate: 'Token name',
+            textCreate: 'Token name (for your convenience only)',
             align: 'left',
             sortable: true,
             value: 'name',
@@ -73,7 +74,7 @@ export default {
         },
         itemDefaults: () => ({ name: '' }),
         itemIsReadOnly: (item) => item.id == store.state.token.id,
-        postcreate(d) { this.snackbarInfoText = `Your new token is: <code>${d.token}</code><br />It is only displayed once.`; },
+        postcreate: () => false,  // do not close dialog
     }
   },
 };

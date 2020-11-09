@@ -16,19 +16,6 @@
               Close
             </v-btn>
           </v-snackbar>
-          <v-snackbar
-            v-model="snackbarInfo"
-            :timeout="-1"
-          >
-            <span v-html="snackbarInfoText"></span>
-            <v-btn
-              color="pink"
-              text
-              @click="snackbarInfoText = ''"
-            >
-              Close
-            </v-btn>
-          </v-snackbar>
 
           <!-- The Actual Table -->
           <v-data-table
@@ -108,6 +95,14 @@
                       </v-alert>
 
                       <v-alert
+                              :value="createDialogSuccess"
+                              type="success"
+                              style="overflow: auto"
+                      >
+                        <span v-html="texts.createSuccess(createDialogItem)"></span>
+                      </v-alert>
+
+                      <v-alert
                               :value="!!texts.createWarning(destroyDialogItem)"
                               type="warning"
                       >
@@ -116,7 +111,7 @@
 
                       <v-card-text v-if="createDialog">
                         <!-- v-if required here to make autofocus below working for the 2nd+ times, cf stackoverflow.com/a/51476992 -->
-                        <p>{{ texts.create() }}</p>
+                        <span v-html="texts.create()"></span>
                         <!-- New Form -->
                         <component
                                 :is="c.datatype"
@@ -127,30 +122,31 @@
                                 :label="c.textCreate || c.text"
                                 :error-messages="c.createErrors"
                                 :required="c.required || false"
-                                :disabled="createInhibited"
+                                :disabled="createInhibited || createDialogSuccess"
                                 autofocus
                                 @input="clearErrors(c)"
                         />
                       </v-card-text>
 
-                      <v-card-actions>
+                      <v-card-actions class="pb-4">
                         <v-spacer />
                         <v-btn
                                 color="primary"
                                 class="grow"
-                                outlined
+                                :outlined="!createDialogSuccess"
                                 :disabled="createDialogWorking"
                                 @click.native="close"
                         >
-                          Cancel
+                          {{ createDialogSuccess ? 'Close' : 'Cancel' }}
                         </v-btn>
                         <v-btn
                                 type="submit"
                                 color="primary"
                                 class="grow"
                                 depressed
-                                :disabled="createInhibited || !valid || createDialogWorking"
+                                :disabled="createInhibited || !valid || createDialogWorking || createDialogSuccess"
                                 :loading="createDialogWorking"
+                                v-if="!createDialogSuccess"
                         >
                           Save
                         </v-btn>
@@ -332,6 +328,7 @@ export default {
     createDialogIndex: null,
     createDialogItem: {},
     createDialogError: false,
+    createDialogSuccess: false,
     destroyDialog: false,
     destroyDialogWorking: false,
     destroyDialogItem: {},
@@ -342,7 +339,6 @@ export default {
     extraComponentBind: {},
     fullWidth: false,
     snackbar: false,
-    snackbarInfoText: '',
     search: '',
     rows: [],
     valid: false,
@@ -360,6 +356,7 @@ export default {
     texts: {
       banner: undefined,
       create: () => ('Create a new object.'),
+      createSuccess: () => undefined,
       createWarning: () => (false),
       destroy: () => ('Delete an object permanently. This operation can likely not be undone.'),
       destroyInfo: () => (false),
@@ -378,7 +375,7 @@ export default {
     itemDefaults: () => ({}),
     // callbacks
     itemIsReadOnly: () => false,
-    postcreate: () => (undefined),
+    postcreate: this.close,
     keyupHandler: (e) => {
       // Intercept Enter key
       if (e.keyCode === 13) {
@@ -402,7 +399,6 @@ export default {
       });
       return cols; // data table expects an array
     },
-    snackbarInfo() { return !!this.snackbarInfoText; },
     writeableColumns() {
       const filter = function (obj, predicate) {
         const result = {};
@@ -500,6 +496,7 @@ export default {
         // new item
         this.createDialogWorking = true;
         this.createDialogError = false;
+        this.createDialogSuccess = false;
         const url = this.resourcePath(
                 this.resourcePath(this.paths.create, this.$route.params, '::'),
                 this.createDialogItem,
@@ -507,7 +504,8 @@ export default {
         );
         const r = await withWorking(this.error, () => HTTP.post(url, self.createDialogItem))
         if (r) {
-          this.close();
+          this.createDialogItem = r.data;
+          this.createDialogSuccess = true;
           const l = this.rows.push(r.data);
           this.postcreate(this.rows[l - 1]);
         }
@@ -522,6 +520,7 @@ export default {
       this.createDialogItem = Object.assign({}, this.itemDefaults());
       this.createDialogIndex = null;
       this.createDialogError = false;
+      this.createDialogSuccess = false;
       for (const c in this.columns) {
         this.columns[c].createErrors = [];
       }

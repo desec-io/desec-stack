@@ -66,7 +66,10 @@ export default {
           delete: 'domains/:{name}/',
         },
         itemDefaults: () => ({ name: '' }),
-        postcreate: d => this.showDomainInfo(d, true),
+        postcreate: d => {
+          this.close();
+          this.showDomainInfo(d, true);
+        },
         async showDomainInfo(d, isNew = false) {
           const url = this.resourcePath(this.paths.delete, d, ':');
           if (d.keys === undefined) {

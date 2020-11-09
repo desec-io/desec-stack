@@ -1,5 +1,5 @@
 <template>
-  <v-text-field
+  <v-text-field v-if="!readonly"
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
@@ -11,6 +11,7 @@
     @input="input($event)"
     @keyup="keyup($event)"
   />
+  <span v-else>{{ value }}</span>
 </template>
 
 <script>
