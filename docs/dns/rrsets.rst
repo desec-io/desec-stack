@@ -6,7 +6,7 @@ Retrieving and Creating DNS Records
 All DNS information is composed of so-called *Resource Record Sets*
 (*RRsets*).  An RRset is the set of all Resource Records of a given record
 type for a given name.  For example, the name ``example.com`` may have an
-RRset of type ``A``, denoting the set of IPv4 addresses associatd with this
+RRset of type ``A``, denoting the set of IPv4 addresses associated with this
 name.  In the traditional Bind zone file format, the RRset would be written
 as::
 
