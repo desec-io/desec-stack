@@ -66,11 +66,11 @@ export default {
       removals: 0,
       types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS'],
       addHandler: () => {
-        self.value.push('');
+        self.value.push('');  /* eslint-disable-line vue/no-mutating-props */
         self.$nextTick(() => self.$refs.inputFields[self.$refs.inputFields.length - 1].focus());
       },
       removeHandler: (index) => {
-        self.value.splice(index, 1);
+        self.value.splice(index, 1);  /* eslint-disable-line vue/no-mutating-props */
         self.removals++;
       },
     }

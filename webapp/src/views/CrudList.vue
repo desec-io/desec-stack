@@ -173,7 +173,7 @@
                 @keyup="keyupHandler"
               />
             </template>
-            <template v-slot:item.actions="itemFieldProps">
+            <template v-slot:[`item.actions`]="itemFieldProps">
               <v-layout
                       class="my-1 py-3"
                       justify-end
@@ -454,9 +454,11 @@ export default {
               this.resourcePath(this.paths.delete, this.$route.params, '::'),
               item, ':',
       );
-      await withWorking(this.error, () => HTTP.delete(url));
-      this.rows.splice(this.rows.indexOf(item), 1);
-      this.destroyClose();
+      const r = await withWorking(this.error, () => HTTP.delete(url));
+      if (r) {
+        this.rows.splice(this.rows.indexOf(item), 1);
+        this.destroyClose();
+      }
       this.destroyDialogWorking = false;
     },
     /** *

@@ -1,6 +1,6 @@
 <template>
   <v-dialog
-    v-model="value"
+    v-model="show"
     max-width="700px"
     persistent
     @keydown.esc="close"
@@ -148,9 +148,19 @@ export default {
     LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
     timeAgo: timeAgo,
   }),
+  computed: {
+    show: {
+      get() {
+        return this.value
+      },
+      set(value) {
+         this.$emit('input', value)
+      }
+    }
+  },
   methods: {
     close() {
-      this.$emit('input', false);
+      this.show = false;
       this.copied = '';
     },
   },
