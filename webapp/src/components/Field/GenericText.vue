@@ -8,8 +8,9 @@
     :placeholder="required ? '' : '(optional)'"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @input="input($event)"
-    @keyup="keyup($event)"
+    @input="$emit('input', $event)"
+    @input.native="$emit('dirty', $event)"
+    @keyup="$emit('keyup', $event)"
   />
   <span v-else>{{ value }}</span>
 </template>
@@ -45,14 +46,6 @@ export default {
     type: {
       type: String,
       required: false,
-    },
-  },
-  methods: {
-    input(event) {
-      this.$emit('input', event);
-    },
-    keyup(event) {
-      this.$emit('keyup', event);
     },
   },
 };

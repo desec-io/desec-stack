@@ -16,7 +16,7 @@
         :error-messages="fieldErrorMessages(index)"
         :style="{ width: fieldWidth(index) }"
         :append-icon="index == fields.length-1 ? appendIcon : ''"
-        @click:append="() => $emit('remove')"
+        @click:append="$emit('remove', $event)"
         @input="inputHandler()"
         @paste.prevent="pasteHandler($event)"
         @keydown.8="backspaceHandler(index, $event)"

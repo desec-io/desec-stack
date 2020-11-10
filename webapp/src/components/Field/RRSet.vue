@@ -10,6 +10,7 @@
             :append-icon="value.length > 1 ? 'mdi-close' : ''"
             ref="inputFields"
             @update:content="$set(value, index, $event)"
+            @input.native="$emit('dirty', $event)"
             @remove="(e) => removeHandler(index, e)"
             @keyup="(e) => $emit('keyup', e)"
     />
@@ -65,11 +66,13 @@ export default {
     return {
       removals: 0,
       types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS'],
-      addHandler: () => {
+      addHandler: ($event) => {
+        self.$emit('dirty', $event);
         self.value.push('');  /* eslint-disable-line vue/no-mutating-props */
         self.$nextTick(() => self.$refs.inputFields[self.$refs.inputFields.length - 1].focus());
       },
-      removeHandler: (index) => {
+      removeHandler: (index, $event) => {
+        self.$emit('dirty', $event);
         self.value.splice(index, 1);  /* eslint-disable-line vue/no-mutating-props */
         self.removals++;
       },

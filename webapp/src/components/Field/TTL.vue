@@ -10,6 +10,7 @@
     :required="required"
     :rules="[v => !required || !!v || 'Required.', v => v >= min || `Value must be ${min} or greater.`]"
     @input="input($event)"
+    @input.native="$emit('dirty', $event)"
     @keyup="keyup($event)"
   />
 </template>

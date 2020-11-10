@@ -6,8 +6,7 @@
     :input-value="value"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @change="input($event)"
-    @keyup="keyup($event)"
+    @change="change"
   />
 </template>
 
@@ -41,11 +40,9 @@ export default {
     },
   },
   methods: {
-    input(event) {
+    change(event) {
       this.$emit('input', event);
-    },
-    keyup(event) {
-      this.$emit('keyup', event);
+      this.$emit('dirty', {target: this.$el});
     },
   },
 };

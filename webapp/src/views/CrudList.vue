@@ -171,6 +171,7 @@
                 v-model="itemFieldProps.item[column.value]"
                 v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
                 @keyup="keyupHandler"
+                @dirty="dirtyHandler"
               />
             </template>
             <template v-slot:[`item.actions`]="itemFieldProps">
@@ -192,7 +193,6 @@
                         v-if="updatable"
                         :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
                         color="grey"
-                        class="hover-green"
                         icon
                         @click.stop="save(itemFieldProps.item, $event)"
                 >
@@ -378,6 +378,7 @@ export default {
     // callbacks
     itemIsReadOnly: () => false,
     postcreate: this.close,
+    dirtyHandler: (e) => e.target.closest('tr').classList.add('orange', 'lighten-5'),
     keyupHandler: (e) => {
       // Intercept Enter key
       if (e.keyCode === 13) {
@@ -482,8 +483,9 @@ export default {
       const self = this;
       if (item) {
         // edit item
+        let tr;
         if (event) {
-          let tr = event.target.closest('tr');
+          tr = event.target.closest('tr');
           tr.addEventListener("animationend", () => tr.classList.remove('successFade'), true);
           tr.classList.add('successFade');
         }
@@ -494,7 +496,19 @@ export default {
         );
         await withWorking(this.error, () => HTTP
                 .patch(url, item)
-                .then(r => self.rows[self.rows.indexOf(item)] = r.data)
+                .then(r => {
+                  self.rows[self.rows.indexOf(item)] = r.data;
+                  if (event) {
+                    tr.classList.remove('orange', 'red', 'lighten-5');
+                  }
+                })
+                .catch(function (error) {
+                  if (event) {
+                    tr.classList.remove('orange', 'red');
+                    tr.classList.add('red', 'lighten-5');
+                  }
+                  throw error;
+                })
         );
       } else {
         // new item
@@ -607,7 +621,7 @@ export default {
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
-  >>> tr:focus-within .mdi-content-save-edit {
+  >>> tr.orange .mdi-content-save-edit, >>> tr.red .mdi-content-save-edit {
     color: forestgreen;
   }
   >>> tr:focus-within :focus {
