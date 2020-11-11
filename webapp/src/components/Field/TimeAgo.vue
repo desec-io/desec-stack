@@ -1,6 +1,6 @@
 <template>
   <div
-          class="my-1 py-3"
+          class="my-1 py-5"
           :title="value"
   >{{ value ? timeAgo.format(new Date(value)) : 'never' }}</div>
 </template>

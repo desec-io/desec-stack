@@ -1,5 +1,5 @@
 <template>
-  <v-text-field v-if="!readonly"
+  <v-text-field
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
@@ -12,7 +12,6 @@
     @input.native="$emit('dirty', $event)"
     @keyup="$emit('keyup', $event)"
   />
-  <span v-else>{{ value }}</span>
 </template>
 
 <script>
@@ -50,3 +49,18 @@ export default {
   },
 };
 </script>
+
+<style>
+/* Removes dropdown icon from read-only select */
+.v-application--is-ltr .v-text-field.v-input--is-disabled .v-input__append-inner {
+  display: none;
+}
+/* remove underline from disabled text fields so they look like regular text */
+:not(v-select).theme--light.v-text-field.v-input--is-disabled .v-input__slot::before {
+  content: none;
+}
+/* display disabled text fields in normal color */
+.theme--light.v-input--is-disabled input {
+  color: rgba(0, 0, 0, 0.87);
+}
+</style>
