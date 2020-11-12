@@ -27,16 +27,16 @@
 
 <script>
 import Record from './Record.vue';
-import RecordA from './RecordA.vue';
-import RecordAAAA from './RecordAAAA.vue';
-import RecordCNAME from './RecordCNAME.vue';
-import RecordNS from './RecordNS.vue';
-import RecordMX from './RecordMX.vue';
-import RecordSRV from './RecordSRV.vue';
-import RecordTXT from './RecordTXT.vue';
+import RecordA from './Record/A.vue';
+import RecordAAAA from './Record/AAAA.vue';
+import RecordCNAME from './Record/CNAME.vue';
+import RecordNS from './Record/NS.vue';
+import RecordMX from './Record/MX.vue';
+import RecordSRV from './Record/SRV.vue';
+import RecordTXT from './Record/TXT.vue';
 
 export default {
-  name: 'RRSet',
+  name: 'RecordList',
   components: {
     Record,
     RecordA,

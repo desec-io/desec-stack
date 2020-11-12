@@ -305,7 +305,7 @@ import TimeAgo from '@/components/Field/TimeAgo';
 import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
 import Record from '@/components/Field/Record';
-import RRSet from '@/components/Field/RRSet';
+import RecordList from '@/components/Field/RecordList';
 import SwitchBox from '@/components/Field/SwitchBox';
 import TTL from '@/components/Field/TTL';
 
@@ -321,7 +321,7 @@ export default {
     Code,
     GenericText,
     Record,
-    RRSet,
+    RecordList,
     TTL,
   },
   data() { return {

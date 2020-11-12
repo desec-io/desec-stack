@@ -1,5 +1,5 @@
 <script>
-import Record from './Record.vue';
+import Record from '../Record.vue';
 
 export default {
   name: 'RecordNS',

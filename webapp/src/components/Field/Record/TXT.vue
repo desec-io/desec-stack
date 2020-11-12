@@ -1,6 +1,6 @@
 <script>
 import { helpers } from 'vuelidate/lib/validators';
-import Record from './Record.vue';
+import Record from '../Record.vue';
 
 const txtToken = helpers.regex('txtToken', /^".*"$/);
 
