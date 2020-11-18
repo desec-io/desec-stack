@@ -26,7 +26,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         self.assertEqual(len(response.data), 2)
         self.assertIn('id', response.data[0])
         self.assertFalse(any(field in response.data[0] for field in ['token', 'key', 'value']))
-        self.assertFalse(any(token.encode() in response.content for token in [self.token.plain, self.token2.plain,]))
+        self.assertFalse(any(token.encode() in response.content for token in [self.token.plain, self.token2.plain]))
         self.assertNotContains(response, self.token.plain)
 
     def test_delete_my_token(self):
@@ -48,8 +48,10 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(
             set(response.data.keys()),
-            {'id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets'}
+            {'id', 'created', 'last_used', 'max_age', 'max_unused_period', 'name', 'perm_manage_tokens',
+             'allowed_subnets', 'is_valid'}
         )
+        self.assertFalse(any(token.encode() in response.content for token in [self.token.plain, self.token2.plain]))
 
     def test_retrieve_other_token(self):
         token_id = Token.objects.get(user=self.user).id
@@ -62,11 +64,20 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         url = self.reverse('v1:token-detail', pk=self.token.id)
 
         for method in [self.client.patch, self.client.put]:
-            data = {'name': method.__name__, 'allowed_subnets': ['127.0.0.0/8']}
-            response = method(url, data=data)
-            self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(Token.objects.get(pk=self.token.id).name, method.__name__)
-            self.assertEqual(Token.objects.get(pk=self.token.id).allowed_subnets, [IPv4Network('127.0.0.0/8')])
+            datas = [
+                {'name': method.__name__},
+                {'allowed_subnets': ['127.0.0.0/8']},
+                {'allowed_subnets': ['127.0.0.0/8', '::/0']},
+                {'max_age': '365 00:10:33.123456'},
+                {'max_age': None},
+                {'max_unused_period': '365 00:10:33.123456'},
+                {'max_unused_period': None},
+            ]
+            for data in datas:
+                response = method(url, data=data)
+                self.assertStatus(response, status.HTTP_200_OK)
+                for k, v in data.items():
+                    self.assertEqual(response.data[k], v)
 
         # Revoke token management permission
         response = self.client.patch(url, data={'perm_manage_tokens': False})
@@ -90,7 +101,8 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_201_CREATED)
             self.assertEqual(
                 set(response.data.keys()),
-                {'id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets', 'token'}
+                {'id', 'created', 'last_used', 'max_age', 'max_unused_period', 'name', 'perm_manage_tokens',
+                 'allowed_subnets', 'is_valid', 'token'}
             )
             self.assertEqual(response.data['name'], data.get('name', ''))
             self.assertEqual(response.data['allowed_subnets'], data.get('allowed_subnets', ['0.0.0.0/0', '::/0']))

@@ -302,11 +302,12 @@
 import { HTTP, withWorking } from '@/utils';
 import RRSetType from '@/components/Field/RRSetType';
 import TimeAgo from '@/components/Field/TimeAgo';
+import Checkbox from '@/components/Field/Checkbox';
 import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
 import Record from '@/components/Field/Record';
 import RecordList from '@/components/Field/RecordList';
-import SwitchBox from '@/components/Field/SwitchBox';
+import Switchbox from '@/components/Field/Switchbox';
 import TTL from '@/components/Field/TTL';
 
 // safely access deeply nested objects
@@ -317,7 +318,8 @@ export default {
   components: {
     RRSetType,
     TimeAgo,
-    SwitchBox,
+    Switchbox,
+    Checkbox,
     Code,
     GenericText,
     Record,

@@ -23,7 +23,7 @@ from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
-from django.core.validators import RegexValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Manager, Q
 from django.db.models.expressions import RawSQL
@@ -397,9 +397,31 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
     allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
+    max_age = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
+    max_unused_period = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
 
     plain = None
     objects = NetManager()
+
+    @property
+    def is_valid(self):
+        now = timezone.now()
+
+        # Check max age
+        try:
+            if self.created + self.max_age < now:
+                return False
+        except TypeError:
+            pass
+
+        # Check regular usage requirement
+        try:
+            if (self.last_used or self.created) + self.max_unused_period < now:
+                return False
+        except TypeError:
+            pass
+
+        return True
 
     def generate_key(self):
         self.plain = secrets.token_urlsafe(21)

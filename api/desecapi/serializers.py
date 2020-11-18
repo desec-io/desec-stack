@@ -51,10 +51,12 @@ class CaptchaSolutionSerializer(serializers.Serializer):
 class TokenSerializer(serializers.ModelSerializer):
     allowed_subnets = serializers.ListField(child=netfields_rf.CidrAddressField(), required=False)
     token = serializers.ReadOnlyField(source='plain')
+    is_valid = serializers.ReadOnlyField()
 
     class Meta:
         model = models.Token
-        fields = ('id', 'created', 'last_used', 'name', 'perm_manage_tokens', 'allowed_subnets', 'token',)
+        fields = ('id', 'created', 'last_used', 'max_age', 'max_unused_period', 'name', 'perm_manage_tokens',
+                  'allowed_subnets', 'is_valid', 'token',)
         read_only_fields = ('id', 'created', 'last_used', 'token')
 
     def __init__(self, *args, include_plain=False, **kwargs):

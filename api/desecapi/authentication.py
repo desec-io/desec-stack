@@ -17,11 +17,19 @@ from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPa
 class TokenAuthentication(RestFrameworkTokenAuthentication):
     model = Token
 
+    # Note: This method's runtime depends on in what way a credential is invalid (expired, wrong client IP).
+    # It thus exposes the failure reason when under timing attack.
     def authenticate(self, request):
         try:
-            user, token = super().authenticate(request)
-        except TypeError:  # TypeError: cannot unpack non-iterable NoneType object
+            user, token = super().authenticate(request)  # may raise exceptions.AuthenticationFailed if token is invalid
+        except TypeError:  # if no token was given
             return None  # unauthenticated
+
+        if not token.is_valid:
+            raise exceptions.AuthenticationFailed('Invalid token.')
+
+        token.last_used = timezone.now()
+        token.save()
 
         # REMOTE_ADDR is populated by the environment of the wsgi-request [1], which in turn is set up by nginx as per
         # uwsgi_params [2]. The value of $remote_addr finally is given by the network connection [3].
@@ -44,10 +52,7 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
 
     def authenticate_credentials(self, key):
         key = Token.make_hash(key)
-        user, token = super().authenticate_credentials(key)
-        token.last_used = timezone.now()
-        token.save()
-        return user, token
+        return super().authenticate_credentials(key)
 
 
 class BasicTokenAuthentication(BaseAuthentication):

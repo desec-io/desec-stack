@@ -33,6 +33,8 @@ A JSON object representing a token has the following structure::
             "0.0.0.0/0",
             "::/0"
         ],
+        "max_age": "365 00:00:00",
+        "max_unused_period": null,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -60,9 +62,16 @@ Field details:
     Token ID, used for identification only (e.g. when deleting a token). This
     is *not* the token value.
 
+``is_valid``
+    :Access mode: read-only
+    :Type: boolean
+
+    Indicates whether this token is valid.  Currently, this reflects validity
+    based on ``max_age`` and ``max_unused_period``.
+
 ``last_used``
     :Access mode: read-only
-    :Type: timestamp (nullable)
+    :Type: timestamp or ``null``
 
     Timestamp of when the token was last successfully authenticated, or
     ``null`` if the token has never been used.
@@ -71,6 +80,30 @@ Field details:
     was performed using this token.  However, if the operation was not
     executed because it was found that the token did not have sufficient
     permission, this field will still be updated.
+
+``max_age``
+    :Access mode: read, write
+    :Type: string (time duration: ``[DD] [HH:[MM:]]ss[.uuuuuu]``) or ``null``
+
+    Maximum token age.  If ``created + max_age`` is less than the current time,
+    the token is invalidated.  Invalidated tokens are not automatically deleted
+    and can be resurrected by adjusting the expiration settings (using another
+    valid token with sufficient privileges).
+
+    If ``null``, the token is valid regardless of age (setting disabled).
+
+``max_unused_period``
+    :Access mode: read, write
+    :Type: string (time duration: ``[DD] [HH:[MM:]]ss[.uuuuuu]``) or ``null``
+
+    Maximum allowed time period of disuse without invalidating the token.  If
+    ``max(created, last_used) + max_unused_period`` is less than the current
+    time, the token is invalidated.  Invalidated tokens are not automatically
+    deleted and can be resurrected by adjusting the expiration settings (using
+    another valid token with sufficient privileges).
+
+    If ``null``, the token is valid regardless of prior usage (setting
+    disabled).
 
 ``name``
     :Access mode: read, write
@@ -145,6 +178,15 @@ configuration during creation:
 
 - ``perm_manage_tokens``:  If set to ``true``, the token can be used to
   authorize token management operations (as described in this chapter).
+
+Additionally, you can configure an expiration policy with the following fields:
+
+- ``max_age``:  Force token expiration when a certain time period has passed
+  since its creation.  If ``null``, the token does not expire due to age.
+
+- ``max_unused_period``:  Require that the token is used a least once within
+  the given time period to prevent it from expiring.  If ``null``, the token
+  does not expire due to it not being used.
 
 If a field is provided but has invalid content, ``400 Bad Request`` is
 returned, with error details in the body.

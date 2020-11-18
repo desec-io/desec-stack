@@ -6,6 +6,8 @@
     :value="value"
     :type="type || ''"
     :placeholder="required ? '' : '(optional)'"
+    :hint="hint"
+    persistent-hint
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
     @input="$emit('input', $event)"
@@ -26,6 +28,10 @@ export default {
       type: [String, Array],
       default: () => [],
     },
+    hint: {
+      type: String,
+      default: '',
+    },
     label: {
       type: String,
       required: false,
@@ -40,7 +46,7 @@ export default {
     },
     value: {
       type: [String, Number],
-      required: true,
+      required: false,
     },
     type: {
       type: String,
