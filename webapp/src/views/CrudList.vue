@@ -41,6 +41,13 @@
                         single-line
                         hide-details
                 />
+                <v-spacer v-if="Object.keys(writeableAdvancedColumns).length > 0"/>
+                <v-switch
+                    v-model="showAdvanced"
+                    v-if="Object.keys(writeableAdvancedColumns).length > 0"
+                    label="Show advanced settings"
+                    class="mt-6"
+                />
                 <v-spacer />
                 <v-btn
                         id="create"
@@ -115,7 +122,7 @@
                         <!-- New Form -->
                         <component
                                 :is="c.datatype"
-                                v-for="(c, id) in writeableColumns"
+                                v-for="(c, id) in writeableStandardColumns"
                                 :key="id"
                                 v-model="createDialogItem[c.value]"
                                 v-bind="c.fieldProps ? c.fieldProps(createDialogItem) : {}"
@@ -126,6 +133,34 @@
                                 autofocus
                                 @input="clearErrors(c)"
                         />
+
+                          <v-expansion-panels
+                              flat
+                              v-if="Object.keys(writeableAdvancedColumns).length > 0"
+                          >
+                            <v-expansion-panel>
+                              <v-expansion-panel-header class="primary lighten-5">
+                                <span>Advanced settings</span>
+                              </v-expansion-panel-header>
+                              <v-expansion-panel-content>
+                                <component
+                                        :is="c.datatype"
+                                        v-for="(c, id) in writeableAdvancedColumns"
+                                        :key="id"
+                                        v-model="createDialogItem[c.value]"
+                                        v-bind="c.fieldProps ? c.fieldProps(createDialogItem) : {}"
+                                        :label="c.textCreate || c.text"
+                                        :error-messages="c.createErrors"
+                                        :required="c.required || false"
+                                        :disabled="createInhibited || createDialogSuccess"
+                                        autofocus
+                                        @input="clearErrors(c)"
+                                />
+                              </v-expansion-panel-content>
+                            </v-expansion-panel>
+                          </v-expansion-panels>
+
+                        <div class="mt-4" v-html="texts.createBottom()"></div>
                       </v-card-text>
 
                       <v-card-actions class="pb-4">
@@ -310,6 +345,18 @@ import RecordList from '@/components/Field/RecordList';
 import Switchbox from '@/components/Field/Switchbox';
 import TTL from '@/components/Field/TTL';
 
+const filter = function (obj, predicate) {
+  const result = {};
+  let key;
+  for (key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && predicate(obj[key])) {
+      result[key] = obj[key];
+    }
+  }
+
+  return result;
+};
+
 // safely access deeply nested objects
 const safeget = (path, object) => path.reduce((xs, x) => ((xs && xs[x]) ? xs[x] : null), object);
 
@@ -343,6 +390,7 @@ export default {
     extraComponentBind: {},
     fullWidth: false,
     snackbar: false,
+    showAdvanced: false,
     search: '',
     rows: [],
     valid: false,
@@ -360,6 +408,7 @@ export default {
     texts: {
       banner: undefined,
       create: () => ('Create a new object.'),
+      createBottom: () => undefined,
       createSuccess: () => undefined,
       createWarning: () => (false),
       destroy: () => ('Delete an object permanently. This operation can likely not be undone.'),
@@ -395,7 +444,10 @@ export default {
   computed: {
     createInhibited: () => false,
     headers() {
-      const cols = Object.values(Object.assign({}, this.columns)); // (shallowly) copy cols and convert to array
+      let cols = Object.values(Object.assign({}, this.columns)); // (shallowly) copy cols and convert to array
+      if (!this.showAdvanced) {
+        cols = cols.filter(col => !(col.advanced || false));
+      }
       cols.push({
         text: 'Actions',
         sortable: false,
@@ -405,19 +457,11 @@ export default {
       });
       return cols; // data table expects an array
     },
-    writeableColumns() {
-      const filter = function (obj, predicate) {
-        const result = {};
-        let key;
-        for (key in obj) {
-          if (Object.prototype.hasOwnProperty.call(obj, key) && !predicate(obj[key])) {
-            result[key] = obj[key];
-          }
-        }
-
-        return result;
-      };
-      return filter(this.columns, c => c.readonly && !c.writeOnCreate);
+    writeableStandardColumns() {
+      return this.filterWriteableColumns(col => !(col.advanced || false));
+    },
+    writeableAdvancedColumns() {
+      return this.filterWriteableColumns(col => (col.advanced || false));
     },
   },
   async created() {
@@ -430,6 +474,10 @@ export default {
     this.createDialogItem = Object.assign({}, this.itemDefaults());
   },
   methods: {
+    filterWriteableColumns(callback) {
+      const columns = filter(this.columns, c => !c.readonly || c.writeOnCreate);
+      return filter(columns, callback);
+    },
     clearErrors(c) {
       c.createErrors = [];
     },

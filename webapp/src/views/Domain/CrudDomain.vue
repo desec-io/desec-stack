@@ -19,7 +19,7 @@ export default {
         destroy: 'Delete Record Set',
       },
       texts: {
-        banner: () => 'You can edit your DNS records here. As this feature is new, we would like to gather your feedback. Feel free to post in <a href="https://talk.desec.io/" target="_blank">our forum</a>, or shoot us an email.',
+        banner: () => 'You can edit your DNS records here. As this feature is evolving, we would like to gather your feedback. Feel free to post in <a href="https://talk.desec.io/" target="_blank">our forum</a>, or shoot us an email.',
         create: () => ('Create a record set'),
         destroy: rrset => (`Delete record set ${rrset.type} ${rrset.subname}?`),
         destroyInfo: () => ('This operation will permanently remove this information from the DNS.'),
