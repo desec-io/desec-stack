@@ -68,10 +68,11 @@
               <v-layout class="justify-center">
                 <v-checkbox
                   v-model="useSessionStorage"
-                  label="Keep credentials for entire browser session (session storage)"
+                  label="Remember me during this browser session"
                   tabindex="3"
                 />
               </v-layout>
+              <p class="text-center"><strong>Note:</strong> Login sessions expire after 1 hour of inactivity, or after 7 days at the latest.</p>
             </v-card-text>
             <v-card-actions class="justify-center">
               <v-btn

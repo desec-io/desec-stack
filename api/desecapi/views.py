@@ -510,7 +510,8 @@ class AccountLoginView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         user = self.request.user
 
-        token = models.Token.objects.create(user=user, name="login", perm_manage_tokens=True)
+        token = models.Token.objects.create(user=user, name="login", perm_manage_tokens=True,
+                                            max_age=timedelta(days=7), max_unused_period=timedelta(hours=1))
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
         data = serializers.TokenSerializer(token, include_plain=True).data

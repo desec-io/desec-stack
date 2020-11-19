@@ -104,9 +104,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         return email.strip(), password, self.client.register(email, password, captcha_id, captcha_solution, **kwargs)
 
     def login_user(self, email, password):
-        response = self.client.login_user(email, password)
-        token = response.data.get('token')
-        return token, response
+        return self.client.login_user(email, password)
 
     def logout(self, token):
         return self.client.logout(token)
@@ -448,9 +446,11 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         return email, password, domain
 
     def _test_login(self):
-        token, response = self.login_user(self.email, self.password)
+        response = self.login_user(self.email, self.password)
         self.assertLoginSuccessResponse(response)
-        return token
+        self.assertEqual(response.data['max_age'], '7 00:00:00')
+        self.assertEqual(response.data['max_unused_period'], '01:00:00')
+        return response.data['token']
 
     def _test_logout(self):
         response = self.logout(self.token)
