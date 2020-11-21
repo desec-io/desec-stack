@@ -2,7 +2,7 @@
 import { helpers, integer, between } from 'vuelidate/lib/validators';
 import Record from '../Record.vue';
 
-const hostname = helpers.regex('hostname', /^(([a-zA-Z0-9-]+\.?)+)|\.$/);
+const hostname = helpers.regex('hostname', /^((([a-zA-Z0-9-]+\.?)+)|\.)$/);
 const trailingDot = helpers.regex('trailingDot', /[.]$/);
 
 const MAX16 = 65535;

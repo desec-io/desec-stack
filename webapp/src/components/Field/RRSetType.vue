@@ -49,6 +49,7 @@ export default {
       'TXT',
       'SPF',
       'CAA',
+      'NS',
       'TLSA',
       'OPENPGPKEY',
       'PTR',
