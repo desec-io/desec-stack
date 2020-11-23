@@ -32,7 +32,7 @@
         <v-col class="col-12 col-sm-6 d-flex" v-for="(t, idx) in terms_of_use" :key="t.title">
           <v-card>
             <v-card-title>§{{idx+1}} {{t.title}}</v-card-title>
-            <v-card-text>{{t.text}}</v-card-text>
+            <v-card-text v-html="t.text" />
           </v-card>
         </v-col>
       </v-row>
@@ -82,6 +82,17 @@ export default {
         text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
                 'deleted after a warning with 4 weeks notice. Owners can prevent deletion by updating DNS ' +
                 'information.',
+      },
+      {
+        title: 'Secure Delegation Required',
+        text: 'Domains created at deSEC which do not include deSEC\'s nameservers in their set of authoritative ' +
+            'nameservers ("NS records") or which fail to establish a DNSSEC chain of trust may receive a deletion ' +
+            'warning and may be deleted four weeks thereafter if that condition still applies. <br/>' +
+            'Anyone who can prove ownership of a domain name by an upstream registry may claim control over this ' +
+            'domain at all deSEC nameservers, even if a corresponding deSEC zone has been created by another user. ' +
+            'During the transfer of control, the zone\'s DNS information and signing keys will be deleted; a backup ' +
+            'of the zone\'s record sets will be made available to the user account that previously held the domain ' +
+            'at deSEC.',
       },
       {
         title: 'Domains with Illegal Activity',
