@@ -81,9 +81,7 @@ export default {
         title: 'Expiration of Inactive dynDNS Domains',
         text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
                 'deleted after a warning with 4 weeks notice. Owners can prevent deletion by updating DNS ' +
-                'information. Deleted domains will undergo retention until associated certificates as recorded in ' +
-                'the transparency log have expired, to make sure no valid certificates exist when another user ' +
-                'registers the name again.',
+                'information.',
       },
       {
         title: 'Domains with Illegal Activity',
