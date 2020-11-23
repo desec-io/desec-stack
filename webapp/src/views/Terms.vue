@@ -29,9 +29,9 @@
         </v-col>
       </v-row>
       <v-row class="pb-8">
-        <v-col class="col-12 col-sm-6 d-flex" v-for="t in terms_of_use" :key="t.title">
+        <v-col class="col-12 col-sm-6 d-flex" v-for="(t, idx) in terms_of_use" :key="t.title">
           <v-card>
-            <v-card-title v-text="t.title"></v-card-title>
+            <v-card-title>§{{idx+1}} {{t.title}}</v-card-title>
             <v-card-text>{{t.text}}</v-card-text>
           </v-card>
         </v-col>
@@ -65,20 +65,20 @@ export default {
   data: () => ({
     terms_of_use: [
       {
-        title: '§1 Keep Server Load Low',
+        title: 'Keep Server Load Low',
         text: 'Only send update requests when there is something to update, and use reasonable TTLs. Accounts ' +
                 'that cause extraordinarily high load or cost may be disabled or throttled. Account ' +
                 'holders will be asked for cooperation to resolve the issue.',
       },
       {
-        title: '§2 Users Must be Responsive',
+        title: 'Users Must be Responsive',
         text: 'Users are required to register with an email address and are obliged to read and react to our ' +
                 'emails. For users who do not react or are uncooperative, deSEC reserves the right to disable the ' +
                 'account and/or zone, and/or modify or disable DNS records or zones in order to ensure smooth ' +
                 'operation of deSEC services.',
       },
       {
-        title: '§3 Expiration of Inactive dynDNS Domains',
+        title: 'Expiration of Inactive dynDNS Domains',
         text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
                 'deleted after a warning with 4 weeks notice. Owners can prevent deletion by updating DNS ' +
                 'information. Deleted domains will undergo retention until associated certificates as recorded in ' +
@@ -86,27 +86,27 @@ export default {
                 'registers the name again.',
       },
       {
-        title: '§4 Domains with Illegal Activity',
+        title: 'Domains with Illegal Activity',
         text: 'Domains that are used for illegal activity such as spam, scam, malware, phishing, etc. will be ' +
                 'disabled immediately and permanently, and owners will be held liable. deSEC will cooperate with ' +
                 'law enforcement to assist prosecution of illegal activity. In most cases, German and European Union ' +
                 'legislation will apply.',
       },
       {
-        title: '§5 Clients Will Need Updates',
+        title: 'Clients Will Need Updates',
         text: 'In order to ensure surpassing security and usability, deSEC will keep the provided services up to ' +
                 'date as technology evolves. We explicitly do not guarantee that old client software keeps on ' +
                 'working forever. Breaking changes will usually be announced weeks ahead, but time-critical changes ' +
                 'may come with a shorter or even no grace period.',
       },
       {
-        title: '§6 No Warranty',
+        title: 'No Warranty',
         text: 'deSEC does not guarantee availability for its free services. Functionality of all services is ' +
                 'provided on a best-effort basis. In particular, Quality of Service, even on a low level, and ' +
                 'fitness for a particular purpose are not assured.',
       },
       {
-        title: '§7 Fineprint',
+        title: 'Fineprint',
         text: 'If a provision of this agreement is or becomes legally invalid or if there is any gap that needs to ' +
                 'be filled, the validity of the remainder of the agreement shall not be affected thereby. Invalid ' +
                 'provisions shall be replaced by common consent with such provisions which come as close as possible ' +
