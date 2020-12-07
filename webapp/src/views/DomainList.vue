@@ -83,7 +83,8 @@ export default {
           }
           let ds = d.keys.map(key => key.ds);
           ds = ds.concat.apply([], ds)
-          this.extraComponentBind = {'name': d.name, 'ds': ds, 'published': d.published, 'is-new': isNew};
+          let dnskey = d.keys.map(key => key.dnskey);
+          this.extraComponentBind = {'name': d.name, 'ds': ds, 'dnskey': dnskey, 'published': d.published, 'is-new': isNew};
           if (process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ').some((suffix) => d.name.endsWith(`.${suffix}`))) {
             this.extraComponentBind['ips'] = [];
             await withWorking(this.error, async (o) => {
