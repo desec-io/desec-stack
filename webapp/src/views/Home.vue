@@ -85,8 +85,8 @@
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-8 py-4 text-center">
           <a class="primary--text text--darken-2" href="//securesystems.de/">SSE</a> supports us with development staff
-          and provides deSEC with global Anycast networking infrastructure for delivering signed DNS data to the
-          public. We trust them because creating and auditing security solutions is their daily business.
+          and provides financial resources for our global Anycast network infrastructure. We trust them because creating
+          and auditing security solutions is their daily business.
         </v-col>
       </v-row>
     </v-container>
@@ -192,18 +192,68 @@ export default {
     valid: false,
     frontends: [
       {
+        name: 'Santiago de Chile (ns2.desec.org)',
+        host: 'scl-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '22%',
+        top: '85%',
+      },
+      {
         name: 'London (ns2.desec.org)',
-        host: 'lhr-1.b.desec.io',
-        adopted_by: '',
+        host: 'lhr-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
         left: '45%',
         top: '20%',
       },
       {
-        name: 'Vienna (ns2.desec.org)',
-        host: 'vie-1.b.desec.io',
-        adopted_by: '',
-        left: '50%',
-        top: '24%',
+        name: 'Singapore (ns2.desec.org)',
+        host: 'sin-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '81%',
+        top: '57.5%',
+      },
+      {
+        name: 'Dubai (ns2.desec.org)',
+        host: 'dxb-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '64%',
+        top: '40.2%',
+      },
+      {
+        name: 'Los Angeles (ns2.desec.org)',
+        host: 'lax-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '6%',
+        top: '32%',
+      },
+      {
+        name: 'Tokyo (ns2.desec.org)',
+        host: 'tyo-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '90.4%',
+        top: '32.2%',
+      },
+      {
+        name: 'Frankfurt (ns2.desec.org)',
+        host: 'fra-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '49.0%',
+        top: '23.0%',
+      },
+      {
+        name: 'New York (ns2.desec.org)',
+        host: 'lga-1.c.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '22%',
+        top: '29%',
+      },
+
+      {
+        name: 'Amsterdam (ns1.desec.io)',
+        host: 'ams-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '47%',
+        top: '22%',
       },
       {
         name: 'Frankfurt (ns1.desec.io)',
@@ -213,35 +263,12 @@ export default {
         top: '23.5%',
       },
       {
-        name: 'Amsterdam (ns1.desec.io)',
-        host: 'ams-1.a.desec.io',
+        name: 'Johannesburg (ns1.desec.io)',
+        host: 'jnb-1.a.desec.io',
         adopted_by: 'SSE Secure Systems Engineering',
-        left: '47%',
-        top: '22%',
+        left: '54%',
+        top: '81%',
       },
-
-      {
-        name: 'Los Angeles (ns2.desec.org)',
-        host: 'lax-1.b.desec.io',
-        adopted_by: '',
-        left: '6%',
-        top: '32%',
-      },
-      {
-        name: 'New York (ns2.desec.org)',
-        host: 'nyc-1.b.desec.io',
-        adopted_by: '',
-        left: '22%',
-        top: '29%',
-      },
-      {
-        name: 'Dallas, TX (ns1.desec.io)',
-        host: 'dfw-1.a.desec.io',
-        adopted_by: 'SSE Secure Systems Engineering',
-        left: '13%',
-        top: '34%',
-      },
-
       {
         name: 'São Paulo (ns1.desec.io)',
         host: 'gru-1.a.desec.io',
@@ -250,21 +277,6 @@ export default {
         top: '78%',
       },
       {
-        name: 'São Paulo (ns2.desec.org)',
-        host: 'gru-1.b.desec.io',
-        adopted_by: '',
-        left: '28.8%',
-        top: '78.5%',
-      },
-      {
-        name: 'Santiago de Chile (ns2.desec.org)',
-        host: 'scl-1.b.desec.io',
-        adopted_by: '',
-        left: '22%',
-        top: '85%',
-      },
-
-      {
         name: 'Sydney (ns1.desec.io)',
         host: 'syd-1.a.desec.io',
         adopted_by: 'SSE Secure Systems Engineering',
@@ -272,34 +284,18 @@ export default {
         top: '84%',
       },
       {
-        name: 'Sydney (ns2.desec.org)',
-        host: 'syd-1.b.desec.io',
-        adopted_by: '',
-        left: '92.5%',
-        top: '84.5%',
-      },
-
-      {
-        name: 'Singapore (ns2.desec.org)',
-        host: 'sin-1.b.desec.io',
-        adopted_by: '',
-        left: '81%',
-        top: '57.5%',
+        name: 'Dallas, TX (ns1.desec.io)',
+        host: 'dfw-1.a.desec.io',
+        adopted_by: 'SSE Secure Systems Engineering',
+        left: '13%',
+        top: '34%',
       },
       {
         name: 'Hong Kong (ns1.desec.io)',
         host: 'hkg-1.a.desec.io',
         adopted_by: 'SSE Secure Systems Engineering',
-        left: '84%',
-        top: '43%',
-      },
-
-      {
-        name: 'Johannesburg (ns1.desec.io)',
-        host: 'jnb-1.a.desec.io',
-        adopted_by: 'SSE Secure Systems Engineering',
-        left: '54%',
-        top: '81%',
+        left: '83.5%',
+        top: '42.2%',
       },
     ],
     features: [
