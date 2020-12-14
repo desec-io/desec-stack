@@ -28,15 +28,14 @@ VALID_RECORDS_CANONICAL = {
         '128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"',
         '1 issue "letsencrypt.org"'
     ],
+    'CDNSKEY': [None],
+    'CDS': [None],
     'CERT': ['6 0 0 sadfdQ=='],
     'CNAME': ['example.com.'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
-    'DLV': [
-        '39556 13 1 aabbccddeeff',
-    ],
-    'DS': [
-        '39556 13 1 aabbccddeeff',
-    ],
+    'DLV': ['39556 13 1 aabbccddeeff'],
+    'DNSKEY': [None],
+    'DS': ['39556 13 1 aabbccddeeff'],
     'EUI48': ['aa-bb-cc-dd-ee-ff'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-00-11'],
     'HINFO': ['"ARMv8-A" "Linux"'],
@@ -137,6 +136,8 @@ VALID_RECORDS_NON_CANONICAL = {
     'AFSDB': ['03 turquoise.FEMTO.edu.'],
     'APL': ['2:FF00:0:0:0:0::/8 !1:192.168.38.0/28'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
+    'CDNSKEY': [],  # managed automatically
+    'CDS': [],  # managed automatically
     'CERT': ['06 00 00 sadfee=='],
     'CNAME': ['EXAMPLE.TEST.'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
@@ -144,6 +145,7 @@ VALID_RECORDS_NON_CANONICAL = {
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
+    'DNSKEY': [],  # managed automatically
     'DS': [
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
@@ -260,10 +262,17 @@ INVALID_RECORDS = {
         '2:::/129',
     ],
     'CAA': ['43235 issue "letsencrypt.org"'],
+    'CDNSKEY': [  # managed automatically, can't tinker
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+    ],
+    'CDS': ['6454 8 1 24396E17E36D031F71C354B06A979A67A01F503E'],  # managed automatically, can't tinker
     'CERT': ['6 0 sadfdd=='],
     'CNAME': ['example.com', '10 example.com.'],
     'DHCID': ['x', 'xx', 'xxx'],
     'DLV': ['-34 13 1 aabbccddeeff'],
+    'DNSKEY': [  # managed automatically, can't tinker
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+    ],
     'DS': ['-34 13 1 aabbccddeeff'],
     'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-gg-11', 'AA-BB-C C-DD-EE-FF-00-11'],
@@ -315,9 +324,14 @@ def test_soundness():
 def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
     domain_name = api_user_domain.domain
     expected = set()
-    assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname='a').status_code == 201
-    expected.add(value)
-    rrset = ns_lord.query(f'a.{domain_name}'.strip('.'), rr_type)
+    subname = 'a'
+    if rr_type in ('CDNSKEY', 'CDS', 'DNSKEY'):
+        expected |= api_user_domain.get_key_params(domain_name, rr_type)
+        subname = ''
+    if value is not None:
+        assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
+        expected.add(value)
+    rrset = ns_lord.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
     assert rrset == expected
 
 
@@ -325,9 +339,14 @@ def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSCl
 def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
     domain_name = api_user_domain.domain
     expected = set()
-    assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname='a').status_code == 201
-    expected.add(value)
-    rrset = ns_lord.query(f'a.{domain_name}'.strip('.'), rr_type)
+    subname = 'a'
+    if rr_type in ('CDNSKEY', 'CDS', 'DNSKEY'):
+        expected |= api_user_domain.get_key_params(domain_name, rr_type)
+        subname = ''
+    if value is not None:
+        assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
+        expected.add(value)
+    rrset = ns_lord.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
     assert len(rrset) == len(expected)
 
 

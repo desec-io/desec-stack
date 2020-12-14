@@ -214,6 +214,25 @@ class DeSECAPIV1Client:
             }
         )
 
+    def get_key_params(self, domain_name: str, rr_type: str) -> list:
+        keys = self.domains[domain_name]['keys']
+        if rr_type in ('CDNSKEY', 'DNSKEY'):
+            params = {key['dnskey'] for key in keys}
+        elif rr_type == 'CDS':
+            params = {ds for key in keys for ds in key['ds']}
+        else:
+            raise ValueError
+
+        # Split into four fields and remove additional spaces
+        params = [map(lambda x: x.replace(' ', ''), param.split(' ', 3)) for param in params]
+
+        # For (C)DNSKEY, add spaces every 32 characters
+        if rr_type in ('CDNSKEY', 'DNSKEY'):
+            params = [[a, b, c, ' '.join(d[i:i + 32] for i in range(0, len(d), 32))] for a, b, c, d in params]
+
+        # Join again
+        return {' '.join(param) for param in params}
+
 
 @pytest.fixture
 def api_anon() -> DeSECAPIV1Client:
