@@ -28,13 +28,26 @@ VALID_RECORDS_CANONICAL = {
         '128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"',
         '1 issue "letsencrypt.org"'
     ],
-    'CDNSKEY': [None],
-    'CDS': [None],
+    'CDNSKEY': [
+        None,
+        '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
+        '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy 9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my 4JmEmjUPA1JeEI9YfTUieMr2UZflu7aI bZFLw0vqiYrywCGrCHXLalOrEOmrvAxL vq4vHtuTlH7JIszzYBSes8g1vle6KG7x XiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJ h6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFa W2m7N/Wy4qcFU13roWKDEAstbxH5CHPo BfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lv u9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg==',
+    ],
+    'CDS': [
+        None,
+        '39556 13 1 aabbccddeeff',
+    ],
     'CERT': ['6 0 0 sadfdQ=='],
     'CNAME': ['example.com.'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
     'DLV': ['39556 13 1 aabbccddeeff'],
-    'DNSKEY': [None],
+    'DNSKEY': [
+        None,
+        '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
+        '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy 9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my 4JmEmjUPA1JeEI9YfTUieMr2UZflu7aI bZFLw0vqiYrywCGrCHXLalOrEOmrvAxL vq4vHtuTlH7JIszzYBSes8g1vle6KG7x XiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJ h6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFa W2m7N/Wy4qcFU13roWKDEAstbxH5CHPo BfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lv u9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg==',
+    ],
     'DS': ['39556 13 1 aabbccddeeff'],
     'EUI48': ['aa-bb-cc-dd-ee-ff'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-00-11'],
@@ -136,8 +149,12 @@ VALID_RECORDS_NON_CANONICAL = {
     'AFSDB': ['03 turquoise.FEMTO.edu.'],
     'APL': ['2:FF00:0:0:0:0::/8 !1:192.168.38.0/28'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
-    'CDNSKEY': [],  # managed automatically
-    'CDS': [],  # managed automatically
+    'CDNSKEY': [
+        '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
+        '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 013  aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+    ],
+    'CDS': ['039556  013  01  aabbccddeeff'],
     'CERT': ['06 00 00 sadfee=='],
     'CNAME': ['EXAMPLE.TEST.'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
@@ -145,7 +162,11 @@ VALID_RECORDS_NON_CANONICAL = {
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
-    'DNSKEY': [],  # managed automatically
+    'DNSKEY': [
+        '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
+        '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 013  aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+    ],
     'DS': [
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
@@ -262,17 +283,13 @@ INVALID_RECORDS = {
         '2:::/129',
     ],
     'CAA': ['43235 issue "letsencrypt.org"'],
-    'CDNSKEY': [  # managed automatically, can't tinker
-        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
-    ],
-    'CDS': ['6454 8 1 24396E17E36D031F71C354B06A979A67A01F503E'],  # managed automatically, can't tinker
+    'CDNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
+    'CDS': ['a 8 1 24396E17E36D031F71C354B06A979A67A01F503E'],
     'CERT': ['6 0 sadfdd=='],
     'CNAME': ['example.com', '10 example.com.'],
     'DHCID': ['x', 'xx', 'xxx'],
     'DLV': ['-34 13 1 aabbccddeeff'],
-    'DNSKEY': [  # managed automatically, can't tinker
-        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
-    ],
+    'DNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
     'DS': ['-34 13 1 aabbccddeeff'],
     'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-gg-11', 'AA-BB-C C-DD-EE-FF-00-11'],
@@ -358,3 +375,19 @@ def test_create_invalid(api_user_domain: DeSECAPIV1Client, rr_type: str, value: 
 def test_create_long_subname(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient):
     assert api_user_domain.rr_set_create(api_user_domain.domain, "AAAA", ["::1"], subname="a"*63).status_code == 201
     assert ns_lord.query(f"{'a'*63}.{api_user_domain.domain}", "AAAA") == {"::1"}
+
+
+def test_add_remove_DNSKEY(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient):
+    domain_name = api_user_domain.domain
+    auto_dnskeys = api_user_domain.get_key_params(domain_name, 'DNSKEY')
+
+    # After adding another DNSKEY, we expect it to be part of the nameserver's response (along with the automatic ones)
+    value = '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg=='
+    assert api_user_domain.rr_set_create(domain_name, 'DNSKEY', [value], subname='').status_code == 201
+    rrset = ns_lord.query(f'{domain_name}'.strip('.'), 'DNSKEY')
+    assert rrset == auto_dnskeys | {value}
+
+    # After deleting it, we expect that the automatically managed ones are still there
+    assert api_user_domain.rr_set_delete(domain_name, "DNSKEY", subname='').status_code == 204
+    rrset = ns_lord.query(f'{domain_name}'.strip('.'), 'DNSKEY')
+    assert rrset == auto_dnskeys

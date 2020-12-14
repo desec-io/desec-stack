@@ -584,6 +584,22 @@ Record types with priority field
     content, separated from the rest of it by a space (e.g.
     ``10 mx.example.com.``).
 
+``CDNSKEY``, ``CDS``, ``DNSKEY`` record
+    These records are managed automatically by deSEC.  However, our API allows
+    adding additional values for specialized purposes.  Regular, automatic
+    DNSSEC operation does not require deSEC users to touch these records.
+
+    Using these record types inappropriately may break proper functioning of
+    your domain.  If you know what you're doing, you can use these record
+    types for announcing extra DNSSEC public keys, for example in order to
+    orchestrate keys when your zone is signed by several DNSSEC operators
+    independently ("multi-signer setup", see also RFC 8901).
+
+    **Note:** Manually provided records are published **in addition** to the
+    ones managed automatically by deSEC.  As a consequence, the TTL values of
+    extra records configured at the zone apex are ignored by the API, and the
+    TTLs used for the automatic records is applied.
+
 ``CNAME`` record
     - The record value (target) must be terminated by a dot ``.`` (as in
       ``example.com.``).  Only one value is allowed.
@@ -599,6 +615,9 @@ Record types with priority field
       HTTPS record type which serves exactly this purpose. Although new,
       browser vendor support is under way (with Chrome planning to roll out
       experimental support in February 2021).
+
+``DNSKEY`` record
+    See notes on the ``CDNSKEY``, ``CDS``, and ``DNSKEY`` record types.
 
 ``MX`` record
     The ``MX`` record value consists of the priority value and a mail server

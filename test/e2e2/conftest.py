@@ -214,6 +214,9 @@ class DeSECAPIV1Client:
             }
         )
 
+    def rr_set_delete(self, domain_name: str, rr_type: str, subname: str = '') -> requests.Response:
+        return self.delete(f"/domains/{domain_name}/rrsets/{subname}.../{rr_type}/")
+
     def get_key_params(self, domain_name: str, rr_type: str) -> list:
         keys = self.domains[domain_name]['keys']
         if rr_type in ('CDNSKEY', 'DNSKEY'):
