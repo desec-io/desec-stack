@@ -472,7 +472,7 @@ RR_SET_TYPES_UNSUPPORTED = {
 # restricted types are managed in use by the API, and cannot directly be modified by the API client
 RR_SET_TYPES_AUTOMATIC = {
     # corresponding functionality is automatically managed:
-    'CDNSKEY', 'CDS', 'DNSKEY', 'KEY', 'NSEC', 'NSEC3', 'OPT', 'RRSIG',
+    'KEY', 'NSEC', 'NSEC3', 'OPT', 'RRSIG',
     # automatically managed by the API:
     'NSEC3PARAM', 'SOA'
 }

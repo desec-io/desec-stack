@@ -206,6 +206,14 @@ class DeSECAPIV1Client:
             }
         )
 
+    def get_key_params(self, domain_name: str, rr_type: str) -> list:
+        data = self.get(f"/domains/{domain_name}/").json()
+        if rr_type in ('CDNSKEY', 'DNSKEY'):
+            return {key['dnskey'] for key in data['keys']}
+        if rr_type == 'CDS':
+            return {ds for key in data['keys'] for ds in key['ds']}
+        raise ValueError
+
 
 @pytest.fixture
 def api_anon() -> DeSECAPIV1Client:

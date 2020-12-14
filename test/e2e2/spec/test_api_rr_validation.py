@@ -28,15 +28,22 @@ VALID_RECORDS_CANONICAL = {
         '128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"',
         '1 issue "letsencrypt.org"'
     ],
+    'CDNSKEY': [
+        '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
+        '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy 9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my 4JmEmjUPA1JeEI9YfTUieMr2UZflu7aI bZFLw0vqiYrywCGrCHXLalOrEOmrvAxL vq4vHtuTlH7JIszzYBSes8g1vle6KG7x XiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJ h6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFa W2m7N/Wy4qcFU13roWKDEAstbxH5CHPo BfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lv u9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg==',
+    ],
+    'CDS': ['39556 13 1 aabbccddeeff'],
     'CERT': ['6 0 0 sadfdQ=='],
     'CNAME': ['example.com.'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
-    'DLV': [
-        '39556 13 1 aabbccddeeff',
+    'DLV': ['39556 13 1 aabbccddeeff',],
+    'DNSKEY': [
+        '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
+        '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy 9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my 4JmEmjUPA1JeEI9YfTUieMr2UZflu7aI bZFLw0vqiYrywCGrCHXLalOrEOmrvAxL vq4vHtuTlH7JIszzYBSes8g1vle6KG7x XiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJ h6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFa W2m7N/Wy4qcFU13roWKDEAstbxH5CHPo BfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lv u9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg==',
     ],
-    'DS': [
-        '39556 13 1 aabbccddeeff',
-    ],
+    'DS': ['39556 13 1 aabbccddeeff',],
     'EUI48': ['aa-bb-cc-dd-ee-ff'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-00-11'],
     'HINFO': ['"ARMv8-A" "Linux"'],
@@ -137,12 +144,23 @@ VALID_RECORDS_NON_CANONICAL = {
     'AFSDB': ['03 turquoise.FEMTO.edu.'],
     'APL': ['2:FF00:0:0:0:0::/8 !1:192.168.38.0/28'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
+    'CDNSKEY': [
+        '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
+        '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 013  aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+    ],
+    'CDS': ['039556  013  01  aabbccddeeff'],
     'CERT': ['06 00 00 sadfee=='],
     'CNAME': ['EXAMPLE.TEST.'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
     'DLV': [
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
+    ],
+    'DNSKEY': [
+        '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
+        '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
+        '257 3 013  aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
     ],
     'DS': [
         '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
@@ -260,10 +278,13 @@ INVALID_RECORDS = {
         '2:::/129',
     ],
     'CAA': ['43235 issue "letsencrypt.org"'],
+    'CDNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
+    'CDS': ['a 8 1 24396E17E36D031F71C354B06A979A67A01F503E'],
     'CERT': ['6 0 sadfdd=='],
     'CNAME': ['example.com', '10 example.com.'],
     'DHCID': ['x', 'xx', 'xxx'],
     'DLV': ['-34 13 1 aabbccddeeff'],
+    'DNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
     'DS': ['-34 13 1 aabbccddeeff'],
     'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-gg-11', 'AA-BB-C C-DD-EE-FF-00-11'],
@@ -314,13 +335,21 @@ def test_soundness():
 @pytest.mark.parametrize("rr_type,value", generate_params(VALID_RECORDS_CANONICAL))
 def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
     assert api_user_domain.rr_set_create(api_user_domain.domains[0], rr_type, [value], subname="a").status_code == 201
-    assert ns_lord.query(f"a.{api_user_domain.domains[0]}", rr_type) == {value}
+    rrset = ns_lord.query(f"a.{api_user_domain.domains[0]}", rr_type)
+    expected = {value}
+    if rr_type in ('CDNSKEY', 'CDS', 'DNSKEY'):
+        expected |= api_user_domain.get_key_params(api_user_domain.domains[0], rr_type)
+    assert rrset == expected
 
 
 @pytest.mark.parametrize("rr_type,value", generate_params(VALID_RECORDS_NON_CANONICAL))
 def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient, rr_type: str, value: str):
     assert api_user_domain.rr_set_create(api_user_domain.domains[0], rr_type, [value], subname="a").status_code == 201
-    assert len(ns_lord.query(f"a.{api_user_domain.domains[0]}", rr_type)) == 1
+    rrset = ns_lord.query(f"a.{api_user_domain.domains[0]}", rr_type)
+    expected = 1
+    if rr_type in ('CDNSKEY', 'CDS', 'DNSKEY'):
+        expected += len(api_user_domain.get_key_params(api_user_domain.domains[0], rr_type))
+    assert len(rrset) == expected
 
 
 @pytest.mark.parametrize("rr_type,value", INVALID_RECORDS_PARAMS)
