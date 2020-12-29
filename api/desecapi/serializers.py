@@ -4,10 +4,11 @@ import json
 import re
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
 
+import django.core.exceptions
+from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth.password_validation import validate_password
-import django.core.exceptions
 from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from django.utils import timezone
@@ -25,11 +26,16 @@ class CaptchaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Captcha
-        fields = ('id', 'challenge') if not settings.DEBUG else ('id', 'challenge', 'content')
+        fields = ('id', 'challenge', 'kind') if not settings.DEBUG else ('id', 'challenge', 'kind', 'content')
 
     def get_challenge(self, obj: models.Captcha):
         # TODO Does this need to be stored in the object instance, in case this method gets called twice?
-        challenge = ImageCaptcha().generate(obj.content).getvalue()
+        if obj.kind == models.Captcha.Kind.IMAGE:
+            challenge = ImageCaptcha().generate(obj.content).getvalue()
+        elif obj.kind == models.Captcha.Kind.AUDIO:
+            challenge = AudioCaptcha().generate(obj.content)
+        else:
+            raise ValueError(f'Unknown captcha type {obj.kind}')
         return b64encode(challenge)
 
 

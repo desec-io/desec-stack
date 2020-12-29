@@ -3,7 +3,7 @@
 #####
 location / {
     add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';" always;
+    add_header Content-Security-Policy "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self'; img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';" always;
     add_header X-Frame-Options "deny" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;

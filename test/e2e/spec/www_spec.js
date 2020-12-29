@@ -156,7 +156,7 @@ describe("www/nginx", function () {
         it("has security headers", function () {
             var response = chakram.get('https://www/');
             expect(response).to.have.header('Strict-Transport-Security', 'max-age=31536000; includeSubdomains; preload');
-            expect(response).to.have.header('Content-Security-Policy', "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';");
+            expect(response).to.have.header('Content-Security-Policy', "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self'; img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';");
             expect(response).to.have.header('X-Frame-Options', 'deny');
             expect(response).to.have.header('X-Content-Type-Options', 'nosniff');
             expect(response).to.have.header('Referrer-Policy', 'strict-origin-when-cross-origin');

@@ -18,7 +18,7 @@ def set_histogram(name, *args, **kwargs):
 
 #models.py metrics
 
-set_counter('desecapi_captcha_content_created', 'number of times captcha content created')
+set_counter('desecapi_captcha_content_created', 'number of times captcha content created', ['kind'])
 set_counter('desecapi_autodelegation_created', 'number of autodelegations added')
 set_counter('desecapi_autodelegation_deleted', 'number of autodelegations deleted')
 set_histogram('desecapi_messages_queued', 'number of emails queued', ['reason', 'user', 'lane'], buckets=[0, 1, float("inf")])
