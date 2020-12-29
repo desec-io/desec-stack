@@ -27,7 +27,7 @@ steps.
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/hook.sh
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/.dedynauth
 
-#. **Get a token.** you need to obtain a token for using the API. To get the token use the email address you used when setting up your desec.io account. To get a token run the following curl command: 
+#. **Get a token.** you need to obtain a token for using the API. To get the token use the email address you used when setting up your desec.io account. To get a token run the following curl command::
 
      curl -X POST https://desec.io/api/v1/auth/login/ --header "Content-Type: application/json" \
          --data @- <<< '{"email": "your-email-address@example.com", "password": "your-desec.io-account-password-here"}'
