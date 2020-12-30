@@ -1,4 +1,3 @@
-from time import sleep
 from typing import List, Tuple
 
 import pytest
@@ -45,7 +44,56 @@ VALID_RECORDS_CANONICAL = {
     ],
     'NS': ['ns1.example.com.'],
     'OPENPGPKEY': [
-        'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete due to 500 byte limit
+        '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',
     ],
     'PTR': ['example.com.', '*.example.com.'],
     'RP': ['hostmaster.example.com. .'],
@@ -103,7 +151,56 @@ VALID_RECORDS_NON_CANONICAL = {
     'NS': ['EXaMPLE.COM.'],
     'OPENPGPKEY': [
         'mG8EXtVIsRMFK4EEAC==',
-        'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete due to 500 byte limit
+        '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',
     ],
     'PTR': ['EXAMPLE.TEST.'],
     'RP': ['hostmaster.EXAMPLE.com. .'],
@@ -114,6 +211,7 @@ VALID_RECORDS_NON_CANONICAL = {
     'TLSA': ['003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
         f'"{"a" * 498}"',
+        '"' + 124 * '🧥' + '==="',  # 501 byte total length
         '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 "',
         '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 👓 🕶 🥽 🥼 🌂 🧵"',
     ],
@@ -154,7 +252,6 @@ INVALID_RECORDS = {
         'foob"ar',
         'v=spf1 include:example.com ~all',
         '"foo\nbar"',
-        '"' + 124 * '🧥' + '==="',  # 501 byte total length
         '"\x00" "illegal hex representation"',
     ],
     'URI': ['"1" "2" "3"'],
