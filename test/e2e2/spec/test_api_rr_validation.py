@@ -45,7 +45,7 @@ VALID_RECORDS_CANONICAL = {
     ],
     'NS': ['ns1.example.com.'],
     'OPENPGPKEY': [
-        'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tS xLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete due to 500 byte limit
+        'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete due to 500 byte limit
     ],
     'PTR': ['example.com.', '*.example.com.'],
     'RP': ['hostmaster.example.com. .'],
@@ -58,7 +58,7 @@ VALID_RECORDS_CANONICAL = {
     ],
     'SRV': ['0 0 0 .', '100 1 5061 example.com.'],
     'SSHFP': ['2 2 aabbcceeddff'],
-    'TLSA': ['3 1 1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',],
+    'TLSA': ['3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
         '"foobar"',
         '"foo" "bar"',
@@ -111,7 +111,7 @@ VALID_RECORDS_NON_CANONICAL = {
     'SPF': [],
     'SRV': ['100 01 5061 example.com.'],
     'SSHFP': ['02 2 aabbcceeddff'],
-    'TLSA': ['3 0001 1 000AAAAAAABBAAAAAAAAAAAAAAAAAAAAAAAA',],
+    'TLSA': ['003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
         f'"{"a" * 498}"',
         '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 "',
