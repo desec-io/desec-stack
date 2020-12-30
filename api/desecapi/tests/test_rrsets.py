@@ -1,6 +1,7 @@
 from ipaddress import IPv4Network
 import re
 from itertools import product
+from math import ceil, floor
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -238,15 +239,35 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 self.client.delete_rr_set(self.my_empty_domain.name, type_=t, subname=f'name{l+2}')
 
     def test_create_my_rr_sets_too_long_content(self):
+        def token(length):
+            if length == 0:
+                return ''
+            if length <= 255:
+                return f'"{"A" * length}"'
+            return f'{token(255)} ' * (length // 255) + token(length % 255)
+
+        def p2w_length(length):
+            return ceil(length / 255 * 256)
+
+        def w2p_length(length):
+            return floor(length / 256 * 255)
+
+        max_wirelength = 64000
+        max_preslength = w2p_length(max_wirelength)
+
+        assert max_preslength == 63750
+        assert p2w_length(max_preslength) == 64000
+        assert p2w_length(max_preslength + 1) == 64002
+
         for t in ['SPF', 'TXT']:
             response = self.client.post_rr_set(
                 self.my_empty_domain.name,
                 # record of wire length 501 bytes in chunks of max 255 each (RFC 4408)
-                **self._create_test_txt_record(f'"{"A" * 255}" "{"A" * 244}"', t)
+                **self._create_test_txt_record(token(max_preslength + 1), t)
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertIn(
-                'Ensure this value has no more than 500 byte in wire format (it has 501).',
+                f'Ensure this value has no more than {max_wirelength} byte in wire format (it has {p2w_length(max_preslength + 1)}).',
                 str(response.data)
             )
 
@@ -254,7 +275,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             response = self.client.post_rr_set(
                 self.my_empty_domain.name,
                 # record of wire length 500 bytes in chunks of max 255 each (RFC 4408)
-                ** self._create_test_txt_record(f'"{"A" * 255}" "{"A" * 243}"')
+                **self._create_test_txt_record(token(max_preslength))
             )
             self.assertStatus(response, status.HTTP_201_CREATED)
 

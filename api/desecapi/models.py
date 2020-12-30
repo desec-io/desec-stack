@@ -684,15 +684,8 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
             relativize=False
         ).to_digestable()
 
-        # The pdns lmdb backend used on our frontends does not only store the record contents itself, but other metadata
-        # (such as type etc.) Both together have to fit into the lmdb backend's current total limit of 512 bytes per RR.
-        # I found the additional data to be 12 bytes (by trial and error). I believe these are the 12 bytes mentioned
-        # here: https://lists.isc.org/pipermail/bind-users/2008-April/070137.html So we can use 500 bytes for the actual
-        # content stored in wire format.
-        # This check can be relaxed as soon as lmdb supports larger records,
-        # cf. https://github.com/desec-io/desec-slave/issues/34 and https://github.com/PowerDNS/pdns/issues/8012
-        if len(wire) > 500:
-            raise ValidationError(f'Ensure this value has no more than 500 byte in wire format (it has {len(wire)}).')
+        if len(wire) > 64000:
+            raise ValidationError(f'Ensure this value has no more than 64000 byte in wire format (it has {len(wire)}).')
 
         parser = dns.wire.Parser(wire, current=0)
         with parser.restrict_to(len(wire)):
