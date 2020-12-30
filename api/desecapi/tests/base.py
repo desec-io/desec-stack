@@ -635,7 +635,7 @@ class DesecTestCase(MockPDNSTestCase):
                        'kota.aichi.jp', 's3.amazonaws.com', 'wildcard.ck'}
     SUPPORTED_RR_SET_TYPES = {'A', 'AAAA', 'AFSDB', 'CAA', 'CERT', 'CNAME', 'DHCID', 'DLV', 'DS', 'EUI48', 'EUI64',
                               'HINFO', 'KX', 'LOC', 'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP',
-                              'SPF', 'SRV', 'SSHFP', 'TLSA', 'TXT', 'URI'}
+                              'SMIMEA', 'SPF', 'SRV', 'SSHFP', 'TLSA', 'TXT', 'URI'}
 
     admin = None
     auto_delegation_domains = None
