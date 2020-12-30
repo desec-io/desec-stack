@@ -2,9 +2,9 @@ import struct
 
 import dns
 import dns.rdtypes.txtbase
-import dns.rdtypes.ANY.OPENPGPKEY
 
 
+@dns.immutable.immutable
 class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
     """
     A TXT record like RFC 1035, but
@@ -12,20 +12,22 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
     - all tokens must be quoted.
     """
 
+    def __init__(self, rdclass, rdtype, strings):
+        # Same as in parent class, but with max_length=None. Note that we are calling __init__ from the grandparent.
+        super(dns.rdtypes.txtbase.TXTBase, self).__init__(rdclass, rdtype)
+        self.strings = self._as_tuple(strings,
+                                      lambda x: self._as_bytes(x, True, max_length=None))
+
     @classmethod
     def from_text(cls, rdclass, rdtype, tok, origin=None, relativize=True):
         strings = []
-        while 1:
-            token = tok.get().unescape()
-            if token.is_eol_or_eof():
-                break
+        for token in tok.get_remaining():
+            token = token.unescape_to_bytes()
+            # The 'if' below is always true in the current code, but we
+            # are leaving this check in in case things change some day.
             if not token.is_quoted_string():
                 raise dns.exception.SyntaxError("Content must be quoted.")
-            value = token.value
-            if isinstance(value, bytes):
-                strings.append(value)
-            else:
-                strings.append(value.encode())
+            strings.append(token.value)
         if len(strings) == 0:
             raise dns.exception.UnexpectedEnd
         return cls(rdclass, rdtype, strings)
@@ -37,11 +39,3 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
                 assert l < 256
                 file.write(struct.pack('!B', l))
                 file.write(s)
-
-
-class OPENPGPKEY(dns.rdtypes.ANY.OPENPGPKEY.OPENPGPKEY):
-    # TODO remove when https://github.com/rthalley/dnspython/commit/d6a95982fcd454a10467260bfb874c3c9d31d06f was
-    #  released
-
-    def to_text(self, origin=None, relativize=True, **kw):
-        return super().to_text(origin, relativize, **kw).replace(' ', '')

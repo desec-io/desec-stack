@@ -30,7 +30,7 @@ from django.db.models.expressions import RawSQL
 from django.template.loader import get_template
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
-from dns import rdata, rdataclass, rdatatype
+from dns import rdataclass, rdatatype
 from dns.exception import Timeout
 from dns.rdtypes import ANY, IN
 from dns.resolver import NoNameservers
@@ -39,7 +39,7 @@ from rest_framework.exceptions import APIException
 
 from desecapi import metrics
 from desecapi import pdns
-from desecapi.dns import LongQuotedTXT, OPENPGPKEY
+from desecapi.dns import LongQuotedTXT
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -672,12 +672,11 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
         if type_ in (dns.rdatatype.TXT, dns.rdatatype.SPF):
             # for TXT record, we slightly deviate from RFC 1035 and allow tokens that are longer than 255 byte.
             cls = LongQuotedTXT
-        elif type_ == dns.rdatatype.OPENPGPKEY:
-            cls = OPENPGPKEY
         else:
             # For all other record types, let dnspython decide
-            cls = rdata
+            cls = dns.rdata
 
+        # Convert to wire format, ensuring input validation.
         wire = cls.from_text(
             rdclass=rdataclass.IN,
             rdtype=type_,
@@ -697,11 +696,15 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
 
         parser = dns.wire.Parser(wire, current=0)
         with parser.restrict_to(len(wire)):
-            return cls.from_wire_parser(
-                rdclass=rdataclass.IN,
-                rdtype=type_,
-                parser=parser,
-            ).to_text()
+            rdata = cls.from_wire_parser(rdclass=rdataclass.IN, rdtype=type_, parser=parser)
+
+        # Convert to canonical presentation format, disable chunking of records.
+        # Exempt types which have chunksize hardcoded (prevents "got multiple values for keyword argument 'chunksize'").
+        chunksize_exception_types = (dns.rdatatype.OPENPGPKEY, dns.rdatatype.EUI48, dns.rdatatype.EUI64)
+        if type_ in chunksize_exception_types:
+            return rdata.to_text()
+        else:
+            return rdata.to_text(chunksize=0)
 
     def __str__(self):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)
