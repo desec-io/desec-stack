@@ -55,18 +55,6 @@ jobs:
         docker-compose -f docker-compose.yml run -T api python manage.py makemigrations --check
         docker-compose -f docker-compose.yml down -v
 
-    - name: Run e2e Tests
-      run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml run -T test-e2e bash -c "./apiwait 45 && mocha ./spec"
-
-    - name: e2e Tests Logs and Cleanup
-      if: always()
-      run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
-        grep 'desec/' /var/log/syslog
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
-        docker-compose down -v
-
     - name: Run e2e2 Tests
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 bash -c "./apiwait 300 && python3 -m pytest -vv ."
@@ -84,6 +72,18 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
 
     - name: API Tests Logs and Cleanup
+      if: always()
+      run: |
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
+        grep 'desec/' /var/log/syslog
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
+        docker-compose down -v
+
+    - name: Run e2e Tests
+      run: |
+        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml run -T test-e2e bash -c "./apiwait 45 && mocha ./spec"
+
+    - name: e2e Tests Logs and Cleanup
       if: always()
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
