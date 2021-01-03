@@ -337,6 +337,10 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
            export DESECSTACK_DJANGO_TEST=1
 
+        Fourth, run the database:
+
+            docker-compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
+
         Finally, you can manage Django using the `manage.py` CLI.
         As an example, to run the tests, use
 
