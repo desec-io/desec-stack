@@ -123,7 +123,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
                     {'subname': 'c.1', 'records': ['dead::beef'], 'type': 'AAAA'},
                     {'subname': 'd.1', 'ttl': 3650, 'type': 'AAAA'},
                     {'subname': 'd.1', 'ttl': 3650, 'type': 'SOA',
-                     'records': ['set.an.example. get.desec.io. 2018034419 10800 3600 604800 60']},
+                     'records': ['get.desec.io. get.desec.io. 2018034419 10800 3600 604800 60']},
                     {'subname': 'd.1', 'ttl': 3650, 'type': 'OPT', 'records': ['9999']},
                     {'subname': 'd.1', 'ttl': 3650, 'type': 'TYPE099', 'records': ['v=spf1 mx -all']},
                 ]

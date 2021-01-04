@@ -103,7 +103,7 @@ class PDNSChangeTracker:
                             # SOA retry = refresh
                             # SOA expire: 4 weeks (all signatures will have expired anyways)
                             # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
-                            'content': 'set.an.example. get.desec.io. 1 86400 86400 2419200 3600',
+                            'content': 'get.desec.io. get.desec.io. 1 86400 86400 2419200 3600',
                             'disabled': False
                         }],
                     }],
