@@ -37,7 +37,7 @@ export default {
           datatype: 'RRSetType',
           searchable: true,
           writeOnCreate: true,
-          width: '130px',
+          width: '120px',
         },
         subname: {
           name: 'item.subname',
@@ -49,7 +49,6 @@ export default {
           datatype: 'GenericText',
           searchable: true,
           writeOnCreate: true,
-          width: '200px',
         },
         records: {
           name: 'item.records',
