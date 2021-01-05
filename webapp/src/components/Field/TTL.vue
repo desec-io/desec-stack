@@ -9,9 +9,9 @@
     :placeholder="required ? '' : '(optional)'"
     :required="required"
     :rules="[v => !required || !!v || 'Required.', v => v >= min || `Value must be ${min} or greater.`]"
-    @input="input($event)"
+    @input="changed('input', $event)"
     @input.native="$emit('dirty', $event)"
-    @keyup="keyup($event)"
+    @keyup="changed('keyup', $event)"
   />
 </template>
 
@@ -49,11 +49,9 @@ export default {
     },
   },
   methods: {
-    input(event) {
-      this.$emit('input', event);
-    },
-    keyup(event) {
-      this.$emit('keyup', event);
+    changed(event, e) {
+      this.$emit(event, e);
+      this.$emit('dirty');
     },
   },
 };

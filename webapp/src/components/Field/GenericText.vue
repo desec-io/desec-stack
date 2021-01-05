@@ -10,9 +10,9 @@
     persistent-hint
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @input="$emit('input', $event)"
+    @input="changed('input', $event)"
     @input.native="$emit('dirty', $event)"
-    @keyup="$emit('keyup', $event)"
+    @keyup="changed('keyup', $event)"
   />
 </template>
 
@@ -51,6 +51,12 @@ export default {
     type: {
       type: String,
       required: false,
+    },
+  },
+  methods: {
+    changed(event, e) {
+      this.$emit(event, e);
+      this.$emit('dirty');
     },
   },
 };
