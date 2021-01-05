@@ -47,7 +47,6 @@ export default {
       'MX',
       'CNAME',
       'TXT',
-      'SPF',
       'CAA',
       'NS',
       'TLSA',
