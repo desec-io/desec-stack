@@ -20,7 +20,7 @@
           <!-- The Actual Table -->
           <v-data-table
                   :headers="headers"
-                  :item-class="(item) => itemIsReadOnly(item) ? 'text--disabled grey lighten-4' : ''"
+                  :item-class="itemClass"
                   :items="rows"
                   :search="search"
                   :custom-filter="filterSearchableCols"
@@ -206,7 +206,7 @@
                 v-model="itemFieldProps.item[column.value]"
                 v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
                 @keyup="keyupHandler"
-                @dirty="dirtyHandler"
+                @dirty="dirty.add(itemFieldProps.item); dirtyError.delete(itemFieldProps.item);"
               />
             </template>
             <template v-slot:[`item.actions`]="itemFieldProps">
@@ -394,6 +394,8 @@ export default {
     search: '',
     rows: [],
     valid: false,
+    dirty: new Set(),
+    dirtyError: new Set(),
     /* to be overwritten */
     // features
     createable: true,
@@ -430,7 +432,6 @@ export default {
     itemIsReadOnly: () => false,
     postcreate: this.close,
     precreate: () => undefined,
-    dirtyHandler: (e) => e.target.closest('tr').classList.add('orange', 'lighten-5'),
     keyupHandler: (e) => {
       // Intercept Enter key
       if (e.keyCode === 13) {
@@ -474,6 +475,18 @@ export default {
     this.createDialogItem = Object.assign({}, this.itemDefaults());
   },
   methods: {
+    itemClass(item) {
+      if (this.itemIsReadOnly(item)) {
+        return 'grey text--disabled grey lighten-4';
+      }
+      if (this.dirtyError.has(item)) {
+        return 'red lighten-5';
+      }
+      if (this.dirty.has(item)) {
+        return 'orange lighten-5';
+      }
+      return '';
+    },
     filterWriteableColumns(callback) {
       const columns = filter(this.columns, c => !c.readonly || c.writeOnCreate);
       return filter(columns, callback);
@@ -536,6 +549,7 @@ export default {
         // edit item
         let tr;
         if (event) {
+          // TODO do not temper with the DOM directly -- bad things will happen (see commit msg)
           tr = event.target.closest('tr');
           tr.addEventListener("animationend", () => tr.classList.remove('successFade'), true);
           tr.classList.add('successFade');
@@ -549,15 +563,11 @@ export default {
                 .patch(url, item)
                 .then(r => {
                   self.rows[self.rows.indexOf(item)] = r.data;
-                  if (event) {
-                    tr.classList.remove('orange', 'red', 'lighten-5');
-                  }
+                  self.dirty.delete(item);
+                  self.dirtyError.delete(item);
                 })
                 .catch(function (error) {
-                  if (event) {
-                    tr.classList.remove('orange', 'red');
-                    tr.classList.add('red', 'lighten-5');
-                  }
+                  self.dirtyError.add(item);
                   throw error;
                 })
         );
