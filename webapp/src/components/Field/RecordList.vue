@@ -2,9 +2,9 @@
   <div>
     <component
             :is="getRecordComponentName(type)"
-            v-for="(item, index) in valueMap"
-            :key="item.id"
-            :content="item.content"
+            v-for="(item, index) in value"
+            :key="index"
+            :content="item"
             :error-messages="errorMessages[index] ? errorMessages[index].content : []"
             :hide-label="index > 0"
             :append-icon="value.length > 1 ? 'mdi-close' : ''"
@@ -82,25 +82,21 @@ export default {
   data: function () {
     const self = this;
     return {
-      removals: 0,
       types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS', 'Subnet'],
       addHandler: ($event) => {
         self.$emit('dirty', $event);
-        self.value.push('');  /* eslint-disable-line vue/no-mutating-props */
+        let value = [].concat(this.value);
+        value.push('')
+        self.$emit('input', value);
         self.$nextTick(() => self.$refs.inputFields[self.$refs.inputFields.length - 1].focus());
       },
       removeHandler: (index, $event) => {
         self.$emit('dirty', $event);
-        self.value.splice(index, 1);  /* eslint-disable-line vue/no-mutating-props */
-        self.removals++;
+        let value = [].concat(this.value);
+        value.splice(index, 1);
+        self.$emit('input', value);
       },
     }
-  },
-  computed: {
-    // This is necessary to allow rerendering the list after record deletion. Otherwise, VueJS confuses record indexes.
-    valueMap: function () {
-      return this.value.map((v, k) => ({content: v, id: `${k}_${this.removals}`}));
-    },
   },
   methods: {
     getRecordComponentName(type) {
