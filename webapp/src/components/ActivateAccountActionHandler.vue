@@ -19,7 +19,17 @@
             let token = this.response.data.token;
             this.$router.push({ name: 'dynSetup', params: { domain: domain.name }, hash: `#${token}` });
           } else {
-            this.$router.push({ name: 'customSetup', params: { domain: domain.name, keys: domain.keys } });
+            let ds = domain.keys.map(key => key.ds);
+            ds = ds.concat.apply([], ds)
+            this.$router.push({
+              name: 'customSetup',
+              params: {
+                domain: domain.name,
+                ds: ds,
+                dnskey: domain.keys.map(key => key.dnskey),
+                isNew: true,
+              },
+            });
           }
         }
       }

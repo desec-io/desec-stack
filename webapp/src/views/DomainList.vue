@@ -1,13 +1,13 @@
 <script>
 import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList';
-import DomainDetailsDialog from '@/views/Console/DomainDetailsDialog';
+import DomainSetupDialog from '@/views/Console/DomainSetupDialog';
 
 export default {
   name: 'DomainList',
   extends: CrudList,
   components: {
-    DomainDetailsDialog,
+    DomainSetupDialog,
   },
   data() {
     const self = this;
@@ -77,24 +77,14 @@ export default {
                 .get(url)
                 .then(r => {
                   d.keys = r.data.keys;
-                  d.published = r.data.published;
                 })
             );
           }
           let ds = d.keys.map(key => key.ds);
           ds = ds.concat.apply([], ds)
           let dnskey = d.keys.map(key => key.dnskey);
-          this.extraComponentBind = {'name': d.name, 'ds': ds, 'dnskey': dnskey, 'published': d.published, 'is-new': isNew};
-          if (process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ').some((suffix) => d.name.endsWith(`.${suffix}`))) {
-            this.extraComponentBind['ips'] = [];
-            await withWorking(this.error, async (o) => {
-              let urlRRset = `${url}/rrsets/?subname=&type=`;
-              for (let type of ['A', 'AAAA']) {
-                await HTTP.get(`${urlRRset}${type}`).then(r => r.data.length && o['ips'].push(...r.data[0].records));
-              }
-            }, this.extraComponentBind);
-          }
-          this.extraComponentName = 'DomainDetailsDialog';
+          this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
+          this.extraComponentName = 'DomainSetupDialog';
         },
         handleRowClick: (value) => {
           this.$router.push({name: 'domain', params: {domain: value.name}});

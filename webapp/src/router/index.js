@@ -24,7 +24,8 @@ const routes = [
   {
     path: '/custom-setup/:domain',
     name: 'customSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/CustomSetup.vue')
+    component: () => import(/* webpackChunkName: "signup" */ '../views/DomainSetupPage'),
+    props: true,
   },
   {
     path: '/dyn-setup/:domain',

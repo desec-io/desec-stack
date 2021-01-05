@@ -11,9 +11,9 @@ import VueTimeago from 'vue-timeago'
 
 
 Vue.config.productionTip = false
+VueClipboard.config.autoSetContainer = true
 Vue.use(VueClipboard)
 Vue.use(Vuelidate)
-
 Vue.use(VueTimeago, {})
 
 new Vue({
