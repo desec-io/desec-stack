@@ -2,23 +2,16 @@
   <div
           class="my-1 py-5"
           :title="value"
-  >{{ value ? timeAgo.format(new Date(value)) : 'never' }}</div>
+  ><timeago v-if="value" :datetime="value"></timeago><span v-else>never</span></div>
 </template>
 
 <script>
-import { timeAgo } from '@/utils';
-
 export default {
   name: 'TimeAgo',
   props: {
     value: {
       default: '',
       type: String,
-    },
-  },
-  computed: {
-    timeAgo() {
-      return timeAgo;
     },
   },
 };

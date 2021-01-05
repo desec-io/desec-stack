@@ -1,6 +1,4 @@
 import axios from 'axios';
-import TimeAgo from 'javascript-time-ago';
-import en from 'javascript-time-ago/locale/en';
 import store from './store';
 
 export const HTTP = axios.create({
@@ -34,6 +32,3 @@ export async function withWorking(errorHandler, action, ...params) {
     store.commit('working', false);
   }
 }
-
-TimeAgo.locale(en);
-export const timeAgo = new TimeAgo();

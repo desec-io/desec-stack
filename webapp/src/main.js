@@ -7,10 +7,14 @@ import VueClipboard from 'vue-clipboard2'
 import Vuelidate from 'vuelidate'
 import 'roboto-fontface/css/roboto/roboto-fontface.css'
 import '@mdi/font/css/materialdesignicons.css'
+import VueTimeago from 'vue-timeago'
+
 
 Vue.config.productionTip = false
 Vue.use(VueClipboard)
 Vue.use(Vuelidate)
+
+Vue.use(VueTimeago, {})
 
 new Vue({
   router,
