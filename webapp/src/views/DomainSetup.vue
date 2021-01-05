@@ -12,6 +12,20 @@
         <span class="fixed-width">{{ domain }}</span> with deSEC.
       </p>
 
+      <div v-if="!$store.state.authenticated">
+        <div class="subtitle-1">
+          <v-icon>mdi-numeric-0-circle</v-icon>
+          DNS Configuration
+        </div>
+        <p>
+          To ensure a smooth transition when moving your domain to deSEC, setup a password for your deSEC account,
+          log in and configure the DNS for <span class="fixed-width">{{ domain }}</span>, before you proceed below.
+        </p>
+        <v-btn outlined block :to="{name: 'reset-password'}" target="_blank">
+          Assign Account Password
+        </v-btn>
+      </div>
+
       <div class="mt-2 subtitle-1">
         <v-icon>mdi-numeric-1-circle</v-icon>
         Delegate your domain

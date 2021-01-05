@@ -147,7 +147,19 @@
               </p>
             </v-alert>
 
-            <h2 class="title">Keep deSEC Going</h2>
+            <div v-if="!$store.state.authenticated">
+              <h2 class="title">Optional: Assign deSEC Account Password</h2>
+              <p>
+                To use more features of deSEC, assign a password to your account. This is not required for using deSEC
+                for dynamic DNS only, but enables to you add more domains and other DNS information.
+                You can also assign a password later at any time.
+              </p>
+              <v-btn outlined block :to="{name: 'reset-password'}">
+                Assign Account Password
+              </v-btn>
+            </div>
+
+            <h2 class="title mt-4">Keep deSEC Going</h2>
             <p>
               To offer free DNS hosting for everyone, deSEC relies on donations only.
               If you like our service, please consider donating.
