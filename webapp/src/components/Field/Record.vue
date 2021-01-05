@@ -86,6 +86,11 @@ export default {
     ],
     value: '',
   }),
+  watch: {
+    content: function () {
+      this.update(this.content);
+    }
+  },
   beforeMount() {
     // Initialize per-field value storage
     this.fields.forEach((field) => {
