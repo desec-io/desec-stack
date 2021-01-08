@@ -49,7 +49,7 @@ steps.
      certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
          --preferred-challenges dns -d "YOURDOMAINNAME.dedyn.io" certonly
          
-   You can also use certbot to get wildcard certificates like so:
+   You can also use certbot to get wildcard certificates like so::
    
      certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
          --preferred-challenges dns -d "example.com" -d "*.example.com" certonly
