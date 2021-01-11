@@ -64,7 +64,8 @@ VALID_RECORDS_CANONICAL = {
         '"foo" "bar"',
         '"foo" "" "bar"',
         '"" "" "foo" "" "bar"',
-        '"new\\010line"',
+        r'"new\010line"',
+        r'"\000" "NUL byte yo"',
         f'"{"a" * 255}" "{"a" * 243}"',  # 500 byte total wire length
     ],
     'URI': ['10 1 "ftp://ftp1.example.com/public"'],
@@ -154,7 +155,7 @@ INVALID_RECORDS = {
         'v=spf1 include:example.com ~all',
         '"foo\nbar"',
         '"' + 124 * '🧥' + '==="',  # 501 byte total length
-        '"\x00" "NUL byte yo"',
+        '"\x00" "Django rejects literal NUL byte"',
     ],
     'URI': ['"1" "2" "3"'],
 }
