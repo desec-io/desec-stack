@@ -188,6 +188,13 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.post_rr_set(self.my_empty_domain.name, **data)
         self.assertContains(response, 'CNAME RRset cannot have empty subname', status_code=status.HTTP_400_BAD_REQUEST)
 
+    def test_create_my_rr_sets_cname_multple_records(self):
+        for records in (['foobar.com.', 'foobar.com.'], ['foobar.com.', 'foobar.org.']):
+            data = {'subname': 'asdf', 'ttl': 3600, 'type': 'CNAME', 'records': records}
+            response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+            self.assertContains(response, 'CNAME RRset cannot have multiple records',
+                                status_code=status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_cname_exclusivity(self):
         self.create_rr_set(self.my_domain, ['1.2.3.4'], type='A', ttl=3600, subname='a')
         self.create_rr_set(self.my_domain, ['example.com.'], type='CNAME', ttl=3600, subname='cname')
