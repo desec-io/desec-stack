@@ -44,6 +44,10 @@ Here's a quick intro how to get started:
    authenticate requests to the DNS management endpoints as demonstrated in
    the next step.
 
+   Note that tokens created by the login endpoint have limited validity (see
+   the ``max_age`` and ``max_unused_period`` fields in the response). To
+   create a long-lived API token, please refer to :ref:`manage-tokens`.
+
 #. Create a DNS zone::
 
     curl -X POST https://desec.io/api/v1/domains/ \

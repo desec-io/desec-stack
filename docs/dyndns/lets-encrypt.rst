@@ -27,11 +27,10 @@ steps.
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/hook.sh
      wget https://raw.githubusercontent.com/desec-io/certbot-hook/master/.dedynauth
 
-#. **Get a token.** you need to obtain a token for using the API. To get the token use the email address you used when setting up your desec.io account. To get a token run the following curl command::
-
-     curl -X POST https://desec.io/api/v1/auth/login/ --header "Content-Type: application/json" \
-         --data @- <<< '{"email": "your-email-address@example.com", "password": "your-desec.io-account-password-here"}'
-
+#. **Get a token.** You need to configure an API token so that certbot can use
+   it to authenticate its requests towards the deSEC API. The easiest way to
+   get such a token is to log into the web interface at https://desec.io/,
+   navigate to "Token Management", and create a token there.
 
 #. **Configuration.** You need to provide your dedyn.io credentials to the hook
    script, so that it can write the Let's Encrypt challenge to the DNS on your
