@@ -346,6 +346,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ('A', ('127.0.0.1', '127.0.0.1')),
             ('AAAA', ('0000::0000:0001', '::1')),
             ('AFSDB', ('02 turquoise.FEMTO.edu.', '2 turquoise.femto.edu.')),
+            ('APL', ('2:FF00:0:0:0:0::/8  !1:192.168.38.0/28', '2:ff00::/8 !1:192.168.38.0/28')),
             ('CAA', ('0128 "issue" "letsencrypt.org"', '128 issue "letsencrypt.org"')),
             ('CERT', ('06 00 00 sadfdd==', '6 0 0 sadfdQ==')),
             ('CNAME', ('EXAMPLE.COM.', 'example.com.')),
@@ -417,6 +418,16 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             'A': ['127.0.0.1', '127.0.0.2'],
             'AAAA': ['::1', '::2'],
             'AFSDB': ['2 turquoise.femto.edu.'],
+            'APL': [
+                # from RFC 3123 Sec. 4
+                '1:192.168.32.0/21 !1:192.168.38.0/28',
+                '1:192.168.42.0/26 1:192.168.42.64/26 1:192.168.42.128/25',
+                '1:127.0.0.1/32 1:172.16.64.0/22',
+                '1:224.0.0.0/4  2:FF00:0:0:0:0:0:0:0/8',
+                # made-up (not from RFC)
+                '1:1.2.3.4/32 2:::/128',
+                '2:FF00::/8 !1:192.168.38.0/28',
+            ],
             'CAA': ['128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"', '1 issue "letsencrypt.org"'],
             'CERT': ['6 0 0 sadfdd=='],
             'CNAME': ['example.com.'],
@@ -474,6 +485,15 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             'A': ['127.0.0.999', '127.000.0.01', '127.0.0.256', '::1', 'foobar', '10.0.1', '10!'],
             'AAAA': ['::g', '1:1:1:1:1:1:1:1:', '1:1:1:1:1:1:1:1:1'],
             'AFSDB': ['example.com.', '1 1', '1 de'],
+            'APL': [
+                '0:192.168.32.0/21 !1:192.168.38.0/28',
+                '1:192.168.32.0/21 !!1:192.168.38.0/28',
+                '1:192.168.32.0/33',
+                '18:12345/2',
+                '1:127.0.0.1',
+                '2:FF00:0:0:0:0:0:0:0:0/8'
+                '2:::/129',
+            ],
             'CAA': ['43235 issue "letsencrypt.org"'],
             'CERT': ['6 0 sadfdd=='],
             'CNAME': ['example.com', '10 example.com.'],
