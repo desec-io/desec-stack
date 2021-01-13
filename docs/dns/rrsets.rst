@@ -363,7 +363,11 @@ Examples::
         '{"ttl": 86400}'
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
-updated RRset in the response body.  If the operation cannot be performed with
+updated RRset in the response body.  An exception to this rule is when an
+empty array is provided as the ``records`` field, in which case the RRset is
+deleted and the return code is ``204 No Content`` (cf. `Deleting an RRset`_).
+
+In case the operation cannot be performed with
 the given parameters, the API returns ``400 Bad Request``.  This can happen, for
 instance, when there is a conflicting RRset with the same name and type, when
 not all required fields were provided correctly (such as, when the ``type``
