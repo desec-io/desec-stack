@@ -14,11 +14,11 @@ application/json`` header field.
 API functionality is demonstrated using the command line tool ``curl``.  To
 pretty-print JSON output, process the data through ``jq``:  ``curl ... | jq .``.
 
-**Windows users:** We are told that the `curl` commands in this documentation
+**Windows users:** We are told that the ``curl`` commands in this documentation
 sometimes do not work. In this case, try moving the request payload in front
-of the `curl` call, like this::
+of the ``curl`` call, like this::
 
-    echo {"email": "mail@example.com", "password": "foobar"} | curl -X POST https://desec.io/api/v1/auth/login/ --header "Content-Type: application/json" --data @-
+    echo {"name": "example.com"} | curl -X POST https://desec.io/api/v1/domains/ --header "Authorization: Token {token}" --header "Content-Type: application/json" --data @-
 
 
 .. toctree::
