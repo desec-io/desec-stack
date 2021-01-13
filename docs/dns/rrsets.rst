@@ -624,3 +624,12 @@ Record types with priority field
             --header "Authorization: Token {token}" \
             --header "Content-Type: application/json" --data @- <<< \
             '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
+
+    Binary record contents are supported, but subject to various escaping
+    rules (both JSON and ``TXT`` record syntax; in addition, certain
+    non-printable characters are not accepted even when unicode-escaped, like
+    ``\u0000``).  Still, you can store any binary data by using DNS-style
+    ``\DDD`` encoding for your binary data (see RFC 1035 Sec. 3.3.14 and 5.1).
+    For example, a carriage return (``\r``) can be stored as ``\013``.  (Note
+    that JSON encoding needs to be applied on top of that, so a valid
+    ``records`` field would be ``["\"\\013\""]``.)
