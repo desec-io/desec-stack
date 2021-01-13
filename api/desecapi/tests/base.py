@@ -633,8 +633,8 @@ class DesecTestCase(MockPDNSTestCase):
     AUTO_DELEGATION_DOMAINS = settings.LOCAL_PUBLIC_SUFFIXES
     PUBLIC_SUFFIXES = {'de', 'com', 'io', 'gov.cd', 'edu.ec', 'xxx', 'pinb.gov.pl', 'valer.ostfold.no',
                        'kota.aichi.jp', 's3.amazonaws.com', 'wildcard.ck'}
-    SUPPORTED_RR_SET_TYPES = {'A', 'AAAA', 'AFSDB', 'CAA', 'CERT', 'CNAME', 'DHCID', 'DLV', 'DS', 'EUI48', 'EUI64',
-                              'HINFO', 'KX', 'LOC', 'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP',
+    SUPPORTED_RR_SET_TYPES = {'A', 'AAAA', 'AFSDB', 'APL', 'CAA', 'CERT', 'CNAME', 'DHCID', 'DLV', 'DS', 'EUI48',
+                              'EUI64', 'HINFO', 'KX', 'LOC', 'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP',
                               'SMIMEA', 'SPF', 'SRV', 'SSHFP', 'TLSA', 'TXT', 'URI'}
 
     admin = None
