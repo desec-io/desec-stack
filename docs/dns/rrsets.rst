@@ -543,8 +543,7 @@ Restricted Types
     These record types are used very rarely in the wild.  Due to conflicts with
     the security guarantees we would like to give, these record types are
     disabled in our API.  If you attempt to create such RRsets, you will receive
-    a ``400 Bad Request`` response.  In case you have a good reason for using
-    these record types, shoot us an email and we can discuss your case.
+    a ``400 Bad Request`` response.
 
 ``DNSKEY``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in
@@ -586,28 +585,17 @@ Record types with priority field
     ``10 mx.example.com.``).
 
 ``CNAME`` record
-    - The record value must be terminated by a dot ``.`` (as in
+    - The record value (target) must be terminated by a dot ``.`` (as in
       ``example.com.``).
 
-    - If you create a ``CNAME`` record, its presence will cause other RRsets of
-      the same name to be hidden ("occluded") from the public (i.e. in
-      responses to DNS queries).  This is per RFC 1912.
+    - RRsets cannot have multiple values.  This is a limitation of the DNS
+      specification.
 
-      However, as far as the API is concerned, you can still retrieve and
-      manipulate those additional RRsets.  In other words, ``CNAME``-induced
-      hiding of additional RRsets does not apply when looking at the zone
-      through the API.
-
-    - It is currently possible to create a ``CNAME`` RRset with several
-      records.  However, this is not legal, and the response to queries for
-      such RRsets is undefined.  In short, don't do it.
-
-    - Similarly, you are discouraged from creating a ``CNAME`` RRset for the
-      zone apex (main domain name, empty ``subname``).  Doing so will most
-      likely break your domain (for example, any ``NS`` records that are
-      present will disappear from DNS responses), and other undefined behavior
-      may occur.  In short, don't do it.  If you are interested in aliasing
-      the zone apex, consider using an ``ALIAS`` RRset.
+    - A ``CNAME`` record is not allowed when other records exist at the same
+      subname.  In particular, this means that a CNAME is not allowed at the
+      zone apex (empty subname), as it will always collide with the NS record
+      (and the internally managed SOA record).  This is a limitation of
+      the DNS specification.
 
 ``MX`` record
     The ``MX`` record value consists of the priority value and a mail server
