@@ -40,6 +40,7 @@ VALID_RECORDS_CANONICAL = {
     'EUI48': ['aa-bb-cc-dd-ee-ff'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-00-11'],
     'HINFO': ['"ARMv8-A" "Linux"'],
+    'HTTPS': ['1 h3POOL.exaMPLe. alpn=h2,h3 echconfig="MTIzLi4uCg=="'],
     # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
     'KX': ['4 example.com.', '28 io.'],
     'LOC': [
@@ -113,6 +114,7 @@ VALID_RECORDS_CANONICAL = {
     ],
     'SRV': ['0 0 0 .', '100 1 5061 example.com.'],
     'SSHFP': ['2 2 aabbcceeddff'],
+    'SVCB': ['2 sVc2.example.NET. port=1234 echconfig="MjIyLi4uCg==" ipv6hint=2001:db8::2'],
     'TLSA': ['3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
         '"foobar"',
@@ -147,6 +149,16 @@ VALID_RECORDS_NON_CANONICAL = {
     'EUI48': ['AA-BB-CC-DD-EE-F1'],
     'EUI64': ['AA-BB-CC-DD-EE-FF-00-12'],
     'HINFO': ['cpu os'],
+    'HTTPS': [
+        # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with echconfig base64'd
+        '1 . alpn=h3',
+        '0 pool.svc.example.',
+        '1 h3pool.example. alpn=h2,h3 echconfig="MTIzLi4uCg=="',
+        '2 .      alpn=h2 echconfig="YWJjLi4uCg=="',
+        # made-up (not from RFC)
+        '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',
+        '2 . echconfig=... key65333=ex1 key65444=ex2 mandatory=key65444,echconfig',  # see #section-7
+    ],
     # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
     'KX': ['012 example.TEST.'],
     'LOC': [
@@ -216,6 +228,11 @@ VALID_RECORDS_NON_CANONICAL = {
     'SPF': [],
     'SRV': ['100 01 5061 example.com.'],
     'SSHFP': ['02 2 aabbcceeddff'],
+    'SVCB': [
+        '0 svc4-baz.example.net.',
+        '1 . key65333=...',
+        '2 svc2.example.net. echconfig="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',
+    ],
     'TLSA': ['003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
         f'"{"a" * 498}"',
@@ -248,6 +265,13 @@ INVALID_RECORDS = {
     'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
     'EUI64': ['aa-bb-cc-dd-ee-ff-gg-11', 'AA-BB-C C-DD-EE-FF-00-11'],
     'HINFO': ['"ARMv8-A"', f'"a" "{"b" * 256}"'],
+    'HTTPS': [
+        # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with echconfig base64'd
+        '1 h3pool alpn=h2,h3 echconfig="MTIzLi4uCg=="',
+        # made-up (not from RFC)
+        '0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',  # no keys in alias mode
+        '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2',  # dup
+    ],
     # 'IPSECKEY': [],
     'KX': ['-1 example.com', '10 example.com'],
     'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
@@ -263,6 +287,11 @@ INVALID_RECORDS = {
     'SPF': ['"v=spf1', 'v=spf1 include:example.com ~all'],
     'SRV': ['0 0 0 0', '100 5061 example.com.'],
     'SSHFP': ['aabbcceeddff'],
+    'SVCB': [
+        '0 svc4-baz.example.net. keys=val',
+        '1 not.fully.qualified key65333=...',
+        '2 duplicate.key. echconfig="MjIyLi4uCg==" echconfig="MjIyLi4uCg=="',
+    ],
     'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
     'TXT': [
         'foob"ar',

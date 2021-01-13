@@ -465,9 +465,7 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
 RR_SET_TYPES_UNSUPPORTED = {
     'ALIAS',  # Requires signing at the frontend, hence unsupported in desec-stack
     'DNAME',  # "do not combine with DNSSEC", https://doc.powerdns.com/authoritative/settings.html#dname-processing
-    'HTTPS',  # TODO enable
     'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/9055 TODO enable with pdns auth 4.5.0
-    'SVCB',  # TODO enable
     'KEY',  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
     'WKS',  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
 }
@@ -481,7 +479,8 @@ RR_SET_TYPES_AUTOMATIC = {
 # backend types are types that are the types supported by the backend(s)
 RR_SET_TYPES_BACKEND = pdns.SUPPORTED_RRSET_TYPES
 # validation types are types supported by the validation backend, currently: dnspython
-RR_SET_TYPES_VALIDATION = set(ANY.__all__) | set(IN.__all__)
+RR_SET_TYPES_VALIDATION = set(ANY.__all__) | set(IN.__all__) \
+                          | {'HTTPS', 'SVCB'}  # https://github.com/rthalley/dnspython/pull/624
 # manageable types are directly managed by the API client
 RR_SET_TYPES_MANAGEABLE = \
         (RR_SET_TYPES_BACKEND & RR_SET_TYPES_VALIDATION) - RR_SET_TYPES_UNSUPPORTED - RR_SET_TYPES_AUTOMATIC

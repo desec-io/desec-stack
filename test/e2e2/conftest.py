@@ -9,9 +9,25 @@ from typing import Optional, Tuple, Iterable, Callable
 import dns
 import dns.name
 import dns.query
+import dns.rdtypes.svcbbase
 import pytest
 import requests
 from requests.exceptions import SSLError
+
+
+def _strip_quotes_decorator(func):
+    return lambda *args, **kwargs: func(*args, **kwargs)[1:-1]
+
+
+# Ensure that dnspython agrees with pdns' expectations for SVCB / HTTPS parameters.
+# WARNING: This is a global side-effect. It can't be done by extending a class, because dnspython hardcodes the use of
+# their dns.rdtypes.svcbbase.*Param classes in the global dns.rdtypes.svcbbase._class_for_key dictionary. We either have
+# to globally mess with that dict and insert our custom class, or we just mess with their classes directly.
+dns.rdtypes.svcbbase.ALPNParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.ALPNParam.to_text)
+dns.rdtypes.svcbbase.IPv4HintParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.IPv4HintParam.to_text)
+dns.rdtypes.svcbbase.IPv6HintParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.IPv6HintParam.to_text)
+dns.rdtypes.svcbbase.MandatoryParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.MandatoryParam.to_text)
+dns.rdtypes.svcbbase.PortParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.PortParam.to_text)
 
 
 def random_mixed_case_string(n):
