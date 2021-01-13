@@ -586,16 +586,19 @@ Record types with priority field
 
 ``CNAME`` record
     - The record value (target) must be terminated by a dot ``.`` (as in
-      ``example.com.``).
-
-    - RRsets cannot have multiple values.  This is a limitation of the DNS
-      specification.
+      ``example.com.``).  Only one value is allowed.
 
     - A ``CNAME`` record is not allowed when other records exist at the same
-      subname.  In particular, this means that a CNAME is not allowed at the
-      zone apex (empty subname), as it will always collide with the NS record
-      (and the internally managed SOA record).  This is a limitation of
-      the DNS specification.
+      subname.  This is a limitation of the DNS specification.
+
+    - Due to the previous limitation, a CNAME is not allowed at the zone apex
+      (empty subname), as it would always collide with the NS record (and the
+      internally managed SOA record).
+
+      If you need redirect functionality at the zone apex, consider using the
+      HTTPS record type which serves exactly this purpose. Although new,
+      browser vendor support is under way (with Chrome planning to roll out
+      experimental support in February 2021).
 
 ``MX`` record
     The ``MX`` record value consists of the priority value and a mail server
