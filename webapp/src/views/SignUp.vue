@@ -52,13 +52,16 @@
 
               <v-radio-group
                       v-model="domainType"
-                      hint="Your first domain (you can add more later). – To use dynDNS with your custom domain, please get in touch with us."
+                      :hint="domainType == 'dynDNS'
+                        ? 'Your first domain (you can add more later).'
+                        : 'Your first domain (you can add more later). – To use dynDNS with your custom domain, please get in touch with us.'
+                      "
                       label="Do you want to set up a domain right away?"
                       persistent-hint
                       prepend-icon="mdi-dns"
               >
-                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
                 <v-radio label="Configure your own domain (Managed DNS)." value="custom" tabindex="2"></v-radio>
+                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
                 <v-radio label="No, I'll add one later through the API." value="none" tabindex="2"></v-radio>
               </v-radio-group>
 
@@ -219,7 +222,7 @@
       this.initialFocus();
     },
     created() {
-      this.domainType = this.$route.query.domainType || 'dynDNS';
+      this.domainType = this.$route.query.domainType || 'custom';
     },
     methods: {
       async open_route(route) {
