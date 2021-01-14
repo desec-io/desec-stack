@@ -326,3 +326,7 @@ def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, ns_lord: 
 @pytest.mark.parametrize("rr_type,value", INVALID_RECORDS_PARAMS)
 def test_create_invalid(api_user_domain: DeSECAPIV1Client, rr_type: str, value: str):
     assert api_user_domain.rr_set_create(api_user_domain.domains[0], rr_type, [value]).status_code == 400
+
+def test_create_long_subname(api_user_domain: DeSECAPIV1Client, ns_lord: NSClient):
+    assert api_user_domain.rr_set_create(api_user_domain.domains[0], "AAAA", ["::1"], subname="a"*63).status_code == 201
+    assert ns_lord.query(f"{'a'*63}.{api_user_domain.domains[0]}", "AAAA") == {"::1"}

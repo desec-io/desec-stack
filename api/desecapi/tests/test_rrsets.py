@@ -33,11 +33,16 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for subname in [
             'aEroport',
             'AEROPORT',
-            'aéroport'
+            'aéroport',
+            'a' * 64,
         ]:
             with self.assertRaises(ValidationError):
                 RRset(domain=self.my_domain, subname=subname, ttl=60, type='A').save()
-        RRset(domain=self.my_domain, subname='aeroport', ttl=60, type='A').save()
+        for subname in [
+            'aeroport',
+            'a' * 63,
+        ]:
+            RRset(domain=self.my_domain, subname=subname, ttl=60, type='A').save()
 
     def test_retrieve_my_rr_sets(self):
         for response in [
