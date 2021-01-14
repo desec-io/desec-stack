@@ -80,8 +80,8 @@ export default {
       {
         title: 'Expiration of Inactive dynDNS Domains',
         text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
-                'deleted after a warning with 4 weeks notice. Owners can prevent deletion by updating DNS ' +
-                'information.',
+                'deleted after a warning with 4 weeks notice. The notice contains instructions for owners to confirm ' +
+                'active use and prevent deletion.',
       },
       {
         title: 'Secure Delegation Required',
