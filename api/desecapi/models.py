@@ -661,20 +661,20 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
 
     objects = RRManager()
 
+    _type_map = {
+        dns.rdatatype.TXT: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
+        dns.rdatatype.SPF: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
+    }
+
     @staticmethod
     def canonical_presentation_format(any_presentation_format, type_):
         """
         Converts any valid presentation format for a RR into it's canonical presentation format.
         Raises if provided presentation format is invalid.
         """
-        if type_ in (dns.rdatatype.TXT, dns.rdatatype.SPF):
-            # for TXT record, we slightly deviate from RFC 1035 and allow tokens that are longer than 255 byte.
-            cls = LongQuotedTXT
-        else:
-            # For all other record types, let dnspython decide
-            cls = dns.rdata
 
         # Convert to wire format, ensuring input validation.
+        cls = RR._type_map.get(type_, dns.rdata)
         wire = cls.from_text(
             rdclass=rdataclass.IN,
             rdtype=type_,
