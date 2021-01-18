@@ -2,6 +2,7 @@ import struct
 
 import dns
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
+import dns.rdtypes.ANY.CDS, dns.rdtypes.ANY.DLV, dns.rdtypes.ANY.DS
 
 
 def _strip_quotes_decorator(func):
@@ -54,3 +55,40 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
                 assert l < 256
                 file.write(struct.pack('!B', l))
                 file.write(s)
+
+
+# TODO remove when https://github.com/rthalley/dnspython/pull/625 is in the main codebase
+class _DigestLengthMixin():
+    _digest_length_by_type = {
+        1: 20,  # SHA-1, RFC 3658 Sec. 2.4
+        2: 32,  # SHA-256, RFC 4509 Sec. 2.2
+        3: 32,  # GOST R 34.11-94, RFC 5933 Sec. 4 in conjunction with RFC 4490 Sec. 2.1
+        4: 48,  # SHA-384, RFC 6605 Sec. 2
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        try:
+            if self.digest_type == 0:  # reserved, RFC 3658 Sec. 2.4
+                raise ValueError('digest type 0 is reserved')
+            expected_length = _DigestLengthMixin._digest_length_by_type[self.digest_type]
+        except KeyError:
+            raise ValueError('unknown digest type')
+        if len(self.digest) != expected_length:
+            raise ValueError('digest length inconsistent with digest type')
+
+
+@dns.immutable.immutable
+class CDS(_DigestLengthMixin, dns.rdtypes.ANY.CDS.CDS):
+    pass
+
+
+@dns.immutable.immutable
+class DLV(_DigestLengthMixin, dns.rdtypes.ANY.DLV.DLV):
+    pass
+
+
+@dns.immutable.immutable
+class DS(_DigestLengthMixin, dns.rdtypes.ANY.DS.DS):
+    pass
