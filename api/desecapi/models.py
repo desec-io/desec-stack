@@ -563,7 +563,6 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
 
         :param records_presentation_format: iterable of records in presentation format
         """
-        rdtype = rdatatype.from_text(self.type)
         errors = []
 
         if self.type == 'CNAME':
@@ -578,24 +577,9 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         records_canonical_format = set()
         for r in records_presentation_format:
             try:
-                r_canonical_format = RR.canonical_presentation_format(r, rdtype)
-            except binascii.Error:
-                # e.g., odd-length string
-                errors.append(_error_msg(r, 'Cannot parse hexadecimal or base64 record contents'))
-            except dns.exception.SyntaxError as e:
-                # e.g., A/127.0.0.999
-                if 'quote' in e.args[0]:
-                    errors.append(_error_msg(r, f'Data for {self.type} records must be given using quotation marks.'))
-                else:
-                    errors.append(_error_msg(r, f'Record content malformed: {",".join(e.args)}'))
-            except dns.name.NeedAbsoluteNameOrOrigin:
-                errors.append(_error_msg(r, 'Hostname must be fully qualified (i.e., end in a dot: "example.com.")'))
-            except ValueError:
-                # e.g., string ("asdf") cannot be parsed into int on base 10
-                errors.append(_error_msg(r, 'Cannot parse record contents'))
-            except Exception as e:
-                # TODO see what exceptions raise here for faulty input
-                raise e
+                r_canonical_format = RR.canonical_presentation_format(r, self.type)
+            except ValueError as ex:
+                errors.append(_error_msg(r, str(ex)))
             else:
                 if r_canonical_format in records_canonical_format:
                     errors.append(_error_msg(r, f'Duplicate record content: this is identical to '
@@ -675,30 +659,49 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
         Converts any valid presentation format for a RR into it's canonical presentation format.
         Raises if provided presentation format is invalid.
         """
+        rdtype = rdatatype.from_text(type_)
 
-        # Convert to wire format, ensuring input validation.
-        cls = RR._type_map.get(type_, dns.rdata)
-        wire = cls.from_text(
-            rdclass=rdataclass.IN,
-            rdtype=type_,
-            tok=dns.tokenizer.Tokenizer(any_presentation_format),
-            relativize=False
-        ).to_digestable()
+        try:
+            # Convert to wire format, ensuring input validation.
+            cls = RR._type_map.get(rdtype, dns.rdata)
+            wire = cls.from_text(
+                rdclass=rdataclass.IN,
+                rdtype=rdtype,
+                tok=dns.tokenizer.Tokenizer(any_presentation_format),
+                relativize=False
+            ).to_digestable()
 
-        if len(wire) > 64000:
-            raise ValidationError(f'Ensure this value has no more than 64000 byte in wire format (it has {len(wire)}).')
+            if len(wire) > 64000:
+                raise ValidationError(f'Ensure this value has no more than 64000 byte in wire format (it has {len(wire)}).')
 
-        parser = dns.wire.Parser(wire, current=0)
-        with parser.restrict_to(len(wire)):
-            rdata = cls.from_wire_parser(rdclass=rdataclass.IN, rdtype=type_, parser=parser)
+            parser = dns.wire.Parser(wire, current=0)
+            with parser.restrict_to(len(wire)):
+                rdata = cls.from_wire_parser(rdclass=rdataclass.IN, rdtype=rdtype, parser=parser)
 
-        # Convert to canonical presentation format, disable chunking of records.
-        # Exempt types which have chunksize hardcoded (prevents "got multiple values for keyword argument 'chunksize'").
-        chunksize_exception_types = (dns.rdatatype.OPENPGPKEY, dns.rdatatype.EUI48, dns.rdatatype.EUI64)
-        if type_ in chunksize_exception_types:
-            return rdata.to_text()
-        else:
-            return rdata.to_text(chunksize=0)
+            # Convert to canonical presentation format, disable chunking of records.
+            # Exempt types which have chunksize hardcoded (prevents "got multiple values for keyword argument 'chunksize'").
+            chunksize_exception_types = (dns.rdatatype.OPENPGPKEY, dns.rdatatype.EUI48, dns.rdatatype.EUI64)
+            if rdtype in chunksize_exception_types:
+                return rdata.to_text()
+            else:
+                return rdata.to_text(chunksize=0)
+        except binascii.Error:
+            # e.g., odd-length string
+            raise ValueError('Cannot parse hexadecimal or base64 record contents')
+        except dns.exception.SyntaxError as e:
+            # e.g., A/127.0.0.999
+            if 'quote' in e.args[0]:
+                raise ValueError(f'Data for {type_} records must be given using quotation marks.')
+            else:
+                raise ValueError(f'Record content for type {type_} malformed: {",".join(e.args)}')
+        except dns.name.NeedAbsoluteNameOrOrigin:
+            raise ValueError('Hostname must be fully qualified (i.e., end in a dot: "example.com.")')
+        except ValueError as ex:
+            # e.g., string ("asdf") cannot be parsed into int on base 10
+            raise ValueError(f'Cannot parse record contents: {ex}')
+        except Exception as e:
+            # TODO see what exceptions raise here for faulty input
+            raise e
 
     def __str__(self):
         return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)

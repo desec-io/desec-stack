@@ -280,6 +280,17 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def validate(self, attrs):
         if 'records' in attrs:
+            try:
+                type_ = attrs['type']
+            except KeyError:  # on the RRsetDetail endpoint, the type is not in attrs
+                type_ = self.instance.type
+
+            try:
+                attrs['records'] = [{'content': models.RR.canonical_presentation_format(rr['content'], type_)}
+                                    for rr in attrs['records']]
+            except ValueError as ex:
+                raise serializers.ValidationError(str(ex))
+
             # There is a 12 byte baseline requirement per record, c.f.
             # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
             # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see

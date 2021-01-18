@@ -132,7 +132,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         }
         response = self.client.get(self.reverse('v1:dyndns12update'), params)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Record content malformed', str(response.data))
+        self.assertIn('malformed', str(response.data))
 
     def test_ddclient_dyndns2_v6_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338

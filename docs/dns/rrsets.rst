@@ -483,31 +483,27 @@ records to ``[]``.
 
 Input validation
 ````````````````
-There are two stages of input validation:
+The API performs various types of validation checks:
 
-1. Sanity checks, such as syntax, basic semantics (e.g. negative TTL), and
-   uniqueness checks. (We both check for uniqueness with respect to
-   pre-existing RRsets as well as with respect to other RRsets sent in the
-   same bulk request.)
+- Sanity checks, such as syntax, basic semantics (e.g. negative TTL).
 
-2. DNS conformity checks, such as whether the given type is a supported record
-   type, and whether the given record contents are consistent with the type.
+- RRset uniqueness (with respect to subname and type) and ``CNAME``
+  exclusivity.  We both check with respect to pre-existing RRsets as well as
+  with respect to other RRsets sent in the same request.
 
-If an error occurs in the first validation stage, the request is aborted, and
-the error(s) are returned.  Only if no error occurred, will the request be
-allowed to proceed to the second stage.
+- DNS record checks, such as whether the given type is a supported record
+  type, and whether the given record contents are consistent with the type.
 
-In the first stage, errors are presented as a list of errors, with each list
-item referring to one part of the bulk request, in the same order.  Parts that
-did not cause errors have an empty error object ``{}``, and parts with errors
-contain more details describing the error.  Unfortunately, in step 2, the API
-currently does not associate the error message with the RRset that caused it.
+Error responses have status ``400 Bad Request`` and contain a list of errors
+in the response body, with each list item corresponding to one part of the
+bulk request, in the same order.  Parts that passed without errors have an
+empty error object ``{}``, and parts with errors contain a data structure
+giving explaining the error(s) in a more detailed fashion.
 
-The successive treatment of stages means that one bulk part with a stage-2
-error may appear valid (``{}``) as long as another RRset has a stage-1 error.
-Only after the stage-1 error is resolved, the request will reach stage 2, at
-which point an error may appear due to a bulk part that previously seemed
-valid.
+In case of several errors for the same RRset, we sometimes only return one
+of them.  For example, if you're creating an RRset that conflicts with an
+existing RRset, the API does not perform further validation of the record
+contents, and instead only points out the uniqueness conflict.
 
 
 Notes
