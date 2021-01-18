@@ -752,7 +752,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 response = self.client.get_rr_set(self.my_rr_set_domain.name, subname, 'A')
                 self.assertStatus(response, status.HTTP_200_OK)
                 current_rr_set.update(data)
-                self.assertEqual(response.data['records'], current_rr_set['records'])
+                self.assertEqual(set(response.data['records']), set(current_rr_set['records']))
                 self.assertEqual(response.data['ttl'], current_rr_set['ttl'])
 
             response = self.client.patch_rr_set(self.my_rr_set_domain.name, subname, 'A', {})
