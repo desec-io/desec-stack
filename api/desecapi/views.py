@@ -593,12 +593,22 @@ class AuthenticatedActionView(generics.GenericAPIView):
     """
     Abstract class. Deserializes the given payload according the serializers specified by the view extending
     this class. If the `serializer.is_valid`, `act` is called on the action object.
+
+    Summary of the behavior depending on HTTP method and Accept: header:
+
+                        GET	                                POST                other method
+    Accept: text/html	forward to `self.html_url` if any   perform action      405 Method Not Allowed
+    else                HTTP 406 Not Acceptable             perform action      405 Method Not Allowed
     """
     action = None
-    authentication_classes = (auth.AuthenticatedBasicUserActionAuthentication,)
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
+
+    @property
+    def authentication_classes(self):
+        # This prevents both code evaluation and user-specific throttling when we only want a redirect
+        return () if self.request.method in SAFE_METHODS else (auth.AuthenticatedBasicUserActionAuthentication,)
 
     @property
     def throttle_scope(self):
@@ -610,11 +620,6 @@ class AuthenticatedActionView(generics.GenericAPIView):
             'code': self.kwargs['code'],
             'validity_period': self.get_serializer_class().validity_period,
         }
-
-    def perform_authentication(self, request):
-        # Delay authentication until request.auth or request.user is first accessed.
-        # This allows returning a redirect or status 405 without validating the action code.
-        pass
 
     def get(self, request, *args, **kwargs):
         # Redirect browsers to frontend if available

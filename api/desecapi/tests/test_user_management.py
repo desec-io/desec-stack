@@ -506,6 +506,11 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
     def test_home(self):
         self.assertResponse(self.client.get(reverse('v1:root')), status.HTTP_200_OK)
 
+    def test_authenticated_action_redirect_with_invalid_code(self):
+        # This tests that the code is not processed when Accept: text/html is not set (redirect without further ado)
+        confirmation_link = self.reverse('v1:confirm-activate-account', code='foobar')
+        self.assertConfirmationLinkRedirect(confirmation_link)
+
     def test_registration(self):
         self._test_registration(password=self.random_password())
 

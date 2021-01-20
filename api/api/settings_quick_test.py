@@ -26,7 +26,8 @@ CACHES = {
 }
 
 REST_FRAMEWORK['PAGE_SIZE'] = 20
-REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = ['rest_framework.throttling.UserRateThrottle']
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {'user': '1000/s'}
 
 # Carry email backend connection over to test mail outbox
 CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ['connection']
