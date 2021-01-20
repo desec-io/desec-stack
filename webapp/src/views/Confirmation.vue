@@ -41,6 +41,7 @@
                       :working="this.working"
                       ref="actionHandler"
                       @autosubmit="confirm"
+                      @clearerrors="clearErrors"
               ></div>
             </v-form>
             <h2 class="title">Keep deSEC Going</h2>
@@ -69,8 +70,7 @@
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
-    headers: {
-    },
+    headers: {'Content-Type': 'application/json'},
   });
 
   export default {
@@ -95,6 +95,7 @@
     },
     methods: {
       async confirm() {
+        this.post_response = {}
         this.errors = []
         this.working = true
         let action = this.$route.params.action
@@ -107,6 +108,9 @@
         }
         this.working = false
       },
+      clearErrors() {
+        this.errors = []
+      }
     },
     filters: {
       replace: function (value, a, b) {

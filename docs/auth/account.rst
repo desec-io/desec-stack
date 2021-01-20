@@ -70,7 +70,13 @@ Please consider the following when registering an account:
 - Your email address is required for account recovery in case you forgot your
   password, for contacting support, etc. We also send out announcements for
   technical changes occasionally. It is thus deSEC's policy to require users
-  provide a valid email address.
+  provide an email address and to confirm its validity by clicking a
+  verification link sent to that address.
+
+- To facilitate automatic sign-ups, the ``captcha`` field in the registration
+  request can be omitted; in this case, the field is required later when
+  completing email verification. In case we find this to cause adverse effects
+  on our systems, we may adopt a captcha-on-registration policy at any time.
 
 When attempting to register a user account, the server will reply with ``202
 Accepted``. In case there already is an account for that email address,
@@ -78,7 +84,8 @@ nothing else will be done. Otherwise, you will receive an email with a
 verification link of the form
 ``https://desec.io/api/v1/v/activate-account/<code>/``. To activate your
 account, click on that link (which will direct you to our frontend) or send a
-``POST`` request on the command line. The link expires after 12 hours.
+``POST`` request on the command line. (If a captcha was not provided during
+registration, it has to be provided now.) The link expires after 12 hours.
 
 If there is a problem with your email address, your password, or the proposed
 captcha solution, the server will reply with ``400 Bad Request`` and give a

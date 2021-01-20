@@ -32,6 +32,9 @@
       working: Boolean,
     },
     computed: {
+      error: function () {
+        return this.response.status >= 400 && this.response.status < 500
+      },
       success: function () {
         return this.response.status >= 200 && this.response.status < 300
       }

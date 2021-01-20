@@ -699,9 +699,9 @@ class DesecTestCase(MockPDNSTestCase):
         return token
 
     @classmethod
-    def create_user(cls, **kwargs):
+    def create_user(cls, needs_captcha=False, **kwargs):
         kwargs.setdefault('email', cls.random_username())
-        user = User(**kwargs)
+        user = User(needs_captcha=needs_captcha, **kwargs)
         user.plain_password = cls.random_string(length=12)
         user.set_password(user.plain_password)
         user.save()

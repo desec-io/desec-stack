@@ -12,7 +12,7 @@ from django.core.validators import MinValueValidator
 from django.db.models import Model, Q
 from django.utils import timezone
 from netfields import rest_framework as netfields_rf
-from rest_framework import serializers
+from rest_framework import fields, serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
@@ -632,7 +632,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterAccountSerializer(UserSerializer):
     domain = serializers.CharField(required=False, validators=models.validate_domain_name)
-    captcha = CaptchaSolutionSerializer(required=True)
+    captcha = CaptchaSolutionSerializer(required=False)
 
     class Meta:
         model = UserSerializer.Meta.model
@@ -650,7 +650,10 @@ class RegisterAccountSerializer(UserSerializer):
 
     def create(self, validated_data):
         validated_data.pop('domain', None)
-        validated_data.pop('captcha', None)
+        # If validated_data['captcha'] exists, the captcha was also validated, so we can set the user to verified
+        if 'captcha' in validated_data:
+            validated_data.pop('captcha')
+            validated_data['needs_captcha'] = False
         return super().create(validated_data)
 
 
@@ -775,13 +778,22 @@ class AuthenticatedBasicUserActionSerializer(AuthenticatedActionSerializer):
 
 
 class AuthenticatedActivateUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    captcha = CaptchaSolutionSerializer(required=False)
 
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedActivateUserAction
-        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('domain',)
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('captcha', 'domain',)
         extra_kwargs = {
             'domain': {'default': None, 'allow_null': True}
         }
+
+    def validate(self, attrs):
+        try:
+            attrs.pop('captcha')  # remove captcha from internal value to avoid passing to Meta.model(**kwargs)
+        except KeyError:
+            if attrs['user'].needs_captcha:
+                raise serializers.ValidationError({'captcha': fields.Field.default_error_messages['required']})
+        return attrs
 
 
 class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedBasicUserActionSerializer):

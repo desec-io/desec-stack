@@ -38,11 +38,17 @@ from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, PublicSuffix
 
 class UserManagementClient(APIClient):
 
-    def register(self, email, password, captcha_id, captcha_solution, **kwargs):
+    def register(self, email, password, captcha=None, **kwargs):
+        try:
+            captcha_id, captcha_solution = captcha
+        except TypeError:
+            pass
+        else:
+            kwargs['captcha'] = {'id': captcha_id, 'solution': captcha_solution}
+
         return self.post(reverse('v1:register'), {
             'email': email,
             'password': password,
-            'captcha': {'id': captcha_id, 'solution': captcha_solution},
             **kwargs
         })
 
@@ -98,10 +104,10 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         solution = Captcha.objects.get(id=id).content
         return id, solution
 
-    def register_user(self, email=None, password=None, **kwargs):
+    def register_user(self, email=None, password=None, late_captcha=False, **kwargs):
         email = email if email is not None else self.random_username()
-        captcha_id, captcha_solution = self.get_captcha()
-        return email.strip(), password, self.client.register(email, password, captcha_id, captcha_solution, **kwargs)
+        captcha = None if late_captcha else self.get_captcha()
+        return email.strip(), password, self.client.register(email, password, captcha, **kwargs)
 
     def login_user(self, email, password):
         return self.client.login_user(email, password)
@@ -284,6 +290,10 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_200_OK
         )
 
+    def assertRegistrationVerificationFailureResponse(self, response):
+        self.assertEqual(response.data['captcha'][0], "This field is required.")
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
     def assertRegistrationWithDomainVerificationSuccessResponse(self, response, domain=None, email=None):
         self.assertNoEmailSent()  # do not send email in any case
         text = 'Success! Please check the docs for the next steps'
@@ -393,16 +403,24 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    def _test_registration(self, email=None, password=None, **kwargs):
-        email, password, response = self.register_user(email, password, **kwargs)
+    def _test_registration(self, email=None, password=None, late_captcha=True, **kwargs):
+        email, password, response = self.register_user(email, password, late_captcha, **kwargs)
         self.assertRegistrationSuccessResponse(response)
         self.assertUserExists(email)
         self.assertFalse(User.objects.get(email=email).is_active)
+        self.assertEqual(User.objects.get(email=email).needs_captcha, late_captcha)
         self.assertPassword(email, password)
         confirmation_link = self.assertRegistrationEmail(email)
         self.assertConfirmationLinkRedirect(confirmation_link)
-        self.assertRegistrationVerificationSuccessResponse(self.client.verify(confirmation_link))
+        response = self.client.verify(confirmation_link)
+        if late_captcha:
+            self.assertRegistrationVerificationFailureResponse(response)
+            captcha_id, captcha_solution = self.get_captcha()
+            data = {'captcha': {'id': captcha_id, 'solution': captcha_solution}}
+            response = self.client.verify(confirmation_link, data=data)
+        self.assertRegistrationVerificationSuccessResponse(response)
         self.assertTrue(User.objects.get(email=email).is_active)
+        self.assertFalse(User.objects.get(email=email).needs_captcha)
         self.assertPassword(email, password)
         return email, password
 
@@ -585,8 +603,11 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         password = self.random_password()
         captcha_id, _ = self.get_captcha()
         self.assertRegistrationFailureCaptchaInvalidResponse(
-            self.client.register(email, password, captcha_id, 'this is most definitely not a correct CAPTCHA solution')
+            self.client.register(email, password, (captcha_id, 'this is most definitely not a CAPTCHA solution'))
         )
+
+    def test_registration_late_captcha(self):
+        self._test_registration(password=self.random_password(), late_captcha=True)
 
 
 class OtherUserAccountTestCase(UserManagementTestCase):
