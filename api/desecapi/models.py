@@ -18,7 +18,7 @@ import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser, BaseUserManager
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperators
 from django.core.exceptions import ValidationError
@@ -225,6 +225,9 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     _keys = None
 
     def __init__(self, *args, **kwargs):
+        if isinstance(kwargs.get('owner'), AnonymousUser):
+            kwargs = {**kwargs, 'owner': None}  # make a copy and override
+        # Avoid super().__init__(owner=None, ...) to not mess up *values instantiation in django.db.models.Model.from_db
         super().__init__(*args, **kwargs)
         if self.pk is None and kwargs.get('renewal_state') is None and self.is_locally_registrable:
             self.renewal_state = Domain.RenewalState.FRESH
