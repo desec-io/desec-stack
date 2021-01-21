@@ -183,7 +183,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
        mkdir -p ~/bin
        cd ~/bin
-       curl https://raw.githubusercontent.com/desec-utils/certbot-hook/master/hook.sh > desec_certbot_hook.sh
+       curl https://raw.githubusercontent.com/desec-io/desec-certbot-hook/master/hook.sh > desec_certbot_hook.sh
        touch .dedynauth; chmod 600 .dedynauth
        echo DEDYN_TOKEN=${TOKEN} >> .dedynauth
        echo DEDYN_NAME=${DOMAIN} >> .dedynauth
