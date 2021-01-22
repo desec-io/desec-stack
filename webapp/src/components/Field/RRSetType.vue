@@ -52,6 +52,7 @@ export default {
       'TLSA',
       'OPENPGPKEY',
       'PTR',
+      'SMIMEA',
       'SRV',
       'DS',
     ],
