@@ -608,7 +608,7 @@ Record types with priority field
       internally managed SOA record).
 
       If you need redirect functionality at the zone apex, consider using the
-      HTTPS record type which serves exactly this purpose. Although new,
+      ``HTTPS`` record type which serves exactly this purpose. Although new,
       browser vendor support is under way (with Chrome planning to roll out
       experimental support in February 2021).
 
