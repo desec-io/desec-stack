@@ -161,7 +161,7 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
     """
     def authenticate(self, request):
         view = request.parser_context['view']
-        serializer = AuthenticatedBasicUserActionSerializer(data=request.data, context=view.get_serializer_context())
+        serializer = AuthenticatedBasicUserActionSerializer(data={}, context=view.get_serializer_context())
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data['user'], None
 
