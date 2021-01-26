@@ -2,7 +2,7 @@ import binascii
 import copy
 import json
 import re
-from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode
+from base64 import urlsafe_b64decode, b64encode
 
 import django.core.exceptions
 from captcha.audio import AudioCaptcha
@@ -710,15 +710,21 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     @classmethod
     def _pack_code(cls, data):
         payload = json.dumps(data).encode()
-        payload_enc = crypto.encrypt(payload, context='desecapi.serializers.AuthenticatedActionSerializer')
-        return urlsafe_b64encode(payload_enc).decode()
+        code = crypto.encrypt(payload, context='desecapi.serializers.AuthenticatedActionSerializer').decode()
+        return code.rstrip('=')
 
     @classmethod
-    def _unpack_code(cls, code, *, ttl):
+    def _unpack_code(cls, code, *, ttl, _retry=True):
+        code += -len(code) % 4 * '='
         try:
-            payload_enc = urlsafe_b64decode(code.encode())
-            payload = crypto.decrypt(payload_enc, context='desecapi.serializers.AuthenticatedActionSerializer', ttl=ttl)
+            payload = crypto.decrypt(code.encode(), context='desecapi.serializers.AuthenticatedActionSerializer',
+                                     ttl=ttl)
             return json.loads(payload.decode())
+        except ValueError:  # TODO remove this once all urlsafe_b64encode'd codes have expired (~30d after deployment)
+            if _retry:
+                return cls._unpack_code(urlsafe_b64decode(code.encode()).decode(), ttl=ttl, _retry=False)
+            else:
+                raise
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
@@ -749,7 +755,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
                 msg = 'This code is invalid.'
             else:
                 msg = f'This code is invalid, possibly because it expired (validity: {validity_period}).'
-            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: msg, 'code': 'invalid_code'})
+            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: msg})
 
         # add extra fields added by the user
         unpacked_data.update(**data)
