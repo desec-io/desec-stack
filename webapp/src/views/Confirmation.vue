@@ -24,12 +24,12 @@
             <v-alert :value="!!(errors && errors.length)" type="error">
               <div v-if="errors.length > 1">
                 <li v-for="error of errors" :key="error.message" >
-                  <b>Error: {{ error.message }}</b>
+                  <b>{{ error.message }}</b>
                   {{ error }}
                 </li>
               </div>
-              <div v-else>
-                Error: {{ errors[0] }}
+              <div v-else-if="errors.length == 1">
+                {{ errors[0].detail || errors[0][0] || errors[0]}}
               </div>
             </v-alert>
             <v-form @submit.prevent="confirm" class="mb-4" v-model="valid" ref="form">
