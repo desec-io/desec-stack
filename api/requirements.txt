@@ -17,3 +17,4 @@ pylibmc~=1.6.1
 pyyaml~=5.3.1
 requests~=2.25.0
 uwsgi~=2.0.0
+amqp==5.0.3
