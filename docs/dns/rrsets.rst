@@ -541,13 +541,19 @@ Restricted Types
     disabled in our API.  If you attempt to create such RRsets, you will receive
     a ``400 Bad Request`` response.
 
-``DNSKEY``, ``NSEC3PARAM``, ``RRSIG``
+``DNSKEY``, ``DS``, ``CDNSKEY``, ``CDS``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in
     order to secure the data stored in your zones.  RRsets of this type are
-    generated and served automatically by our nameservers.  However, you can
-    neither read nor manipulate these RRsets through the API.  When attempting
-    such operations, ``403 Forbidden`` or ``400 Bad Request`` is returned,
-    respectively.
+    generated and served automatically by our nameservers.  It is currently
+    not possible to read or manipulate any automatically generated values
+    using the API.
+
+    Note, however, that it is possible to add *additional* values for some
+    key-related records types (``DNSKEY``, ``DS``, ``CDNSKEY``) in order to
+    publish extra public keys.  For details, see `DNSKEY caveat`_.
+
+    When attempting an unsupported operation, ``403 Forbidden`` or ``400 Bad
+    Request`` is returned.
 
 .. _`SOA caveat`:
 
@@ -580,6 +586,8 @@ Record types with priority field
     content, separated from the rest of it by a space (e.g.
     ``10 mx.example.com.``).
 
+.. _`DNSKEY caveat`:
+
 ``CDNSKEY``, ``CDS``, ``DNSKEY`` record
     These records are managed automatically by deSEC.  However, our API allows
     adding additional values for specialized purposes.  Regular, automatic
@@ -593,8 +601,9 @@ Record types with priority field
 
     **Note:** Manually provided records are published **in addition** to the
     ones managed automatically by deSEC.  As a consequence, the TTL values of
-    extra records configured at the zone apex are ignored by the API, and the
-    TTLs used for the automatic records is applied.
+    extra records configured at the zone apex are ignored by the API, and
+    manually provided records are published with the same TTL as automatic
+    ones.
 
 ``CNAME`` record
     - The record value (target) must be terminated by a dot ``.`` (as in
