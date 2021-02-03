@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core.mail import get_connection, mail_admins
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Max, OuterRef, Subquery
+from django.db.models.functions import Greatest
 from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework.reverse import reverse
@@ -20,15 +21,20 @@ notice_days_warn = 7
 
 class Command(BaseCommand):
     base_queryset = models.Domain.objects.exclude(renewal_state=models.Domain.RenewalState.IMMORTAL)
+    _rrsets_outer_queryset = models.RRset.objects.filter(domain=OuterRef('pk')).values('domain')  # values() is GROUP BY
+    _max_touched = Subquery(_rrsets_outer_queryset.annotate(max_touched=Max('touched')).values('max_touched'))
 
     @classmethod
     def renew_touched_domains(cls):
-        last_published_threshold = timezone.localdate() - datetime.timedelta(days=183)
-        recently_touched_domains = cls.base_queryset.filter(published__date__gte=last_published_threshold,
-                                                            renewal_changed__lt=F('published'))
+        recently_active_domains = cls.base_queryset.annotate(
+            last_active=Greatest(cls._max_touched, 'published')
+        ).filter(
+            last_active__date__gte=timezone.localdate() - datetime.timedelta(days=183),
+            renewal_changed__lt=F('last_active'),
+        )
 
-        print('Renewing domains:', *recently_touched_domains.values_list('name', flat=True))
-        recently_touched_domains.update(renewal_state=models.Domain.RenewalState.FRESH, renewal_changed=F('published'))
+        print('Renewing domains:', *recently_active_domains.values_list('name', flat=True))
+        recently_active_domains.update(renewal_state=models.Domain.RenewalState.FRESH, renewal_changed=F('last_active'))
 
     @classmethod
     def warn_domain_deletion(cls, renewal_state, notice_days, inactive_days):
@@ -65,19 +71,21 @@ class Command(BaseCommand):
 
     @classmethod
     def delete_domains(cls, inactive_days):
-        published_threshold = timezone.localdate() - datetime.timedelta(days=inactive_days)
-        renewal_changed_threshold = timezone.localdate() - datetime.timedelta(days=notice_days_warn)
-        expiry_candidates = cls.base_queryset.filter(renewal_state=models.Domain.RenewalState.WARNED)
-        domains = expiry_candidates.filter(renewal_changed__date__lte=renewal_changed_threshold,
-                                           published__date__lte=published_threshold)
-        for domain in domains:
+        expired_domains = cls.base_queryset.filter(renewal_state=models.Domain.RenewalState.WARNED).annotate(
+            last_active=Greatest(cls._max_touched, 'published')
+        ).filter(
+            renewal_changed__date__lte=timezone.localdate() - datetime.timedelta(days=notice_days_warn),
+            last_active__date__lte=timezone.localdate() - datetime.timedelta(days=inactive_days),
+        )
+
+        for domain in expired_domains:
             with PDNSChangeTracker():
                 domain.delete()
             if not domain.owner.domains.exists():
                 domain.owner.delete()
         # Do one large delegation update
         with PDNSChangeTracker():
-            for domain in domains:
+            for domain in expired_domains:
                 views.DomainViewSet.auto_delegate(domain)
 
     def handle(self, *args, **kwargs):

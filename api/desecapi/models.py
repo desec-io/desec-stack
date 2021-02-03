@@ -504,7 +504,7 @@ class RRsetManager(Manager):
 class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
-    touched = models.DateTimeField(auto_now=True)
+    touched = models.DateTimeField(auto_now=True, db_index=True)
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
