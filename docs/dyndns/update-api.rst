@@ -116,7 +116,6 @@ dynDNS updates are subject to rate limiting.  For details, see
 
 Examples
 ````````
-
 The examples below use ``<your domain>.dedyn.io`` as the domain which is to be updated and
 ``<your authorization token>`` as an API token affiliated with the respective account.
 (See :ref:`manage-tokens` for details.) ``<1.2.3.4>`` is used as an example for an IPv4 Address,
@@ -126,14 +125,14 @@ with your respective values.
 
 Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
 
-  curl --user <your domain>.dedyn.io:<your authorization token> https://update.dedyn.io
+  curl --user <your domain>.dedyn.io:<your authorization token> https://update.dedyn.io/
   
   curl https://update.dedyn.io/?hostname=<your domain>.dedyn.io \
     --header "Authorization: Token <your authorization token>"
 
 Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
 
-  curl --user <your domain>.dedyn.io:<your authorization token> https://update6.dedyn.io
+  curl --user <your domain>.dedyn.io:<your authorization token> https://update6.dedyn.io/
   
   curl https://update6.dedyn.io/?hostname=<your domain>.dedyn.io \
     --header "Authorization: Token <your authorization token>"
@@ -141,8 +140,8 @@ Basic authentication with forced use of IPv6 (will remove IPv4 address from the 
 Basic authentication with simultaneous update of IPv4 and IPv6::
 
   curl --user <your domain>.dedyn.io:<your authorization token> \
-    https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234
+    "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
 
-  curl https://update6.dedyn.io/?hostname=<your domain>.dedyn.io?myipv4=<1.2.3.4>&myipv6=<fd08::1234> \
+  curl "https://update6.dedyn.io/?hostname=<your domain>.dedyn.io?myipv4=1.2.3.4&myipv6=fd08::1234" \
     --header "Authorization: Token <your authorization token>"
 
