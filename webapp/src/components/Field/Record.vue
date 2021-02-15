@@ -181,7 +181,7 @@ export default {
       const n = (trimmed.match(/ /g) || []).length;
       const diff = Math.max(0, (this.fields.length - 1) - n);
       trimmed += ' '.repeat(diff);
-      if (caretPosition === undefined || caretPosition < trimmed.length) {
+      if (caretPosition < trimmed.length) {
         value = trimmed;
       }
 
