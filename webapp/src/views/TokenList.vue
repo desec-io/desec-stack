@@ -148,6 +148,10 @@ export default {
             delete this.createDialogItem.allowed_subnets;
           }
         },
+        preupdate(item) {
+          item.max_age = item.max_age || null;
+          item.max_unused_period = item.max_unused_period || null;
+        },
     }
   },
 };

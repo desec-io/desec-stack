@@ -432,6 +432,7 @@ export default {
     itemIsReadOnly: () => false,
     postcreate: this.close,
     precreate: () => undefined,
+    preupdate: () => undefined,
     keyupHandler: (e) => {
       // Intercept Enter key
       if (e.keyCode === 13) {
@@ -554,6 +555,7 @@ export default {
           tr.addEventListener("animationend", () => tr.classList.remove('successFade'), true);
           tr.classList.add('successFade');
         }
+        this.preupdate(item);
         const url = this.resourcePath(
                 this.resourcePath(this.paths.update, this.$route.params, '::'),
                 item,
@@ -562,7 +564,7 @@ export default {
         await withWorking(this.error, () => HTTP
                 .patch(url, item)
                 .then(r => {
-                  self.rows[self.rows.indexOf(item)] = r.data;
+                  Object.assign(self.rows[self.rows.indexOf(item)], r.data);
                   self.dirty.delete(item);
                   self.dirtyError.delete(item);
                 })
