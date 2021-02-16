@@ -45,6 +45,3 @@ set_counter('desecapi_pdns_catalog_updated', 'number of times pdns catalog was u
 
 # throttling.py metrics
 set_counter('desecapi_throttle_failure', 'number of requests throttled', ['method', 'scope', 'user'])
-
-# serializers.py metrics
-set_counter('desecapi_rrset_list_serializer', 'number of times RRsetListSerializer was initialized')

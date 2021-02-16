@@ -418,22 +418,14 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         extra_kwargs = {
             'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
         }
+        list_serializer_class = RRsetListSerializer
 
-    def __init__(self, instance=None, data=serializers.empty, domain=None, **kwargs):
-        if domain is None:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            self.domain = self.context['domain']
+        except KeyError:
             raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
-        self.domain = domain
-        super().__init__(instance, data, **kwargs)
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        domain = kwargs.pop('domain')
-        # Note: We are not yet deciding the value of the child's "partial" attribute, as its value depends on whether
-        # the RRSet is created (never partial) or not (partial if PATCH), for each given item (RRset) individually.
-        kwargs['child'] = cls(domain=domain)
-        serializer = RRsetListSerializer(*args, **kwargs)
-        metrics.get('desecapi_rrset_list_serializer').inc()
-        return serializer
 
     def get_fields(self):
         fields = super().get_fields()

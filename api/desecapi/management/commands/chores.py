@@ -43,7 +43,8 @@ class Command(BaseCommand):
             'ttl': '3600',
             'records': [content]
         }]
-        serializer = serializers.RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
+        context = {'domain': domain}
+        serializer = serializers.RRsetSerializer(instances, data=data, many=True, partial=True, context=context)
         serializer.is_valid(raise_exception=True)
         with PDNSChangeTracker():
             serializer.save()

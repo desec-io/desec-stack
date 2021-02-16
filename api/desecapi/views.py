@@ -66,6 +66,9 @@ class IdempotentDestroyMixin:
 
 class DomainViewMixin:
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'domain': self.domain}
+
     def initial(self, request, *args, **kwargs):
         # noinspection PyUnresolvedReferences
         super().initial(request, *args, **kwargs)
@@ -173,9 +176,6 @@ class RRsetDetail(IdempotentDestroyMixin, DomainViewMixin, generics.RetrieveUpda
 
         return obj
 
-    def get_serializer(self, *args, **kwargs):
-        return super().get_serializer(domain=self.domain, *args, **kwargs)
-
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
 
@@ -231,7 +231,7 @@ class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, 
             elif self.request.method in ['PATCH', 'PUT']:
                 kwargs['many'] = True
 
-        return super().get_serializer(domain=self.domain, *args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
         with PDNSChangeTracker():
@@ -364,7 +364,8 @@ class DynDNS12Update(APIView):
         ]
 
         instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()
-        serializer = serializers.RRsetSerializer(instances, domain=domain, data=data, many=True, partial=True)
+        context = {'domain': domain}
+        serializer = serializers.RRsetSerializer(instances, data=data, many=True, partial=True, context=context)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
