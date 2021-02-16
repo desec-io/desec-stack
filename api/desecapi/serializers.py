@@ -205,155 +205,6 @@ class RRSerializer(serializers.ModelSerializer):
         return instance.content
 
 
-class RRsetSerializer(ConditionalExistenceModelSerializer):
-    domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    records = RRSerializer(many=True)
-    ttl = serializers.IntegerField(max_value=604800)
-
-    class Meta:
-        model = models.RRset
-        fields = ('created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched',)
-        extra_kwargs = {
-            'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
-        }
-
-    def __init__(self, instance=None, data=serializers.empty, domain=None, **kwargs):
-        if domain is None:
-            raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
-        self.domain = domain
-        super().__init__(instance, data, **kwargs)
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        domain = kwargs.pop('domain')
-        # Note: We are not yet deciding the value of the child's "partial" attribute, as its value depends on whether
-        # the RRSet is created (never partial) or not (partial if PATCH), for each given item (RRset) individually.
-        kwargs['child'] = cls(domain=domain)
-        serializer = RRsetListSerializer(*args, **kwargs)
-        metrics.get('desecapi_rrset_list_serializer').inc()
-        return serializer
-
-    def get_fields(self):
-        fields = super().get_fields()
-        fields['subname'].validators.append(ReadOnlyOnUpdateValidator())
-        fields['type'].validators.append(ReadOnlyOnUpdateValidator())
-        fields['ttl'].validators.append(MinValueValidator(limit_value=self.domain.minimum_ttl))
-        return fields
-
-    def get_validators(self):
-        return [
-            UniqueTogetherValidator(
-                self.domain.rrset_set,
-                ('subname', 'type'),
-                message='Another RRset with the same subdomain and type exists for this domain.',
-            ),
-            validators.ExclusionConstraintValidator(
-                self.domain.rrset_set,
-                ('subname',),
-                exclusion_condition=('type', 'CNAME',),
-                message='RRset with conflicting type present: database ({types}).'
-                        ' (No other RRsets are allowed alongside CNAME.)',
-            ),
-        ]
-
-    @staticmethod
-    def validate_type(value):
-        if value not in models.RR_SET_TYPES_MANAGEABLE:
-            # user cannot manage this type, let's try to tell her the reason
-            if value in models.RR_SET_TYPES_AUTOMATIC:
-                raise serializers.ValidationError(f'You cannot tinker with the {value} RR set. It is managed '
-                                                  f'automatically.')
-            elif value.startswith('TYPE'):
-                raise serializers.ValidationError('Generic type format is not supported.')
-            else:
-                raise serializers.ValidationError(f'The {value} RR set type is currently unsupported.')
-        return value
-
-    def validate_records(self, value):
-        # `records` is usually allowed to be empty (for idempotent delete), except for POST requests which are intended
-        # for RRset creation only. We use the fact that DRF generic views pass the request in the serializer context.
-        request = self.context.get('request')
-        if request and request.method == 'POST' and not value:
-            raise serializers.ValidationError('This field must not be empty when using POST.')
-        return value
-
-    def validate(self, attrs):
-        if 'records' in attrs:
-            try:
-                type_ = attrs['type']
-            except KeyError:  # on the RRsetDetail endpoint, the type is not in attrs
-                type_ = self.instance.type
-
-            try:
-                attrs['records'] = [{'content': models.RR.canonical_presentation_format(rr['content'], type_)}
-                                    for rr in attrs['records']]
-            except ValueError as ex:
-                raise serializers.ValidationError(str(ex))
-
-            # There is a 12 byte baseline requirement per record, c.f.
-            # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
-            # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
-            # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
-            # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
-            qname = models.RRset.construct_name(attrs.get('subname', ''), self.domain.name)
-            conservative_total_length = 32 + len(qname) + sum(12 + len(rr['content']) for rr in attrs['records'])
-
-            # Add some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
-            conservative_total_length += 256
-
-            excess_length = conservative_total_length - 65535  # max response size
-            if excess_length > 0:
-                raise serializers.ValidationError(f'Total length of RRset exceeds limit by {excess_length} bytes.',
-                                                  code='max_length')
-
-        return attrs
-
-    def exists(self, arg):
-        if isinstance(arg, models.RRset):
-            return arg.records.exists()
-        else:
-            return bool(arg.get('records')) if 'records' in arg.keys() else True
-
-    def create(self, validated_data):
-        rrs_data = validated_data.pop('records')
-        rrset = models.RRset.objects.create(**validated_data)
-        self._set_all_record_contents(rrset, rrs_data)
-        return rrset
-
-    def update(self, instance: models.RRset, validated_data):
-        rrs_data = validated_data.pop('records', None)
-        if rrs_data is not None:
-            self._set_all_record_contents(instance, rrs_data)
-
-        ttl = validated_data.pop('ttl', None)
-        if ttl and instance.ttl != ttl:
-            instance.ttl = ttl
-            instance.save()  # also updates instance.touched
-        else:
-            # Update instance.touched without triggering post-save signal (no pdns action required)
-            models.RRset.objects.filter(pk=instance.pk).update(touched=timezone.now())
-
-        return instance
-
-    def save(self, **kwargs):
-        kwargs.setdefault('domain', self.domain)
-        return super().save(**kwargs)
-
-    @staticmethod
-    def _set_all_record_contents(rrset: models.RRset, rrs):
-        """
-        Updates this RR set's resource records, discarding any old values.
-
-        :param rrset: the RRset at which we overwrite all RRs
-        :param rrs: list of RR representations
-        """
-        record_contents = [rr['content'] for rr in rrs]
-        try:
-            rrset.save_records(record_contents)
-        except django.core.exceptions.ValidationError as e:
-            raise serializers.ValidationError(e.messages, code='record-content')
-
-
 class RRsetListSerializer(serializers.ListSerializer):
     default_error_messages = {
         **serializers.Serializer.default_error_messages,
@@ -554,6 +405,155 @@ class RRsetListSerializer(serializers.ListSerializer):
     def save(self, **kwargs):
         kwargs.setdefault('domain', self.child.domain)
         return super().save(**kwargs)
+
+
+class RRsetSerializer(ConditionalExistenceModelSerializer):
+    domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    records = RRSerializer(many=True)
+    ttl = serializers.IntegerField(max_value=604800)
+
+    class Meta:
+        model = models.RRset
+        fields = ('created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched',)
+        extra_kwargs = {
+            'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
+        }
+
+    def __init__(self, instance=None, data=serializers.empty, domain=None, **kwargs):
+        if domain is None:
+            raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
+        self.domain = domain
+        super().__init__(instance, data, **kwargs)
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        domain = kwargs.pop('domain')
+        # Note: We are not yet deciding the value of the child's "partial" attribute, as its value depends on whether
+        # the RRSet is created (never partial) or not (partial if PATCH), for each given item (RRset) individually.
+        kwargs['child'] = cls(domain=domain)
+        serializer = RRsetListSerializer(*args, **kwargs)
+        metrics.get('desecapi_rrset_list_serializer').inc()
+        return serializer
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['subname'].validators.append(ReadOnlyOnUpdateValidator())
+        fields['type'].validators.append(ReadOnlyOnUpdateValidator())
+        fields['ttl'].validators.append(MinValueValidator(limit_value=self.domain.minimum_ttl))
+        return fields
+
+    def get_validators(self):
+        return [
+            UniqueTogetherValidator(
+                self.domain.rrset_set,
+                ('subname', 'type'),
+                message='Another RRset with the same subdomain and type exists for this domain.',
+            ),
+            validators.ExclusionConstraintValidator(
+                self.domain.rrset_set,
+                ('subname',),
+                exclusion_condition=('type', 'CNAME',),
+                message='RRset with conflicting type present: database ({types}).'
+                        ' (No other RRsets are allowed alongside CNAME.)',
+            ),
+        ]
+
+    @staticmethod
+    def validate_type(value):
+        if value not in models.RR_SET_TYPES_MANAGEABLE:
+            # user cannot manage this type, let's try to tell her the reason
+            if value in models.RR_SET_TYPES_AUTOMATIC:
+                raise serializers.ValidationError(f'You cannot tinker with the {value} RR set. It is managed '
+                                                  f'automatically.')
+            elif value.startswith('TYPE'):
+                raise serializers.ValidationError('Generic type format is not supported.')
+            else:
+                raise serializers.ValidationError(f'The {value} RR set type is currently unsupported.')
+        return value
+
+    def validate_records(self, value):
+        # `records` is usually allowed to be empty (for idempotent delete), except for POST requests which are intended
+        # for RRset creation only. We use the fact that DRF generic views pass the request in the serializer context.
+        request = self.context.get('request')
+        if request and request.method == 'POST' and not value:
+            raise serializers.ValidationError('This field must not be empty when using POST.')
+        return value
+
+    def validate(self, attrs):
+        if 'records' in attrs:
+            try:
+                type_ = attrs['type']
+            except KeyError:  # on the RRsetDetail endpoint, the type is not in attrs
+                type_ = self.instance.type
+
+            try:
+                attrs['records'] = [{'content': models.RR.canonical_presentation_format(rr['content'], type_)}
+                                    for rr in attrs['records']]
+            except ValueError as ex:
+                raise serializers.ValidationError(str(ex))
+
+            # There is a 12 byte baseline requirement per record, c.f.
+            # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
+            # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
+            # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
+            # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
+            qname = models.RRset.construct_name(attrs.get('subname', ''), self.domain.name)
+            conservative_total_length = 32 + len(qname) + sum(12 + len(rr['content']) for rr in attrs['records'])
+
+            # Add some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+            conservative_total_length += 256
+
+            excess_length = conservative_total_length - 65535  # max response size
+            if excess_length > 0:
+                raise serializers.ValidationError(f'Total length of RRset exceeds limit by {excess_length} bytes.',
+                                                  code='max_length')
+
+        return attrs
+
+    def exists(self, arg):
+        if isinstance(arg, models.RRset):
+            return arg.records.exists()
+        else:
+            return bool(arg.get('records')) if 'records' in arg.keys() else True
+
+    def create(self, validated_data):
+        rrs_data = validated_data.pop('records')
+        rrset = models.RRset.objects.create(**validated_data)
+        self._set_all_record_contents(rrset, rrs_data)
+        return rrset
+
+    def update(self, instance: models.RRset, validated_data):
+        rrs_data = validated_data.pop('records', None)
+        if rrs_data is not None:
+            self._set_all_record_contents(instance, rrs_data)
+
+        ttl = validated_data.pop('ttl', None)
+        if ttl and instance.ttl != ttl:
+            instance.ttl = ttl
+            instance.save()  # also updates instance.touched
+        else:
+            # Update instance.touched without triggering post-save signal (no pdns action required)
+            models.RRset.objects.filter(pk=instance.pk).update(touched=timezone.now())
+
+        return instance
+
+    def save(self, **kwargs):
+        kwargs.setdefault('domain', self.domain)
+        return super().save(**kwargs)
+
+    @staticmethod
+    def _set_all_record_contents(rrset: models.RRset, rrs):
+        """
+        Updates this RR set's resource records, discarding any old values.
+
+        :param rrset: the RRset at which we overwrite all RRs
+        :param rrs: list of RR representations
+        """
+        record_contents = [rr['content'] for rr in rrs]
+        try:
+            rrset.save_records(record_contents)
+        except django.core.exceptions.ValidationError as e:
+            raise serializers.ValidationError(e.messages, code='record-content')
 
 
 class DomainSerializer(serializers.ModelSerializer):
