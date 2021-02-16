@@ -94,8 +94,7 @@ class BasicTokenAuthentication(BaseAuthentication):
         try:
             username, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
             user, token = TokenAuthentication().authenticate_credentials(key)
-            domain_names = user.domains.values_list('name', flat=True)
-            if username not in ['', user.email] and not username.lower() in domain_names:
+            if username not in ['', user.email] and not user.domains.filter(name=username.lower()).exists():
                 raise Exception
         except Exception:
             raise exceptions.AuthenticationFailed(invalid_token_message)
