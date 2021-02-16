@@ -187,12 +187,17 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
 class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 4
 
-    def test_honor_minimum_ttl(self):
+    def test_ignore_minimum_ttl(self):
         self.my_domain.minimum_ttl = 61
         self.my_domain.save()
-        response = self.assertDynDNS12NoUpdate(self.my_domain.name)
-        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['detail'], 'Domain not eligible for dynamic updates, please contact support.')
+
+        # Test that dynDNS updates work both under a local public suffix (self.my_domain) and for a custom domains
+        for domain in [self.my_domain, self.create_domain(owner=self.owner)]:
+            self.assertGreater(domain.minimum_ttl, 60)
+            self.client.set_credentials_basic_auth(domain.name.lower(), self.token.plain)
+            response = self.assertDynDNS12Update(domain.name)
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(domain.rrset_set.get(subname='', type='A').ttl, 60)
 
     def test_identification_by_token(self):
         """

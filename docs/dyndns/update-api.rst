@@ -11,17 +11,23 @@ Please note that when using HTTPS (which we highly recommend), outdated setups
 issues, you may have to update your dynDNS client and/or libraries used by it
 (such as OpenSSL).
 
+**Note:** Out of mercy for legacy clients (especially old routers), we still
+accept unencrypted requests for this service.  We **urge** you to **use HTTPS
+whenever possible**.
+
 Update Request
 ``````````````
-An IP updates is performed by sending a GET request to ``update.dedyn.io`` via
-HTTP or HTTPS. The path component can be chosen freely as long as it does not
-end in ``.ico`` or ``.png``.
+An IP updates is performed by sending a ``GET`` request to ``update.dedyn.io``
+via IPv4 or IPv6.  To enforce IPv6, use ``update6.dedyn.io``.  The path
+component can be chosen freely as long as it does not end in ``.ico`` or
+``.png``.  HTTPS is recommended over HTTP.
 
-You can connect via IPv4 or IPv6. To enforce IPv6, use ``update6.dedyn.io``.
+When the request is authenticated successfully, we use the connection IP
+address and query parameters to update your domain's DNS ``A`` (IPv4) and
+``AAAA`` (IPv6) records.  The new records will have a TTL value of 60 seconds
+(that is, outdated values should disappear from DNS resolvers within that
+time).
 
-Please be aware that while we still accept unencrypted requests, we **urge**
-you to use HTTPS. For that reason, we also send an HSTS header on HTTPS
-connections.
 
 .. _update-api-authentication:
 
@@ -78,10 +84,7 @@ determine the hostname, we try the following steps until there is a match:
   associated with your user account (if not ambiguous).
 
 If we cannot determine a hostname to update, the API will return a ``404 Not
-Found`` status code. If the selected hostname is not eligible for dynamic
-updates, we will return ``403 Forbidden``. This usually happens if you try
-updating a hostname that is not under the ``dedyn.io`` domain. If you are
-affected by this and would like to use another domain, please contact support.
+Found`` status code.
 
 .. _determine-ip-addresses:
 
@@ -118,8 +121,8 @@ Examples
 ````````
 The examples below use ``<your domain>.dedyn.io`` as the domain which is to be updated and
 ``<your authorization token>`` as an API token affiliated with the respective account.
-(See :ref:`manage-tokens` for details.) ``<1.2.3.4>`` is used as an example for an IPv4 Address,
-``<fd08::1234>`` as a standin for an IPv6 address. Replace those (including the ``<`` and ``>``)
+(See :ref:`manage-tokens` for details.) ``1.2.3.4`` is used as an example for an IPv4 Address,
+``fd08::1234`` as a stand-in for an IPv6 address. Replace those (including the ``<`` and ``>``)
 with your respective values.
 
 

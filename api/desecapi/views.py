@@ -364,14 +364,11 @@ class DynDNS12Update(APIView):
         ]
 
         instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()
-        context = {'domain': domain}
+        context = {'domain': domain, 'minimum_ttl': 60}
         serializer = serializers.RRsetSerializer(instances, data=data, many=True, partial=True, context=context)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
-            if any('ttl' in error for error in e.detail):
-                raise PermissionDenied({'detail': 'Domain not eligible for dynamic updates, please contact support.'})
-
             if any(
                     any(
                         getattr(non_field_error, 'code', '') == 'unique'
