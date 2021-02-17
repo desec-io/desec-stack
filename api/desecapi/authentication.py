@@ -14,6 +14,16 @@ from desecapi.models import Token
 from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPasswordSerializer
 
 
+class DynAuthenticationMixin:
+    def authenticate_credentials(self, username, key):
+        user, token = TokenAuthentication().authenticate_credentials(key)
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed
+        if username not in ['', user.email] and not user.domains.filter(name=username.lower()).exists():
+            raise exceptions.AuthenticationFailed
+        return user, token
+
+
 class TokenAuthentication(RestFrameworkTokenAuthentication):
     model = Token
 
@@ -55,7 +65,7 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
         return super().authenticate_credentials(key)
 
 
-class BasicTokenAuthentication(BaseAuthentication):
+class BasicTokenAuthentication(BaseAuthentication, DynAuthenticationMixin):
     """
     HTTP Basic authentication that uses username and token.
 
@@ -87,28 +97,17 @@ class BasicTokenAuthentication(BaseAuthentication):
             msg = 'Invalid basic auth token header. Basic authentication string should not contain spaces.'
             raise exceptions.AuthenticationFailed(msg)
 
-        return self.authenticate_credentials(auth[1])
-
-    def authenticate_credentials(self, basic):
-        invalid_token_message = 'Invalid basic auth token'
         try:
-            username, key = base64.b64decode(basic).decode(HTTP_HEADER_ENCODING).split(':')
-            user, token = TokenAuthentication().authenticate_credentials(key)
-            if username not in ['', user.email] and not user.domains.filter(name=username.lower()).exists():
-                raise Exception
+            username, key = base64.b64decode(auth[1]).decode(HTTP_HEADER_ENCODING).split(':')
+            return self.authenticate_credentials(username, key)
         except Exception:
-            raise exceptions.AuthenticationFailed(invalid_token_message)
-
-        if not user.is_active:
-            raise exceptions.AuthenticationFailed(invalid_token_message)
-
-        return user, token
+            raise exceptions.AuthenticationFailed("badauth")
 
     def authenticate_header(self, request):
         return 'Basic'
 
 
-class URLParamAuthentication(BaseAuthentication):
+class URLParamAuthentication(BaseAuthentication, DynAuthenticationMixin):
     """
     Authentication against username/password as provided in URL parameters.
     """
@@ -116,8 +115,8 @@ class URLParamAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
         """
-        Returns a `User` if a correct username and password have been supplied
-        using URL parameters.  Otherwise returns `None`.
+        Returns `(User, Token)` if a correct username and token have been supplied
+        using URL parameters.  Otherwise raises `AuthenticationFailed`.
         """
 
         if 'username' not in request.query_params:
@@ -127,18 +126,10 @@ class URLParamAuthentication(BaseAuthentication):
             msg = 'No password URL parameter provided.'
             raise exceptions.AuthenticationFailed(msg)
 
-        return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
-
-    def authenticate_credentials(self, _, key):
         try:
-            user, token = TokenAuthentication().authenticate_credentials(key)
-        except self.model.DoesNotExist:
-            raise exceptions.AuthenticationFailed('badauth')
-
-        if not user.is_active:
-            raise exceptions.AuthenticationFailed('badauth')
-
-        return token.user, token
+            return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
+        except Exception:
+            raise exceptions.AuthenticationFailed("badauth")
 
 
 class EmailPasswordPayloadAuthentication(BaseAuthentication):
