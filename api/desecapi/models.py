@@ -377,8 +377,12 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             raise ValueError('Cannot update delegation of %s as it is not an immediate child domain of %s.' %
                              (child_domain.name, self.name))
 
+        # Always remove delegation so that we con properly recreate it
+        for rrset in self.rrset_set.filter(subname=child_subname, type__in=['NS', 'DS']):
+            rrset.delete()
+
         if child_domain.pk:
-            # Domain real: set delegation
+            # Domain real: (re-)set delegation
             child_keys = child_domain.keys
             if not child_keys:
                 raise APIException('Cannot delegate %s, as it currently has no keys.' % child_domain.name)
@@ -388,9 +392,7 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
                                  contents=[ds for k in child_keys for ds in k['ds']])
             metrics.get('desecapi_autodelegation_created').inc()
         else:
-            # Domain not real: remove delegation
-            for rrset in self.rrset_set.filter(subname=child_subname, type__in=['NS', 'DS']):
-                rrset.delete()
+            # Domain not real: that's it
             metrics.get('desecapi_autodelegation_deleted').inc()
 
     def delete(self):
