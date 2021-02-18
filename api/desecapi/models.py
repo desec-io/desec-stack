@@ -25,8 +25,9 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Manager, Q
+from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.expressions import RawSQL
+from django.db.models.functions import Concat, Length
 from django.template.loader import get_template
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
@@ -204,6 +205,19 @@ validate_domain_name = [
 ]
 
 
+class DomainManager(Manager):
+    def filter_qname(self, qname: str, **kwargs) -> models.query.QuerySet:
+        try:
+            Domain._meta.get_field('name').run_validators(qname)
+        except ValidationError:
+            raise ValueError
+        return self.annotate(
+            dotted_name=Concat(Value('.'), 'name', output_field=CharField()),
+            dotted_qname=Value(f'.{qname}', output_field=CharField()),
+            name_length=Length('name'),
+        ).filter(dotted_qname__endswith=F('dotted_name'), **kwargs)
+
+
 class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     @staticmethod
     def _minimum_ttl_default():
@@ -226,7 +240,9 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)
+
     _keys = None
+    objects = DomainManager()
 
     def __init__(self, *args, **kwargs):
         if isinstance(kwargs.get('owner'), AnonymousUser):

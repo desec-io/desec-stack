@@ -10,18 +10,20 @@ from rest_framework.authentication import (
     TokenAuthentication as RestFrameworkTokenAuthentication,
     BasicAuthentication)
 
-from desecapi.models import Token
+from desecapi.models import Domain, Token
 from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPasswordSerializer
 
 
 class DynAuthenticationMixin:
     def authenticate_credentials(self, username, key):
         user, token = TokenAuthentication().authenticate_credentials(key)
-        if not user.is_active:
-            raise exceptions.AuthenticationFailed
-        if username not in ['', user.email] and not user.domains.filter(name=username.lower()).exists():
-            raise exceptions.AuthenticationFailed
-        return user, token
+        # Make sure username is not misleading
+        try:
+            if username in ['', user.email] or Domain.objects.filter_qname(username.lower(), owner=user).exists():
+                return user, token
+        except ValueError:
+            pass
+        raise exceptions.AuthenticationFailed
 
 
 class TokenAuthentication(RestFrameworkTokenAuthentication):

@@ -83,8 +83,20 @@ determine the hostname, we try the following steps until there is a match:
 - After successful authentication (no matter how), the only hostname that is
   associated with your user account (if not ambiguous).
 
-If we cannot determine a hostname to update, the API will return a ``404 Not
-Found`` status code.
+If we cannot determine a hostname to update, the API returns a status code of
+``400 Bad Request`` (if no hostname was given but multiple domains exist in
+the account) or ``404 Not Found`` (if the specified domain was not found).
+
+Subdomains
+----------
+The dynDNS update API can also be used to update IP records for subdomains.
+To do so, make sure that in the above list of steps, the first value
+provided contains the full domain name (including the subdomain).
+
+Example: Your domain is ``yourdomain.dedyn.io``, and you're using HTTP Basic
+Authentication.  In this case, replace your authentication username with
+``sub.yourdomain.dedyn.io``.  Similarly, if you use the ``hostname`` query
+parameter, it needs to be set to the full domain name (including subdomain).
 
 .. _determine-ip-addresses:
 

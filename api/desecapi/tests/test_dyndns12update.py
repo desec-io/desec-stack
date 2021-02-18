@@ -7,10 +7,11 @@ from desecapi.tests.base import DynDomainOwnerTestCase
 
 class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
-    def assertIP(self, ipv4=None, ipv6=None, name=None):
+    def assertIP(self, ipv4=None, ipv6=None, name=None, subname=''):
         name = name or self.my_domain.name.lower()
         for type_, value in [('A', ipv4), ('AAAA', ipv6)]:
-            response = self.client_token_authorized.get(self.reverse('v1:rrset', name=name, subname='', type=type_))
+            url = self.reverse('v1:rrset', name=name, subname=subname, type=type_)
+            response = self.client_token_authorized.get(url)
             if value:
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertEqual(response.data['records'][0], value)
@@ -30,6 +31,18 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
         self.assertIP(ipv4='127.0.0.1')
+
+    def test_identification_by_query_params_with_subdomain(self):
+        # /update?username=baz.foobar.dedyn.io&password=secret
+        self.client.set_credentials_basic_auth(None, None)
+        response = self.assertDynDNS12NoUpdate(username='baz', password=self.token.plain)
+        self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.content, b'badauth')
+
+        response = self.assertDynDNS12Update(username=f'baz.{self.my_domain.name}', password=self.token.plain)
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, 'good')
+        self.assertIP(ipv4='127.0.0.1', subname='baz')
 
     def test_deviant_ttl(self):
         """
@@ -134,6 +147,17 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertIn('malformed', str(response.data))
 
+    def test_ddclient_dyndns2_v4_invalid_or_foreign_domain(self):
+        # /nic/update?system=dyndns&hostname=<...>&myip=10.2.3.4
+        for name in [self.owner.email, self.other_domain.name, self.my_domain.parent_domain_name]:
+            response = self.assertDynDNS12NoUpdate(
+                system='dyndns',
+                hostname=name,
+                myip='10.2.3.4',
+            )
+            self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+            self.assertEqual(response.content, b'nohost')
+
     def test_ddclient_dyndns2_v6_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338
         response = self.assertDynDNS12Update(
@@ -205,7 +229,7 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         """
         self.client.set_credentials_basic_auth('', self.token.plain)
         response = self.client.get(self.reverse('v1:dyndns12update'), REMOTE_ADDR='10.5.5.7')
-        self.assertStatus(response, status.HTTP_409_CONFLICT)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
 
 class MixedCaseDynDNS12UpdateTestCase(DynDNS12UpdateTest):

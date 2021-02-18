@@ -1,6 +1,7 @@
 import base64
 import binascii
 from datetime import timedelta
+from functools import cached_property
 
 from django.conf import settings
 from django.contrib.auth import user_logged_in
@@ -265,60 +266,12 @@ class Root(APIView):
         return Response(routes)
 
 
-class DynDNS12Update(APIView):
+class DynDNS12Update(generics.GenericAPIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [PlainTextRenderer]
     throttle_scope = 'dyndns'
 
-    def _find_domain(self, request):
-        def find_domain_name(r):
-            # 1. hostname parameter
-            if 'hostname' in r.query_params and r.query_params['hostname'] != 'YES':
-                return r.query_params['hostname']
-
-            # 2. host_id parameter
-            if 'host_id' in r.query_params:
-                return r.query_params['host_id']
-
-            # 3. http basic auth username
-            try:
-                domain_name = base64.b64decode(
-                    get_authorization_header(r).decode().split(' ')[1].encode()).decode().split(':')[0]
-                if domain_name and '@' not in domain_name:
-                    return domain_name
-            except IndexError:
-                pass
-            except UnicodeDecodeError:
-                pass
-            except binascii.Error:
-                pass
-
-            # 4. username parameter
-            if 'username' in r.query_params:
-                return r.query_params['username']
-
-            # 5. only domain associated with this user account
-            if len(r.user.domains.all()) == 1:
-                return r.user.domains.all()[0].name
-            if len(r.user.domains.all()) > 1:
-                ex = ValidationError(detail={
-                    "detail": "Request does not specify domain unambiguously.",
-                    "code": "domain-ambiguous"
-                })
-                ex.status_code = status.HTTP_409_CONFLICT
-                raise ex
-
-            return None
-
-        name = find_domain_name(request).lower()
-
-        try:
-            return self.request.user.domains.get(name=name)
-        except models.Domain.DoesNotExist:
-            return None
-
-    @staticmethod
-    def find_ip(request, params, version=4):
+    def _find_ip(self, params, version):
         if version == 4:
             look_for = '.'
         elif version == 6:
@@ -328,43 +281,88 @@ class DynDNS12Update(APIView):
 
         # Check URL parameters
         for p in params:
-            if p in request.query_params:
-                if not len(request.query_params[p]):
+            if p in self.request.query_params:
+                if not len(self.request.query_params[p]):
                     return None
-                if look_for in request.query_params[p]:
-                    return request.query_params[p]
+                if look_for in self.request.query_params[p]:
+                    return self.request.query_params[p]
 
         # Check remote IP address
-        client_ip = request.META.get('REMOTE_ADDR')
+        client_ip = self.request.META.get('REMOTE_ADDR')
         if look_for in client_ip:
             return client_ip
 
         # give up
         return None
 
-    def _find_ip_v4(self, request):
-        return self.find_ip(request, ['myip', 'myipv4', 'ip'])
+    @cached_property
+    def qname(self):
+        # hostname parameter
+        try:
+            if self.request.query_params['hostname'] != 'YES':
+                return self.request.query_params['hostname'].lower()
+        except KeyError:
+            pass
 
-    def _find_ip_v6(self, request):
-        return self.find_ip(request, ['myipv6', 'ipv6', 'myip', 'ip'], version=6)
+        # host_id parameter
+        try:
+            return self.request.query_params['host_id'].lower()
+        except KeyError:
+            pass
 
-    def get(self, request, *_):
-        domain = self._find_domain(request)
+        # http basic auth username
+        try:
+            domain_name = base64.b64decode(
+                get_authorization_header(self.request).decode().split(' ')[1].encode()).decode().split(':')[0]
+            if domain_name and '@' not in domain_name:
+                return domain_name.lower()
+        except (binascii.Error, IndexError, UnicodeDecodeError):
+            pass
 
-        if domain is None:
+        # username parameter
+        try:
+            return self.request.query_params['username'].lower()
+        except KeyError:
+            pass
+
+        # only domain associated with this user account
+        try:
+            return self.request.user.domains.get().name
+        except models.Domain.MultipleObjectsReturned:
+            raise ValidationError(detail={
+                "detail": "Request does not properly specify domain for update.",
+                "code": "domain-unspecified"
+            })
+        except models.Domain.DoesNotExist:
             metrics.get('desecapi_dynDNS12_domain_not_found').inc()
             raise NotFound('nohost')
 
-        ipv4 = self._find_ip_v4(request)
-        ipv6 = self._find_ip_v6(request)
+    @cached_property
+    def domain(self):
+        try:
+            return models.Domain.objects.filter_qname(self.qname, owner=self.request.user).order_by('-name_length')[0]
+        except (IndexError, ValueError):
+            raise NotFound('nohost')
+
+    @property
+    def subname(self):
+        return self.qname.rpartition(f'.{self.domain.name}')[0]
+
+    def get_queryset(self):
+        return self.domain.rrset_set.filter(subname=self.subname, type__in=['A', 'AAAA'])
+
+    def get(self, request, *_):
+        instances = self.get_queryset().all()
+
+        ipv4 = self._find_ip(['myip', 'myipv4', 'ip'], version=4)
+        ipv6 = self._find_ip(['myipv6', 'ipv6', 'myip', 'ip'], version=6)
 
         data = [
-            {'type': 'A', 'subname': '', 'ttl': 60, 'records': [ipv4] if ipv4 else []},
-            {'type': 'AAAA', 'subname': '', 'ttl': 60, 'records': [ipv6] if ipv6 else []},
+            {'type': 'A', 'subname': self.subname, 'ttl': 60, 'records': [ipv4] if ipv4 else []},
+            {'type': 'AAAA', 'subname': self.subname, 'ttl': 60, 'records': [ipv6] if ipv6 else []},
         ]
 
-        instances = domain.rrset_set.filter(subname='', type__in=['A', 'AAAA']).all()
-        context = {'domain': domain, 'minimum_ttl': 60}
+        context = {'domain': self.domain, 'minimum_ttl': 60}
         serializer = serializers.RRsetSerializer(instances, data=data, many=True, partial=True, context=context)
         try:
             serializer.is_valid(raise_exception=True)
@@ -383,7 +381,7 @@ class DynDNS12Update(APIView):
         with PDNSChangeTracker():
             serializer.save()
 
-        return Response('good', content_type='text/plain')
+        return Response('good')
 
 
 class DonationList(generics.CreateAPIView):

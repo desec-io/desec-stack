@@ -453,3 +453,50 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             response = self.client.post(url, {'name': name})
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(response.data['minimum_ttl'], 60)
+
+
+class DomainManagerTestCase(DesecTestCase):
+
+    def test_filter_qname(self):
+        user1, user2 = self.create_user(), self.create_user()
+        domains = {
+            user1: ['domain.dedyn.io', 'foobar.example'],
+            user2: ['dedyn.io', 'desec.io'],
+        }
+        for user, names in domains.items():
+            for name in names:
+                Domain(name=name, owner=user).save()
+
+        config = {
+            'domain.dedyn.io': {
+                None: ['domain.dedyn.io', 'dedyn.io'],
+                user1: ['domain.dedyn.io'],
+                user2: ['dedyn.io'],
+            },
+            'foo.bar.baz.foobar.example': {
+                None: ['foobar.example'],
+                user1: ['foobar.example'],
+                user2: [],
+            },
+            'dedyn.io': {
+                None: ['dedyn.io'],
+                user1: [],
+                user2: ['dedyn.io'],
+            },
+            'foobar.desec.io': {
+                None: ['desec.io'],
+                user1: [],
+                user2: ['desec.io'],
+            },
+        }
+        config['sub.domain.dedyn.io'] = config['domain.dedyn.io']
+
+        for qname, cases in config.items():
+            for owner, expected in cases.items():
+                filter_kwargs = dict(owner=owner) if owner is not None else {}
+                qs = Domain.objects.filter_qname(qname, **filter_kwargs).values_list('name', flat=True)
+                self.assertListEqual(list(qs), expected)
+
+    def test_filter_qname_invalid(self):
+        with self.assertRaises(ValueError):
+            Domain.objects.filter_qname('foo@bar.com')
