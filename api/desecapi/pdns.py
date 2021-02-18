@@ -94,7 +94,7 @@ def get_keys(domain):
     metrics.get('desecapi_pdns_keys_fetched').inc()
     return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
             for key in r.json()
-            if key['active'] and key['keytype'] in ['csk', 'ksk']]
+            if key['published'] and key['keytype'] in ['csk', 'ksk']]
 
 
 def get_zone(domain):

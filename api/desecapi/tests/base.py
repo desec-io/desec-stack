@@ -435,7 +435,6 @@ class MockPDNSTestCase(APITestCase):
             'status': 200,
             'body': json.dumps([
                 {
-                    'active': True,
                     'algorithm': 'ECDSAP256SHA256',
                     'bits': 256,
                     'dnskey': '257 3 13 EVBcsqrnOp6RGWtsrr9QW8cUtt/'
@@ -449,6 +448,7 @@ class MockPDNSTestCase(APITestCase):
                     'flags': 257,
                     'id': 179425943,
                     'keytype': key_type,
+                    'published': True,
                     'type': 'Cryptokey',
                 }
                 for key_type in ['csk', 'ksk', 'zsk']
