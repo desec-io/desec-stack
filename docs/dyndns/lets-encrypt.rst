@@ -76,3 +76,4 @@ There are other ACME clients that support deSEC out of the box. We currently
 know of the following:
 
 - `acme.sh <https://github.com/Neilpang/acme.sh/wiki/dnsapi#71-use-desecio>`_
+- `lego <https://github.com/go-acme/lego>`_
