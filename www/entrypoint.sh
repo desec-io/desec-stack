@@ -81,7 +81,7 @@ else
 fi
 
 # replace environment references in config files
-/etc/nginx/sites-available/envreplace.sh
+/etc/nginx/envreplace.sh
 
 (
   echo "Starting nginx"
