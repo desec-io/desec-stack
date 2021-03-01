@@ -42,6 +42,7 @@ VALID_RECORDS_CANONICAL = {
     'CNAME': ['example.com.'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
     'DLV': ['6454 8 1 24396e17e36d031f71c354b06a979a67a01f503e'],
+    'DNAME': ['example.com.'],
     'DNSKEY': [
         None,
         '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
@@ -165,6 +166,7 @@ VALID_RECORDS_NON_CANONICAL = {
         '06454  08   01    24396e17e36d031f71c354b06a979a67a01f503e',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
+    'DNAME': ['EXAMPLE.TEST.'],
     'DNSKEY': [
         '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
         '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
@@ -295,6 +297,7 @@ INVALID_RECORDS = {
     'CNAME': ['example.com', '10 example.com.'],
     'DHCID': ['x', 'xx', 'xxx'],
     'DLV': ['-34 13 1 aabbccddeeff'],
+    'DNAME': ['example.com', '10 example.com.'],
     'DNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
     'DS': [
         '-34 13 1 24396E17E36D031F71C354B06A979A67A01F503E',
