@@ -34,14 +34,8 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
     def authenticate(self, request):
         try:
             user, token = super().authenticate(request)  # may raise exceptions.AuthenticationFailed if token is invalid
-        except TypeError:  # if no token was given
+        except TypeError:  # no token given
             return None  # unauthenticated
-
-        if not token.is_valid:
-            raise exceptions.AuthenticationFailed('Invalid token.')
-
-        token.last_used = timezone.now()
-        token.save()
 
         # REMOTE_ADDR is populated by the environment of the wsgi-request [1], which in turn is set up by nginx as per
         # uwsgi_params [2]. The value of $remote_addr finally is given by the network connection [3].
@@ -64,7 +58,16 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
 
     def authenticate_credentials(self, key):
         key = Token.make_hash(key)
-        return super().authenticate_credentials(key)
+        try:
+            user, token = super().authenticate_credentials(key)
+        except TypeError:  # no token given
+            return None  # unauthenticated
+
+        if not token.is_valid:
+            raise exceptions.AuthenticationFailed('Invalid token.')
+        token.last_used = timezone.now()
+        token.save()
+        return user, token
 
 
 class BasicTokenAuthentication(BaseAuthentication, DynAuthenticationMixin):
