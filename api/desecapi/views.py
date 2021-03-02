@@ -381,7 +381,7 @@ class DynDNS12Update(generics.GenericAPIView):
         with PDNSChangeTracker():
             serializer.save()
 
-        return Response('good')
+        return Response('good', content_type='text/plain')
 
 
 class DonationList(generics.CreateAPIView):

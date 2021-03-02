@@ -30,6 +30,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         response = self.assertDynDNS12Update(username=self.my_domain.name, password=self.token.plain)
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, 'good')
+        self.assertEqual(response.content_type, 'text/plain')
         self.assertIP(ipv4='127.0.0.1')
 
     def test_identification_by_query_params_with_subdomain(self):
