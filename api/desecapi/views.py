@@ -98,7 +98,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     throttle_scope = 'account_management_passive'
 
     def get_queryset(self):
-        return self.request.user.auth_tokens.all()
+        return self.request.user.token_set.all()
 
     def get_serializer(self, *args, **kwargs):
         # When creating a new token, return the plaintext representation
@@ -263,7 +263,7 @@ class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, 
 
 
 class Root(APIView):
-    def get(self, request, *_):
+    def get(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:
             routes = {
                 'account': {
@@ -378,7 +378,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def get_queryset(self):
         return self.domain.rrset_set.filter(subname=self.subname, type__in=['A', 'AAAA'])
 
-    def get(self, request, *_):
+    def get(self, request, *args, **kwargs):
         instances = self.get_queryset().all()
 
         ipv4 = self._find_ip(['myip', 'myipv4', 'ip'], version=4)
