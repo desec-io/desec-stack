@@ -268,6 +268,127 @@ If you do not have the token UUID, but you do have the token value itself, you
 can use the :ref:`log-out` endpoint to delete it.
 
 
+Token Scoping: Domain Policies
+``````````````````````````````
+Tokens by default can be used to authorize arbitrary actions within the user's
+account, including some administrative tasks and DNS operations on any domain.
+As such, tokens are considered *privileged* when no further configuration is
+done.
+(This applies to v1 of the API and may change in a later version.)
+
+Tokens can be *restricted* using Token Policies, which narrow down the scope
+of influence for a given API token.
+Using policies, the token's power can be limited in two ways:
+
+1. the types of DNS operations that can be performed, such as :ref:`dynDNS
+   updates <update-api>` or :ref:`general RRset management <manage-rrsets>`.
+
+2. the set of domains on which these actions can be performed.
+
+Policies can be configured on a per-domain basis.
+Domains for which no explicit policy is configured are subject to the token's
+default policy.
+It is required to create such a default policy before any domain-specific
+policies can be created.
+
+Tokens with at least one policy are considered *restricted*, with their scope
+explicitly limited to DNS record management.
+They can perform neither :ref:`retrieve-account-information` nor
+:ref:`domain-management` (such as domain creation or deletion).
+
+**Please note:**  Token policies are *independent* of high-level token
+permissions that can be assigned when `Creating a Token`_.
+In particular, a restricted token that at the same time has the
+``perm_manage_tokens`` permission is able to free itself from its
+restrictions (see `Token Field Reference`_).
+
+
+Token Domain Policy Field Reference
+-----------------------------------
+
+A JSON object representing a token domain policy has the following structure::
+
+    {
+        "domain": "example.com",
+        "perm_dyndns": false,
+        "perm_rrsets": true
+    }
+
+Field details:
+
+``domain``
+    :Access mode: read, write
+    :Type: string or ``null``
+
+    Domain name to which the policy applies.  ``null`` for the default policy.
+
+``perm_dyndns``
+    :Access mode: read, write
+    :Type: boolean
+
+    Indicates whether :ref:`dynDNS updates <update-api>` are allowed.
+    Defaults to ``false``.
+
+``perm_rrsets``
+    :Access mode: read, write
+    :Type: boolean
+
+    Indicates whether :ref:`general RRset management <manage-rrsets>` is
+    allowed.  Defaults to ``false``.
+
+
+Token Domain Policy Management
+------------------------------
+Token Domain Policies are managed using the ``policies/domain/`` endpoint
+under the token's URL.
+Usage of this endpoint requires that the request's authorization token has the
+``perm_manage_tokens`` flag.
+
+Semantics, input validation, and error handling follow the same style as the
+rest of the API, so is not documented in detail here.
+For example, to retrieve a list of policies for a given token, issue a ``GET``
+request as follows::
+
+    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/domains/ \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
+
+The server will respond with a list of token domain policy objects.
+
+To create the default policy, send a request like::
+
+    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"domain": null}'
+
+This will create a default policy.  Permission flags that are not given are
+assumed to be ``false``.  To enable permissions, they have to be set to
+``true`` explicitly.  As an example, let's create a policy that only allows
+dynDNS updates for a specific domain::
+
+    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
+        --header "Content-Type: application/json" --data @- <<< \
+        '{"domain": "example.dedyn.io", "perm_dyndns": true}'
+
+You can retrieve (``GET``), update (``PATCH``, ``PUT``), and remove
+(``DELETE``) policies by appending their ``domain`` to the endpoint::
+
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/domains/{domain}/ \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
+
+The default policy can be accessed using the special domain name ``default``
+(``/api/v1/auth/tokens/{id}/policies/domains/default/``).
+
+When modifying or deleting policies, the API enforces the default policy's
+primacy:
+You cannot create domain-specific policies without first creating a default
+policy, and you cannot remove a default policy when other policies are still
+in place.
+
+During deletion of tokens, users, or domains, policies are cleaned up
+automatically.  (It is not necessary to first remove policies manually.)
+
 Security Considerations
 ```````````````````````
 

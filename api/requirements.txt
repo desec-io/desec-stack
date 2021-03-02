@@ -7,6 +7,7 @@ django-cors-headers~=3.10.1
 djangorestframework~=3.13.1
 django-celery-email~=3.0.0
 django-netfields~=1.2.4
+django-pgtrigger~=2.4.0
 django-prometheus~=2.2.0
 dnspython~=2.1.0
 httpretty~=1.0.5

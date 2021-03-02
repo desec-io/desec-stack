@@ -166,6 +166,8 @@ header to the token value, prefixed with ``Token``::
         --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 
+.. _retrieve-account-information:
+
 Retrieve Account Information
 ````````````````````````````
 

@@ -3,6 +3,7 @@ import binascii
 from datetime import timedelta
 from functools import cached_property
 
+import django.core.exceptions
 from django.conf import settings
 from django.contrib.auth import user_logged_in
 from django.contrib.auth.hashers import is_password_usable
@@ -22,11 +23,10 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 import desecapi.authentication as auth
-from desecapi import metrics, models, serializers
+from desecapi import metrics, models, permissions, serializers
 from desecapi.exceptions import ConcurrencyException
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import ManageTokensPermission, IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimit
 from desecapi.renderers import PlainTextRenderer
 
 
@@ -69,7 +69,7 @@ class IdempotentDestroyMixin:
 
 class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = serializers.TokenSerializer
-    permission_classes = (IsAuthenticated, ManageTokensPermission,)
+    permission_classes = (IsAuthenticated, permissions.ManageTokensPermission,)
     throttle_scope = 'account_management_passive'
 
     def get_queryset(self):
@@ -97,10 +97,12 @@ class DomainViewSet(IdempotentDestroyMixin,
 
     @property
     def permission_classes(self):
-        permissions = [IsAuthenticated, IsOwner]
+        ret = [IsAuthenticated, permissions.IsOwner]
         if self.action == 'create':
-            permissions.append(WithinDomainLimit)
-        return permissions
+            ret.append(permissions.WithinDomainLimit)
+        if self.request.method not in SAFE_METHODS:
+            ret.append(permissions.TokenNoDomainPolicy)
+        return ret
 
     @property
     def throttle_scope(self):
@@ -150,8 +152,54 @@ class DomainViewSet(IdempotentDestroyMixin,
                 parent_domain.update_delegation(instance)
 
 
+class TokenPoliciesRoot(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        permissions.HasManageTokensPermission | permissions.AuthTokenCorrespondsToViewToken,
+    ]
+
+    def get(self, request, *args, **kwargs):
+        return Response({'domain': reverse('token_domain_policies-list', request=request, kwargs=kwargs)})
+
+
+class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
+    lookup_field = 'domain__name'
+    lookup_value_regex = DomainViewSet.lookup_value_regex
+    pagination_class = None
+    serializer_class = serializers.TokenDomainPolicySerializer
+    throttle_scope = 'account_management_passive'
+
+    @property
+    def permission_classes(self):
+        ret = [IsAuthenticated]
+        if self.request.method in SAFE_METHODS:
+            ret.append(permissions.ManageTokensPermission | permissions.AuthTokenCorrespondsToViewToken)
+        else:
+            ret.append(permissions.ManageTokensPermission)
+        return ret
+
+    def dispatch(self, request, *args, **kwargs):
+        # map default policy onto domain_id IS NULL
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        try:
+            if kwargs[lookup_url_kwarg] == 'default':
+                kwargs[lookup_url_kwarg] = None
+        except KeyError:
+            pass
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return models.TokenDomainPolicy.objects.filter(token_id=self.kwargs['token_id'], token__user=self.request.user)
+
+    def perform_destroy(self, instance):
+        try:
+            super().perform_destroy(instance)
+        except django.core.exceptions.ValidationError as exc:
+            raise ValidationError(exc.message_dict, code='precedence')
+
+
 class SerialListView(APIView):
-    permission_classes = (IsVPNClient,)
+    permission_classes = (permissions.IsVPNClient,)
     throttle_classes = []  # don't break slaves when they ask too often (our cached responses are cheap)
 
     def get(self, request, *args, **kwargs):
@@ -165,7 +213,14 @@ class SerialListView(APIView):
 
 class RRsetView:
     serializer_class = serializers.RRsetSerializer
-    permission_classes = (IsAuthenticated, IsDomainOwner,)
+    permission_classes = (IsAuthenticated, permissions.IsDomainOwner, permissions.TokenHasDomainRRsetsPermission,)
+
+    @property
+    def domain(self):
+        try:
+            return self.request.user.domains.get(name=self.kwargs['name'])
+        except models.Domain.DoesNotExist:
+            raise Http404
 
     @property
     def throttle_scope(self):
@@ -182,15 +237,6 @@ class RRsetView:
     def get_serializer_context(self):
         # noinspection PyUnresolvedReferences
         return {**super().get_serializer_context(), 'domain': self.domain}
-
-    def initial(self, request, *args, **kwargs):
-        # noinspection PyUnresolvedReferences
-        super().initial(request, *args, **kwargs)
-        try:
-            # noinspection PyAttributeOutsideInit, PyUnresolvedReferences
-            self.domain = self.request.user.domains.get(name=self.kwargs['name'])
-        except models.Domain.DoesNotExist:
-            raise Http404
 
     def perform_update(self, serializer):
         with PDNSChangeTracker():
@@ -287,6 +333,7 @@ class Root(APIView):
 
 class DynDNS12UpdateView(generics.GenericAPIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
+    permission_classes = (permissions.TokenHasDomainDynDNSPermission,)
     renderer_classes = [PlainTextRenderer]
     serializer_class = serializers.RRsetSerializer
     throttle_scope = 'dyndns'
@@ -492,7 +539,7 @@ class AccountCreateView(generics.CreateAPIView):
 
 
 class AccountView(generics.RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, permissions.TokenNoDomainPolicy,)
     serializer_class = serializers.UserSerializer
     throttle_scope = 'account_management_passive'
 

@@ -14,6 +14,7 @@ from functools import cached_property
 from hashlib import sha256
 
 import dns
+import pgtrigger
 import psl_dns
 import rest_framework.authtoken.models
 from django.conf import settings
@@ -24,7 +25,7 @@ from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperat
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
 from django.core.validators import MinValueValidator, RegexValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Concat, Length
@@ -244,6 +245,10 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     _keys = None
     objects = DomainManager()
 
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['id', 'owner'], name='unique_id_owner')]
+        ordering = ('created',)
+
     def __init__(self, *args, **kwargs):
         if isinstance(kwargs.get('owner'), AnonymousUser):
             kwargs = {**kwargs, 'owner': None}  # make a copy and override
@@ -403,9 +408,6 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     def __str__(self):
         return self.name
 
-    class Meta:
-        ordering = ('created',)
-
 
 class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models.Token):
     @staticmethod
@@ -421,9 +423,13 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
     max_age = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
     max_unused_period = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
+    domain_policies = models.ManyToManyField(Domain, through='TokenDomainPolicy')
 
     plain = None
     objects = NetManager()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['id', 'user'], name='unique_id_user')]
 
     @property
     def is_valid(self):
@@ -453,6 +459,91 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     @staticmethod
     def make_hash(plain):
         return make_password(plain, salt='static', hasher='pbkdf2_sha256_iter1')
+
+    def get_policy(self, *, domain=None):
+        order_by = F('domain').asc(nulls_last=True)  # default Postgres sorting, but: explicit is better than implicit
+        return self.tokendomainpolicy_set.filter(Q(domain=domain) | Q(domain__isnull=True)).order_by(order_by).first()
+
+    @transaction.atomic
+    def delete(self):
+        # This is needed because Model.delete() emulates cascade delete via django.db.models.deletion.Collector.delete()
+        # which deletes related objects in pk order.  However, the default policy has to be deleted last.
+        # Perhaps this will change with https://code.djangoproject.com/ticket/21961
+        self.tokendomainpolicy_set.filter(domain__isnull=False).delete()
+        self.tokendomainpolicy_set.filter(domain__isnull=True).delete()
+        return super().delete()
+
+
+@pgtrigger.register(
+    # Ensure that token_user is consistent with token
+    pgtrigger.Trigger(
+        name='token_user',
+        operation=pgtrigger.Update | pgtrigger.Insert,
+        when=pgtrigger.Before,
+        func='NEW.token_user_id = (SELECT user_id FROM desecapi_token WHERE id = NEW.token_id); RETURN NEW;',
+    ),
+
+    # Ensure that if there is *any* domain policy for a given token, there is always one with domain=None.
+    pgtrigger.Trigger(
+        name='default_policy_on_insert',
+        operation=pgtrigger.Insert,
+        when=pgtrigger.Before,
+        # Trigger `condition` arguments (corresponding to WHEN clause) don't support subqueries, so we use `func`
+        func="IF (NEW.domain_id IS NOT NULL and NOT EXISTS(SELECT * FROM desecapi_tokendomainpolicy WHERE domain_id IS NULL AND token_id = NEW.token_id)) THEN "
+             "  RAISE EXCEPTION 'Cannot insert non-default policy into % table when default policy is not present', TG_TABLE_NAME; "
+             "END IF; RETURN NEW;",
+    ),
+    pgtrigger.Protect(
+        name='default_policy_on_update',
+        operation=pgtrigger.Update,
+        when=pgtrigger.Before,
+        condition=pgtrigger.Q(old__domain__isnull=True, new__domain__isnull=False),
+    ),
+    # Ideally, this would be a deferred trigger, but depends on https://github.com/Opus10/django-pgtrigger/issues/14
+    pgtrigger.Trigger(
+        name='default_policy_on_delete',
+        operation=pgtrigger.Delete,
+        when=pgtrigger.Before,
+        # Trigger `condition` arguments (corresponding to WHEN clause) don't support subqueries, so we use `func`
+        func="IF (OLD.domain_id IS NULL and EXISTS(SELECT * FROM desecapi_tokendomainpolicy WHERE domain_id IS NOT NULL AND token_id = OLD.token_id)) THEN "
+             "  RAISE EXCEPTION 'Cannot delete default policy from % table when non-default policy is present', TG_TABLE_NAME; "
+             "END IF; RETURN OLD;",
+    ),
+)
+class TokenDomainPolicy(ExportModelOperationsMixin('TokenDomainPolicy'), models.Model):
+    token = models.ForeignKey(Token, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, null=True)
+    perm_dyndns = models.BooleanField(default=False)
+    perm_rrsets = models.BooleanField(default=False)
+    # Token user, filled via trigger. Used by compound FK constraints to tie domain.owner to token.user (see migration).
+    token_user = models.ForeignKey(User, on_delete=models.CASCADE, db_constraint=False, related_name='+')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['token', 'domain'], name='unique_entry'),
+            models.UniqueConstraint(fields=['token'], condition=Q(domain__isnull=True), name='unique_entry_null_domain')
+        ]
+
+    def clean(self):
+        default_policy = self.token.get_policy(domain=None)
+        if self.pk:  # update
+            # Can't change policy's default status ("domain NULLness") to maintain policy precedence
+            if (self.domain is None) != (self.pk == default_policy.pk):
+                raise ValidationError({'domain': 'Policy precedence: Cannot disable default policy when others exist.'})
+        else:  # create
+            # Can't violate policy precedence (default policy has to be first)
+            if (self.domain is not None) and (default_policy is None):
+                raise ValidationError({'domain': 'Policy precedence: The first policy must be the default policy.'})
+
+    def delete(self):
+        # Can't delete default policy when others exist
+        if (self.domain is None) and self.token.tokendomainpolicy_set.exclude(domain__isnull=True).exists():
+            raise ValidationError({'domain': "Policy precedence: Can't delete default policy when there exist others."})
+        return super().delete()
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Donation(ExportModelOperationsMixin('Donation'), models.Model):

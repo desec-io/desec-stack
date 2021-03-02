@@ -75,6 +75,30 @@ class TokenSerializer(serializers.ModelSerializer):
         return fields
 
 
+class DomainSlugRelatedField(serializers.SlugRelatedField):
+
+    def get_queryset(self):
+        return self.context['request'].user.domains
+
+
+class TokenDomainPolicySerializer(serializers.ModelSerializer):
+    domain = DomainSlugRelatedField(allow_null=True, slug_field='name')
+
+    class Meta:
+        model = models.TokenDomainPolicy
+        fields = ('domain', 'perm_dyndns', 'perm_rrsets',)
+
+    def to_internal_value(self, data):
+        return {**super().to_internal_value(data),
+                'token': self.context['request'].user.token_set.get(id=self.context['view'].kwargs['token_id'])}
+
+    def save(self, **kwargs):
+        try:
+            return super().save(**kwargs)
+        except django.core.exceptions.ValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict, code='precedence')
+
+
 class RequiredOnPartialUpdateCharField(serializers.CharField):
     """
     This field is always required, even for partial updates (e.g. using PATCH).

@@ -21,6 +21,64 @@ class IsDomainOwner(permissions.BasePermission):
         return obj.domain.owner == request.user
 
 
+class TokenNoDomainPolicy(permissions.BasePermission):
+    """
+    Permission to check whether a token is unrestricted by any domain policy.
+    """
+
+    def has_permission(self, request, view):
+        return request.auth.get_policy(domain=None) is None
+
+
+class TokenDomainPolicyBasePermission(permissions.BasePermission):
+    """
+    Base permission to check whether a token authorizes specific actions on a domain.
+    """
+    perm_field = None
+
+    def _has_object_permission(self, request, view, obj):
+        policy = request.auth.get_policy(domain=obj)
+
+        # If the token has no domain policy, there are no restrictions
+        if policy is None:
+            return True
+
+        # Otherwise, return the requested permission
+        return getattr(policy, self.perm_field)
+
+
+class TokenHasDomainBasePermission(TokenDomainPolicyBasePermission):
+    """
+    Base permission for checking a token's domain policy, for the view domain.
+    """
+
+    def has_permission(self, request, view):
+        return self._has_object_permission(request, view, view.domain)
+
+
+class TokenHasDomainDynDNSPermission(TokenHasDomainBasePermission):
+    """
+    Custom permission to check whether a token authorizes using the dynDNS interface for the view domain.
+    """
+    perm_field = 'perm_dyndns'
+
+
+class TokenHasDomainRRsetsPermission(TokenHasDomainBasePermission):
+    """
+    Custom permission to check whether a token authorizes accessing RRsets for the view domain.
+    """
+    perm_field = 'perm_rrsets'
+
+
+class AuthTokenCorrespondsToViewToken(permissions.BasePermission):
+    """
+    Permission to check whether the view kwargs's token_id corresponds to the current token.
+    """
+
+    def has_permission(self, request, view):
+        return view.kwargs['token_id'] == str(request.auth.pk)
+
+
 class IsVPNClient(permissions.BasePermission):
     """
     Permission that requires that the user is accessing using an IP from the VPN net.
@@ -33,6 +91,9 @@ class IsVPNClient(permissions.BasePermission):
 
 
 class ManageTokensPermission(permissions.BasePermission):
+    """
+    Permission to check whether a token has "manage tokens" permission.
+    """
 
     def has_permission(self, request, view):
         return request.auth.perm_manage_tokens

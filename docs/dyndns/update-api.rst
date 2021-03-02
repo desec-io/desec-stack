@@ -1,3 +1,5 @@
+.. _update-api:
+
 IP Update API
 ~~~~~~~~~~~~~
 
