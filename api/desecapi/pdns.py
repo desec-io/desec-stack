@@ -90,11 +90,16 @@ def get_keys(domain):
     """
     Retrieves a dict representation of the DNSSEC key information
     """
+    def _filter_ds(key):
+        key['ds'] = [ds for ds in key['ds'] if int(ds.split()[2]) in [2, 4]]
+        return key
+
     r = _pdns_get(NSLORD, '/zones/%s/cryptokeys' % pdns_id(domain.name))
     metrics.get('desecapi_pdns_keys_fetched').inc()
-    return [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
-            for key in r.json()
-            if key['published'] and key['keytype'] in ['csk', 'ksk']]
+    keys = [{k: key[k] for k in ('dnskey', 'ds', 'flags', 'keytype')}
+             for key in r.json()
+             if key['published'] and key['keytype'] in ['csk', 'ksk']]
+    return list(map(_filter_ds, keys))
 
 
 def get_zone(domain):

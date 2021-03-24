@@ -24,9 +24,7 @@ A JSON object representing a domain has the following structure::
             {
                 "dnskey": "257 3 13 WFRl60...",
                 "ds": [
-                    "6006 13 1 8581e9...",
                     "6006 13 2 f34b75...",
-                    "6006 13 3 dfb325...",
                     "6006 13 4 2fdcf8..."
                 ],
                 "flags": 257,
@@ -52,9 +50,9 @@ Field details:
     :Access mode: read-only
 
     Array with DNSSEC key information.  Each entry contains ``DNSKEY`` and
-    ``DS`` record contents (the latter being computed from the former), and
-    some extra information.  For delegation of DNSSEC-secured domains, the
-    parent domain needs to publish these ``DS`` records.  (This usually
+    ``DS`` record contents (the latter being computed from the former), plus
+    some more technical information.  For delegation of DNSSEC-secured domains,
+    the parent domain needs to publish these ``DS`` records.  (This usually
     involves telling your registrar/registry about those records, and they
     will publish them for you.)
 
@@ -64,10 +62,9 @@ Field details:
       specific domain. In contrast, when listing all domains, the keys field
       is omitted for performance reasons.
 
-    - The contents of this field are generated from PowerDNS' ``cryptokeys``
-      endpoint, see https://doc.powerdns.com/md/httpapi/api_spec/#cryptokeys.
-      We look at each active ``cryptokey_resource`` (``active`` is true) and
-      then use the ``dnskey``, ``ds``, ``flags``, and ``keytype`` fields.
+    - ``DS`` values are the result of hashing the ``DNSKEY`` with various
+      algorithms.  We limit the set of hash algorithms according to best
+      practice.  Currently, we use algorithms 2 (SHA-256) and 4 (SHA-384).
 
 ``minimum_ttl``
     :Access mode: read-only
