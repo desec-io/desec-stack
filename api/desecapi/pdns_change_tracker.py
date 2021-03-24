@@ -1,4 +1,3 @@
-import secrets
 import socket
 
 from django.conf import settings
@@ -84,14 +83,13 @@ class PDNSChangeTracker:
             return True
 
         def pdns_do(self):
-            salt = secrets.token_hex(nbytes=8)
             _pdns_post(
                 NSLORD, '/zones?rrsets=false',
                 {
                     'name': self.domain_name_normalized,
                     'kind': 'MASTER',
                     'dnssec': True,
-                    'nsec3param': '1 0 127 %s' % salt,
+                    'nsec3param': '1 0 0 -',
                     'nameservers': settings.DEFAULT_NS,
                     'rrsets': [{
                         'name': self.domain_name_normalized,
