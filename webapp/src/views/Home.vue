@@ -65,7 +65,7 @@
         <v-col class="col-12 col-sm-4 text-center" v-for="f in features" :key="f.title">
           <v-icon x-large>{{f.icon}}</v-icon>
           <h1 class="grey--text text--darken-2"><span>{{f.title}}</span></h1>
-          <p>{{f.text}}</p>
+          <p v-html="f.text"></p>
         </v-col>
       </v-row>
     </v-container>
@@ -303,61 +303,90 @@ export default {
         href: '#',
         icon: 'mdi-lock-outline',
         title: 'DNSSEC',
-        text: 'DNS information hosted with deSEC is signed using DNSSEC, always.',
+        text: 'DNS information hosted with deSEC is <b>signed using DNSSEC, always</b>. We use state-of-the-art '
+                + 'elliptic-curve cryptography and follow operational best practice.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-cloud-check',
+        title: 'Cloud Integration',
+        text: 'Thanks to <a href="https://talk.desec.io/t/tools-implementing-desec/11" target="_blank">cloud '
+                + 'integrations and language bindings</a>, deSEC works out of the box in automated environments. '
+                + 'Examples include <b>Terraform</b> providers and <b>Go, Python, and JavaScript bindings.</b>',
+      },
+      {
+        href: '#',
+        icon: 'mdi-dns',
+        title: 'Modern Record Types',
+        text: 'We support a <a href="https://desec.readthedocs.io/en/latest/dns/rrsets.html#supported-types" target="_blank">broad '
+                + 'array of record types</a>, including novel types such as <code>HTTPS</code>/<code>SVCB</code> (for '
+                + '<code>CNAME</code>-like behavior at the apex), <code>CDNSKEY</code>/<code>CDS</code> (RFC 8078, RFC '
+                + '8901), or <code>OPENPGPKEY</code>, <code>SMIMEA</code>, and <code>TLSA</code>.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-database-arrow-up',
+        title: 'Scalability',
+        text: 'Are you a web hoster? Start using deSEC, <b>even with thousands of domains</b>. Our global network '
+                + 'ensures <b>high availability and performance everywhere</b>. <a href="mailto:support@desec.io">Talk '
+                + 'to us</a> about your use case.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-robot',
+        title: 'REST API',
+        text: 'Configure your DNS information via a <b>modern API</b>. You can easily integrate our API into your '
+              + 'scripts, tools, or even CI/CD pipeline.',
       },
       {
         href: '#',
         icon: 'mdi-ip-network-outline',
         title: 'IPv6',
-        text: 'deSEC is fully IPv6-aware: administration can be done using v6, AAAA-records '
+        text: 'deSEC is <b>fully IPv6-aware</b>: administration can be done using v6, AAAA-records '
                 + 'containing IPv6 addresses can be set up, our name servers are reachable via IPv6.',
       },
       {
         href: '#',
         icon: 'mdi-certificate',
         title: 'DANE / TLSA',
-        text: 'Secure your web service with TLSA records, hardening it against fraudulently issued SSL '
-                + 'certificates. You can also use other DANE techniques, such as OPENPGPKEY key exchange.',
-      },
-      {
-        href: '#',
-        icon: 'mdi-robot',
-        title: 'REST API',
-        text: 'Configure your DNS information via a modern API. You can easily integrate our API into your scripts, '
-              + 'tools, or even CI/CD pipeline.',
-      },
-      {
-        href: '#',
-        icon: 'mdi-run-fast',
-        title: 'Fast Updates',
-        text: 'Updates to your DNS information will be published by deSEC within a few seconds. '
-                + 'Minimum required TTLs are low.',
-      },
-      {
-        href: '#',
-        icon: 'mdi-flower',
-        title: 'Open Source',
-        text: 'deSEC runs 100% on free open-source software. Start hacking away ...',
-      },
-      {
-        href: '#',
-        icon: 'mdi-lan',
-        title: 'Low-latency Anycast',
-        text: 'We run global networks of high-performance frontend DNS servers located on all continents. Your query '
-              + 'is routed to the closest server via Anycast, so clients receive answers as fast as possible.',
-      },
-      {
-        href: '#',
-        icon: 'mdi-gift',
-        title: 'Non-profit',
-        text: 'deSEC is organized as a non-profit charitable organization based in Berlin. We make sure that privacy '
-              + 'is not compromised by business interest.',
+        text: 'Secure your web service with <code>TLSA</code> records, <b>hardening it against fraudulently issued SSL '
+                + 'certificates</b>. You can also use other DANE techniques, such as <code>OPENPGPKEY</code> key '
+                + 'exchange.',
       },
       {
         href: '#',
         icon: 'mdi-file-certificate',
         title: "Let's Encrypt Integration",
-        text: "We provide easy integration with Let's Encrypt and their certbot tool.",
+        text: 'We provide <b>easy integration</b> with Let\'s Encrypt and their certbot tool. '
+               + '<a href="https://talk.desec.io/t/tools-implementing-desec/11">Further integration with ACME '
+               + 'clients</a> like acme.sh, lego, and Terraform is available.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-run-fast',
+        title: 'Fast Updates',
+        text: 'Updates to your DNS information will be <b>published world-wide within a few seconds</b>. '
+                + 'Minimum required TTLs are low.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-lan',
+        title: 'Low-latency Anycast',
+        text: 'We run <b>global networks of high-performance frontend DNS servers</b>. Your query is routed to the '
+              + '<b>closest server</b> via Anycast, so clients receive answers as fast as possible.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-flower',
+        title: 'Open Source',
+        text: 'deSEC runs <b>100% on free and open-source</b> software. Start hacking away!',
+      },
+      {
+        href: '#',
+        icon: 'mdi-gift',
+        title: 'Non-profit',
+        text: 'deSEC is organized as a <b>non-profit organization based in Berlin</b>. We make sure that privacy '
+              + 'is not compromised by business interest.',
       },
     ],
     breaking_news: [

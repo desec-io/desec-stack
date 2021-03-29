@@ -125,12 +125,10 @@ Field details:
 ``type``
     :Access mode: read, write-once (upon RRset creation)
 
-    RRset type (uppercase).  We support all `RRset types supported by
-    PowerDNS`_, with the exception of DNSSEC-related types (the backend
-    automagically takes care of setting those records properly).  You also
-    cannot access the ``SOA``, see `SOA caveat`_.
-
-.. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
+    RRset type (uppercase).  A broad range of record types is supported, with
+    most DNSSEC-related types (and the ``SOA`` type) managed automagically by
+    the backend.  For details, check `Supported Types`_ and `Restricted
+    Types`_.
 
 ``touched``
     :Access mode: read-only
@@ -519,17 +517,24 @@ Consider the following general remarks that apply to our API as a whole:
   RRset share the record type and also the TTL.  (This is actually a
   requirement of the DNS specification and not an API design choice.)
 
-- We have not done extensive testing for reverse DNS, but things should work in
-  principle.  If you encounter any problems, please let us know.
 
+Supported Types
+```````````````
 
-Generally, the API supports all `RRset types supported by PowerDNS`_, with a
-few exceptions for such record types that the backend manages automatically.
-Thus, these restrictions are not limitations from a practical point of view.
-Furthermore, special care needs to be taken with some types of records, as
-explained below.
+Generally, the API supports almost all `RRset types supported by PowerDNS`_,
+with a few exceptions for such record types that the backend manages
+automatically.
 
-.. _RRset types supported by PowerDNS: https://doc.powerdns.com/md/types/
+.. _RRset types supported by PowerDNS: https://doc.powerdns.com/authoritative/appendices/types.html
+
+At least the following record types are supported: ``A``, ``AAAA``, ``AFSDB``,
+``APL``, ``CAA``, ``CDNSKEY``, ``CDS``, ``CERT``, ``CNAME``, ``DHCID``,
+``DNSKEY``, ``DLV``, ``DS``, ``EUI48``, ``EUI64``, ``HINFO``, ``HTTPS``,
+``KX``, ``LOC``, ``MX``, ``NAPTR``, ``NS``, ``OPENPGPKEY``, ``PTR``, ``RP``,
+``SMIMEA``, ``SPF``, ``SRV``, ``SSHFP``, ``SVCB``, ``TLSA``, ``TXT``, ``URI``.
+(The ``SOA`` record is managed automatically.)
+
+Special care needs to be taken with some types of records, as explained below.
 
 
 Restricted Types
