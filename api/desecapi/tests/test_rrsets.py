@@ -679,7 +679,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
 
 
-    def test_create_my_rr_sets_insufficient_ttl(self):
+    def test_create_my_rr_sets_ttl_too_small(self):
         ttl = settings.MINIMUM_TTL_DEFAULT - 1
         response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.3.4'], ttl=ttl, type='A')
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
@@ -689,6 +689,17 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         ttl += 1
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
             response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.23.4'], ttl=ttl, type='A')
+        self.assertStatus(response, status.HTTP_201_CREATED)
+
+    def test_create_my_rr_sets_ttl_too_large(self):
+        max_ttl = 24*3600
+        response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.3.4'], ttl=max_ttl + 1, type='A')
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        detail = f'Ensure this value is less than or equal to {max_ttl}.'
+        self.assertEqual(response.data['ttl'][0], detail)
+
+        with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)):
+            response = self.client.post_rr_set(self.my_empty_domain.name, records=['1.2.23.4'], ttl=max_ttl, type='A')
         self.assertStatus(response, status.HTTP_201_CREATED)
 
     def test_retrieve_my_rr_sets_apex(self):
