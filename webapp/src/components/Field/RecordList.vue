@@ -34,9 +34,11 @@ import Record from './Record.vue';
 import RecordA from './Record/A.vue';
 import RecordAAAA from './Record/AAAA.vue';
 import RecordCAA from './Record/CAA.vue';
+import RecordCDS from './Record/CDS.vue';
 import RecordCNAME from './Record/CNAME.vue';
-import RecordNS from './Record/NS.vue';
+import RecordDS from './Record/DS.vue';
 import RecordMX from './Record/MX.vue';
+import RecordNS from './Record/NS.vue';
 import RecordOPENPGPKEY from './Record/OPENPGPKEY.vue';
 import RecordPTR from './Record/PTR.vue';
 import RecordSMIMEA from './Record/SMIMEA.vue';
@@ -52,7 +54,9 @@ export default {
     RecordA,
     RecordAAAA,
     RecordCAA,
+    RecordCDS,
     RecordCNAME,
+    RecordDS,
     RecordMX,
     RecordNS,
     RecordOPENPGPKEY,
@@ -95,18 +99,19 @@ export default {
       types: [
         'A',
         'AAAA',
+        'CAA',
+        'CDS',
+        'CNAME',
+        'DS',
         'MX',
         'NS',
-        'CNAME',
-        'TXT',
-        'SPF',
-        'CAA',
-        'TLSA',
         'OPENPGPKEY',
-        'SMIMEA',
         'PTR',
+        'SMIMEA',
+        'SPF',
         'SRV',
-        'DS',
+        'TLSA',
+        'TXT',
         'Subnet'
       ],
       addHandler: ($event) => {
