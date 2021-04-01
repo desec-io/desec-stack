@@ -37,6 +37,7 @@ import RecordCNAME from './Record/CNAME.vue';
 import RecordNS from './Record/NS.vue';
 import RecordMX from './Record/MX.vue';
 import RecordSRV from './Record/SRV.vue';
+import RecordTLSA from './Record/TLSA.vue';
 import RecordTXT from './Record/TXT.vue';
 import RecordSubnet from './Record/Subnet.vue';
 
@@ -50,6 +51,7 @@ export default {
     RecordMX,
     RecordNS,
     RecordSRV,
+    RecordTLSA,
     RecordTXT,
     RecordSubnet,
   },
