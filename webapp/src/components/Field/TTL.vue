@@ -5,10 +5,11 @@
     :error-messages="errorMessages"
     :value="value"
     type="number"
+    max="86400"
     :min="min"
     :placeholder="required ? '' : '(optional)'"
     :required="required"
-    :rules="[v => !required || !!v || 'Required.', v => v >= min || `Value must be ${min} or greater.`]"
+    :rules="rules"
     @input="changed('input', $event)"
     @input.native="$emit('dirty', $event)"
     @keyup="changed('keyup', $event)"
@@ -48,6 +49,12 @@ export default {
       required: true,
     },
   },
+  data() { return {
+    rules: [
+      v => !this.required || !!v || 'Required.',
+      v => v >= this.min && v <= 86400 || `${this.min} ≤ … ≤ 86400`,
+    ],
+  }},
   methods: {
     changed(event, e) {
       this.$emit(event, e);

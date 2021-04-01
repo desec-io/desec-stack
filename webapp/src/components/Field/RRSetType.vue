@@ -3,6 +3,8 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
+    hint="You can also enter other types. For all full list, check the documentation."
+    :persistent-hint="!readonly"
     :value="value"
     :items="types"
     :required="required"
@@ -47,13 +49,14 @@ export default {
       'MX',
       'CNAME',
       'TXT',
+      'HTTPS',
       'CAA',
-      'NS',
       'TLSA',
       'OPENPGPKEY',
-      'PTR',
       'SMIMEA',
+      'PTR',
       'SRV',
+      'NS',
       'DS',
     ],
   }),
