@@ -36,6 +36,7 @@ import RecordAAAA from './Record/AAAA.vue';
 import RecordCNAME from './Record/CNAME.vue';
 import RecordNS from './Record/NS.vue';
 import RecordMX from './Record/MX.vue';
+import RecordSMIMEA from './Record/SMIMEA.vue';
 import RecordSRV from './Record/SRV.vue';
 import RecordTLSA from './Record/TLSA.vue';
 import RecordTXT from './Record/TXT.vue';
@@ -50,6 +51,7 @@ export default {
     RecordCNAME,
     RecordMX,
     RecordNS,
+    RecordSMIMEA,
     RecordSRV,
     RecordTLSA,
     RecordTXT,
@@ -84,7 +86,23 @@ export default {
   data: function () {
     const self = this;
     return {
-      types: ['A', 'AAAA', 'MX', 'NS', 'CNAME', 'TXT', 'SPF', 'CAA', 'TLSA', 'OPENPGPKEY', 'PTR', 'SRV', 'DS', 'Subnet'],
+      types: [
+        'A',
+        'AAAA',
+        'MX',
+        'NS',
+        'CNAME',
+        'TXT',
+        'SPF',
+        'CAA',
+        'TLSA',
+        'OPENPGPKEY',
+        'SMIMEA',
+        'PTR',
+        'SRV',
+        'DS',
+        'Subnet'
+      ],
       addHandler: ($event) => {
         self.$emit('dirty', $event);
         let value = [].concat(this.value);
