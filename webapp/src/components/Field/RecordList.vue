@@ -38,6 +38,7 @@ import RecordCNAME from './Record/CNAME.vue';
 import RecordNS from './Record/NS.vue';
 import RecordMX from './Record/MX.vue';
 import RecordOPENPGPKEY from './Record/OPENPGPKEY.vue';
+import RecordPTR from './Record/PTR.vue';
 import RecordSMIMEA from './Record/SMIMEA.vue';
 import RecordSRV from './Record/SRV.vue';
 import RecordTLSA from './Record/TLSA.vue';
@@ -55,6 +56,7 @@ export default {
     RecordMX,
     RecordNS,
     RecordOPENPGPKEY,
+    RecordPTR,
     RecordSMIMEA,
     RecordSRV,
     RecordTLSA,
