@@ -18,7 +18,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-bank-transfer-in</v-icon> Let us Take your Money: Direct Debit (Europe)
+                    <v-icon class="mr-2">mdi-bank-transfer-in</v-icon> Direct Debit – Let us Take your Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -32,7 +32,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-bank-transfer-out</v-icon> Send us Money: Bank Transfer (Europe)
+                    <v-icon class="mr-2">mdi-bank-transfer-out</v-icon> Bank Transfer – Send us Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -65,18 +65,26 @@
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
                   <p>
-                    To donate by credit card, <strong>please use <a href="https://liberapay.com/deSEC/donate">our
-                    account at Liberapay</a></strong>.
+                    To donate by credit card, <strong>please use <a href="https://liberapay.com/deSEC/donate"
+                    target="_blank">our account at Liberapay</a></strong>.
                   </p>
                   <p>
                     By default, Liberapay sets up a recurring donation. If you want to support us only once, simply stop
                     the automatic payment plan right after your first donation. However, as our costs are recurring, we
                     actually do appreciate recurring donations.
                   </p>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+              <v-expansion-panel>
+                <v-expansion-panel-header class="subtitle-1">
+                  <v-layout>
+                    <v-icon class="mr-2">mdi-github</v-icon> GitHub Sponsors
+                  </v-layout>
+                </v-expansion-panel-header>
+                <v-expansion-panel-content class="pt-4">
                   <p>
-                    Are you based in Europe? You almost certainly can perform a donation via direct debit or bank
-                    transfer above (you just need your IBAN). With these payment methods, the fees subtracted from your
-                    donation will be much less, and we will receive more of your money!
+                    <strong><a href="https://github.com/sponsors/desec-io" target="_blank">Click here</a> to donate via
+                    GitHub.</strong>
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>
@@ -88,23 +96,17 @@
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
                   <p>
-                    To donate via PayPal, <strong>please use <a href="https://liberapay.com/deSEC/donate">our account at
-                    Liberapay</a></strong>. Note that PayPal charges us the highest fees of all, so if you can use one
-                    of the other donation methods, that would be appreciated!
-                  </p>
-                  <p>
-                    By default, Liberapay sets up a recurring donation. If you want to support us only once, simply stop
-                    the automatic payment plan right after your first donation. However, as our costs are recurring, we
-                    actually do appreciate recurring donations.
-                  </p>
-                  <p>
-                    Are you based in Europe? You almost certainly can perform a donation via direct debit or bank
-                    transfer above (you just need your IBAN). With these payment methods, the fees subtracted from your
-                    donation will be much less, and we will receive more of your money!
+                    <strong><a href="https://www.paypal.com/donate?hosted_button_id=GPGXGLA4SU78W" target="_blank">Click
+                    here</a> to donate via PayPal.</strong> Note that PayPal charges us the highest fees of all, so if
+                    you can use one of the other methods, that would be appreciated!
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>
             </v-expansion-panels>
+            <p>
+              <strong>Based in Europe?</strong> You almost certainly can donate via direct debit or bank transfer (you
+              only need your IBAN). <strong>No fees</strong> will be subtracted, so you can do more good!
+            </p>
             <div class="title">Donation Receipts</div>
             <p>
               deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
