@@ -33,6 +33,7 @@
 import Record from './Record.vue';
 import RecordA from './Record/A.vue';
 import RecordAAAA from './Record/AAAA.vue';
+import RecordCAA from './Record/CAA.vue';
 import RecordCNAME from './Record/CNAME.vue';
 import RecordNS from './Record/NS.vue';
 import RecordMX from './Record/MX.vue';
@@ -48,6 +49,7 @@ export default {
     Record,
     RecordA,
     RecordAAAA,
+    RecordCAA,
     RecordCNAME,
     RecordMX,
     RecordNS,
