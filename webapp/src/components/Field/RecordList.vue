@@ -34,8 +34,10 @@ import Record from './Record.vue';
 import RecordA from './Record/A.vue';
 import RecordAAAA from './Record/AAAA.vue';
 import RecordCAA from './Record/CAA.vue';
+import RecordCDNSKEY from './Record/CDNSKEY.vue';
 import RecordCDS from './Record/CDS.vue';
 import RecordCNAME from './Record/CNAME.vue';
+import RecordDNSKEY from './Record/DNSKEY.vue';
 import RecordDS from './Record/DS.vue';
 import RecordMX from './Record/MX.vue';
 import RecordNS from './Record/NS.vue';
@@ -54,8 +56,10 @@ export default {
     RecordA,
     RecordAAAA,
     RecordCAA,
+    RecordCDNSKEY,
     RecordCDS,
     RecordCNAME,
+    RecordDNSKEY,
     RecordDS,
     RecordMX,
     RecordNS,
@@ -100,8 +104,10 @@ export default {
         'A',
         'AAAA',
         'CAA',
+        'CDNSKEY',
         'CDS',
         'CNAME',
+        'DNSKEY',
         'DS',
         'MX',
         'NS',
