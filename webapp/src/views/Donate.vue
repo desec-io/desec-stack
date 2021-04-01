@@ -76,8 +76,7 @@
                   <p>
                     Are you based in Europe? You almost certainly can perform a donation via direct debit or bank
                     transfer above (you just need your IBAN). With these payment methods, the fees subtracted from your
-                    donation will be much less, and we will receive more of your money! If you want to support us
-                    regularly, you can also set up a recurring direct debit donation through Liberapay.
+                    donation will be much less, and we will receive more of your money!
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>
@@ -101,8 +100,7 @@
                   <p>
                     Are you based in Europe? You almost certainly can perform a donation via direct debit or bank
                     transfer above (you just need your IBAN). With these payment methods, the fees subtracted from your
-                    donation will be much less, and we will receive more of your money! If you want to support us
-                    regularly, you can also set up a recurring direct debit donation through Liberapay.
+                    donation will be much less, and we will receive more of your money!
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>

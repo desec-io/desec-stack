@@ -2,6 +2,8 @@ Woha,
 
 {{ donation.name }} <{{ donation.email }}> hat {{ donation.amount }}€ gespendet.
 
+Häufigkeit: alle {{ donation.interval }} Monate
+
 Nachricht:
 {{ donation.message | default:"(keine)" }}
 

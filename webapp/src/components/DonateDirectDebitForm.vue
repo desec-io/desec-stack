@@ -32,6 +32,16 @@
         </div>
       </v-alert>
 
+      <v-radio-group
+          v-model="interval"
+          mandatory
+          row
+      >
+        <v-radio label="Just once" :value="0"></v-radio>
+        <v-radio label="Monthly" :value="1"></v-radio>
+        <v-radio label="Quarterly" :value="3"></v-radio>
+      </v-radio-group>
+
       <v-text-field
               v-model="name"
               label="Full Name of the Account Holder"
@@ -146,6 +156,9 @@
       email_rules: [v => v === '' || !!email_pattern.test(v || '') || 'This is not an email address.'],
       email_errors: [],
 
+      /* donation interval (every N months) */
+      interval: 1,
+
       /* sent by server */
       mref: '',
     }),
@@ -167,6 +180,7 @@
             bic: "",
             message: this.message,
             email: this.email,
+            interval: this.interval,
           });
           this.mref = response.data.mref;
           this.done = true;

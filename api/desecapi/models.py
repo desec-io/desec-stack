@@ -471,6 +471,11 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
     def _mref_default():
         return "ONDON" + str(time.time())
 
+    class Interval(models.IntegerChoices):
+        ONCE = 0
+        MONTHLY = 1
+        QUARTERLY = 3
+
     created = models.DateTimeField(default=_created_default.__func__)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
@@ -479,10 +484,15 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
     message = models.CharField(max_length=255, blank=True)
     due = models.DateTimeField(default=_due_default.__func__)
     mref = models.CharField(max_length=32, default=_mref_default.__func__)
+    interval = models.IntegerField(choices=Interval.choices, default=Interval.ONCE)
     email = models.EmailField(max_length=255, blank=True)
 
     class Meta:
         managed = False
+
+    @property
+    def interval_label(self):
+        return dict(self.Interval.choices)[self.interval]
 
 
 # RR set types: the good, the bad, and the ugly

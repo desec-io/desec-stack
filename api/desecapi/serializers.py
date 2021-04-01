@@ -589,7 +589,7 @@ class DonationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Donation
-        fields = ('name', 'iban', 'bic', 'amount', 'message', 'email', 'mref')
+        fields = ('name', 'iban', 'bic', 'amount', 'message', 'email', 'mref', 'interval')
         read_only_fields = ('mref',)
 
 

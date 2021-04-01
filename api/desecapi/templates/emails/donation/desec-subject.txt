@@ -1,1 +1,1 @@
-Spende: {{ donation.amount }}€
+Spende: {{ donation.amount }} € ({{ donation.interval_label }})
