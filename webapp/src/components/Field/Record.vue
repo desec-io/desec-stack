@@ -12,7 +12,7 @@
         :class="hideLabel ? 'pt-0' : ''"
         :disabled="disabled"
         :readonly="readonly"
-        :placeholder="required ? ' ' : '(optional)'"
+        :placeholder="required && !field.optional ? ' ' : '(optional)'"
         :hide-details="!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid)"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import { required as requiredValidator } from 'vuelidate/lib/validators';
+import { requiredUnless } from 'vuelidate/lib/validators';
 
 export default {
   name: 'Record',
@@ -104,7 +104,7 @@ export default {
     const validations = {
       fields: {
         $each: {
-          value: this.required ? { requiredValidator } : {},
+          value: this.required ? { required: requiredUnless('optional') } : {},
         },
       },
     };

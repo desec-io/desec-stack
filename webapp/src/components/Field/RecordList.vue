@@ -39,12 +39,14 @@ import RecordCDS from './Record/CDS.vue';
 import RecordCNAME from './Record/CNAME.vue';
 import RecordDNSKEY from './Record/DNSKEY.vue';
 import RecordDS from './Record/DS.vue';
+import RecordHTTPS from './Record/HTTPS.vue';
 import RecordMX from './Record/MX.vue';
 import RecordNS from './Record/NS.vue';
 import RecordOPENPGPKEY from './Record/OPENPGPKEY.vue';
 import RecordPTR from './Record/PTR.vue';
 import RecordSMIMEA from './Record/SMIMEA.vue';
 import RecordSRV from './Record/SRV.vue';
+import RecordSVCB from './Record/SVCB.vue';
 import RecordTLSA from './Record/TLSA.vue';
 import RecordTXT from './Record/TXT.vue';
 import RecordSubnet from './Record/Subnet.vue';
@@ -61,12 +63,14 @@ export default {
     RecordCNAME,
     RecordDNSKEY,
     RecordDS,
+    RecordHTTPS,
     RecordMX,
     RecordNS,
     RecordOPENPGPKEY,
     RecordPTR,
     RecordSMIMEA,
     RecordSRV,
+    RecordSVCB,
     RecordTLSA,
     RecordTXT,
     RecordSubnet,
@@ -109,6 +113,7 @@ export default {
         'CNAME',
         'DNSKEY',
         'DS',
+        'HTTPS',
         'MX',
         'NS',
         'OPENPGPKEY',
@@ -116,6 +121,7 @@ export default {
         'SMIMEA',
         'SPF',
         'SRV',
+        'SVCB',
         'TLSA',
         'TXT',
         'Subnet'
