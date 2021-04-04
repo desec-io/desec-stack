@@ -12,10 +12,9 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
 
 COPY requirements.txt /usr/src/app/
-RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev postgresql-dev jpeg-dev zlib-dev git \
+RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev postgresql-dev jpeg-dev zlib-dev git cargo \
     && pip install -r requirements.txt \
-    && apk --no-cache del gcc
-RUN pip freeze
+    && pip freeze
 
 RUN mkdir /root/cronhook
 ADD ["cronhook/crontab", "cronhook/start-cron.sh", "/root/cronhook/"]
