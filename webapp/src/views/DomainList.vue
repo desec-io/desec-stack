@@ -23,7 +23,7 @@ export default {
         },
         texts: {
           banner: () => 'To edit your DNS records, click on one of your domains.',
-          create: () => `You have ${self.availableCount} of ${self.limit_domains} domains left.`,
+          create: () => `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>Contact support to apply for a higher limit.</small>`,
           createWarning: () => (self.availableCount <= 0 ? 'You have reached your maximum number of domains. Please contact support to apply for a higher limit.' : ''),
           destroy: d => (`Delete domain ${d.name}?`),
           destroyInfo: () => 'This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet.',
