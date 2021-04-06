@@ -10,6 +10,6 @@ then
 fi
 
 for file in $DIR/*.var; do
-    # we only replace occurances of the variables specified below as first argument
+    # we only replace occurrences of the variables specified below as first argument
     (envsubst '$DESECSTACK_IPV4_REAR_PREFIX16' | envsubst '$DESECSTACK_DOMAIN' | envsubst '$CERT_PATH' | envsubst '$PROD_ONLY' ) < $file > $DIR/`basename $file .var`
 done

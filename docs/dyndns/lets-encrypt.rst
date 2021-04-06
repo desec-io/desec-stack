@@ -19,7 +19,7 @@ steps.
 #. **Install hook script.** To authenticate your dedyn.io domain against Let's
    Encrypt using the DNS challenge mechanism, you will need to update your
    domain according to instructions provided by Let's Encrypt. Our hook script
-   automatizes this process for you. To use it, download the following two
+   automates this process for you. To use it, download the following two
    files and place them into a directory of your choice. Make sure to change
    the owner/permissions of the file (``chown``/``chmod``), so that it is only
    readable by your certbot user (usually ``root``). ::

@@ -120,7 +120,7 @@ class DeSECAPIV1Client:
             try:
                 with warnings.catch_warnings():
                     if verify_list == [False]:
-                        # Supress insecurity warning if we do not want to verify
+                        # Suppress insecurity warning if we do not want to verify
                         warnings.filterwarnings('ignore', category=InsecureRequestWarning)
                     reply = requests.request(*args, **kwargs, verify=verify)
             except SSLError as e:

@@ -182,7 +182,7 @@ To retrieve a domain with a specific name, issue a ``GET`` request with the
 This will return only one domain (i.e., the response is not a JSON array).
 
 If you own a domain with that name, the API responds with ``200 OK`` and
-returns the domain object in the reponse body.  Otherwise, the return status
+returns the domain object in the response body.  Otherwise, the return status
 code is ``404 Not Found``.
 
 
