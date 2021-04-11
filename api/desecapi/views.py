@@ -38,6 +38,7 @@ def generate_confirmation_link(request, action_serializer, viewname, **kwargs):
 
 class EmptyPayloadMixin:
     def initialize_request(self, request, *args, **kwargs):
+        # noinspection PyUnresolvedReferences
         request = super().initialize_request(request, *args, **kwargs)
 
         try:
@@ -68,6 +69,7 @@ class IdempotentDestroyMixin:
 class DomainViewMixin:
 
     def get_serializer_context(self):
+        # noinspection PyUnresolvedReferences
         return {**super().get_serializer_context(), 'domain': self.domain}
 
     def initial(self, request, *args, **kwargs):
@@ -146,7 +148,7 @@ class SerialList(generics.ListAPIView):
     permission_classes = (IsVPNClient,)
     throttle_classes = []  # don't break slaves when they ask too often (our cached responses are cheap)
 
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         key = 'desecapi.views.serials'
         serials = cache.get(key)
         if serials is None:
