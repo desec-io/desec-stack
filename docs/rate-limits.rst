@@ -26,11 +26,19 @@ with ``429 Too Many Requests``.
 |                                |          |                                                                                           |
 |                                | 50/min   |                                                                                           |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_write``              | 6/s      | DNS write operations (e.g. create a domain, change an RRset)                              |
+| ``dns_api_write_domains``      | 10/s     | DNS write operations: domain creation/deletion                                            |
 |                                |          |                                                                                           |
-|                                | 50/min   |                                                                                           |
+|                                | 300/min  |                                                                                           |
 |                                |          |                                                                                           |
-|                                | 200/h    |                                                                                           |
+|                                | 1000/h   |                                                                                           |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``user``                       | 1000/day | Any activity of a) authenticated users, b) unauthenticated users (by IP)                  |
+| ``dns_api_write_rrsets``       | 2/s      | DNS write operations: RRset creation/deletion/modification (per domain).  If you require  |
+|                                |          | more requests, consider using bulk requests.                                              |
+|                                | 15/min   |                                                                                           |
+|                                |          |                                                                                           |
+|                                | 30/h     |                                                                                           |
+|                                |          |                                                                                           |
+|                                | 100/day  |                                                                                           |
++--------------------------------+----------+-------------------------------------------------------------------------------------------+
+| ``user``                       | 2000/day | Any activity of a) authenticated users, b) unauthenticated users (by IP)                  |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+

@@ -35,10 +35,8 @@ class ThrottlingTestCase(TestCase):
         super().setUp()
         self.factory = APIRequestFactory()
 
-    def _test_requests_are_throttled(self, rates, counts):
-        cache.clear()
-        request = self.factory.get('/')
-        with override_rates(rates):
+    def _test_requests_are_throttled(self, rates, counts, buckets=None):
+        def do_test():
             view = MockView.as_view()
             sum_delay = 0
             for delay, count in counts:
@@ -50,6 +48,15 @@ class ThrottlingTestCase(TestCase):
 
                     response = view(request)
                     self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        cache.clear()
+        request = self.factory.get('/')
+        with override_rates(rates):
+            do_test()
+            if buckets is not None:
+                for bucket in buckets:
+                    MockView.throttle_scope_bucket = bucket
+                    do_test()
 
     def test_requests_are_throttled_4sec(self):
         self._test_requests_are_throttled(['4/sec'], [(0, 4), (1, 4)])
@@ -64,3 +71,7 @@ class ThrottlingTestCase(TestCase):
     def test_requests_are_throttled_multiple_cascade(self):
         # We test that we can do 4 requests in the first second and only 2 in the second second
         self._test_requests_are_throttled(['4/s', '6/day'], [(0, 4), (1, 2)])
+
+    def test_requests_are_throttled_multiple_cascade_with_buckets(self):
+        # We test that we can do 4 requests in the first second and only 2 in the second second
+        self._test_requests_are_throttled(['4/s', '6/day'], [(0, 4), (1, 2)], buckets=['foo', 'bar'])

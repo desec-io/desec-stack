@@ -111,9 +111,10 @@ REST_FRAMEWORK = {
         'account_management_passive': ['10/min'],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         'dyndns': ['1/min'],  # dynDNS updates; anything above 1/min is a client misconfiguration
         'dns_api_read': ['10/s', '50/min'],  # DNS API requests that do not involve pdns
-        'dns_api_write': ['6/s', '50/min', '200/h'],  # DNS API requests that do involve pdns
+        'dns_api_write_domains': ['10/s', '300/min', '1000/h'],  # domains/ endpoint
+        'dns_api_write_rrsets': ['2/s', '15/min', '30/h', '100/d'],  # rrsets/ endpoint, domain-scoped on the view
         # UserRateThrottle
-        'user': '1000/d',  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
+        'user': '2000/d',  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },
     'NUM_PROXIES': 0,  # Do not use X-Forwarded-For header when determining IP for throttling
 }

@@ -25,6 +25,11 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
         if self.rate is None:
             return True
 
+        # Amend scope with optional bucket
+        bucket = getattr(view, self.scope_attr + '_bucket', None)
+        if bucket is not None:
+            self.scope += ':' + bucket
+
         self.now = self.timer()
         self.num_requests, self.duration = zip(*self.parse_rate(self.rate))
         self.key = self.get_cache_key(request, view)

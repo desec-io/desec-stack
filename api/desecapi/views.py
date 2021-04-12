@@ -2,6 +2,7 @@ import base64
 import binascii
 from datetime import timedelta
 from functools import cached_property
+from hashlib import sha1
 
 from django.conf import settings
 from django.contrib.auth import user_logged_in
@@ -68,6 +69,15 @@ class IdempotentDestroyMixin:
 
 class DomainViewMixin:
 
+    @property
+    def throttle_scope(self):
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_rrsets'
+
+    @property
+    def throttle_scope_bucket(self):
+        # Note: bucket should remain constant even when domain is recreated
+        return None if self.request.method in SAFE_METHODS else sha1(self.kwargs['name'].encode()).hexdigest()
+
     def get_serializer_context(self):
         # noinspection PyUnresolvedReferences
         return {**super().get_serializer_context(), 'domain': self.domain}
@@ -113,7 +123,7 @@ class DomainViewSet(IdempotentDestroyMixin,
 
     @property
     def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_domains'
 
     def get_queryset(self):
         return self.request.user.domains
@@ -161,10 +171,6 @@ class RRsetDetail(IdempotentDestroyMixin, DomainViewMixin, generics.RetrieveUpda
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
 
-    @property
-    def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
-
     def get_queryset(self):
         return self.domain.rrset_set
 
@@ -198,10 +204,6 @@ class RRsetDetail(IdempotentDestroyMixin, DomainViewMixin, generics.RetrieveUpda
 class RRsetList(EmptyPayloadMixin, DomainViewMixin, generics.ListCreateAPIView, generics.UpdateAPIView):
     serializer_class = serializers.RRsetSerializer
     permission_classes = (IsAuthenticated, IsDomainOwner,)
-
-    @property
-    def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
 
     def get_queryset(self):
         rrsets = models.RRset.objects.filter(domain=self.domain)
