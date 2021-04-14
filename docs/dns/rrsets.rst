@@ -535,11 +535,13 @@ explained below.
 Restricted Types
 ````````````````
 
-``ALIAS``, ``DNAME``
-    These record types are used very rarely in the wild.  Due to conflicts with
-    the security guarantees we would like to give, these record types are
-    disabled in our API.  If you attempt to create such RRsets, you will receive
-    a ``400 Bad Request`` response.
+``ALIAS``/``ANAME``
+    This rarely used record type conflicts with the security guarantees we
+    would like to give, and is thus not supported by our API (`detailed
+    explanation`_).  Attempts to create an ``ALIAS`` record will result in a
+    ``400 Bad Request`` response.
+
+.. _detailed explanation: https://talk.desec.io/t/clarification-on-alias-records/113/2
 
 ``DNSKEY``, ``DS``, ``CDNSKEY``, ``CDS``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in

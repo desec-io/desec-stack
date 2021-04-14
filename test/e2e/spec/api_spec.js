@@ -323,7 +323,7 @@ describe("API v1", function () {
 
                 describe("cannot create RRsets of restricted or dead type", function () {
 
-                    var rrTypes = ['DNAME', 'ALIAS', 'SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT'];
+                    var rrTypes = ['ALIAS', 'SOA', 'RRSIG', 'DNSKEY', 'NSEC3PARAM', 'OPT'];
                     for (var i = 0; i < rrTypes.length; i++) {
                         var rrType = rrTypes[i];
                         it(rrType, function () {
