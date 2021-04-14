@@ -17,7 +17,7 @@ whenever possible**.
 
 Update Request
 ``````````````
-An IP updates is performed by sending a ``GET`` request to ``update.dedyn.io``
+An IP update is performed by sending a ``GET`` request to ``update.dedyn.io``
 via IPv4 or IPv6.  To enforce IPv6, use ``update6.dedyn.io``.  The path
 component can be chosen freely as long as it does not end in ``.ico`` or
 ``.png``.  HTTPS is recommended over HTTP.
