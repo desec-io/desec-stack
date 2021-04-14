@@ -2,7 +2,6 @@ import base64
 import binascii
 from datetime import timedelta
 from functools import cached_property
-from hashlib import sha1
 
 from django.conf import settings
 from django.contrib.auth import user_logged_in
@@ -76,7 +75,7 @@ class DomainViewMixin:
     @property
     def throttle_scope_bucket(self):
         # Note: bucket should remain constant even when domain is recreated
-        return None if self.request.method in SAFE_METHODS else sha1(self.kwargs['name'].encode()).hexdigest()
+        return None if self.request.method in SAFE_METHODS else self.kwargs['name']
 
     def get_serializer_context(self):
         # noinspection PyUnresolvedReferences

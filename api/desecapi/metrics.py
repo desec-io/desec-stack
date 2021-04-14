@@ -44,4 +44,4 @@ set_counter('desecapi_pdns_keys_fetched', 'number of times pdns keys were fetche
 set_counter('desecapi_pdns_catalog_updated', 'number of times pdns catalog was updated successfully')
 
 # throttling.py metrics
-set_counter('desecapi_throttle_failure', 'number of requests throttled', ['method', 'scope', 'user'])
+set_counter('desecapi_throttle_failure', 'number of requests throttled', ['method', 'scope', 'user', 'bucket'])

@@ -1,3 +1,5 @@
+from hashlib import sha1
+
 from rest_framework import throttling
 from rest_framework.settings import api_settings
 
@@ -12,15 +14,14 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
         return [super(ScopedRatesThrottle, self).parse_rate(rate) for rate in rates]
 
     def allow_request(self, request, view):
-        # We can only determine the scope once we're called by the view.
-        self.scope = getattr(view, self.scope_attr, None)
-
-        # If a view does not have a `throttle_scope` always allow the request
-        if not self.scope:
+        # We can only determine the scope once we're called by the view.  Always allow request if scope not set.
+        scope = getattr(view, self.scope_attr, None)
+        if not scope:
             return True
 
         # Determine the allowed request rate as we normally would during
         # the `__init__` call.
+        self.scope = scope
         self.rate = self.get_rate()
         if self.rate is None:
             return True
@@ -28,7 +29,7 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
         # Amend scope with optional bucket
         bucket = getattr(view, self.scope_attr + '_bucket', None)
         if bucket is not None:
-            self.scope += ':' + bucket
+            self.scope += ':' + sha1(bucket.encode()).hexdigest()
 
         self.now = self.timer()
         self.num_requests, self.duration = zip(*self.parse_rate(self.rate))
@@ -46,7 +47,7 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
                 # Prepare variables used by the Throttle's wait() method that gets called by APIView.check_throttles()
                 self.num_requests, self.duration, self.key, self.history = num_requests, duration, key, history
                 response = self.throttle_failure()
-                metrics.get('desecapi_throttle_failure').labels(request.method, self.scope, request.user.pk).inc()
+                metrics.get('desecapi_throttle_failure').labels(request.method, scope, request.user.pk, bucket).inc()
                 return response
             self.history[key] = history
         return self.throttle_success()
