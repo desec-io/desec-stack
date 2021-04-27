@@ -391,7 +391,7 @@ class DonationList(generics.CreateAPIView):
     serializer_class = serializers.DonationSerializer
 
     def perform_create(self, serializer):
-        instance = self.serializer_class.Meta.model(**serializer.validated_data)
+        instance = serializer.save()
 
         context = {
             'donation': instance,

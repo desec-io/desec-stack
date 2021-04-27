@@ -601,6 +601,9 @@ class DonationSerializer(serializers.ModelSerializer):
     def validate_iban(value):
         return re.sub(r'[\s]', '', value)
 
+    def create(self, validated_data):
+        return self.Meta.model(**validated_data)
+
 
 class UserSerializer(serializers.ModelSerializer):
 
