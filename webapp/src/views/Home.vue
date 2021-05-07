@@ -92,11 +92,26 @@
     </v-container>
   </v-container>
   <v-container fluid>
+    <v-container class="py-8">
+      <v-row align="center">
+        <v-col class="text-center">
+          <h2>Partners</h2>
+        </v-col>
+      </v-row>
+      <v-row justify="center">
+        <v-col class="py-4 text-center">
+          <a href="https://nextcloud.com/"><v-img :src="require('../assets/non-free/nextcloud-logo-inverted.svg')" alt="Nextcloud Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"></v-img></a>
+          <a href="https://www.hanssonit.se/"><v-img :src="require('../assets/non-free/hanssonit.logo.png')" alt="Hansson IT Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"></v-img></a>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-container>
+  <v-container fluid class="grey lighten-4">
     <v-container>
       <v-row align="center" justify="center">
         <v-card
           class="mx-auto col-12"
-          color="grey lighten-4"
+          color="grey lighten-5"
         >
           <v-card-text
                   class="pt-6"
