@@ -48,22 +48,24 @@ steps.
      certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
          --preferred-challenges dns -d "YOURDOMAINNAME.dedyn.io" certonly
          
-   You can also use certbot to get wildcard certificates like so::
+   Please note that the hook script may wait up to two minutes to ensure that
+   the challenge was correctly published.
+
+   To include subdomains in your certificate, you can specify the ``-d``
+   argument several times, e.g.
+   ``-d "YOURDOMAINNAME.dedyn.io" -d "www.YOURDOMAINNAME.dedyn.io"``.
+
+   Similarly, you can get wildcard certificates like so::
    
      certbot --manual --manual-auth-hook ./hook.sh --manual-cleanup-hook ./hook.sh \
          --preferred-challenges dns -d "example.com" -d "*.example.com" certonly
 
-   to make the process headless you can add ``--manual-public-ip-logging-ok -n``.
+   To make the process headless, add ``--agree-tos -n`` (this implies agreeing
+   to their Terms of Service!).  Let's Encrypt asks for an email address to
+   send expiration notices to, which you can provide with
+   ``--email [your email]``.  To sign up without email, use
+   ``--register-unsafely-without-email`` instead (discouraged).
 
-   Depending on how you installed certbot, you may need to replace ``certbot``
-   with ``./certbot-auto`` (assuming that the ``certbot-auto`` executable is
-   located in the current directory). Please also note that the hook script may
-   wait up to two minutes to be sure that the challenge was correctly
-   published.
-
-   **Note:** To include subdomains in your certificate, you can specify the
-   ``-d`` argument several times, e.g.
-   ``-d "YOURDOMAINNAME.dedyn.io" -d "www.YOURDOMAINNAME.dedyn.io"``.
 
    If you would like to help improve this hook script, please check out our
    open issues at `<https://github.com/desec-io/desec-certbot-hook/issues>`_.
@@ -76,4 +78,11 @@ There are other ACME clients that support deSEC out of the box. We currently
 know of the following:
 
 - `acme.sh <https://github.com/Neilpang/acme.sh/wiki/dnsapi#71-use-desecio>`_
+- `deSEC certbot plugin <https://pypi.org/project/certbot-dns-desec/>`_
+- `cert-manager web hook <https://github.com/kmorning/cert-manager-webhook-desec>`_
+  (Kubernetes)
 - `lego <https://github.com/go-acme/lego>`_
+- `Posh-ACME <https://github.com/rmbolger/Posh-ACME/blob/main/Posh-ACME/Plugins/DeSEC-Readme.md>`_
+- `Terraform vancluever/acme <https://registry.terraform.io/providers/vancluever/acme/latest/docs/guides/dns-providers-desec>`_
+
+Our forum has `a more updated list <https://talk.desec.io/t/tools-implementing-desec/11>`_.
