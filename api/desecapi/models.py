@@ -584,6 +584,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         return self.construct_name(self.subname, self.domain.name)
 
     def save(self, *args, **kwargs):
+        # TODO Enforce that subname and type aren't changed. https://github.com/desec-io/desec-stack/issues/553
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 
