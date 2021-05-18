@@ -2,7 +2,7 @@ import binascii
 import copy
 import json
 import re
-from base64 import urlsafe_b64decode, b64encode
+from base64 import b64encode
 
 import django.core.exceptions
 from captcha.audio import AudioCaptcha
@@ -710,17 +710,12 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         return code.rstrip('=')
 
     @classmethod
-    def _unpack_code(cls, code, *, ttl, _retry=True):
+    def _unpack_code(cls, code, *, ttl):
         code += -len(code) % 4 * '='
         try:
             payload = crypto.decrypt(code.encode(), context='desecapi.serializers.AuthenticatedActionSerializer',
                                      ttl=ttl)
             return json.loads(payload.decode())
-        except ValueError:  # TODO remove this once all urlsafe_b64encode'd codes have expired (~30d after deployment)
-            if _retry:
-                return cls._unpack_code(urlsafe_b64decode(code.encode()).decode(), ttl=ttl, _retry=False)
-            else:
-                raise
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
