@@ -91,7 +91,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-paypal</v-icon> PayPal
+                    <v-icon class="mr-2">mdi-gift-outline</v-icon> PayPal
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -99,6 +99,24 @@
                     <strong><a href="https://www.paypal.com/donate?hosted_button_id=GPGXGLA4SU78W" target="_blank">Click
                     here</a> to donate via PayPal.</strong> Note that PayPal charges us the highest fees of all, so if
                     you can use one of the other methods, that would be appreciated!
+                  </p>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+              <v-expansion-panel>
+                <v-expansion-panel-header class="subtitle-1">
+                  <v-layout>
+                    <v-icon class="mr-2">mdi-heart-multiple-outline</v-icon> Double-up with Your Employer
+                  </v-layout>
+                </v-expansion-panel-header>
+                <v-expansion-panel-content class="pt-4">
+                  <p>
+                    Many employers <b>double donations</b> initiated by their employees. Donations often happen through
+                    dedicated facilitation platforms such as
+                    <a href="https://causes.benevity.org/causes/276-5650058387161_db64" target="_blank">Benevity</a>.
+                  </p>
+                  <p>
+                    Make sure to <b>check with your company</b> if you're eligible for a co-donation, and double the
+                    impact!
                   </p>
                 </v-expansion-panel-content>
               </v-expansion-panel>
