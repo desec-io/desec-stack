@@ -339,7 +339,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
         Fourth, run the database:
 
-            docker-compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
+           docker-compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
 
         Finally, you can manage Django using the `manage.py` CLI.
         As an example, to run the tests, use
@@ -351,7 +351,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
         2. In Project: desec-stack › Project Interpreter, add a new interpreter. Choose "existing environment" and select `api/venv/bin/python3` from the project root.
         3. In Languages & Frameworks › Django, enable the Django support and set the Django project root to `api/`.
 
-    1. From the PyCharm menu, select Run › Edit Configurations and select the "Django tests" template from the list.
+    1. From the PyCharm menu, select Run › Edit Configurations and click on "Edit configuration templates"; select the "Django tests" template from the list.
         1. Open the Environment Variables dialog. Copy the contents of the `.env` file and paste it here.
         2. Add an environment variable with the name `DESECSTACK_DJANGO_TEST` and the value `1`.
         3. Fill the Custom Settings field with the path to the `settings_quick_test` module.
