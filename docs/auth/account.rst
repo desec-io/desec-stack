@@ -103,9 +103,6 @@ human-readable error message that may look like::
 Zone Creation during Account Registration
 *****************************************
 
-**Note:** The following functionality is intended for internal deSEC use only.
-Availability of this functionality may change without notice.
-
 Along with your account creation request, you can provide a domain name as
 follows::
 
