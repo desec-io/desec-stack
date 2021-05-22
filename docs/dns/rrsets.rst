@@ -91,10 +91,10 @@ Field details:
     the array is 64,000 (after JSON encoding).
 
     Records must be given in presentation format (a.k.a. "BIND" or zone file
-    format). Record values that are not given in canonical form, such as
-    ``0:0000::1`` will be converted by the API into canonical form, e.g.
-    ``::1``. Exact validation and canonicalization depend on the record
-    type.
+    format).  Record values that are not given in canonical form, such as
+    ``0:0000::1`` for an IPv6 address, will be converted by the API into
+    canonical form (here: ``::1``).  Exact validation and canonicalization
+    depend on the record type.
 
 ``subname``
     :Access mode: read, write-once (upon RRset creation)
@@ -120,7 +120,7 @@ Field details:
     TTL (time-to-live) value, which dictates for how long resolvers may cache
     this RRset, measured in seconds.  The smallest acceptable value is given by
     the domain's :ref:`minimum TTL <domain object>` setting.  The maximum value
-    is 604800 (one week).
+    is 86400 (one day).
 
 ``type``
     :Access mode: read, write-once (upon RRset creation)
@@ -170,6 +170,13 @@ enclosed in double quotes (with the quotes being part of the field value);
 your shell or programming language may require another layer of quotes!  By
 contrast, ``ttl`` is an integer field, so the JSON value does not contain
 quotes.
+
+RRset write operations are subject to rate limiting (see :ref:`rate-limits`).
+When creating (or updating) a large number of RRsets, we strongly encourage
+you to use `Bulk Operations`_ instead of multiple sequential requests.
+(Single requests are much more expensive on the server side, as each request
+triggers a DNSSEC signing operation.  With bulk requests, only one signing
+operation is performed, covering all changes together.)
 
 Creating a TLSA RRset
 `````````````````````
@@ -376,7 +383,7 @@ semantically invalid (e.g. when you provide an unknown record type, or an ``A``
 value that is not an IPv4 address).
 
 To modify an RRset at the zone apex (empty subname), use the special subname
-value ``@`` (read more about `Accessing the Zone Apex`_).
+value ``@`` in the endpoint URL (read more about `Accessing the Zone Apex`_).
 
 Bulk Modification of RRsets
 ```````````````````````````
@@ -479,7 +486,7 @@ For the ``PATCH`` method, only ``type`` is required; if you want to modify only
 using ``PATCH``, all fields but ``subname`` must be specified.
 
 To delete an RRset during a bulk operation, use ``PATCH`` or ``PUT`` and set
-records to ``[]``.
+``records`` to ``[]``.
 
 Input validation
 ````````````````
@@ -498,7 +505,7 @@ Error responses have status ``400 Bad Request`` and contain a list of errors
 in the response body, with each list item corresponding to one part of the
 bulk request, in the same order.  Parts that passed without errors have an
 empty error object ``{}``, and parts with errors contain a data structure
-giving explaining the error(s) in a more detailed fashion.
+explaining the error(s) in a human-readable fashion.
 
 In case of several errors for the same RRset, we sometimes only return one
 of them.  For example, if you're creating an RRset that conflicts with an
@@ -516,8 +523,7 @@ Consider the following general remarks that apply to our API as a whole:
 
 - The TTL (time-to-live: time for which resolvers may cache DNS information)
   is a property of an RRset (and not of a record).  Thus, all records in an
-  RRset share the record type and also the TTL.  (This is actually a
-  requirement of the DNS specification and not an API design choice.)
+  RRset share the record type and also the TTL.
 
 
 Supported Types
@@ -542,11 +548,21 @@ Special care needs to be taken with some types of records, as explained below.
 Restricted Types
 ````````````````
 
-``ALIAS``, ``DNAME``
-    These record types are used very rarely in the wild.  Due to conflicts with
-    the security guarantees we would like to give, these record types are
-    disabled in our API.  If you attempt to create such RRsets, you will receive
-    a ``400 Bad Request`` response.
+``ALIAS``
+    Due to conflicts with the security guarantees we would like to give, this
+    record type is disabled in our API.  If you attempt to create such RRsets,
+    you will receive a ``400 Bad Request`` response.
+
+    If you need redirect functionality at the zone apex, consider using the
+    ``HTTPS`` record type which serves exactly this purpose.  (Note that as of
+    06/2021, this record type is not yet supported in all browsers.)
+
+``DNAME``
+    Implementation of this record type is under way.  You can track progress
+    here: https://github.com/desec-io/desec-stack/pull/521
+
+    When attempting to create such an RRset, you will receive a ``400 Bad
+    Request`` response.
 
 ``DNSKEY``, ``DS``, ``CDNSKEY``, ``CDS``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in
@@ -624,9 +640,8 @@ Record types with priority field
       internally managed SOA record).
 
       If you need redirect functionality at the zone apex, consider using the
-      ``HTTPS`` record type which serves exactly this purpose. Although new,
-      browser vendor support is under way (with Chrome planning to roll out
-      experimental support in February 2021).
+      ``HTTPS`` record type which serves exactly this purpose.  (Note that as
+      of 06/2021, this record type is not yet supported in all browsers.)
 
 ``DNSKEY`` record
     See notes on the ``CDNSKEY``, ``CDS``, and ``DNSKEY`` record types.
@@ -646,21 +661,29 @@ Record types with priority field
       undefined, per RFC 4592, Sec. 4.2.
 
 ``TXT`` record
-    The contents of the ``TXT`` record must be enclosed in double quotes.
-    Thus, when ``POST``\ ing to the API, make sure to do proper escaping etc.
-    as required by the client you are using.  Here's an example of how to
-    create a ``TXT`` RRset::
+    - The contents of the ``TXT`` record must be enclosed in double quotes.
+      Thus, when ``POST``\ ing to the API, make sure to do proper escaping
+      etc. as required by the client you are using.  Here's an example of how
+      to create a ``TXT`` RRset::
 
-        curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
-            --header "Authorization: Token {token}" \
-            --header "Content-Type: application/json" --data @- <<< \
-            '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
+          curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
+              --header "Authorization: Token {token}" \
+              --header "Content-Type: application/json" --data @- <<< \
+              '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
 
-    Binary record contents are supported, but subject to various escaping
-    rules (both JSON and ``TXT`` record syntax; in addition, certain
-    non-printable characters are not accepted even when unicode-escaped, like
-    ``\u0000``).  Still, you can store any binary data by using DNS-style
-    ``\DDD`` encoding for your binary data (see RFC 1035 Sec. 3.3.14 and 5.1).
-    For example, a carriage return (``\r``) can be stored as ``\013``.  (Note
-    that JSON encoding needs to be applied on top of that, so a valid
-    ``records`` field would be ``["\"\\013\""]``.)
+    - Record values consisting of several token strings separated by
+      whitespace are permitted, for example:
+      ``["\"token 1 of record 1\" \"token 2 of record 1\"", "\"record 2\""]``
+
+      Token strings longer than 255 characters are automatically split into
+      several token strings.  (This maximum length is given by the DNS
+      specification.)
+
+    - Binary record contents are supported, but subject to various escaping
+      rules (both JSON and ``TXT`` record syntax; in addition, certain
+      non-printable characters are not accepted even when unicode-escaped, like
+      ``\u0000``).  Still, you can store any binary data by using DNS-style
+      ``\DDD`` encoding for your binary data (see RFC 1035 Sec. 3.3.14 and 5.1).
+      For example, a carriage return (``\r``) can be stored as ``\013``.  (Note
+      that JSON encoding needs to be applied on top of that, so a valid
+      ``records`` field would be ``["\"\\013\""]``.)
