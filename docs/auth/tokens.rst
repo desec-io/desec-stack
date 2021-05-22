@@ -138,7 +138,7 @@ Creating a Token
 To create a new token, issue a ``POST`` request to the tokens endpoint::
 
     curl -X POST https://desec.io/api/v1/auth/tokens/ \
-        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond" \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "my new token"}'
 
@@ -199,7 +199,7 @@ To modify a token, send a ``PATCH`` or ``PUT`` request to the
 ``auth/tokens/{id}/`` endpoint of the token you would like to modify::
 
     curl -X POST https://desec.io/api/v1/auth/tokens/{id}/ \
-        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond" \
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "my new token"}'
 
@@ -227,7 +227,7 @@ Listing Tokens
 To retrieve a list of all known tokens, issue a ``GET`` request as follows::
 
     curl -X GET https://desec.io/api/v1/auth/tokens/ \
-        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will respond with a list of token objects.  Up to 500 items are
 returned at a time. If you have a larger number of tokens configured, the use
@@ -241,7 +241,7 @@ To retrieve information about a specific token, issue a ``GET`` request to the
 token's endpoint::
 
     curl -X GET https://desec.io/api/v1/auth/tokens/{id}/ \
-        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The response will contain a token object as described under `Token Field
 Reference`_.  You can use it to check a token's properties, such as name,
@@ -260,7 +260,7 @@ To delete an existing token by its ID via the token management endpoints, issue 
 token ``id`` value::
 
     curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/ \
-        --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
+        --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will reply with ``204 No Content``, even if the token was not found.
 
