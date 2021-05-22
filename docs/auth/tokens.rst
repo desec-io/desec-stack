@@ -224,8 +224,7 @@ reversed by means of another token that has this permission.
 Listing Tokens
 ``````````````
 
-To retrieve a list of currently valid tokens, issue a ``GET`` request as
-follows::
+To retrieve a list of all known tokens, issue a ``GET`` request as follows::
 
     curl -X GET https://desec.io/api/v1/auth/tokens/ \
         --header "Authorization: Token mu4W4MHuSc0HyrGD1h/dnKuZBond"
@@ -238,7 +237,7 @@ of :ref:`pagination` is required.
 Retrieving a Specific Token
 ```````````````````````````
 
-To retrieve a list of currently valid tokens, issue a ``GET`` request to the
+To retrieve information about a specific token, issue a ``GET`` request to the
 token's endpoint::
 
     curl -X GET https://desec.io/api/v1/auth/tokens/{id}/ \
