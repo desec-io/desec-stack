@@ -7,6 +7,7 @@ following options might be easier than the others.
 
 To update your dynDNS IP address, there are several options:
 
+
 Option 1: Use Your Router
 `````````````````````````
 
@@ -32,7 +33,7 @@ following details in your router configuration:
 - Update Server ``update.dedyn.io``, or Update URL ``https://update.dedyn.io/``
 - Username (the full name of the domain you want to update, e.g. yourname.dedyn.io)
 - Hostname (same as your username)
-- Token (long random string for authorization)
+- Token (long random string for authorization, displayed after sign-up)
 
 **Advanced API users:** The dynDNS token technically is a regular API token.
 You can also use the token to make requests to our REST API. (Currently, all
@@ -56,42 +57,40 @@ to set up IPv4 and IPv6 by using both update servers in an alternating fashion.
 
 To update both your IPv4 and IPv6 address at the same time, most routers need
 to be configured with an update URL that provides both IP addresses via query string
-parameters, e.g. ``https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234``, and
-provide placeholders for the respective addresses. To find out the placeholder names
+parameters, e.g. ``https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234``,
+with the IP addresses replaced by placeholders. To find out the placeholder names
 for your router, please refer to the manual of your device.
 
 Example: Fritz!Box Devices
 --------------------------
 
-For Fritz!Box devices, for example, the respective URL reads:
-``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>``.
+For Fritz!Box devices, for example, the corresponding URL reads:
+``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>``
 
 =============================   =====
 Field                           Entry
 =============================   =====
 DynDNS Provider                 User-defined
 Update URL :superscript:`1`     ``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>``
-Domain Name :superscript:`2`    <your domain>.dedyn.io
-Username :superscript:`3`       <your domain>.dedyn.io
-Password :superscript:`4`       <your authorization token>
+Domain Name                     <your domain>.dedyn.io
+Username :superscript:`2`       <your domain>.dedyn.io
+Password :superscript:`3`       <your authorization token>
 =============================   =====
 
 *Note 1*
   Note that the placeholders ``<ipaddr>`` and ``<ip6addr>`` in the update URL must
-  remain unchanged; your router will substitute them automatically. Furthermore,
+  remain unchanged; your router will substitute them automatically.  Furthermore,
   it is neither necessary nor recommended to use the placeholders ``<username>``
-  and ``<passwd>`` as the Fritz!Box makes use of HTTP basic authentication,
-  see :ref:`update-api-authentication`.
+  and ``<passwd>`` in the URL, as the Fritz!Box also supports HTTP basic
+  authentication which is more secure (see :ref:`update-api-authentication`).
 
 *Note 2*
-  This entry is not used by deSEC - you only need to enter it as Fritz!Box mandates it
-
-*Note 3*
   **Not** your deSEC username! Instead, use the domain you want to update,
   see :ref:`update-api-authentication` for details.
 
-*Note 4*
+*Note 3*
   A valid access token for the domain. **Not** you deSEC account password!
+
 
 Option 2: Use ddclient
 ``````````````````````

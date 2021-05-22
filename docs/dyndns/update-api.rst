@@ -68,8 +68,8 @@ the case, we suggest looking for another client.
 Determine Hostname
 ******************
 To update your IP address in the DNS, our servers need to determine the
-hostname you want to update (it's possible to set up several domains). To
-determine the hostname, we try the following steps until there is a match:
+hostname you want to update.  To determine the hostname, we try the following
+steps until there is a match:
 
 - ``hostname`` query string parameter, unless it is set to ``YES`` (this
   sometimes happens with dynDNS update clients).
@@ -131,32 +131,33 @@ dynDNS updates are subject to rate limiting.  For details, see
 
 Examples
 ````````
-The examples below use ``<your domain>.dedyn.io`` as the domain which is to be updated and
-``<your authorization token>`` as an API token affiliated with the respective account.
-(See :ref:`manage-tokens` for details.) ``1.2.3.4`` is used as an example for an IPv4 Address,
-``fd08::1234`` as a stand-in for an IPv6 address. Replace those (including the ``<`` and ``>``)
-with your respective values.
+The examples below use ``<your domain>`` (e.g. ``example.dedyn.io``) as the
+domain which is to be updated and ``<your authorization token>`` as an API
+token affiliated with the respective account (see :ref:`manage-tokens` for
+details.)  ``1.2.3.4`` is used as an example IPv4 address, and ``fd08::1234``
+for IPv6.  Replace those (including the ``<`` and ``>``) with your respective
+values.
 
 
 Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
 
-  curl --user <your domain>.dedyn.io:<your authorization token> https://update.dedyn.io/
+  curl --user <your domain>:<your authorization token> https://update.dedyn.io/
   
-  curl https://update.dedyn.io/?hostname=<your domain>.dedyn.io \
+  curl https://update.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your authorization token>"
 
 Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
 
-  curl --user <your domain>.dedyn.io:<your authorization token> https://update6.dedyn.io/
+  curl --user <your domain>:<your authorization token> https://update6.dedyn.io/
   
-  curl https://update6.dedyn.io/?hostname=<your domain>.dedyn.io \
+  curl https://update6.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your authorization token>"
 
 Basic authentication with simultaneous update of IPv4 and IPv6::
 
-  curl --user <your domain>.dedyn.io:<your authorization token> \
+  curl --user <your domain>:<your authorization token> \
     "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
 
-  curl "https://update6.dedyn.io/?hostname=<your domain>.dedyn.io?myipv4=1.2.3.4&myipv6=fd08::1234" \
+  curl "https://update6.dedyn.io/?hostname=<your domain>?myipv4=1.2.3.4&myipv6=fd08::1234" \
     --header "Authorization: Token <your authorization token>"
 
