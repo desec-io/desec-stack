@@ -131,7 +131,8 @@ payload was malformed, or when the requested domain name is unavailable
 below).
 
 If you have reached the maximum number of domains for your account, the API
-responds with ``403 Forbidden``.
+responds with ``403 Forbidden``.  If you find yourself affected by this limit
+although you have a legitimate use case, please contact our support.
 
 Restrictions on what is a valid domain name apply.  In particular, domains
 listed on the `Public Suffix List`_ such as ``co.uk`` cannot be registered.
@@ -141,10 +142,10 @@ certainly possible; please contact support.) Also, domains ending with
 
 .. _Public Suffix List: https://publicsuffix.org/
 
-Furthermore, restrictions on a per-user basis may apply.  In particular, the
-number of domains a user can create is limited.  If you find yourself affected
-by this limit although you have a legitimate use case, please contact our
-support.
+Furthermore, we may impose other restrictions on a per-user basis if necessary
+to enforce our `Terms of Use`_.
+
+.. _Terms of Use: https://desec.io/terms
 
 
 Listing Domains
@@ -234,5 +235,5 @@ Deleting a Domain
 ~~~~~~~~~~~~~~~~~
 
 To delete a domain, send a ``DELETE`` request to the endpoint representing the
-domain.  Upon success or if the domain did not exist or was not yours in the
-first place, the response status code is ``204 No Content``.
+domain.  Upon success or if the domain did not exist in your account, the
+response status code is ``204 No Content``.
