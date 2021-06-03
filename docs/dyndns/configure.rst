@@ -138,12 +138,22 @@ For more information, check out `these
 <https://sourceforge.net/p/ddclient/wiki/usage/>`_ of the ddclient
 documentation.
 
-**Hint:** We have been told that in newer versions of ddclient, IPv6 can be
-enabled by replacing ``use`` with ``usev6``, ``checkipv4.dedyn.io`` with
-``checkipv6.dedyn.io``, and ``update.dedyn.io`` with ``update6.dedyn.io``.
-Unfortunately, there seems to be no documentation of the ``usev6`` setting, so
-we don't know if it is reliable. If you know more about this, please open an
-issue or pull request at `<https://github.com/desec-io/desec-stack/>`_.
+*Note 1*
+  Exclusively on Debian and derivatives, since ddclient 3.8.2-3 you can enable
+  IPv6 by replacing ``use`` with ``usev6``, ``checkipv4.dedyn.io`` with
+  ``checkipv6.dedyn.io``, and ``update.dedyn.io`` with ``update6.dedyn.io``.
+  There are some notes `here
+  <https://github.com/ddclient/ddclient/blob/develop/docs/ipv6-design-doc.md>`_.
+
+*Note 2*
+  According to :ref:`determine-ip-addresses`, the IP used for connecting to
+  the update server is also considered when trying to find an IPv6 address to
+  assign to your domain.  So, if you connect via IPv6, this address will be
+  set on your domain, *even if you did not provide it explicitly*.
+
+  If you would like to *avoid* setting an IPv6 address automatically, one
+  simple workaround is to add a fake parameter on the domain section like
+  this: ``mydomain.dedyn.io&myipv6=``
 
 To test your setup, run ``sudo ddclient -force`` and see if everything works as
 expected.
