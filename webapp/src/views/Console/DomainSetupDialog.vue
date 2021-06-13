@@ -3,6 +3,7 @@
     v-model="show"
     max-width="700px"
     persistent
+    scrollable
     @keydown.esc="close"
   >
     <v-card>
@@ -17,13 +18,17 @@
       </v-card-title>
       <v-divider/>
 
-      <domain-setup v-bind="$attrs"></domain-setup>
+      <v-alert
+          class="mb-0"
+          :value="isNew"
+          type="success"
+      >
+        Your domain <b>{{ domain }}</b> has been successfully created!
+      </v-alert>
 
-      <v-divider/>
-      <v-card-actions>
-        <v-spacer/>
-        <v-btn flat @click.stop="close">Close</v-btn>
-      </v-card-actions>
+      <v-card-text>
+        <domain-setup v-bind="$attrs"></domain-setup>
+      </v-card-text>
     </v-card>
   </v-dialog>
 </template>
@@ -38,7 +43,11 @@ export default {
     'domain': {
       type: String,
       required: true,
-    }
+    },
+    isNew: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     value: {
