@@ -119,7 +119,7 @@
   });
 
   export default {
-    name: 'SignUp',
+    name: 'DonateDirectDebitForm',
     data: () => ({
       valid: false,
       working: false,

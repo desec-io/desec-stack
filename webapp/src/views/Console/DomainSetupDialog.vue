@@ -32,7 +32,7 @@
 import DomainSetup from "@/views/DomainSetup";
 
 export default {
-  name: 'DomainSetupPage',
+  name: 'DomainSetupDialog',
   components: { DomainSetup },
   props: {
     'domain': {
