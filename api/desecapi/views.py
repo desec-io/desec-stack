@@ -496,7 +496,7 @@ class AccountView(generics.RetrieveAPIView):
         return self.request.user
 
 
-class AccountDeleteView(generics.GenericAPIView):
+class AccountDeleteView(APIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     response_still_has_domains = Response(
