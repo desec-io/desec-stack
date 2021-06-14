@@ -102,7 +102,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
 
     def get_serializer(self, *args, **kwargs):
         # When creating a new token, return the plaintext representation
-        if self.request.method == 'POST':
+        if self.action == 'create':
             kwargs.setdefault('include_plain', True)
         return super().get_serializer(*args, **kwargs)
 
