@@ -285,9 +285,10 @@ class Root(APIView):
         return Response(routes)
 
 
-class DynDNS12Update(generics.GenericAPIView):
+class DynDNS12UpdateView(generics.GenericAPIView):
     authentication_classes = (auth.TokenAuthentication, auth.BasicTokenAuthentication, auth.URLParamAuthentication,)
     renderer_classes = [PlainTextRenderer]
+    serializer_class = serializers.RRsetSerializer
     throttle_scope = 'dyndns'
 
     def _find_ip(self, params, version):
@@ -367,6 +368,9 @@ class DynDNS12Update(generics.GenericAPIView):
     def subname(self):
         return self.qname.rpartition(f'.{self.domain.name}')[0]
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'domain': self.domain, 'minimum_ttl': 60}
+
     def get_queryset(self):
         return self.domain.rrset_set.filter(subname=self.subname, type__in=['A', 'AAAA'])
 
@@ -381,8 +385,7 @@ class DynDNS12Update(generics.GenericAPIView):
             {'type': 'AAAA', 'subname': self.subname, 'ttl': 60, 'records': [ipv6] if ipv6 else []},
         ]
 
-        context = {'domain': self.domain, 'minimum_ttl': 60}
-        serializer = serializers.RRsetSerializer(instances, data=data, many=True, partial=True, context=context)
+        serializer = self.get_serializer(instances, data=data, many=True, partial=True)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:

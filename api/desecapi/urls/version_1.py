@@ -39,7 +39,7 @@ api_urls = [
     path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
 
     # DynDNS update
-    path('dyndns/update', views.DynDNS12Update.as_view(), name='dyndns12update'),
+    path('dyndns/update', views.DynDNS12UpdateView.as_view(), name='dyndns12update'),
 
     # Serials
     path('serials/', views.SerialList.as_view(), name='serial'),
