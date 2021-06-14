@@ -523,16 +523,16 @@ class AccountDeleteView(generics.GenericAPIView):
 class AccountLoginView(generics.GenericAPIView):
     authentication_classes = (auth.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.TokenSerializer
     throttle_scope = 'account_management_passive'
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-
         token = models.Token.objects.create(user=user, name="login", perm_manage_tokens=True,
                                             max_age=timedelta(days=7), max_unused_period=timedelta(hours=1))
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
-        data = serializers.TokenSerializer(token, include_plain=True).data
+        data = self.get_serializer(token, include_plain=True).data
         return Response(data)
 
 
