@@ -144,10 +144,6 @@ export default {
       type: String,
       required: true,
     },
-    isNew: {
-      type: Boolean,
-      default: false,
-    },
     ds: {
       type: Array,
       default: () => [],
