@@ -536,7 +536,7 @@ class AccountLoginView(generics.GenericAPIView):
         return Response(data)
 
 
-class AccountLogoutView(generics.GenericAPIView, mixins.DestroyModelMixin):
+class AccountLogoutView(APIView, mixins.DestroyModelMixin):
     authentication_classes = (auth.TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     throttle_classes = []  # always allow people to log out
