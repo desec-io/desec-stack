@@ -27,7 +27,7 @@
       </v-alert>
 
       <v-card-text>
-        <domain-setup v-bind="$attrs"></domain-setup>
+        <domain-setup v-bind="$attrs" :domain="domain"></domain-setup>
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -40,7 +40,7 @@ export default {
   name: 'DomainSetupDialog',
   components: { DomainSetup },
   props: {
-    'domain': {
+    domain: {
       type: String,
       required: true,
     },
