@@ -183,6 +183,51 @@ returns the domain object in the response body.  Otherwise, the return status
 code is ``404 Not Found``.
 
 
+Identifying the Responsible Domain for a DNS Name
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have several domains which share a DNS suffix (i.e. one domain is a
+parent of the other), it is sometimes necessary to find out which domain is
+responsible for a given DNS name.  (In DNS terminology, the responsible domain
+is also called the "authoritative zone".)
+
+The responsible domain for a given DNS query name (``qname``) can be retrieved
+by applying a filter on the endpoint used for `Listing Domains`_, like so::
+
+    curl -X GET https://desec.io/api/v1/domains/?owns_qname={qname} \
+        --header "Authorization: Token {token}"
+
+If your account has a domain that is reponsible for the name ``qname``, the
+API returns a JSON array containing only that domain object in the response
+body.  Otherwise, the JSON array will be empty.
+
+One use case of this is when requesting TLS certificates using the DNS
+challenge mechanism, which requires placing a ``TXT`` record at a certain name
+within the responsible domain.
+
+Example
+```````
+Let's say you have the domains ``example.net``, ``dev.example.net`` and
+``git.dev.example.net``, and you would like to request a certificate for the
+TLS server name ``www.dev.example.net``.  In this case, the ``TXT`` record
+needs to be created with the name ``_acme-challenge.www.dev.example.net``.
+
+This DNS name belongs to the ``dev.example.net`` domain, and the record needs
+to be created under that domain using the ``subname`` value
+``_acme-challenge.www`` (see :ref:`creating-an-rrset`).
+
+If ``dev.example.net`` was not configured as a domain in its own right, the
+responsible domain would instead be the parent domain ``example.net``.  In
+this case, the record would have to be configured there, with a ``subname``
+value of ``_acme-challenge.www.dev``.
+
+Finally, when requesting a certificate for ``git.dev.example.net``, the
+responsible domain for the corresponding DNS record is the one with this name,
+and ``subname`` would just be ``_acme-challenge``.
+
+The above API request helps you answer this kind of question.
+
+
 .. _deleting-a-domain:
 
 Deleting a Domain

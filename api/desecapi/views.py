@@ -18,6 +18,7 @@ from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 import desecapi.authentication as auth
@@ -124,8 +125,23 @@ class DomainViewSet(IdempotentDestroyMixin,
     def throttle_scope(self):
         return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_domains'
 
+    @property
+    def pagination_class(self):
+        # Turn off pagination when filtering for covered qname, as pagination would re-order by `created` (not what we
+        # want here) after taking a slice (that's forbidden anyway). But, we don't need pagination in this case anyways.
+        if 'owns_qname' in self.request.query_params:
+            return None
+        else:
+            return api_settings.DEFAULT_PAGINATION_CLASS
+
     def get_queryset(self):
-        return self.request.user.domains
+        qs = self.request.user.domains
+
+        owns_qname = self.request.query_params.get('owns_qname')
+        if owns_qname is not None:
+            qs = qs.filter_qname(owns_qname).order_by('-name_length')[:1]
+
+        return qs
 
     def get_serializer(self, *args, **kwargs):
         include_keys = (self.action in ['create', 'retrieve'])

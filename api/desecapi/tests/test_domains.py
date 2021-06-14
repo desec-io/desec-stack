@@ -207,6 +207,30 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertEqual(response_set, expected_set)
         self.assertFalse(any('keys' in data for data in response.data))
 
+    def test_list_domains_owns_qname(self):
+        # Domains outside this account or non-existent
+        for domain in ['non-existent.net', self.other_domain.name]:
+            for name in [domain, f'foo.bar.{domain}']:
+                response = self.client.get(self.reverse('v1:domain-list'), data={'owns_qname': name})
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertEqual(len(response.data), 0)
+
+        # Domains within this account
+        domains = [
+            Domain(owner=self.owner, name=name)
+            # Weird order so that name ownership does not follow domain creation chronologically
+            for name in ['a.foobar.net', 'foobar.net', 'b.a.foobar.net']
+        ]
+        for domain in domains:
+            domain.save()
+
+        for domain in domains:
+            for name in [domain.name, f'foo.bar.{domain.name}']:
+                response = self.client.get(self.reverse('v1:domain-list'), data={'owns_qname': name})
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertEqual(len(response.data), 1)
+                self.assertEqual(response.data[0]['name'], domain.name)
+
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
 
