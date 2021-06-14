@@ -198,15 +198,14 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 Domain(owner=self.owner, name=name).save()
 
     def test_list_domains(self):
-        with self.assertPdnsNoRequestsBut(self.request_pdns_zone_retrieve_crypto_keys()):
-            response = self.client.get(self.reverse('v1:domain-list'))
-            self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
+        response = self.client.get(self.reverse('v1:domain-list'))
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
 
-            response_set = {data['name'] for data in response.data}
-            expected_set = {domain.name for domain in self.my_domains}
-            self.assertEqual(response_set, expected_set)
-            self.assertFalse(any('keys' in data for data in response.data))
+        response_set = {data['name'] for data in response.data}
+        expected_set = {domain.name for domain in self.my_domains}
+        self.assertEqual(response_set, expected_set)
+        self.assertFalse(any('keys' in data for data in response.data))
 
     def test_delete_my_domain(self):
         url = self.reverse('v1:domain-detail', name=self.my_domain.name)
