@@ -615,7 +615,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
     Accept: text/html	forward to `self.html_url` if any   perform action      405 Method Not Allowed
     else                HTTP 406 Not Acceptable             perform action      405 Method Not Allowed
     """
-    action = None
+    authenticated_action = None
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
@@ -651,14 +651,14 @@ class AuthenticatedActionView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            self.action = serializer.Meta.model(**serializer.validated_data)
+            self.authenticated_action = serializer.Meta.model(**serializer.validated_data)
         except ValueError:  # this happens when state cannot be verified
             ex = ValidationError('This action cannot be carried out because another operation has been performed, '
                                  'invalidating this one. (Are you trying to perform this action twice?)')
             ex.status_code = status.HTTP_409_CONFLICT
             raise ex
 
-        self.action.act()
+        self.authenticated_action.act()
         return self.finalize()
 
     def finalize(self):
@@ -670,7 +670,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
-        if not self.action.domain:
+        if not self.authenticated_action.domain:
             return self._finalize_without_domain()
         else:
             domain = self._create_domain()
@@ -678,25 +678,25 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
 
     def _create_domain(self):
         serializer = serializers.DomainSerializer(
-            data={'name': self.action.domain},
+            data={'name': self.authenticated_action.domain},
             context=self.get_serializer_context()
         )
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:  # e.g. domain name unavailable
-            self.action.user.delete()
+            self.authenticated_action.user.delete()
             reasons = ', '.join([detail.code for detail in e.detail.get('name', [])])
             raise ValidationError(
-                f'The requested domain {self.action.domain} could not be registered (reason: {reasons}). '
+                f'The requested domain {self.authenticated_action.domain} could not be registered (reason: {reasons}). '
                 f'Please start over and sign up again.'
             )
         # TODO the following line is subject to race condition and can fail, as for the domain name, we have that
         #  time-of-check != time-of-action
-        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.action.user))
+        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.authenticated_action.user))
 
     def _finalize_without_domain(self):
-        if not is_password_usable(self.action.user.password):
-            AccountResetPasswordView.send_reset_token(self.action.user, self.request)
+        if not is_password_usable(self.authenticated_action.user.password):
+            AccountResetPasswordView.send_reset_token(self.authenticated_action.user, self.request)
             return Response({
                 'detail': 'Success! We sent you instructions on how to set your password.'
             })
@@ -729,7 +729,7 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
 
     def finalize(self):
         return Response({
-            'detail': f'Success! Your email address has been changed to {self.action.user.email}.'
+            'detail': f'Success! Your email address has been changed to {self.authenticated_action.user.email}.'
         })
 
 
@@ -760,7 +760,7 @@ class AuthenticatedRenewDomainBasicUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedRenewDomainBasicUserActionSerializer
 
     def finalize(self):
-        return Response({'detail': f'We recorded that your domain {self.action.domain} is still in use.'})
+        return Response({'detail': f'We recorded that your domain {self.authenticated_action.domain} is still in use.'})
 
 
 class CaptchaView(generics.CreateAPIView):
