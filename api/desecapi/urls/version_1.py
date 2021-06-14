@@ -42,7 +42,7 @@ api_urls = [
     path('dyndns/update', views.DynDNS12UpdateView.as_view(), name='dyndns12update'),
 
     # Serials
-    path('serials/', views.SerialList.as_view(), name='serial'),
+    path('serials/', views.SerialListView.as_view(), name='serial'),
 
     # Donation
     path('donation/', views.DonationList.as_view(), name='donation'),

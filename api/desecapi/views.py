@@ -169,11 +169,11 @@ class DomainViewSet(IdempotentDestroyMixin,
                 parent_domain.update_delegation(instance)
 
 
-class SerialList(generics.ListAPIView):
+class SerialListView(APIView):
     permission_classes = (IsVPNClient,)
     throttle_classes = []  # don't break slaves when they ask too often (our cached responses are cheap)
 
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         key = 'desecapi.views.serials'
         serials = cache.get(key)
         if serials is None:
