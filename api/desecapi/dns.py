@@ -68,7 +68,7 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
 
 
 # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in the main codebase
-class _DigestLengthMixin():
+class _DigestLengthMixin:
     _digest_length_by_type = {
         1: 20,  # SHA-1, RFC 3658 Sec. 2.4
         2: 32,  # SHA-256, RFC 4509 Sec. 2.2
