@@ -1,8 +1,11 @@
 import struct
 
+from ipaddress import IPv6Address
+
 import dns
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
 import dns.rdtypes.ANY.CDS, dns.rdtypes.ANY.DLV, dns.rdtypes.ANY.DS
+import dns.rdtypes.IN.AAAA
 
 
 def _strip_quotes_decorator(func):
@@ -18,6 +21,13 @@ dns.rdtypes.svcbbase.IPv4HintParam.to_text = _strip_quotes_decorator(dns.rdtypes
 dns.rdtypes.svcbbase.IPv6HintParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.IPv6HintParam.to_text)
 dns.rdtypes.svcbbase.MandatoryParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.MandatoryParam.to_text)
 dns.rdtypes.svcbbase.PortParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.PortParam.to_text)
+
+
+@dns.immutable.immutable
+class AAAA(dns.rdtypes.IN.AAAA.AAAA):
+    def to_text(self, origin=None, relativize=True, **kw):
+        address = super().to_text(origin, relativize, **kw)
+        return IPv6Address(address).compressed
 
 
 @dns.immutable.immutable

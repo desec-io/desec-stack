@@ -350,6 +350,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             # record type: (non-canonical input, canonical output expectation)
             ('A', ('127.0.0.1', '127.0.0.1')),
             ('AAAA', ('0000::0000:0001', '::1')),
+            ('AAAA', ('::ffff:127.0.0.1', '::ffff:7f00:1')),
+            ('AAAA', ('2001:db8::128.2.129.4', '2001:db8::8002:8104')),
             ('AFSDB', ('02 turquoise.FEMTO.edu.', '2 turquoise.femto.edu.')),
             ('APL', ('2:FF00:0:0:0:0::/8  !1:192.168.38.0/28', '2:ff00::/8 !1:192.168.38.0/28')),
             ('CAA', ('0128 "issue" "letsencrypt.org"', '128 issue "letsencrypt.org"')),

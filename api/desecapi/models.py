@@ -40,7 +40,7 @@ from rest_framework.exceptions import APIException
 
 from desecapi import metrics
 from desecapi import pdns
-from desecapi.dns import CDS, DLV, DS, LongQuotedTXT
+from desecapi.dns import AAAA, CDS, DLV, DS, LongQuotedTXT
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -681,6 +681,7 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
     objects = RRManager()
 
     _type_map = {
+        dns.rdatatype.AAAA: AAAA,  # TODO remove when https://github.com/PowerDNS/pdns/issues/8182 is fixed
         dns.rdatatype.CDS: CDS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
         dns.rdatatype.DLV: DLV,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
         dns.rdatatype.DS: DS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase

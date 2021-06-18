@@ -145,7 +145,7 @@ VALID_RECORDS_CANONICAL = {
 
 VALID_RECORDS_NON_CANONICAL = {
     'A': ['127.0.0.3'],
-    'AAAA': ['0000::0000:0003'],
+    'AAAA': ['0000::0000:0003', '2001:db8::128.2.129.4'],
     'AFSDB': ['03 turquoise.FEMTO.edu.'],
     'APL': ['2:FF00:0:0:0:0::/8 !1:192.168.38.0/28'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
