@@ -54,7 +54,7 @@ VALID_RECORDS_CANONICAL = {
     'HINFO': ['"ARMv8-A" "Linux"'],
     'HTTPS': ['1 h3POOL.exaMPLe. alpn=h2,h3 echconfig="MTIzLi4uCg=="'],
     # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
-    'KX': ['4 example.com.', '28 io.'],
+    'KX': ['4 example.com.', '28 io.', '0 .'],
     'LOC': [
         '23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m',
     ],
@@ -263,7 +263,7 @@ VALID_RECORDS_NON_CANONICAL = {
     ],
     'TLSA': ['003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
-        f'"{"a" * 498}"',
+        f'"{"a" * 498}" ',
         '"' + 124 * '🧥' + '==="',  # 501 byte total length
         '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 "',
         '"🧥 👚 👕 👖 👔 👗 👙 👘 👠 👡 👢 👞 👟 🥾 🥿  🧦 🧤 🧣 🎩 🧢 👒 🎓 ⛑ 👑 👝 👛 👜 💼 🎒 👓 🕶 🥽 🥼 🌂 🧵"',
@@ -313,7 +313,7 @@ INVALID_RECORDS = {
     # 'IPSECKEY': [],
     'KX': ['-1 example.com', '10 example.com'],
     'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
-    'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.'],
+    'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.' '10 _foo.example.com.', '10 $url.'],
     'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu',
               '100  50  "s"     ""  _z3950._tcp.gatech.edu.',
               '100  50  3 2  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
@@ -323,7 +323,7 @@ INVALID_RECORDS = {
     'RP': ['hostmaster.example.com.', '10 foo.'],
     'SMIMEA': ['3 1 0 aGVsbG8gd29ybGQh', 'x 0 0 aabbccddeeff'],
     'SPF': ['"v=spf1', 'v=spf1 include:example.com ~all'],
-    'SRV': ['0 0 0 0', '100 5061 example.com.'],
+    'SRV': ['0 0 0 0', '100 5061 example.com.', '0 0 16920 _foo.example.com.', '0 0 16920 $url.'],
     'SSHFP': ['aabbcceeddff'],
     'SVCB': [
         '0 svc4-baz.example.net. keys=val',

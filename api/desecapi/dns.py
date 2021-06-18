@@ -1,11 +1,13 @@
+import re
 import struct
 
 from ipaddress import IPv6Address
 
 import dns
+import dns.name
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CDS, dns.rdtypes.ANY.DLV, dns.rdtypes.ANY.DS
-import dns.rdtypes.IN.AAAA
+import dns.rdtypes.ANY.CDS, dns.rdtypes.ANY.DLV, dns.rdtypes.ANY.DS, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
+import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
 
 
 def _strip_quotes_decorator(func):
@@ -101,4 +103,33 @@ class DLV(_DigestLengthMixin, dns.rdtypes.ANY.DLV.DLV):
 
 @dns.immutable.immutable
 class DS(_DigestLengthMixin, dns.rdtypes.ANY.DS.DS):
+    pass
+
+
+def _HostnameMixin(name_field, *, allow_root):
+    # Taken from https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L419
+    hostname_re = re.compile(r'^(([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)\.)+$')
+
+    class Mixin:
+        def to_text(self, origin=None, relativize=True, **kw):
+            name = getattr(self, name_field)
+            if not (allow_root and name == dns.name.root) and hostname_re.match(str(name)) is None:
+                raise ValueError(f'invalid {name_field}: {name}')
+            return super().to_text(origin, relativize, **kw)
+
+    return Mixin
+
+
+@dns.immutable.immutable
+class MX(_HostnameMixin('exchange', allow_root=True), dns.rdtypes.ANY.MX.MX):
+    pass
+
+
+@dns.immutable.immutable
+class NS(_HostnameMixin('target', allow_root=False), dns.rdtypes.ANY.NS.NS):
+    pass
+
+
+@dns.immutable.immutable
+class SRV(_HostnameMixin('target', allow_root=True), dns.rdtypes.IN.SRV.SRV):
     pass

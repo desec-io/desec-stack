@@ -40,7 +40,7 @@ from rest_framework.exceptions import APIException
 
 from desecapi import metrics
 from desecapi import pdns
-from desecapi.dns import AAAA, CDS, DLV, DS, LongQuotedTXT
+from desecapi.dns import AAAA, CDS, DLV, DS, LongQuotedTXT, MX, NS, SRV
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -685,6 +685,9 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
         dns.rdatatype.CDS: CDS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
         dns.rdatatype.DLV: DLV,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
         dns.rdatatype.DS: DS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
+        dns.rdatatype.MX: MX,  # do DNS name validation the same way as pdns
+        dns.rdatatype.NS: NS,  # do DNS name validation the same way as pdns
+        dns.rdatatype.SRV: SRV,  # do DNS name validation the same way as pdns
         dns.rdatatype.TXT: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
         dns.rdatatype.SPF: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
     }
