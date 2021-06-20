@@ -7,11 +7,19 @@ The API implements rate limits to prevent brute force attacks on passwords, to
 ensure that the system load remains manageable, to avoid update rejections due
 to concurrent DNS updates on the same domain etc.
 
-Rate limits apply per account.  The following table summarizes the rate limits
-pertaining to various parts of the API.  When several rates are given, all are
-enforced at the same time.  For throttled requests, the server will respond
-with ``429 Too Many Requests``.
+Rate limits apply per account and are enforced in a sliding-window fashion.
+For throttled requests, the server will respond with ``429 Too Many Requests``.
+The response body contains information on how long to wait.
 
+**Example:** If the rate is 10/min and you make a request every second, the
+11th request will be rejected.  You will then have to wait for 50 seconds,
+until the first request's age reaches one minute.  At that time, it will be
+dropped from the calculation, and you can make another request.  One second
+later, and generally every time an old request's age falls out of the
+counting interval, you can make another request.
+
+The following table summarizes the rate limits pertaining to various parts of
+the API.  When several rates are given, all are enforced at the same time.
 
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
 | Rate limit name                | Rate     | Affected operations                                                                       |
