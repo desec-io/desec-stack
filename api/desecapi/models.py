@@ -99,7 +99,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
-    limit_domains = models.IntegerField(default=_limit_domains_default.__func__, null=True, blank=True)
+    limit_domains = models.PositiveIntegerField(default=_limit_domains_default.__func__, null=True, blank=True)
     needs_captcha = models.BooleanField(default=True)
 
     objects = MyUserManager()
