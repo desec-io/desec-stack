@@ -355,16 +355,6 @@ class RRSetTestCase(PdnsChangeTrackerTestCase):
             for type_, subname, _ in data.keys():
                 self.full_domain.rrset_set.get(subname=subname, type=type_).delete()
 
-    def test_update_type(self):
-        with PDNSChangeTracker():
-            self.rr_sets[0].type = 'PTR'
-            self.rr_sets[0].save()
-
-    def test_update_subname(self):
-        with PDNSChangeTracker():
-            self.rr_sets[0].subname = '*.baz.foobar.ugly'
-            self.rr_sets[0].save()
-
     def test_update_ttl(self):
         new_ttl = 765
         data = {(type_, subname, new_ttl): records for (type_, subname, _), records in self.TEST_DATA.items()}
