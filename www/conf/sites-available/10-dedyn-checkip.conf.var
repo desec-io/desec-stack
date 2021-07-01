@@ -33,6 +33,7 @@ server {
 	include global.conf;
 	
 	location / {
+		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;
@@ -62,6 +63,7 @@ server {
 	include global.conf;
 
 	location / {
+		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;
@@ -93,6 +95,7 @@ server {
 	include global.conf;
 
 	location / {
+		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;
