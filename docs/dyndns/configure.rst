@@ -2,8 +2,9 @@ Configuring your dynDNS Client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here's how to configure your client to send your IP address to our servers so
-that we can publish it in the DNS. Depending on your use case, one of the
-following options might be easier than the others.
+that we can publish it in the DNS. This works with both your own domains and
+with dynDNS domains registered with us under dedyn.io. Depending on your use
+case, one of the following options might be easier than the others.
 
 To update your dynDNS IP address, there are several options:
 
@@ -72,8 +73,8 @@ Field                           Entry
 =============================   =====
 DynDNS Provider                 User-defined
 Update URL :superscript:`1`     ``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>``
-Domain Name                     <your domain>.dedyn.io
-Username :superscript:`2`       <your domain>.dedyn.io
+Domain Name                     <your domain>
+Username :superscript:`2`       <your domain>
 Password :superscript:`3`       <your authorization token>
 =============================   =====
 
@@ -85,8 +86,9 @@ Password :superscript:`3`       <your authorization token>
   authentication which is more secure (see :ref:`update-api-authentication`).
 
 *Note 2*
-  **Not** your deSEC username! Instead, use the domain you want to update,
-  see :ref:`update-api-authentication` for details.
+  **Not** your deSEC username! Instead, use the domain you want to update, for
+  example ``yourdomain.dedyn.io``. See :ref:`update-api-authentication` for
+  details.
 
 *Note 3*
   A valid access token for the domain. **Not** you deSEC account password!
