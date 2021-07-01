@@ -74,7 +74,6 @@ describe("API v1", function () {
         return chakram.get('/').then(function (response) {
             expect(response).to.have.schema(schemas.rootNoLogin);
             expect(response.body.login).to.match(/https:\/\/[^\/]+\/api\/v1\/auth\/login\//);
-            return chakram.wait();
         });
     });
 
