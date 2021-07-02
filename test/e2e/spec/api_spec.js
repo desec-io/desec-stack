@@ -70,13 +70,6 @@ describe("API v1", function () {
         });
     });
 
-    it("provides an index page", function () {
-        return chakram.get('/').then(function (response) {
-            expect(response).to.have.schema(schemas.rootNoLogin);
-            expect(response.body.login).to.match(/https:\/\/[^\/]+\/api\/v1\/auth\/login\//);
-        });
-    });
-
     it("has HSTS header", function () {
         var response = chakram.get('/');
         expect(response).to.have.header('Strict-Transport-Security', 'max-age=31536000; includeSubdomains; preload');
