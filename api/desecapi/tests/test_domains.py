@@ -515,11 +515,13 @@ class DomainManagerTestCase(DesecTestCase):
         config['sub.domain.dedyn.io'] = config['domain.dedyn.io']
 
         for qname, cases in config.items():
-            for owner, expected in cases.items():
-                filter_kwargs = dict(owner=owner) if owner is not None else {}
-                qs = Domain.objects.filter_qname(qname, **filter_kwargs).values_list('name', flat=True)
-                self.assertListEqual(list(qs), expected)
+            for qname in [qname, f'*.{qname}']:
+                for owner, expected in cases.items():
+                    filter_kwargs = dict(owner=owner) if owner is not None else {}
+                    qs = Domain.objects.filter_qname(qname, **filter_kwargs).values_list('name', flat=True)
+                    self.assertListEqual(list(qs), expected)
 
     def test_filter_qname_invalid(self):
-        with self.assertRaises(ValueError):
-            Domain.objects.filter_qname('foo@bar.com')
+        for qname in ['foo@bar.com', '*.*.example.com', '*foo.example.com', 'foo.*.example.com']:
+            with self.assertRaises(ValueError):
+                Domain.objects.filter_qname(qname)

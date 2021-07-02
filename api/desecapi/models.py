@@ -208,7 +208,7 @@ validate_domain_name = [
 class DomainManager(Manager):
     def filter_qname(self, qname: str, **kwargs) -> models.query.QuerySet:
         try:
-            Domain._meta.get_field('name').run_validators(qname)
+            Domain._meta.get_field('name').run_validators(qname.removeprefix('*.'))
         except ValidationError:
             raise ValueError
         return self.annotate(

@@ -40,10 +40,11 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.content, b'badauth')
 
-        response = self.assertDynDNS12Update(username=f'baz.{self.my_domain.name}', password=self.token.plain)
-        self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(response.data, 'good')
-        self.assertIP(ipv4='127.0.0.1', subname='baz')
+        for subname in ['baz', '*.baz']:
+            response = self.assertDynDNS12Update(username=f'{subname}.{self.my_domain.name}', password=self.token.plain)
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data, 'good')
+            self.assertIP(ipv4='127.0.0.1', subname=subname)
 
     def test_deviant_ttl(self):
         """
