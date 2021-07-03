@@ -600,11 +600,15 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         """
         errors = []
 
+        # Singletons
+        if self.type in ('CNAME', 'DNAME',):
+            if len(records_presentation_format) > 1:
+                errors.append(f'{self.type} RRset cannot have multiple records.')
+
+        # Non-apex
         if self.type == 'CNAME':
             if self.subname == '':
                 errors.append('CNAME RRset cannot have empty subname.')
-            if len(records_presentation_format) > 1:
-                errors.append('CNAME RRset cannot have multiple records.')
 
         def _error_msg(record, detail):
             return f'Record content of {self.type} {self.name} invalid: \'{record}\': {detail}'
