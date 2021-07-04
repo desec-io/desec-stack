@@ -291,6 +291,10 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     serializer_class = serializers.RRsetSerializer
     throttle_scope = 'dyndns'
 
+    @property
+    def throttle_scope_bucket(self):
+        return self.domain.name
+
     def _find_ip(self, params, version):
         if version == 4:
             look_for = '.'

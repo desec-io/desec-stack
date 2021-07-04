@@ -28,7 +28,8 @@ the API.  When several rates are given, all are enforced at the same time.
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``account_management_passive`` | 10/min   | Account activities with internal effects (e.g. viewing account details, creating a token) |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dyndns``                     | 1/min    | dynDNS updates                                                                            |
+| ``dyndns``                     | 1/min    | dynDNS updates (per domain).  If you need to keep subdomains in sync, consider setting up |
+|                                |          | a ``CNAME`` redirect in our web interface.                                                |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``dns_api_read``               | 10/s     | DNS read operations (e.g. fetching an RRset)                                              |
 |                                |          |                                                                                           |
