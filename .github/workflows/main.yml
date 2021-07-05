@@ -75,9 +75,9 @@ jobs:
     - name: API Tests Logs and Cleanup
       if: always()
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
+        docker-compose -f docker-compose.yml -f docker-compose.test-api.yml ps
         grep 'desec/' /var/log/syslog
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
+        docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
         docker-compose down -v
 
     - name: Run e2e Tests
