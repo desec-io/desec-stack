@@ -48,7 +48,6 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         docker-compose build
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml build test-e2e
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
 
     - name: Check for missing migrations
@@ -78,16 +77,4 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml ps
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
-        docker-compose down -v
-
-    - name: Run e2e Tests
-      run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml run -T test-e2e bash -c "./apiwait 45 && mocha ./spec"
-
-    - name: e2e Tests Logs and Cleanup
-      if: always()
-      run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml ps
-        grep 'desec/' /var/log/syslog
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e.yml down -v
         docker-compose down -v
