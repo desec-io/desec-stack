@@ -1,7 +1,7 @@
 import pytest
 
 from conftest import DeSECAPIV1Client, return_eventually, query_replication, random_domainname, assert_eventually, \
-    faketime_add
+    FaketimeShift
 
 
 some_ds_records = [
@@ -15,8 +15,8 @@ def test_signature_rotation(api_user_domain: DeSECAPIV1Client):
     name = random_domainname()
     api_user_domain.domain_create(name)
     rrsig = return_eventually(lambda: query_replication(name, "", 'RRSIG', covers='SOA'), timeout=20)
-    faketime_add(days=7)
-    assert_eventually(lambda: rrsig != query_replication(name, "", 'RRSIG', covers='SOA'), timeout=60)
+    with FaketimeShift(days=7):
+        assert_eventually(lambda: rrsig != query_replication(name, "", 'RRSIG', covers='SOA'), timeout=60)
 
 
 def test_zone_deletion(api_user_domain: DeSECAPIV1Client):
@@ -68,12 +68,11 @@ def test_signature_rotation_performance(api_user_domain: DeSECAPIV1Client):
             soa_rrsig[name] = return_eventually(lambda: query_replication(name, "", 'RRSIG', covers='SOA'), timeout=20)
 
     # rotate signatures
-    faketime_add(7)
-
-    # assert SOA RRSIG has been updated
-    for names in domain_names.values():
-        for name in names:
-            assert_eventually(
-                lambda: soa_rrsig[name] != query_replication(name, "", 'RRSIG', covers='SOA'),
-                timeout=600,  # depending on number of domains in the database, this value requires increase
-            )
+    with FaketimeShift(days=7):
+        # assert SOA RRSIG has been updated
+        for names in domain_names.values():
+            for name in names:
+                assert_eventually(
+                    lambda: soa_rrsig[name] != query_replication(name, "", 'RRSIG', covers='SOA'),
+                    timeout=600,  # depending on number of domains in the database, this value requires increase
+                )

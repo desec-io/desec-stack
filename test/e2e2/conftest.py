@@ -413,12 +413,21 @@ def faketime_get():
         return '+0d'
 
 
-def faketime_add(days: int):
-    assert days >= 0
+class FaketimeShift:
+    # Note: Time is rolled back when exiting the context. Conceivably, this may cause weird side
+    # effects. So: Watch out for side effects. If any are found, let's rethink this.
 
-    current_faketime = faketime_get()
-    assert current_faketime[0] == '+'
-    assert current_faketime[-1] == 'd'
-    current_days = int(current_faketime[1:-1])
+    def __init__(self, days: int):
+        assert days >= 0
+        self.days = days
 
-    faketime(f'+{current_days + days:n}d')
+    def __enter__(self):
+        self._faketime = faketime_get()
+        assert self._faketime[0] == '+'
+        assert self._faketime[-1] == 'd'
+        current_days = int(self._faketime[1:-1])
+
+        faketime(f'+{current_days + self.days:n}d')
+
+    def __exit__(self, type, value, traceback):
+        faketime(self._faketime)
