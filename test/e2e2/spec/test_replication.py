@@ -1,5 +1,8 @@
+import pytest
+
 from conftest import DeSECAPIV1Client, return_eventually, query_replication, random_domainname, assert_eventually, \
     faketime_add
+
 
 some_ds_records = [
     '60604 8 1 ef66f772935b412376c8445c4442b802b0322814',
@@ -23,6 +26,7 @@ def test_zone_deletion(api_user_domain: DeSECAPIV1Client):
     assert_eventually(lambda: query_replication(name, "", 'SOA') is None, timeout=20)
 
 
+@pytest.mark.performance
 def test_signature_rotation_performance(api_user_domain: DeSECAPIV1Client):
     root_domain = api_user_domain.domain
 
