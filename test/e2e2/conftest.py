@@ -20,6 +20,24 @@ from requests.exceptions import SSLError
 from urllib3.exceptions import InsecureRequestWarning
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--skip-performance-tests", action="store_true", default=False, help="skip expensive performance tests"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "performance: mark test as expensive performance test")
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--skip-performance-tests"):
+        skip_mark = pytest.mark.skip(reason="need --runslow option to run")
+        for item in items:
+            if "performance" in item.keywords:
+                item.add_marker(skip_mark)
+
+
 def tsprint(s, *args, **kwargs):
     print(f"{datetime.now().strftime('%d-%b (%H:%M:%S)')} {s}", *args, **kwargs)
 
