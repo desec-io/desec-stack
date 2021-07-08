@@ -8,8 +8,11 @@ ensure that the system load remains manageable, to avoid update rejections due
 to concurrent DNS updates on the same domain etc.
 
 Rate limits apply per account and are enforced in a sliding-window fashion.
-For throttled requests, the server will respond with ``429 Too Many Requests``.
-The response body contains information on how long to wait.
+For throttled requests, the server will return status ``429 Too Many
+Requests`` and give a human-readable explanation in the response body,
+including how long to wait before making another request.  The number of
+seconds after which the next request will be allowed is also given by the
+``Retry-After`` header.
 
 **Example:** If the rate is 10/min and you make a request every second, the
 11th request will be rejected.  You will then have to wait for 50 seconds,
