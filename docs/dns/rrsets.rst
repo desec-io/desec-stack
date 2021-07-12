@@ -263,11 +263,12 @@ given in the ``Link:`` response header.  For example::
       <https://desec.io/api/v1/domains/{domain}/rrsets/?cursor=:next_cursor>; rel="next"
 
 where ``:prev_cursor`` and ``:next_cursor`` are page identifiers that are to
-be treated opaque by clients.  On the first/last page, the ``Link:`` header
-will not contain a ``prev``/``next`` field, respectively.
+be treated as opaque by clients.  On the first/last page, the ``Link:`` header
+will not contain a ``prev``/``next`` link, respectively.
 
 If no pagination parameter is given although pagination is required, the server
-will return ``400 Bad Request``, along with instructions for pagination.
+will return ``400 Bad Request``, along with a ``Link:`` header containing the
+``first`` link, and human-readable instructions on pagination in the body.
 
 
 Filtering by Record Type
