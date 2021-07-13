@@ -18,6 +18,9 @@ SUPPORTED_RRSET_TYPES = {
 
     # "additional" types, without obsolete ones
     'DHCID', 'DLV', 'EUI48', 'EUI64', 'IPSECKEY', 'KX', 'MINFO', 'MR', 'RKEY', 'WKS',
+
+    # https://doc.powerdns.com/authoritative/changelog/4.5.html#change-4.5.0-alpha1-New-Features
+    'NID', 'L32', 'L64', 'LP'
 }
 
 NSLORD = object()
