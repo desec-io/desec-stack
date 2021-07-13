@@ -511,12 +511,12 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',
                 '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7
             ],
-            # 'IPSECKEY': [
-            #     '12 0 2 . asdfdf==',
-            #     '03 1 1 127.0.0.1 asdfdf==',
-            #     '10 02 2 bade::affe AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==',
-            #     '12 3 01 example.com. asdfdf==',
-            # ],
+            'IPSECKEY': [
+                '12 0 2 . asdfdf==',
+                '03 1 1 127.0.0.1 asdfdf==',
+                '10 02 2 bade::affe AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==',
+                '12 3 01 example.com. asdfdf==',
+            ],
             'KX': ['4 example.com.', '28 io.'],
             'LOC': ['23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m'],
             'MX': ['10 example.com.', '20 1.1.1.1.'],
@@ -630,7 +630,12 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',  # no keys in alias mode
                 '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2',  # dup
             ],
-            # 'IPSECKEY': [],
+            'IPSECKEY': [
+                '10 example.com.',
+                '256 0 2 . asdfdf==',
+                '3 4 3 127.0.0.1 asdfdf==',
+                '3 1 1 127.256.0.1 asdfdf==',
+            ],
             'KX': ['-1 example.com', '10 example.com'],
             'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
             'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.', '10 _foo.example.com.', '10 $url.'],

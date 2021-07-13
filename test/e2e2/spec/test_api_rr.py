@@ -189,7 +189,7 @@ VALID_RECORDS_NON_CANONICAL = {
         '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',
         '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7
     ],
-    # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
+    'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
     'KX': ['012 example.TEST.'],
     'LOC': [
         '023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m',
@@ -313,7 +313,12 @@ INVALID_RECORDS = {
         '0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',  # no keys in alias mode
         '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2',  # dup
     ],
-    # 'IPSECKEY': [],
+    'IPSECKEY': [
+        '10 example.com.',
+        '256 0 2 . asdfdf==',
+        '3 4 3 127.0.0.1 asdfdf==',
+        '3 1 1 127.256.0.1 asdfdf==',
+    ],
     'KX': ['-1 example.com', '10 example.com'],
     'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
     'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.' '10 _foo.example.com.', '10 $url.'],
