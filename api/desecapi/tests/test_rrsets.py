@@ -372,6 +372,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                      '47883 13 2 43BD262211B2A748335149408F67BC95B9A4A3174FD86E6A83830380446E7AFD'.lower())),
             ('CERT', ('06 00 00 sadfdd==', '6 0 0 sadfdQ==')),
             ('CNAME', ('EXAMPLE.COM.', 'example.com.')),
+            ('CSYNC', ('066 03  NS  AAAA A', '66 3 A NS AAAA')),
             ('DHCID', ('xxxx', 'xxxx')),
             ('DLV', ('6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
                      '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520'.lower())),
@@ -483,6 +484,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '61655 13 4 C838A5C66FCBF83B8B6B50C3CEEC3524777FE4AF8A9FE0172ECAD242 48B0CA1A216DD0D538F20C130DD3059538204B04',
             ],
             'CNAME': ['example.com.'],
+            'CSYNC': ['0 0', '66 1 A', '66 2 AAAA', '66 3 A NS AAAA', '66 15 NSEC'],
             'DHCID': ['aaaaaaaaaaaa', 'aa aaa  aaaa a a a'],
             'DLV': [
                 '6454 8 1 24396E17E36D031F71C354B06A979A67A01F503E',
@@ -596,6 +598,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 1 aabbccddeeff',
             ],
             'CNAME': ['example.com', '10 example.com.'],
+            'CSYNC': ['0 -1 A', '444 65536 A', '0 3 AAA'],
             'DHCID': ['x', 'xx', 'xxx'],
             'DLV': [
                 'a 8 1 24396E17E36D031F71C354B06A979A67A01F503E',

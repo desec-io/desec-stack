@@ -12,9 +12,9 @@ from desecapi.exceptions import PDNSException, RequestEntityTooLarge
 SUPPORTED_RRSET_TYPES = {
     # https://doc.powerdns.com/authoritative/appendices/types.html
     # "major" types
-    'A', 'AAAA', 'AFSDB', 'ALIAS', 'APL', 'CAA', 'CERT', 'CDNSKEY', 'CDS', 'CNAME', 'DNSKEY', 'DNAME', 'DS', 'HINFO',
-    'HTTPS', 'KEY', 'LOC', 'MX', 'NAPTR', 'NS', 'NSEC', 'NSEC3', 'NSEC3PARAM', 'OPENPGPKEY', 'PTR', 'RP', 'RRSIG',
-    'SOA', 'SPF', 'SSHFP', 'SRV', 'SVCB', 'TLSA', 'SMIMEA', 'TXT', 'URI',
+    'A', 'AAAA', 'AFSDB', 'ALIAS', 'APL', 'CAA', 'CERT', 'CDNSKEY', 'CDS', 'CNAME', 'CSYNC', 'DNSKEY', 'DNAME', 'DS',
+    'HINFO', 'HTTPS', 'KEY', 'LOC', 'MX', 'NAPTR', 'NS', 'NSEC', 'NSEC3', 'NSEC3PARAM', 'OPENPGPKEY', 'PTR', 'RP',
+    'RRSIG', 'SOA', 'SPF', 'SSHFP', 'SRV', 'SVCB', 'TLSA', 'SMIMEA', 'TXT', 'URI',
 
     # "additional" types, without obsolete ones
     'DHCID', 'DLV', 'EUI48', 'EUI64', 'IPSECKEY', 'KX', 'MINFO', 'MR', 'RKEY', 'WKS',

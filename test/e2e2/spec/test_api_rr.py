@@ -40,6 +40,7 @@ VALID_RECORDS_CANONICAL = {
     ],
     'CERT': ['6 0 0 sadfdQ=='],
     'CNAME': ['example.com.'],
+    'CSYNC': ['0 0', '66 1 A', '66 2 AAAA', '66 3 A NS AAAA', '66 15 NSEC'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
     'DLV': ['6454 8 1 24396e17e36d031f71c354b06a979a67a01f503e'],
     'DNAME': ['example.com.'],
@@ -167,6 +168,7 @@ VALID_RECORDS_NON_CANONICAL = {
     ],
     'CERT': ['06 00 00 sadfee=='],
     'CNAME': ['EXAMPLE.TEST.'],
+    'CSYNC': ['066 03  NS  AAAA A'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
     'DLV': [
         '06454  08   01    24396e17e36d031f71c354b06a979a67a01f503e',
@@ -301,6 +303,7 @@ INVALID_RECORDS = {
     ],
     'CERT': ['6 0 sadfdd=='],
     'CNAME': ['example.com', '10 example.com.'],
+    'CSYNC': ['0 -1 A', '444 65536 A', '0 3 AAA'],
     'DHCID': ['x', 'xx', 'xxx'],
     'DLV': ['-34 13 1 aabbccddeeff'],
     'DNAME': ['example.com', '10 example.com.'],
