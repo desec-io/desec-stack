@@ -11,7 +11,9 @@
             <v-toolbar-title>Setup Instructions for <b>{{ domain }}</b></v-toolbar-title>
           </v-toolbar>
 
-          <domain-setup v-bind="$attrs" :domain="domain"></domain-setup>
+          <v-card-text>
+            <domain-setup v-bind="$attrs" :domain="domain"></domain-setup>
+          </v-card-text>
 
         </v-card>
       </v-col>
