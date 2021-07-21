@@ -368,8 +368,10 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                         '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=')),
             ('CDNSKEY', ('257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
                         '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/NTEoai5bxoipVQQXzHlzyg==')),
+            ('CDNSKEY', ('0 3 0 AA==', '0 3 0 AA==')),
             ('CDS', ('047883  013  02  43BD262211B2A748335149408F67BC95B9A4A3174FD86E6A83830380 446E7AFD',
                      '47883 13 2 43BD262211B2A748335149408F67BC95B9A4A3174FD86E6A83830380446E7AFD'.lower())),
+            ('CDS', ('0 0 0 00', '0 0 0 00')),
             ('CERT', ('06 00 00 sadfdd==', '6 0 0 sadfdQ==')),
             ('CNAME', ('EXAMPLE.COM.', 'example.com.')),
             ('CSYNC', ('066 03  NS  AAAA A', '66 3 A NS AAAA')),
@@ -585,7 +587,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 'a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='
                 '257 b 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='
                 '257 3 c aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='
-                '257 3 13 d'
+                '257 3 13 d',
+                '0 3 0 0',
             ],
             'CDS': [
                 'a 8 1 24396E17E36D031F71C354B06A979A67A01F503E',
@@ -596,6 +599,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 0 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 aabbccddeeff',
+                '0 0 0 0',
             ],
             'CNAME': ['example.com', '10 example.com.'],
             'CSYNC': ['0 -1 A', '444 65536 A', '0 3 AAA'],

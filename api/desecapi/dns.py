@@ -71,7 +71,8 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
 
 # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in the main codebase
 class _DigestLengthMixin:
-    _digest_length_by_type = {
+    _digest_length_by_type = {  # octets (not hex)
+        0: 1,  # reserved in RFC 3658 Sec. 2.4, but used in RFC 8078 Sec. 4 (DS delete via CDS)
         1: 20,  # SHA-1, RFC 3658 Sec. 2.4
         2: 32,  # SHA-256, RFC 4509 Sec. 2.2
         3: 32,  # GOST R 34.11-94, RFC 5933 Sec. 4 in conjunction with RFC 4490 Sec. 2.1
@@ -82,13 +83,12 @@ class _DigestLengthMixin:
         super().__init__(*args, **kwargs)
 
         try:
-            if self.digest_type == 0:  # reserved, RFC 3658 Sec. 2.4
-                raise ValueError('digest type 0 is reserved')
-            expected_length = _DigestLengthMixin._digest_length_by_type[self.digest_type]
+            expected_len = _DigestLengthMixin._digest_length_by_type[self.digest_type]
         except KeyError:
             raise ValueError('unknown digest type')
-        if len(self.digest) != expected_length:
-            raise ValueError('digest length inconsistent with digest type')
+        actual_len = len(self.digest)
+        if actual_len != expected_len:
+            raise ValueError(f'invalid digest length {actual_len*2} (expected for this digest type: {expected_len*2}')
 
 
 @dns.immutable.immutable

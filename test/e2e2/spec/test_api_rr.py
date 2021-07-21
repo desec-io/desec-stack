@@ -33,10 +33,12 @@ VALID_RECORDS_CANONICAL = {
         '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
         '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy 9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my 4JmEmjUPA1JeEI9YfTUieMr2UZflu7aI bZFLw0vqiYrywCGrCHXLalOrEOmrvAxL vq4vHtuTlH7JIszzYBSes8g1vle6KG7x XiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJ h6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFa W2m7N/Wy4qcFU13roWKDEAstbxH5CHPo BfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lv u9TAiZPc0oysY6aslO7jXv16Gws=',
         '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg==',
+        '0 3 0 AA==',
     ],
     'CDS': [
         None,
         '6454 8 1 24396e17e36d031f71c354b06a979a67a01f503e',
+        '0 0 0 00',
     ],
     'CERT': ['6 0 0 sadfdQ=='],
     'CNAME': ['example.com.'],
@@ -296,10 +298,14 @@ INVALID_RECORDS = {
         '2:::/129',
     ],
     'CAA': ['43235 issue "letsencrypt.org"'],
-    'CDNSKEY': ['a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg=='],
+    'CDNSKEY': [
+        'a 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iDSFZNORnQuHKtJ9Wpyz+kNryq uB78Pyk/NTEoai5bxoipVQQXzHlzyg==',
+        '0 3 0 0',
+    ],
     'CDS': [
         'a 8 1 24396E17E36D031F71C354B06A979A67A01F503E',
         '6454 8 1 aabbccddeeff',
+        '0 0 0 0',
     ],
     'CERT': ['6 0 sadfdd=='],
     'CNAME': ['example.com', '10 example.com.'],
