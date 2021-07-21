@@ -9,7 +9,7 @@
     :hint="hint"
     persistent-hint
     :required="required"
-    :rules="[v => !required || !!v || 'Required.']"
+    :rules="[v => !required || !!v || 'Required.'].concat(rules)"
     @input="changed('input', $event)"
     @input.native="$emit('dirty', $event)"
     @keyup="changed('keyup', $event)"
@@ -43,6 +43,10 @@ export default {
     required: {
       type: Boolean,
       default: false,
+    },
+    rules: {
+      type: Array,
+      default: () => [],
     },
     value: {
       type: [String, Number],
