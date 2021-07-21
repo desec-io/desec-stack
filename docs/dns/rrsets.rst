@@ -7,17 +7,24 @@ All DNS information is composed of so-called *Resource Record Sets*
 (*RRsets*).  An RRset is the set of all Resource Records of a given record
 type for a given name.  For example, the name ``example.com`` may have an
 RRset of type ``A``, denoting the set of IPv4 addresses associated with this
-name.  In the traditional Bind zone file format, the RRset would be written
+name.  In the traditional BIND zone file format, the RRset would be written
 as::
 
-    <name>  IN  A 127.0.0.1
-    <name>  IN  A 127.0.0.2
+    <name>  3600  IN  A  127.0.0.1
+    <name>  3600  IN  A  127.0.0.2
     ...
+
+where 3600 is the number of seconds for which DNS resolvers may cache the
+information before asking again (time-to-live, short: *TTL*).
 
 Each of these lines is a Resource Record, and together they form an RRset.
 
-The basic units accessible through the API are RRsets, each represented by a
-JSON object.  The object structure is detailed in the next section.
+The basic units accessible through the API are RRsets (not individual Resource
+Records).  The TTL is a property of an RRset; and all records of an RRset
+therefore share the record type and also the TTL.
+
+RRsets are each represented by a JSON object.  The object structure is
+detailed in the next section.
 
 The relevant endpoints all reside under ``/api/v1/domains/{name}/rrsets/``,
 where ``{name}`` is the name of a domain you own.  When operating on domains
@@ -512,18 +519,8 @@ existing RRset, the API does not perform further validation of the record
 contents, and instead only points out the uniqueness conflict.
 
 
-Notes
-~~~~~
-
-Consider the following general remarks that apply to our API as a whole:
-
-- All operations are performed on RRsets, not on the individual Resource
-  Records.
-
-- The TTL (time-to-live: time for which resolvers may cache DNS information)
-  is a property of an RRset (and not of a record).  Thus, all records in an
-  RRset share the record type and also the TTL.
-
+Record Types
+~~~~~~~~~~~~
 
 Supported Types
 ```````````````
