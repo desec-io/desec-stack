@@ -3,7 +3,7 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    hint="You can also enter other types. For all full list, check the documentation."
+    hint="You can also enter other types. For a full list, check the documentation."
     :persistent-hint="!readonly"
     :value="value"
     :items="types"
