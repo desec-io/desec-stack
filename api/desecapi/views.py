@@ -707,9 +707,8 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             return Response({
                 'detail': 'Success! We sent you instructions on how to set your password.'
             })
-        login_url = self.request.build_absolute_uri(reverse('v1:login'))
         return Response({
-                'detail': f'Success! Please log in at {login_url}.'
+                'detail': 'Success! Your account has been activated, and you can now log in.'
             })
 
     def _finalize_with_domain(self, domain):
@@ -745,8 +744,7 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer
 
     def finalize(self):
-        login_url = self.request.build_absolute_uri(reverse('v1:login'))
-        return Response({'detail': f'Success! Your password has been changed. Log in at {login_url}.'})
+        return Response({'detail': 'Success! Your password has been changed.'})
 
 
 class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
