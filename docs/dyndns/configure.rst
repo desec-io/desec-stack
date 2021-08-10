@@ -152,9 +152,11 @@ documentation.
   assign to your domain.  So, if you connect via IPv6, this address will be
   set on your domain, *even if you did not provide it explicitly*.
 
-  If you would like to *avoid* setting an IPv6 address automatically, one
-  simple workaround is to add a fake parameter on the domain section like
-  this: ``mydomain.dedyn.io&myipv6=``
+  If you would like to *avoid* setting an IPv6 address automatically, and
+  instead configure an address statically (or remove the address), you can add
+  a the ``myipv6`` parameter on the domain section, like this:
+  ``mydomain.dedyn.io&myipv6=`` (delete) or ``mydomain.dedyn.io&myipv6=::1``
+  (static value)
 
 To test your setup, run ``sudo ddclient -force`` and see if everything works as
 expected.
