@@ -26,7 +26,7 @@ from desecapi import metrics, models, serializers
 from desecapi.exceptions import ConcurrencyException
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import ManageTokensPermission, IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimitOnPOST
+from desecapi.permissions import ManageTokensPermission, IsDomainOwner, IsOwner, IsVPNClient, WithinDomainLimit
 from desecapi.renderers import PlainTextRenderer
 
 
@@ -92,9 +92,15 @@ class DomainViewSet(IdempotentDestroyMixin,
                     mixins.ListModelMixin,
                     viewsets.GenericViewSet):
     serializer_class = serializers.DomainSerializer
-    permission_classes = (IsAuthenticated, IsOwner, WithinDomainLimitOnPOST)
     lookup_field = 'name'
     lookup_value_regex = r'[^/]+'
+
+    @property
+    def permission_classes(self):
+        permissions = [IsAuthenticated, IsOwner]
+        if self.action == 'create':
+            permissions.append(WithinDomainLimit)
+        return permissions
 
     @property
     def throttle_scope(self):
