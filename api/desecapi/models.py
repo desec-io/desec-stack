@@ -219,6 +219,11 @@ class DomainManager(Manager):
             name_length=Length('name'),
         ).filter(dotted_qname__endswith=F('dotted_name'), **kwargs)
 
+    def most_specific_zone(self, fqdn: str) -> Tuple[Domain, str]:
+        domain = self.filter_qname(fqdn).order_by('-name_length').first()
+        subname = fqdn[:-len(domain.name)].rstrip('.')
+        return domain, subname
+
 
 class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     @staticmethod
@@ -994,37 +999,39 @@ class Identity(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='identities')
     default_ttl = models.PositiveIntegerField(default=300)
+    rrs = models.ManyToManyField(to=RR)
+    scheduled_removal = models.DateTimeField(null=True)
 
     class Meta:
         abstract = True
 
-    def get_record_contents(self) -> List[str]:
-        raise NotImplementedError
-
-    def save_rrs(self):
+    def get_rrs(self) -> List[RR]:
         raise NotImplementedError
 
     def save(self, *args, **kwargs):
-        self.save_rrs()
+        for rr in self.get_rrs():
+            self.rrs.add(rr)
+            rr.rrset.save()
+            rr.save()
         return super().save(*args, **kwargs)
 
-    def delete_rrs(self):
-        raise NotImplementedError
-
     def delete(self, using=None, keep_parents=False):
-        # TODO this will delete also RRs that may be covered by other identities
-        self.delete_rrs()
+        for rr in self.rrs.all():  # TODO use one query
+            if len(rr.identities) == 1:
+                rr.delete()
         return super().delete(using, keep_parents)
 
+    # TODO move to RRset / RRset manager?
     def get_or_create_rr_set(self, domain: Domain, subname: str) -> RRset:
         try:
             return RRset.objects.get(domain=domain, subname=subname, type=self.rr_type)
         except RRset.DoesNotExist:
-            # TODO save this RRset?
             return RRset(domain=domain, subname=subname, type=self.rr_type, ttl=self.default_ttl)
 
-    @staticmethod
-    def get_or_create_rr(rrset: RRset, content: str) -> RR:
+    # TODO move to RR / RR manager?
+    def get_or_create_rr(self, fqdn: str, content: str) -> RR:
+        domain, subname = self.owner.domains.most_specific_zone(fqdn)
+        rrset = self.get_or_create_rr_set(domain, subname)
         try:
             return RR.objects.get(rrset=rrset, content=content)
         except RR.DoesNotExist:
@@ -1063,8 +1070,6 @@ class TLSIdentity(Identity):
 
     port = models.IntegerField(default=443)
     protocol = models.TextField(choices=Protocol.choices, default=Protocol.TCP)
-
-    scheduled_removal = models.DateTimeField(null=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1123,20 +1128,9 @@ class TLSIdentity(Identity):
 
         return subject_names | subject_alternative_names
 
-    @staticmethod
-    def get_closest_ancestor(domain_name, owner: User) -> Optional[Domain]:
-        # TODO move to Domain?
-        labels = domain_name.split('.')
-        ancestor_names = ['.'.join(labels[i:]) for i in range(len(labels))]
-        for ancestor_name in ancestor_names:  # TODO do this with one query
-            try:
-                return Domain.objects.get(name=ancestor_name, owner=owner)
-            except Domain.DoesNotExist:
-                continue
-        return None
-
-    def domains_subnames(self) -> Set[Tuple[Domain, str]]:
-        domains_subnames = set()
+    @property
+    def subject_names_clean(self) -> Set[str]:
+        clean = set()
         for name in self.subject_names:
             # cut off any wildcard prefix
             name = name.lstrip('*').lstrip('.')
@@ -1147,41 +1141,18 @@ class TLSIdentity(Identity):
             except ValidationError:
                 continue
 
-            # find user-owned parent domain
-            domain = self.get_closest_ancestor(name, self.owner)
-            if not domain:
-                continue
-            subname = name[:-len(domain.name)].rstrip('.')
-
-            # return subname, domain pair
-            domains_subnames.add((domain, f"_{self.port:n}._{self.protocol}.{subname}".rstrip('.')))
-        return domains_subnames
-
-    def get_rrsets(self) -> List[RRset]:
-        rrsets = []
-        for domain, subname in self.domains_subnames():
-            rrsets.append(self.get_or_create_rr_set(domain, subname))
-        return rrsets
+            clean.add(name)
+        return clean
 
     def get_rrs(self) -> List[RR]:
-        rrs = []
-        for domain, subname in self.domains_subnames():
-            rrset = self.get_or_create_rr_set(domain, subname)
-            for content in self.get_record_contents():
-                rrs.append(self.get_or_create_rr(rrset=rrset, content=content))
-        return rrs
-
-    def save_rrs(self):
-        for rr in self.get_rrs():
-            rr.rrset.save()
-            rr.save()
-
-    def delete_rrs(self):
-        for domain, subname in self.domains_subnames():
-            rrset = self.get_or_create_rr_set(domain, subname)
-            rrset.records.filter(content__in=self.get_record_contents()).delete()
-            if not len(rrset.records.all()):
-                rrset.delete()
+        return [
+            self.get_or_create_rr(
+                fqdn=f"_{self.port:n}._{self.protocol}.{qname}",
+                content=content,
+            )
+            for qname in self.subject_names_clean
+            for content in self.get_record_contents()
+        ]
 
     @property
     def not_valid_before(self):
