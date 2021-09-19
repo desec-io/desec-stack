@@ -47,10 +47,7 @@ class TLSAIdentityTest(DesecTestCase):
 
         id = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user, protocol=models.TLSIdentity.Protocol.SCTP)
 
-        self.assertEqual(
-            id.domains_subnames(),
-            {(domain, '_443._sctp'), (domain, '_443._sctp.desec'), (domain, '_443._sctp.dedyn')},
-        )
+        self.assertEqual(id.subject_names, SUBJECT_NAMES)
 
         rrs = id.get_rrs()
         self.assertEqual(len(rrs), 3)
@@ -69,7 +66,6 @@ class TLSAIdentityTest(DesecTestCase):
         domain.save()
 
         id = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user, port=123)
-        self.assertEqual(id.domains_subnames(), {(domain, '_123._tcp')})
 
         rrs = id.get_rrs()
         self.assertEqual(len(rrs), 1)
@@ -115,3 +111,37 @@ class TLSAIdentityTest(DesecTestCase):
         id.delete()
         rrset = models.RRset.objects.get(domain__name='desec.example.dedyn.io', type='TLSA', subname='_123._tcp')
         self.assertEqual(len(rrset.records.all()), 1)
+
+    def test_duplicate_record(self):
+        def count_tlsa_records():
+            return models.RRset.objects.get(
+                    domain__name='desec.example.dedyn.io',
+                    type='TLSA', subname='_443._tcp'
+                ).records.count()
+
+        domain = models.Domain(name='desec.example.dedyn.io', owner=self.user)
+        domain.save()
+
+        # insert first cert, insert second, delete first, delete second
+        id1 = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)
+        id2 = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)
+        id1.save()
+        self.assertEqual(count_tlsa_records(), 1)
+        id2.save()
+        self.assertEqual(count_tlsa_records(), 1)
+        id1.delete()
+        self.assertEqual(count_tlsa_records(), 1)
+        id2.delete()
+        self.assertEqual(count_tlsa_records(), 0)
+
+        # insert first cert, insert second, delete second, delete first
+        id1 = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)
+        id2 = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)
+        id1.save()
+        self.assertEqual(count_tlsa_records(), 1)
+        id2.save()
+        self.assertEqual(count_tlsa_records(), 1)
+        id2.delete()
+        self.assertEqual(count_tlsa_records(), 1)
+        id1.delete()
+        self.assertEqual(count_tlsa_records(), 0)

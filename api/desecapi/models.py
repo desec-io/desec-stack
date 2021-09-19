@@ -220,7 +220,10 @@ class DomainManager(Manager):
         ).filter(dotted_qname__endswith=F('dotted_name'), **kwargs)
 
     def most_specific_zone(self, fqdn: str) -> Tuple[Domain, str]:
-        domain = self.filter_qname(fqdn).order_by('-name_length').first()
+        try:
+            domain = self.filter_qname(fqdn).order_by('-name_length')[0]
+        except IndexError:
+            raise Domain.DoesNotExist
         subname = fqdn[:-len(domain.name)].rstrip('.')
         return domain, subname
 
@@ -999,7 +1002,7 @@ class Identity(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='identities')
     default_ttl = models.PositiveIntegerField(default=300)
-    rrs = models.ManyToManyField(to=RR)
+    rrs = models.ManyToManyField(to=RR, related_name='identities')
     scheduled_removal = models.DateTimeField(null=True)
 
     class Meta:
@@ -1010,14 +1013,14 @@ class Identity(models.Model):
 
     def save(self, *args, **kwargs):
         for rr in self.get_rrs():
-            self.rrs.add(rr)
             rr.rrset.save()
             rr.save()
+            self.rrs.add(rr)
         return super().save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
         for rr in self.rrs.all():  # TODO use one query
-            if len(rr.identities) == 1:
+            if len(rr.identities.all()) == 1:
                 rr.delete()
         return super().delete(using, keep_parents)
 
@@ -1076,7 +1079,7 @@ class TLSIdentity(Identity):
         if 'not_valid_after' not in kwargs:
             self.scheduled_removal = self.not_valid_after
 
-    def get_record_contents(self) -> List[str]:
+    def get_record_content(self) -> str:
         # choose hash function
         if self.tlsa_matching_type == self.MatchingType.SHA256:
             hash_function = hazmat.primitives.hashes.SHA256()
@@ -1100,7 +1103,7 @@ class TLSIdentity(Identity):
         hash = h.finalize().hex()
 
         # create TLSA record content
-        return [f"{self.tlsa_certificate_usage} {self.tlsa_selector} {self.tlsa_matching_type} {hash}"]
+        return f"{self.tlsa_certificate_usage} {self.tlsa_selector} {self.tlsa_matching_type} {hash}"
 
     @property
     def _cert(self) -> x509.Certificate:
@@ -1145,14 +1148,17 @@ class TLSIdentity(Identity):
         return clean
 
     def get_rrs(self) -> List[RR]:
-        return [
-            self.get_or_create_rr(
-                fqdn=f"_{self.port:n}._{self.protocol}.{qname}",
-                content=content,
-            )
-            for qname in self.subject_names_clean
-            for content in self.get_record_contents()
-        ]
+        rrs = []
+        content = self.get_record_content()
+        for qname in self.subject_names_clean:
+            try:
+                rrs.append(self.get_or_create_rr(
+                    fqdn=f"_{self.port:n}._{self.protocol}.{qname}",
+                    content=content,
+                ))
+            except Domain.DoesNotExist:
+                pass
+        return rrs
 
     @property
     def not_valid_before(self):
