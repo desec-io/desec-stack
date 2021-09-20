@@ -98,10 +98,10 @@ class PDNSChangeTracker:
                         'ttl': 300,
                         'records': [{
                             # SOA refresh: 1 day (only needed for nslord --> nsmaster replication after RRSIG rotation)
-                            # SOA retry = refresh
+                            # SOA retry = 1h
                             # SOA expire: 4 weeks (all signatures will have expired anyways)
                             # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
-                            'content': 'get.desec.io. get.desec.io. 1 86400 86400 2419200 3600',
+                            'content': 'get.desec.io. get.desec.io. 1 86400 3600 2419200 3600',
                             'disabled': False
                         }],
                     }],
