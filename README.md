@@ -39,6 +39,7 @@ Although most configuration is contained in this repository, some external depen
         need to manually update persisted data structures such as the MySQL grant tables! Better don't do it.
       - `DESECSTACK_IPV6_SUBNET`: IPv6 net, ideally /80 (see below)
       - `DESECSTACK_IPV6_ADDRESS`: IPv6 address of frontend container, ideally 0642:ac10:0080 in within the above subnet (see below)
+      - `DESECSTACK_PORT_XFR`: Port over which XFRs are performed with secondaries
     - certificates
       - `DESECSTACK_WWW_CERTS`: `./path/to/certificates` for `www` container. This directory is monitored for changes so that nginx can reload when new keys/certificates are provided. **Note:** The reload is done any time something changes in the directory. The relevant files are **not** watched individually.
     - API-related
@@ -62,9 +63,11 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSLORD_DEFAULT_TTL`: TTL to use by default, including for default NS records
     - nsmaster-related
       - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
+      - `DESECSTACK_NSMASTER_ALSO_NOTIFY`: Comma-separated list of additional IP addresses to notify of zone updates
       - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the secondaries)
       - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
       - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
+      - `DESECSTACK_NSMASTER_TSIGKEY`: Base64-encoded value of the default TSIG key used for talking to external secondaries (algorithm: HMAC-SHA256)
     - monitoring-related
       - `DESECSTACK_WATCHDOG_SECONDARIES`: space-separated list of secondary hostnames; used to check correct replication of recent DNS changes
       - `DESECSTACK_PROMETHEUS_PASSWORD`: basic auth password for user `prometheus` at `https://${DESECSTACK_DOMAIN}/prometheus/`

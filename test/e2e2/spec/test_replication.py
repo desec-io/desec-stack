@@ -1,3 +1,8 @@
+from base64 import b64decode
+import os
+import socket
+
+import dns.query
 import pytest
 
 from conftest import DeSECAPIV1Client, return_eventually, query_replication, random_domainname, assert_eventually, \
@@ -76,3 +81,30 @@ def test_signature_rotation_performance(api_user_domain: DeSECAPIV1Client):
                     lambda: soa_rrsig[name] != query_replication(name, "", 'RRSIG', covers='SOA'),
                     timeout=600,  # depending on number of domains in the database, this value requires increase
                 )
+
+def test_tsig_axfr(api_user_domain: DeSECAPIV1Client):
+    ns_ip = socket.gethostbyname('nsmaster')
+
+    def count_xfr_rrsets(**kwargs):
+        xfr = dns.query.xfr(ns_ip, api_user_domain.domain, **kwargs)
+        zone = dns.zone.from_xfr(xfr)
+
+        ## from dnspython 2.2.0 on
+        #zone = dns.zone.Zone(api_user_domain.domain)
+        #query, _ = dns.xfr.make_query(zone, **kwargs)
+        #dns.query.inbound_xfr(ns_ip, zone, query)
+        return sum(1 for _ in zone.iterate_rdatasets())
+
+    with pytest.raises(dns.xfr.TransferError) as exc_info:
+        count_xfr_rrsets()
+
+    assert exc_info.value.rcode == dns.rcode.NOTAUTH
+
+    keyring = {'default.': b64decode('XXXXXXXXXXXXXXXXXXXXXX==')}
+    with pytest.raises(dns.xfr.TransferError) as exc_info:
+        count_xfr_rrsets(keyring=keyring, keyname=None)
+
+    assert exc_info.value.rcode == dns.rcode.NOTAUTH
+
+    keyring = {'default.': b64decode(os.environ['DESECSTACK_NSMASTER_TSIGKEY'])}
+    assert_eventually(lambda: count_xfr_rrsets(keyring=keyring, keyname=None) > 5, timeout=20, retry_on=(Exception,))

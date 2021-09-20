@@ -113,7 +113,8 @@ class PDNSChangeTracker:
                 {
                     'name': self.domain_name_normalized,
                     'kind': 'SLAVE',
-                    'masters': [socket.gethostbyname('nslord')]
+                    'masters': [socket.gethostbyname('nslord')],
+                    'master_tsig_key_ids': ['default'],
                 }
             )
 

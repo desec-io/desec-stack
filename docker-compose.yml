@@ -191,12 +191,16 @@ services:
     init: true
     cap_add:
     - NET_ADMIN
+    ports:
+    - "${DESECSTACK_PORT_XFR}:53"
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
     - DESECSTACK_DBMASTER_PASSWORD_pdns
+    - DESECSTACK_NSMASTER_ALSO_NOTIFY
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_NSMASTER_CARBONSERVER
     - DESECSTACK_NSMASTER_CARBONOURNAME
+    - DESECSTACK_NSMASTER_TSIGKEY
     depends_on:
     - dbmaster
     networks:

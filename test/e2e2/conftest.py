@@ -461,6 +461,9 @@ def return_eventually(expression: callable, min_pause: float = .1, max_pause: fl
                 raise e
             time.sleep(wait)
             wait = min(2 * wait, max_pause)
+        except Exception as e:
+            tsprint(f'{expression.__code__} raised unexpected exception {e}')
+            raise
 
 
 def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
