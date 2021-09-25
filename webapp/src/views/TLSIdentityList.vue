@@ -95,6 +95,16 @@ export default {
             readonly: true,
             datatype: 'MultilineText',
           },
+          scheduled_removal: {
+            name: 'item.scheduled_removal',
+            text: 'Scheduled Removal',
+            align: 'left',
+            sortable: true,
+            value: 'scheduled_removal',
+            readonly: true,
+            datatype: 'TimeAgo',
+            searchable: false,
+          },
           created: {
             name: 'item.created',
             text: 'Created',

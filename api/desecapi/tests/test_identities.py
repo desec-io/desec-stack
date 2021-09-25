@@ -119,6 +119,12 @@ class TLSAIdentityTest(DesecTestCase):
                     type='TLSA', subname='_443._tcp'
                 ).records.count()
 
+        def count_tlsa_rrsets():
+            return models.RRset.objects.get(
+                domain__name='desec.example.dedyn.io',
+                type='TLSA', subname='_443._tcp'
+            ).count()
+
         domain = models.Domain(name='desec.example.dedyn.io', owner=self.user)
         domain.save()
 
@@ -133,6 +139,7 @@ class TLSAIdentityTest(DesecTestCase):
         self.assertEqual(count_tlsa_records(), 1)
         id2.delete()
         self.assertEqual(count_tlsa_records(), 0)
+        self.assertEqual(count_tlsa_rrsets(), 0)
 
         # insert first cert, insert second, delete second, delete first
         id1 = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)
@@ -145,3 +152,4 @@ class TLSAIdentityTest(DesecTestCase):
         self.assertEqual(count_tlsa_records(), 1)
         id1.delete()
         self.assertEqual(count_tlsa_records(), 0)
+        self.assertEqual(count_tlsa_rrsets(), 0)

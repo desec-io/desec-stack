@@ -12,7 +12,7 @@ import uuid
 from datetime import timedelta
 from functools import cached_property
 from hashlib import sha256
-from typing import Set, List, Optional, Tuple, Dict
+from typing import Set, List, Tuple
 
 import dns
 import psl_dns
@@ -224,7 +224,7 @@ class DomainManager(Manager):
             domain = self.filter_qname(fqdn).order_by('-name_length')[0]
         except IndexError:
             raise Domain.DoesNotExist
-        subname = fqdn[:-len(domain.name)].rstrip('.')
+        subname = fqdn[:-len(domain.name)].removesuffix('.')
         return domain, subname
 
 
@@ -1012,16 +1012,20 @@ class Identity(models.Model):
         raise NotImplementedError
 
     def save(self, *args, **kwargs):
+        ret = super().save(*args, **kwargs)
         for rr in self.get_rrs():
             rr.rrset.save()
             rr.save()
             self.rrs.add(rr)
-        return super().save(*args, **kwargs)
+        return ret
 
     def delete(self, using=None, keep_parents=False):
         for rr in self.rrs.all():  # TODO use one query
             if len(rr.identities.all()) == 1:
-                rr.delete()
+                if (len(rr.rrset.records.all())) == 1:
+                    rr.rrset.delete()
+                else:
+                    rr.delete()
         return super().delete(using, keep_parents)
 
     # TODO move to RRset / RRset manager?

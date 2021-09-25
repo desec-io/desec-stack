@@ -785,7 +785,7 @@ class TLSIdentityViewSet(IdentityViewSet):
 
     @property
     def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write'
+        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_rrsets'
 
     def get_queryset(self):
         return self.request.user.identities.all()  # TODO filter for TLS

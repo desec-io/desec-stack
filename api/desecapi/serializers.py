@@ -848,23 +848,25 @@ class TLSIdentitySerializer(serializers.ModelSerializer):
     def get_published_at(self, tls_identity: models.TLSIdentity):
         return [
             f"{rrset.type}/{rrset.name}"
-            for rrset in tls_identity.get_rrsets()
+            for rrset in {rr.rrset for rr in tls_identity.rrs.all()}  # TODO improve query
         ]
 
     class Meta:
         model = models.TLSIdentity
         fields = (
+            # Identity fields
             'id', 'name', 'created',
 
             'default_ttl',
+            'scheduled_removal',
+            'published_at',
 
+            # TLSAIdentity fields
             'certificate',
             'tlsa_selector', 'tlsa_matching_type', 'tlsa_certificate_usage',
 
             'port', 'protocol',
 
             'fingerprint', 'not_valid_before', 'not_valid_after', 'subject_names',
-
-            'published_at',
         )
         read_only_fields = list(filter(lambda f: f not in ('name', 'certificate'), fields))
