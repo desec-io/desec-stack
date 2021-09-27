@@ -1002,7 +1002,7 @@ class Identity(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='identities')
     default_ttl = models.PositiveIntegerField(default=300)
-    rrs = models.ManyToManyField(to=RR, related_name='identities')
+    rrs = models.ManyToManyField(to=RR, related_name='identities')  # TODO OneToMany?
     scheduled_removal = models.DateTimeField(null=True)
 
     class Meta:
@@ -1010,6 +1010,16 @@ class Identity(models.Model):
 
     def get_rrs(self) -> List[RR]:
         raise NotImplementedError
+
+    @property
+    def covered_names(self) -> List[str]:
+        raise NotImplementedError
+
+    def domains(self) -> List[Domain]:
+        # TODO improve query
+        return list({
+            d.name: d for d in [rr.rrset.domain for rr in self.rrs.all()]
+        }.values())
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
@@ -1081,7 +1091,7 @@ class TLSIdentity(Identity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'not_valid_after' not in kwargs:
-            self.scheduled_removal = self.not_valid_after
+            self.scheduled_removal = self.not_valid_after  # TODO check timezone
 
     def get_record_content(self) -> str:
         # choose hash function
@@ -1140,7 +1150,7 @@ class TLSIdentity(Identity):
         clean = set()
         for name in self.subject_names:
             # cut off any wildcard prefix
-            name = name.lstrip('*').lstrip('.')
+            name = name.lstrip('*').lstrip('.')  # TODO publish wildcard TLSA record?
 
             # filter names for valid domain names
             try:
@@ -1171,3 +1181,7 @@ class TLSIdentity(Identity):
     @property
     def not_valid_after(self):
         return self._cert.not_valid_after
+
+    @property
+    def covered_names(self) -> Set[str]:
+        return {rr.rrset.name.split('.', 2)[-1].removesuffix('.') for rr in self.rrs.all()}

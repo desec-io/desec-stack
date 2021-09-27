@@ -36,6 +36,7 @@ SUBJECT_NAMES = {'*.dedyn.example.dedyn.io', '*.desec.example.dedyn.io', '*.exam
 
 
 class TLSAIdentityTest(DesecTestCase):
+    # TODO load invalid cert
 
     def read_subject_names(self):
         id = models.TLSIdentity(certificate=CERTIFICATE, owner=self.user)

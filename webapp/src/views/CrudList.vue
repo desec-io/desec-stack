@@ -24,6 +24,7 @@
             :loading="$store.getters.working || createDialogWorking || destroyDialogWorking"
             class="elevation-1"
             @click:row="rowClick"
+            :show-expand="expandable"
     >
       <template slot="top">
         <!-- Headline & Toolbar, Including New Form -->
@@ -250,6 +251,14 @@
           <p>No entries yet.</p>
         </div>
       </template>
+      <template v-slot:expanded-item="{ item }">
+        <td :colspan="headers.length" v-if="expandable">
+          <component
+            :is="expandComponentName"
+            v-model="rows[rows.indexOf(item)]"
+          ></component>
+        </td>
+    </template>
     </v-data-table>
 
     <!-- Delete Dialog -->
@@ -339,6 +348,8 @@ import RecordList from '@/components/Field/RecordList';
 import Switchbox from '@/components/Field/Switchbox';
 import TTL from '@/components/Field/TTL';
 import MultilineText from "@/components/Field/MultilineText";
+import TLSAIdentity from "../components/Field/TLSAIdentity";
+import DomainList from "../components/Field/DomainList";
 
 const filter = function (obj, predicate) {
   const result = {};
@@ -368,6 +379,8 @@ export default {
     RecordList,
     TTL,
     MultilineText,
+    TLSAIdentity,
+    DomainList,
   },
   data() { return {
     createDialog: false,
@@ -415,6 +428,8 @@ export default {
     },
     columns: {},
     actions: [],
+    expandable: false,
+    expandComponentName: undefined,
     // resource
     paths: {
       list: 'needs/to/be/overwritten/',

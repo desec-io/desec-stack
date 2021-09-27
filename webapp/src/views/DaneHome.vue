@@ -46,8 +46,8 @@ export default {
   components: {TLSIdentityList},
   data: () => ({
     'types': [
-      {'id': 'tls', 'rdtype': 'TLSA', 'name': 'TLS Keys'},
-      {'id': 'smime', 'rdtype': 'SMIMEA', 'name': 'S/MIME Keys'},
+      {'id': 'tls', 'rdtype': 'TLSA', 'name': 'TLS Certificates'},
+      {'id': 'smime', 'rdtype': 'SMIMEA', 'name': 'S/MIME Certificates'},
       {'id': 'OPENPGP', 'rdtype': 'OPENPGPKEY', 'name': 'OPEN PGP Keys'},
       {'id': 'SSH', 'rdtype': 'SSHFP', 'name': 'SSH Fingerprints'},
     ]

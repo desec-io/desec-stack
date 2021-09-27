@@ -844,6 +844,11 @@ class AuthenticatedRenewDomainBasicUserActionSerializer(AuthenticatedDomainBasic
 
 class TLSIdentitySerializer(serializers.ModelSerializer):
     published_at = serializers.SerializerMethodField(read_only=True)
+    domains = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+     )
 
     def get_published_at(self, tls_identity: models.TLSIdentity):
         return [
@@ -860,6 +865,8 @@ class TLSIdentitySerializer(serializers.ModelSerializer):
             'default_ttl',
             'scheduled_removal',
             'published_at',
+            'domains',
+            'covered_names',
 
             # TLSAIdentity fields
             'certificate',
@@ -869,4 +876,4 @@ class TLSIdentitySerializer(serializers.ModelSerializer):
 
             'fingerprint', 'not_valid_before', 'not_valid_after', 'subject_names',
         )
-        read_only_fields = list(filter(lambda f: f not in ('name', 'certificate'), fields))
+        read_only_fields = list(filter(lambda f: f not in ('name', 'certificate'), fields))  # TODO add tlsa_*, port, proto

@@ -1,5 +1,4 @@
 <script>
-import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList';
 
 export default {
@@ -13,12 +12,12 @@ export default {
         updatable: false,
         destroyable: true,
         headlines: {
-          table: 'TLS Identities',
+          table: 'TLS Server Identities',
           create: 'Add an identity',
           destroy: 'Remove an identity',
         },
         texts: {
-          banner: () => 'Publish your web servers\' cryptographic identity in the DNS by adding your server certificate(s) below.',
+          banner: () => 'Publish your TLS servers\' cryptographic identity in the DNS by adding your server certificate(s) below.',
           create: () => `Adds a TLS identity.`,
           destroy: d => (`Remove TLS identity ${d.name}?`),
           destroyInfo: () => 'Removing this TLS identity may render your website unavailable users.',
@@ -50,51 +49,111 @@ export default {
             datatype: 'MultilineText',
             searchable: false,
           },
-          fingerprint: {
-            name: 'item.fingerprint',
-            text: 'Fingerprint',
+          // fingerprint: {
+          //   name: 'item.fingerprint',
+          //   text: 'Fingerprint',
+          //   algin: 'left',
+          //   sortable: true,
+          //   value: 'fingerprint',
+          //   readonly: true,
+          //   datatype: 'GenericText',
+          // },
+          // not_valid_before: {
+          //   name: 'item.not_valid_before',
+          //   text: 'Begin Validity',
+          //   algin: 'left',
+          //   sortable: true,
+          //   value: 'not_valid_before',
+          //   readonly: true,
+          //   datatype: 'TimeAgo',
+          // },
+          // not_valid_after: {
+          //   name: 'item.not_valid_after',
+          //   text: 'Expiration',
+          //   algin: 'left',
+          //   sortable: true,
+          //   value: 'not_valid_after',
+          //   readonly: true,
+          //   datatype: 'TimeAgo',
+          // },
+          // subject_names: {
+          //   name: 'item.subject_names',
+          //   text: 'Subject Names',
+          //   algin: 'left',
+          //   sortable: true,
+          //   value: 'subject_names',
+          //   readonly: true,
+          //   datatype: 'MultilineText',
+          // },
+          // published_at: {
+          //   name: 'item.published_at',
+          //   text: 'published at',
+          //   algin: 'left',
+          //   sortable: true,
+          //   value: 'published_at',
+          //   readonly: true,
+          //   datatype: 'MultilineText',
+          // },
+          domains: {
+            name: 'item.domains',
+            text: 'domains',
             algin: 'left',
             sortable: true,
-            value: 'fingerprint',
+            value: 'domains',
             readonly: true,
+            datatype: 'DomainList',
+          },
+          tlsa_selector: {
+            name: 'item.tlsa_selector',
+            text: 'TLSA Selector',
+            algin: 'left',
+            sortable: true,
+            value: 'tlsa_selector',
+            readonly: true,
+            writeOnCreate: true,
             datatype: 'GenericText',
           },
-          not_valid_before: {
-            name: 'item.not_valid_before',
-            text: 'Begin Validity',
+          tlsa_matching_type: {
+            name: 'item.tlsa_matching_type',
+            text: 'TLSA Matching Type',
             algin: 'left',
             sortable: true,
-            value: 'not_valid_before',
+            value: 'tlsa_matching_type',
             readonly: true,
-            datatype: 'TimeAgo',
+            writeOnCreate: true,
+            datatype: 'GenericText',
           },
-          not_valid_after: {
-            name: 'item.not_valid_after',
-            text: 'Expiration',
+          tlsa_certificate_usage: {
+            name: 'item.tlsa_certificate_usage',
+            text: 'TLSA Certificate Usage',
             algin: 'left',
             sortable: true,
-            value: 'not_valid_after',
+            value: 'tlsa_certificate_usage',
             readonly: true,
-            datatype: 'TimeAgo',
+            writeOnCreate: true,
+            datatype: 'GenericText',
           },
-          subject_names: {
-            name: 'item.subject_names',
-            text: 'Subject Names',
+          protocol: {
+            name: 'item.protocol',
+            text: 'Protocol',
             algin: 'left',
             sortable: true,
-            value: 'subject_names',
+            value: 'protocol',
             readonly: true,
-            datatype: 'MultilineText',
+            writeOnCreate: true,
+            datatype: 'GenericText',
           },
-          records_in: {
-            name: 'item.published_at',
-            text: 'published at',
+          port: {
+            name: 'item.port',
+            text: 'Port',
             algin: 'left',
             sortable: true,
-            value: 'published_at',
+            value: 'port',
             readonly: true,
-            datatype: 'MultilineText',
+            writeOnCreate: true,
+            datatype: 'GenericText',
           },
+
           scheduled_removal: {
             name: 'item.scheduled_removal',
             text: 'Scheduled Removal',
@@ -128,27 +187,9 @@ export default {
           create: 'identities/tls/',
           delete: 'identities/tls/:{id}',
         },
+        expandable: true,
+        expandComponentName: "TLSAIdentity",
         itemDefaults: () => ({ name: '' }),
-        postcreate: d => {
-          this.close();
-          this.showDomainInfo(d, true);
-        },
-        async showDomainInfo(d, isNew = false) {
-          const url = this.resourcePath(this.paths.delete, d, ':');
-          if (d.keys === undefined) {
-            await withWorking(this.error, () => HTTP
-                .get(url)
-                .then(r => {
-                  d.keys = r.data.keys;
-                })
-            );
-          }
-          let ds = d.keys.map(key => key.ds);
-          ds = ds.concat.apply([], ds)
-          let dnskey = d.keys.map(key => key.dnskey);
-          this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
-          this.extraComponentName = 'DomainSetupDialog';
-        },
         handleRowClick: (value) => {
           console.log(value);
           // this.$router.push({name: 'domain', params: {domain: value.name}});
