@@ -43,7 +43,7 @@ Encode your username and token (provided during registration) in the
 ``Authorization: Basic ...`` header. This is the method virtually all dynDNS
 clients use out of the box.
 
-**Important:** If you dynDNS client asks for a *password*, do not enter your
+**Important:** If your dynDNS client asks for a *password*, do not enter your
 account password (if you have one). Instead, enter your token!
 
 
