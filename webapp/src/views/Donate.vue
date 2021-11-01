@@ -97,9 +97,13 @@
                 <v-expansion-panel-content class="pt-4">
                   <p>
                     <strong><a href="https://www.paypal.com/donate?hosted_button_id=GPGXGLA4SU78W" target="_blank">Click
-                    here</a> to donate via PayPal.</strong> Note that PayPal charges us the highest fees of all, so if
+                    here</a> or use the below QR code to donate via PayPal.</strong>
+                    Note that PayPal charges us the highest fees of all, so if
                     you can use one of the other methods, that would be appreciated!
                   </p>
+                  <v-layout class="justify-center">
+                    <v-img :src="require('../assets/paypal-qrcode.png')" alt="PayPal QR Code" style="max-width: 256px"></v-img>
+                  </v-layout>
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
