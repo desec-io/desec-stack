@@ -69,7 +69,7 @@ class IdempotentDestroyMixin:
 
 class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = serializers.TokenSerializer
-    permission_classes = (IsAuthenticated, permissions.ManageTokensPermission,)
+    permission_classes = (IsAuthenticated, permissions.HasManageTokensPermission,)
     throttle_scope = 'account_management_passive'
 
     def get_queryset(self):
@@ -173,9 +173,9 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     def permission_classes(self):
         ret = [IsAuthenticated]
         if self.request.method in SAFE_METHODS:
-            ret.append(permissions.ManageTokensPermission | permissions.AuthTokenCorrespondsToViewToken)
+            ret.append(permissions.HasManageTokensPermission | permissions.AuthTokenCorrespondsToViewToken)
         else:
-            ret.append(permissions.ManageTokensPermission)
+            ret.append(permissions.HasManageTokensPermission)
         return ret
 
     def dispatch(self, request, *args, **kwargs):

@@ -90,7 +90,7 @@ class IsVPNClient(permissions.BasePermission):
         return ip in IPv4Network('10.8.0.0/24')
 
 
-class ManageTokensPermission(permissions.BasePermission):
+class HasManageTokensPermission(permissions.BasePermission):
     """
     Permission to check whether a token has "manage tokens" permission.
     """
