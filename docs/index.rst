@@ -45,8 +45,14 @@ of the ``curl`` call, like this::
    :caption: dynDNS
 
    dyndns/configure
-   dyndns/lets-encrypt
    dyndns/update-api
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Integrations
+
+   integrations/lets-encrypt
 
 
 .. toctree::
