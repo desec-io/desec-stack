@@ -21,6 +21,8 @@ def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
     api_headers = api_user_lps_domain.headers.copy()
 
     def _ips_in_network(ip_set, network):
+        if ip_set:
+            assert network is not None, "`network` was None when `ip_set` wasn't empty."
         return all(ipaddress.ip_address(ip) in ipaddress.ip_network(network) for ip in ip_set)
 
     def do_test(url, headers, params, expected_ipv4, expected_ipv6, subname):
