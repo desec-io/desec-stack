@@ -160,3 +160,16 @@ documentation.
 
 To test your setup, run ``sudo ddclient -force`` and see if everything works as
 expected.
+
+
+.. _updating-multiple-dyn-domains:
+
+Updating multiple domains
+`````````````````````````
+To update multiple domain or subdomains, it is best to designate one of them
+as the main domain, and create CNAME records for the others, so that they act
+as DNS aliases for the main domain.
+You can use do that either via the web interface or the API.
+
+If you try to update several subdomains directly (by issuing multiple update
+requests), your update requests may be refused (see :ref:`rate-limits`).

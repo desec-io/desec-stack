@@ -100,6 +100,9 @@ Authentication.  In this case, replace your authentication username with
 ``sub.yourdomain.dedyn.io``.  Similarly, if you use the ``hostname`` query
 parameter, it needs to be set to the full domain name (including subdomain).
 
+To update more than one domain name, please see
+:ref:`updating-multiple-dyn-domains`.
+
 .. _determine-ip-addresses:
 
 Determine IP addresses
