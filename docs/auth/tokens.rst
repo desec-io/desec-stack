@@ -349,7 +349,7 @@ rest of the API, so is not documented in detail here.
 For example, to retrieve a list of policies for a given token, issue a ``GET``
 request as follows::
 
-    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/domains/ \
+    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will respond with a list of token domain policy objects.
@@ -374,11 +374,11 @@ dynDNS updates for a specific domain::
 You can retrieve (``GET``), update (``PATCH``, ``PUT``), and remove
 (``DELETE``) policies by appending their ``domain`` to the endpoint::
 
-    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/domains/{domain}/ \
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/domain/{domain}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The default policy can be accessed using the special domain name ``default``
-(``/api/v1/auth/tokens/{id}/policies/domains/default/``).
+(``/api/v1/auth/tokens/{id}/policies/domain/default/``).
 
 When modifying or deleting policies, the API enforces the default policy's
 primacy:
