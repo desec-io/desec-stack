@@ -633,13 +633,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.User
-        fields = ('created', 'email', 'id', 'limit_domains', 'password',)
-        extra_kwargs = {
-            'password': {
-                'write_only': True,  # Do not expose password field
-                'allow_null': True,
-            }
-        }
+        fields = ('created', 'email', 'id', 'limit_domains',)
+        read_only_fields = ('created', 'email', 'id', 'limit_domains',)
 
     def validate_password(self, value):
         if value is not None:
@@ -656,8 +651,13 @@ class RegisterAccountSerializer(UserSerializer):
 
     class Meta:
         model = UserSerializer.Meta.model
-        fields = ('email', 'password', 'domain', 'captcha')
-        extra_kwargs = UserSerializer.Meta.extra_kwargs
+        fields = ('email', 'password', 'domain', 'captcha',)
+        extra_kwargs = {
+            'password': {
+                'write_only': True,  # Do not expose password field
+                'allow_null': True,
+            }
+        }
 
     def validate_domain(self, value):
         serializer = DomainSerializer(data=dict(name=value), context=self.context)

@@ -676,7 +676,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_view_account(self):
         response = self.client.view_account(self.token)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('created' in response.data)
+        self.assertEqual(response.data.keys(), {'created', 'email', 'id', 'limit_domains'})
         self.assertEqual(response.data['email'], self.email)
         self.assertEqual(response.data['id'], str(User.objects.get(email=self.email).pk))
         self.assertEqual(response.data['limit_domains'], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT)
