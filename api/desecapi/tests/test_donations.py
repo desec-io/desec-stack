@@ -23,6 +23,7 @@ class DonationTests(DesecTestCase):
         self.assertTrue(mail.outbox)
         email_internal = str(mail.outbox[0].message())
         direct_debit = str(mail.outbox[0].attachments[0][1])
+        reply_to = mail.outbox[0].reply_to
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(response.data['iban'], data['iban'])
@@ -30,6 +31,7 @@ class DonationTests(DesecTestCase):
         self.assertIn('ONDON1', response.data['mref'])
         self.assertTrue('Name' in direct_debit)
         self.assertTrue(data['iban'] in email_internal)
+        self.assertEqual(reply_to, [])
 
     def test_create_donation_verbose(self):
         url = reverse('v1:donation')
@@ -46,6 +48,7 @@ class DonationTests(DesecTestCase):
         self.assertTrue(mail.outbox)
         email_internal = str(mail.outbox[0].message())
         direct_debit = str(mail.outbox[0].attachments[0][1])
+        reply_to = mail.outbox[0].reply_to
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(response.data['iban'], data['iban'])
@@ -53,3 +56,4 @@ class DonationTests(DesecTestCase):
         self.assertIn('ONDON1', response.data['mref'])
         self.assertTrue('Komplizierter Vornamu' in direct_debit)
         self.assertTrue(data['iban'] in email_internal)
+        self.assertEqual(reply_to, [data['email']])

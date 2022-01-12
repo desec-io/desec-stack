@@ -477,12 +477,10 @@ class DonationList(generics.CreateAPIView):
         email = EmailMessage(subject_tmpl.render(context),
                              content_tmpl.render(context),
                              from_tmpl.render(context),
-                             ['donation@desec.io'],
-                             attachments=[
-                                 ('jameica-directdebit.xml',
-                                  attachment_tmpl.render(context),
-                                  'text/xml')
-                             ])
+                             [settings.DEFAULT_FROM_EMAIL],
+                             attachments=[('jameica-directdebit.xml', attachment_tmpl.render(context), 'text/xml')],
+                             reply_to=[instance.email] if instance.email else None
+                             )
         email.send()
 
         # donor notification
