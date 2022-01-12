@@ -1,11 +1,16 @@
 Hi there,
 
-Thank you for registering with deSEC!
-
+Thank you for registering with deSEC!{% if domain is not None %} You are about to set up the
+following domain: {{ domain }}{% endif %}
+{% if domain is None %}
 As we may need to contact you in the future, you need to verify your
 email address before you can use your account. To do so, please use
 the following link (valid for {{ link_expiration_hours }} hours):
-
+{% else %}
+To create your account and finish the registration, please confirm you
+received this email by clicking on the following link (valid for {{ link_expiration_hours }}
+hours):
+{% endif %}
 {{ confirmation_link }}
 
 After that, please follow the instructions on the confirmation page.

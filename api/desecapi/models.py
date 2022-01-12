@@ -165,7 +165,6 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         immediate_lane = 'email_immediate_lane'
         lanes = {
             'activate': slow_lane,
-            'activate-with-domain': slow_lane,
             'change-email': slow_lane,
             'change-email-confirmation-old-email': fast_lane,
             'password-change-confirmation': fast_lane,

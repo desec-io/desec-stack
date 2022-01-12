@@ -525,7 +525,7 @@ class AccountCreateView(generics.CreateAPIView):
                 link, validity_period = generate_confirmation_link(request,
                                                                    serializers.AuthenticatedActivateUserActionSerializer,
                                                                    'confirm-activate-account', user=user, domain=domain)
-                user.send_email('activate-with-domain' if domain else 'activate', context={
+                user.send_email('activate', context={
                     'confirmation_link': link,
                     'link_expiration_hours': validity_period // timedelta(hours=1),
                     'domain': domain,
