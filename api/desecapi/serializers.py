@@ -721,7 +721,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.User
-        fields = ('created', 'email', 'id', 'limit_domains',)
+        fields = ('created', 'email', 'id', 'limit_domains', 'outreach_preference',)
         read_only_fields = ('created', 'email', 'id', 'limit_domains',)
 
     def validate_password(self, value):
@@ -739,7 +739,7 @@ class RegisterAccountSerializer(UserSerializer):
 
     class Meta:
         model = UserSerializer.Meta.model
-        fields = ('email', 'password', 'domain', 'captcha',)
+        fields = ('email', 'password', 'domain', 'captcha', 'outreach_preference',)
         extra_kwargs = {
             'password': {
                 'write_only': True,  # Do not expose password field

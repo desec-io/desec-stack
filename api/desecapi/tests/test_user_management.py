@@ -417,6 +417,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertFalse(User.objects.get(email=email).is_active)
         self.assertIsNone(User.objects.get(email=email).is_active)
         self.assertEqual(User.objects.get(email=email).needs_captcha, late_captcha)
+        self.assertEqual(User.objects.get(email=email).outreach_preference, kwargs.get('outreach_preference', True))
         self.assertPassword(email, password)
         confirmation_link = self.assertRegistrationEmail(email)
         self.assertConfirmationLinkRedirect(confirmation_link)
@@ -539,7 +540,9 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         self.assertConfirmationLinkRedirect(confirmation_link)
 
     def test_registration(self):
-        self._test_registration(password=self.random_password())
+        for outreach_preference in [None, True, False]:
+            kwargs = dict(outreach_preference=outreach_preference) if outreach_preference is not None else {}
+            self._test_registration(password=self.random_password(), **kwargs)
 
     def test_registration_trim_email(self):
         user_email = ' {} '.format(self.random_username())
@@ -685,21 +688,45 @@ class HasUserAccountTestCase(UserManagementTestCase):
     def test_view_account(self):
         response = self.client.view_account(self.token)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data.keys(), {'created', 'email', 'id', 'limit_domains'})
+        self.assertEqual(response.data.keys(), {'created', 'email', 'id', 'limit_domains', 'outreach_preference'})
         self.assertEqual(response.data['email'], self.email)
         self.assertEqual(response.data['id'], str(User.objects.get(email=self.email).pk))
         self.assertEqual(response.data['limit_domains'], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT)
+        self.assertTrue(response.data['outreach_preference'])
 
-    def test_view_account_read_only(self):
-        # Should this test ever be removed (to allow writeable fields), make sure to
-        # add new tests for each read-only field individually (such as limit_domains)!
-        for method in [self.client.patch, self.client.put, self.client.post, self.client.delete]:
+    def test_view_account_forbidden_methods(self):
+        for method in [self.client.post, self.client.delete]:
             response = method(
                 reverse('v1:account'),
                 {'limit_domains': 99},
                 HTTP_AUTHORIZATION='Token {}'.format(self.token)
             )
             self.assertResponse(response, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_view_account_update(self):
+        user = User.objects.get(email=self.email)
+        immutable_fields = ('created', 'email', 'id', 'limit_domains', 'password',)
+        immutable_values = [getattr(user, key) for key in immutable_fields]
+        outreach_preference = user.outreach_preference
+
+        for method in [self.client.patch, self.client.put]:
+            outreach_preference = not outreach_preference
+            response = method(
+                reverse('v1:account'),
+                {
+                    'created': '2019-10-16T18:09:17.715702Z',
+                    'email': 'youremailaddress@example.com',
+                    'id': '9ab16e5c-805d-4ab1-9030-af3f5a541d47',
+                    'limit_domains': 42,
+                    'password': self.random_password(),
+                    'outreach_preference': outreach_preference,
+                },
+                HTTP_AUTHORIZATION='Token {}'.format(self.token)
+            )
+            self.assertResponse(response, status.HTTP_200_OK)
+            user = User.objects.get(email=self.email)
+            self.assertEqual(outreach_preference, user.outreach_preference)  # `outreach_preference` updated
+            self.assertEqual(immutable_values, [getattr(user, k) for k in immutable_fields])  # read-only fields ignored
 
     def test_reset_password(self):
         self._test_reset_password(self.email)

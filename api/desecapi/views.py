@@ -521,7 +521,7 @@ class AccountCreateView(generics.CreateAPIView):
         return Response(data={'detail': message}, status=status.HTTP_202_ACCEPTED)
 
 
-class AccountView(generics.RetrieveAPIView):
+class AccountView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, permissions.TokenNoDomainPolicy,)
     serializer_class = serializers.UserSerializer
     throttle_scope = 'account_management_passive'
