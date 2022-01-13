@@ -25,8 +25,8 @@ class DonationTests(DesecTestCase):
         direct_debit = str(mail.outbox[0].attachments[0][1])
         reply_to = mail.outbox[0].reply_to
         self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.keys(), {'name', 'amount', 'email', 'mref', 'interval'})
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(response.data['iban'], data['iban'])
         self.assertEqual(response.data['interval'], 0)
         self.assertIn('ONDON1', response.data['mref'])
         self.assertTrue('Name' in direct_debit)
@@ -50,8 +50,8 @@ class DonationTests(DesecTestCase):
         direct_debit = str(mail.outbox[0].attachments[0][1])
         reply_to = mail.outbox[0].reply_to
         self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.keys(), {'name', 'amount', 'email', 'mref', 'interval'})
         self.assertEqual(len(mail.outbox), 2)
-        self.assertEqual(response.data['iban'], data['iban'])
         self.assertEqual(response.data['interval'], 3)
         self.assertIn('ONDON1', response.data['mref'])
         self.assertTrue('Komplizierter Vornamu' in direct_debit)

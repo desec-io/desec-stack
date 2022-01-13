@@ -6,13 +6,10 @@ from pytest_schema import schema, Optional
 
 donation = {
     'name': str,
-    'iban': str,
-    'bic': str,
     'amount': str,
+    'email': str,
     'mref': str,
     'interval': int,
-    'message': str,
-    'email': str,
 }
 
 

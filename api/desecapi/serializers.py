@@ -615,6 +615,11 @@ class DonationSerializer(serializers.ModelSerializer):
         model = models.Donation
         fields = ('name', 'iban', 'bic', 'amount', 'message', 'email', 'mref', 'interval')
         read_only_fields = ('mref',)
+        extra_kwargs = {  # do not return sensitive information
+            'iban': {'write_only': True},
+            'bic': {'write_only': True},
+            'message': {'write_only': True},
+        }
 
 
     @staticmethod
