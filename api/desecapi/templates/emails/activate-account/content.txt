@@ -11,7 +11,7 @@ To create your account and finish the registration, please confirm you
 received this email by clicking on the following link (valid for {{ link_expiration_hours }}
 hours):
 {% endif %}
-{{ confirmation_link }}
+{{ confirmation_link.0 }}
 
 After that, please follow the instructions on the confirmation page.
 If link has already expired, please register again.

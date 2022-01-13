@@ -8,7 +8,7 @@ Otherwise, we will delete your account, including all related data.
 Before we do so, we need you to confirm once more that this is what you
 really, really want by clicking the following link (valid for {{ link_expiration_hours }} hours):
 
-{{ confirmation_link }}
+{{ confirmation_link.0 }}
 
 Note that this action is irreversible! We cannot recover your account.
 

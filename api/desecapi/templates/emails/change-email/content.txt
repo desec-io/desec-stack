@@ -13,7 +13,7 @@ As we may need to contact you under this address in the future, you
 need to verify your new email address before we can make the change.
 To do so, please use the following link (valid for {{ link_expiration_hours }} hours):
 
-{{ confirmation_link }}
+{{ confirmation_link.0 }}
 
 After your confirmation, we will perform the change.
 

@@ -8,7 +8,7 @@ have a password.
 To ensure that the request is legitimate, we need you to confirm it
 using the following link (valid for {{ link_expiration_hours }} hours):
 
-{{ confirmation_link }}
+{{ confirmation_link.0 }}
 
 After your confirmation, you can provide your new password.
 

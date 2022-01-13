@@ -30,13 +30,6 @@ from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.renderers import PlainTextRenderer
 
 
-def generate_confirmation_link(request, action_serializer, viewname, **kwargs):
-    action = action_serializer.Meta.model(**kwargs)
-    action_data = action_serializer(action).data
-    confirmation_link = reverse(viewname, request=request, args=[action_data['code']])
-    return confirmation_link, action_serializer.validity_period
-
-
 class EmptyPayloadMixin:
     def initialize_request(self, request, *args, **kwargs):
         # noinspection PyUnresolvedReferences
@@ -522,14 +515,7 @@ class AccountCreateView(generics.CreateAPIView):
             # send email if needed
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
-                link, validity_period = generate_confirmation_link(request,
-                                                                   serializers.AuthenticatedActivateUserActionSerializer,
-                                                                   'confirm-activate-account', user=user, domain=domain)
-                user.send_email('activate', context={
-                    'confirmation_link': link,
-                    'link_expiration_hours': validity_period // timedelta(hours=1),
-                    'domain': domain,
-                })
+                user.send_confirmation_email('activate-account', params=dict(domain=domain))
 
         # This request is unauthenticated, so don't expose whether we did anything.
         message = 'Welcome! Please check your mailbox.' if activation_required else 'Welcome!'
@@ -555,15 +541,9 @@ class AccountDeleteView(APIView):
     throttle_scope = 'account_management_active'
 
     def post(self, request, *args, **kwargs):
-        if self.request.user.domains.exists():
+        if request.user.domains.exists():
             return self.response_still_has_domains
-        link, validity_period = generate_confirmation_link(request,
-                                                           serializers.AuthenticatedDeleteUserActionSerializer,
-                                                           'confirm-delete-account', user=self.request.user)
-        request.user.send_email('delete-user', context={
-            'confirmation_link': link,
-            'link_expiration_hours': validity_period // timedelta(hours=1),
-        })
+        request.user.send_confirmation_email('delete-account')
 
         return Response(data={'detail': 'Please check your mailbox for further account deletion instructions.'},
                         status=status.HTTP_202_ACCEPTED)
@@ -605,20 +585,12 @@ class AccountChangeEmailView(generics.GenericAPIView):
     throttle_scope = 'account_management_active'
 
     def post(self, request, *args, **kwargs):
-        # Check password and extract email
+        # Check password and extract `new_email` field
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
-
-        link, validity_period = generate_confirmation_link(request,
-                                                           serializers.AuthenticatedChangeEmailUserActionSerializer,
-                                                           'confirm-change-email', user=request.user, new_email=new_email)
-        request.user.send_email('change-email', recipient=new_email, context={
-            'confirmation_link': link,
-            'link_expiration_hours': validity_period // timedelta(hours=1),
-            'old_email': request.user.email,
-            'new_email': new_email,
-        })
+        request.user.send_confirmation_email('change-email', recipient=new_email, old_email=request.user.email,
+                                             params=dict(new_email=new_email))
 
         # At this point, we know that we are talking to the user, so we can tell that we sent an email.
         return Response(data={'detail': 'Please check your mailbox to confirm email address change.'},
@@ -638,22 +610,12 @@ class AccountResetPasswordView(generics.GenericAPIView):
         except models.User.DoesNotExist:
             pass
         else:
-            self.send_reset_token(user, request)
+            user.send_confirmation_email('reset-password')
 
         # This request is unauthenticated, so don't expose whether we did anything.
         return Response(data={'detail': 'Please check your mailbox for further password reset instructions. '
                                         'If you did not receive an email, please contact support.'},
                         status=status.HTTP_202_ACCEPTED)
-
-    @staticmethod
-    def send_reset_token(user, request):
-        link, validity_period = generate_confirmation_link(request,
-                                                           serializers.AuthenticatedResetPasswordUserActionSerializer,
-                                                           'confirm-reset-password', user=user)
-        user.send_email('reset-password', context={
-            'confirmation_link': link,
-            'link_expiration_hours': validity_period // timedelta(hours=1),
-        })
 
 
 class AuthenticatedActionView(generics.GenericAPIView):
@@ -748,13 +710,9 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
 
     def _finalize_without_domain(self):
         if not is_password_usable(self.authenticated_action.user.password):
-            AccountResetPasswordView.send_reset_token(self.authenticated_action.user, self.request)
-            return Response({
-                'detail': 'Success! We sent you instructions on how to set your password.'
-            })
-        return Response({
-                'detail': 'Success! Your account has been activated, and you can now log in.'
-            })
+            self.authenticated_action.user.send_confirmation_email('reset-password')
+            return Response({'detail': 'Success! We sent you instructions on how to set your password.'})
+        return Response({'detail': 'Success! Your account has been activated, and you can now log in.'})
 
     def _finalize_with_domain(self, domain):
         if domain.is_locally_registrable:

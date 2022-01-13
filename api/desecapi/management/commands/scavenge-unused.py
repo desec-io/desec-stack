@@ -1,14 +1,11 @@
 import datetime
 
-from django.conf import settings
 from django.core.mail import get_connection, mail_admins
 from django.core.management import BaseCommand
 from django.db import transaction
 from django.db.models import F, Max, OuterRef, Subquery
 from django.db.models.functions import Greatest
-from django.test import RequestFactory
 from django.utils import timezone
-from rest_framework.reverse import reverse
 
 from desecapi import models, serializers, views
 from desecapi.pdns_change_tracker import PDNSChangeTracker
@@ -38,12 +35,6 @@ class Command(BaseCommand):
 
     @classmethod
     def warn_domain_deletion(cls, renewal_state, notice_days, inactive_days):
-        def confirmation_link(domain_name, user):
-            action = models.AuthenticatedRenewDomainBasicUserAction(domain=domain_name, user=user)
-            verification_code = serializers.AuthenticatedRenewDomainBasicUserActionSerializer(action).data['code']
-            request = RequestFactory().generic('', '', secure=True, HTTP_HOST=f'desec.{settings.DESECSTACK_DOMAIN}')
-            return reverse('v1:confirm-renew-domain', request=request, args=[verification_code])
-
         # We act when `renewal_changed` is at least this date (or older)
         inactive_threshold = timezone.localdate() - datetime.timedelta(days=inactive_days)
         # Filter candidates which have the state of interest, at least since the calculated date
@@ -66,8 +57,8 @@ class Command(BaseCommand):
                     domain.renewal_state += 1
                     domain.renewal_changed = timezone.now()
                     domain.save(update_fields=['renewal_state', 'renewal_changed'])
-                links = [{'name': domain, 'confirmation_link': confirmation_link(domain, user)} for domain in domains]
-                user.send_email('renew-domain', context={'domains': links, 'deletion_date': deletion_date})
+                domains = [{'domain': domain} for domain in domains]
+                user.send_confirmation_email('renew-domain', deletion_date=deletion_date, params=domains)
 
     @classmethod
     def delete_domains(cls, inactive_days):
