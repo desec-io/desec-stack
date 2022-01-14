@@ -728,6 +728,8 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     state = serializers.CharField()  # serializer read-write, but model read-only field
     validity_period = settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
 
+    _crypto_context = 'desecapi.serializers.AuthenticatedActionSerializer'
+
     class Meta:
         model = models.AuthenticatedAction
         fields = ('state',)
@@ -735,20 +737,19 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     @classmethod
     def _pack_code(cls, data):
         payload = json.dumps(data).encode()
-        code = crypto.encrypt(payload, context='desecapi.serializers.AuthenticatedActionSerializer').decode()
+        code = crypto.encrypt(payload, context=cls._crypto_context).decode()
         return code.rstrip('=')
 
     @classmethod
     def _unpack_code(cls, code, *, ttl):
         code += -len(code) % 4 * '='
         try:
-            payload = crypto.decrypt(code.encode(), context='desecapi.serializers.AuthenticatedActionSerializer',
-                                     ttl=ttl)
+            payload = crypto.decrypt(code.encode(), context=cls._crypto_context, ttl=ttl)
             return json.loads(payload.decode())
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
-    def to_representation(self, instance: models.AuthenticatedUserAction):
+    def to_representation(self, instance: models.AuthenticatedAction):
         # do the regular business
         data = super().to_representation(instance)
 
@@ -756,8 +757,6 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         return {'code': self._pack_code(data)}
 
     def to_internal_value(self, data):
-        data = data.copy()  # avoid side effect from .pop
-
         # calculate code TTL
         validity_period = self.context.get('validity_period', self.validity_period)
         try:
