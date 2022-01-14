@@ -729,6 +729,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     validity_period = settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE
 
     _crypto_context = 'desecapi.serializers.AuthenticatedActionSerializer'
+    timestamp = None  # is set to the code's timestamp during validation
 
     class Meta:
         model = models.AuthenticatedAction
@@ -744,8 +745,8 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
     def _unpack_code(cls, code, *, ttl):
         code += -len(code) % 4 * '='
         try:
-            payload = crypto.decrypt(code.encode(), context=cls._crypto_context, ttl=ttl)
-            return json.loads(payload.decode())
+            timestamp, payload = crypto.decrypt(code.encode(), context=cls._crypto_context, ttl=ttl)
+            return timestamp, json.loads(payload.decode())
         except (TypeError, UnicodeDecodeError, UnicodeEncodeError, json.JSONDecodeError, binascii.Error):
             raise ValueError
 
@@ -766,7 +767,7 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
 
         # decode from single string
         try:
-            unpacked_data = self._unpack_code(self.context['code'], ttl=ttl)
+            self.timestamp, unpacked_data = self._unpack_code(self.context['code'], ttl=ttl)
         except KeyError:
             raise serializers.ValidationError({'code': ['This field is required.']})
         except ValueError:

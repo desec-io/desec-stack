@@ -35,9 +35,10 @@ def encrypt(data, *, context):
 
 def decrypt(token, *, context, ttl=None):
     key = retrieve_key(label=b'crypt', context=context)
+    f = Fernet(key=key)
     try:
-        value = Fernet(key=key).decrypt(token, ttl=ttl)
+        ret = f.extract_timestamp(token), f.decrypt(token, ttl=ttl)
         metrics.get('desecapi_key_decryption_success').labels(context).inc()
-        return value
+        return ret
     except InvalidToken:
         raise ValueError

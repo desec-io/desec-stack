@@ -443,7 +443,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         if tampered_domain is not None:
             path = urlparse(confirmation_link).path
             code = resolve(path).kwargs.get('code')
-            data = AuthenticatedActionSerializer._unpack_code(code, ttl=None)
+            _, data = AuthenticatedActionSerializer._unpack_code(code, ttl=None)
             data['domain'] = tampered_domain
             tampered_code = AuthenticatedActionSerializer._pack_code(data)
             confirmation_link = confirmation_link.replace(code, tampered_code)

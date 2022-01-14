@@ -1,4 +1,5 @@
 from math import log
+import time
 
 from django.test import TestCase
 
@@ -42,7 +43,9 @@ class CryptoTestCase(TestCase):
     def test_encrypt_decrypt(self):
         plain = b'test'
         ciphertext = crypto.encrypt(plain, context=self.context)
-        self.assertEqual(plain, crypto.decrypt(ciphertext, context=self.context))
+        timestamp, decrypted = crypto.decrypt(ciphertext, context=self.context)
+        self.assertEqual(plain, decrypted)
+        self.assertTrue(0 <= time.time() - timestamp <= 1)
 
     def test_encrypt_decrypt_raises_on_tampering(self):
         ciphertext = crypto.encrypt(b'test', context=self.context)
