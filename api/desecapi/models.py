@@ -373,11 +373,9 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     def touched(self):
         try:
             rrset_touched = max(updated for updated in self.rrset_set.values_list('touched', flat=True))
-            # If the domain has not been published yet, self.published is None and max() would fail
-            return rrset_touched if not self.published else max(rrset_touched, self.published)
-        except ValueError:
-            # This can be none if the domain was never published and has no records (but there should be at least NS)
-            return self.published
+        except ValueError:  # no RRsets (but there should be at least NS)
+            return self.published  # may be None if the domain was never published
+        return max(rrset_touched, self.published or rrset_touched)
 
     @property
     def is_locally_registrable(self):
