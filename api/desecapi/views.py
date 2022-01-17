@@ -510,7 +510,7 @@ class AccountCreateView(generics.CreateAPIView):
                 raise e
         else:
             # create user
-            user = serializer.save(is_active=(not activation_required))
+            user = serializer.save(is_active=None if activation_required else True)
 
             # send email if needed
             domain = serializer.validated_data.get('domain')

@@ -21,7 +21,7 @@ class Command(BaseCommand):
     def delete_never_activated_users():
         # delete inactive users whose activation link expired and who never logged in
         # (this will not delete users who have used their account and were later disabled)
-        models.User.objects.filter(is_active=False, last_login__exact=None,
+        models.User.objects.filter(is_active__isnull=True, last_login__isnull=True,
                             created__lt=timezone.now() - settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE).delete()
 
     @staticmethod

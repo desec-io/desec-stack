@@ -98,7 +98,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         verbose_name='email address',
         unique=True,
     )
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, null=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     limit_domains = models.PositiveIntegerField(default=_limit_domains_default.__func__, null=True, blank=True)
@@ -902,7 +902,7 @@ class AuthenticatedAction(models.Model):
                 raise ValueError
 
     @property
-    def _state_fields(self):
+    def _state_fields(self) -> list:
         """
         Returns a list that defines the state of this action (used for authentication of this action).
 
@@ -924,12 +924,16 @@ class AuthenticatedAction(models.Model):
         name = '.'.join([self.__module__, self.__class__.__qualname__])
         return [name]
 
+    @staticmethod
+    def state_of(fields: list):
+        state = json.dumps(fields).encode()
+        h = sha256()
+        h.update(state)
+        return h.hexdigest()
+
     @property
     def state(self):
-        state = json.dumps(self._state_fields).encode()
-        hash = sha256()
-        hash.update(state)
-        return hash.hexdigest()
+        return self.state_of(self._state_fields)
 
     def validate_state(self, value):
         return value == self.state
@@ -966,15 +970,27 @@ class AuthenticatedUserAction(AuthenticatedBasicUserAction):
     Abstract AuthenticatedBasicUserAction, incorporating the user's id, email, password, and is_active flag into the
     Message Authentication Code state.
     """
-
     class Meta:
         managed = False
 
     @property
     def _state_fields(self):
         # TODO consider adding a "last change" attribute of the user to the state to avoid code
-        #  re-use after the the state has been changed and changed back.
+        # re-use after the state has been changed and changed back.
         return super()._state_fields + [self.user.email, self.user.password, self.user.is_active]
+
+    def validate_legacy_state(self, value):
+        return value == self.state_of(self._state_fields[:-1] + [False])
+
+    def validate_state(self, value):
+        is_valid = super().validate_state(value)
+
+        # Retry with state structure before migration 0019 (activation link transition period)
+        # TODO Remove once legacy links have expired (DESECSTACK_API_AUTHACTION_VALIDITY hours after deployment)
+        if not is_valid and self._state_fields[-1] is None and self.user.last_login is None:
+            is_valid = self.validate_legacy_state(value)
+
+        return is_valid
 
 
 class AuthenticatedActivateUserAction(AuthenticatedUserAction):

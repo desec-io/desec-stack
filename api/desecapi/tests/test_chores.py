@@ -26,17 +26,19 @@ class ChoresCommandTest(TestCase):
         def create_users(kind):
             logintime = timezone.now() + timezone.timedelta(seconds=5)
             kwargs_list = [
-                dict(email=f'user1+{kind}@example.com', is_active=False, last_login=None),
-                dict(email=f'user2+{kind}@example.com', is_active=True, last_login=None),
-                dict(email=f'user3+{kind}@example.com', is_active=False, last_login=logintime),
-                dict(email=f'user4+{kind}@example.com', is_active=True, last_login=logintime),
+                dict(email=f'user1+{kind}@example.com', is_active=None, last_login=None),
+                dict(email=f'user2+{kind}@example.com', is_active=None, last_login=logintime),
+                dict(email=f'user3+{kind}@example.com', is_active=False, last_login=None),
+                dict(email=f'user4+{kind}@example.com', is_active=False, last_login=logintime),
+                dict(email=f'user5+{kind}@example.com', is_active=True, last_login=None),
+                dict(email=f'user6+{kind}@example.com', is_active=True, last_login=logintime),
             ]
             return (User.objects.create(**kwargs) for kwargs in kwargs_list)
 
         # Old users
         faketime = timezone.now() - settings.VALIDITY_PERIOD_VERIFICATION_SIGNATURE - timezone.timedelta(seconds=1)
         with mock.patch('django.db.models.fields.timezone.now', return_value=faketime):
-            expired_user, _, _, _ = create_users('old')
+            expired_user, *_ = create_users('old')
 
         # New users
         create_users('new')

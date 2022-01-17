@@ -408,6 +408,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertRegistrationSuccessResponse(response)
         self.assertUserExists(email)
         self.assertFalse(User.objects.get(email=email).is_active)
+        self.assertIsNone(User.objects.get(email=email).is_active)
         self.assertEqual(User.objects.get(email=email).needs_captcha, late_captcha)
         self.assertPassword(email, password)
         confirmation_link = self.assertRegistrationEmail(email)
@@ -436,6 +437,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertRegistrationSuccessResponse(response)
         self.assertUserExists(email)
         self.assertFalse(User.objects.get(email=email).is_active)
+        self.assertIsNone(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
 
         confirmation_link = self.assertRegistrationEmail(email)
@@ -697,10 +699,11 @@ class HasUserAccountTestCase(UserManagementTestCase):
 
     def test_reset_password_inactive_user(self):
         user = User.objects.get(email=self.email)
-        user.is_active = False
-        user.save()
-        self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
-        self.assertNoEmailSent()
+        for is_active in [False, None]:
+            user.is_active = is_active
+            user.save()
+            self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
+            self.assertNoEmailSent()
 
     def test_reset_password_multiple_times(self):
         for _ in range(3):
