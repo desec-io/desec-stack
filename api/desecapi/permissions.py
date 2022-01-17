@@ -3,6 +3,16 @@ from ipaddress import IPv4Address, IPv4Network
 from rest_framework import permissions
 
 
+class IsActiveUser(permissions.BasePermission):
+    """
+    Allows access only to activated users.
+    """
+
+    def has_permission(self, request, view):
+        # Authenticated users can have is_active = None (pending activation). Strictly require True here.
+        return request.user and request.user.is_active == True
+
+
 class IsOwner(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object to view or edit it.

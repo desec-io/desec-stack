@@ -149,16 +149,22 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
 class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
     """
     Authenticates a request based on whether the serializer determines the validity of the given verification code
-    and additional data (using `serializer.is_valid()`). The serializer's input data will be determined by (a) the
-    view's 'code' kwarg and (b) the request payload for POST requests.
-
-    If the request is valid, the AuthenticatedAction instance will be attached to the request as `auth` attribute.
+    based on the view's 'code' kwarg and the view serializer's code validity period.
     """
     def authenticate(self, request):
         view = request.parser_context['view']
-        serializer = AuthenticatedBasicUserActionSerializer(data={}, context=view.get_serializer_context())
+        return self.authenticate_credentials(view.get_serializer_context())
+
+    def authenticate_credentials(self, context):
+        serializer = AuthenticatedBasicUserActionSerializer(data={}, context=context)
         serializer.is_valid(raise_exception=True)
-        return serializer.validated_data['user'], None
+        user = serializer.validated_data['user']
+
+        # When user.is_active is None, activation is pending.  We need to admit them to finish activation, so only
+        # reject strictly False.  There are permissions to make sure that such accounts can't do anything else.
+        if user.is_active == False:
+            raise exceptions.AuthenticationFailed('User inactive.')
+        return user, None
 
 
 class TokenHasher(PBKDF2PasswordHasher):

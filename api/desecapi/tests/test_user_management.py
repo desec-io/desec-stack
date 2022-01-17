@@ -319,6 +319,13 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             status_code=status.HTTP_200_OK
         )
 
+    def assertResetPasswordInactiveUserVerificationFailedResponse(self, response):
+        return self.assertContains(
+            response=response,
+            text="User inactive.",
+            status_code=status.HTTP_403_FORBIDDEN
+        )
+
     def assertChangeEmailSuccessResponse(self, response):
         return self.assertContains(
             response=response,
@@ -704,6 +711,20 @@ class HasUserAccountTestCase(UserManagementTestCase):
             user.save()
             self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
             self.assertNoEmailSent()
+
+    def test_reset_password_inactive_user_old_confirmation_link(self):
+        user = User.objects.get(email=self.email)
+        user.needs_captcha = False
+
+        self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
+        confirmation_link = self.assertResetPasswordEmail(self.email)
+
+        user.is_active = False
+        user.save()
+        new_password = self.random_password()
+        self.assertConfirmationLinkRedirect(confirmation_link)
+        self.assertResetPasswordInactiveUserVerificationFailedResponse(
+            self.client.verify(confirmation_link, data={'new_password': new_password}))
 
     def test_reset_password_multiple_times(self):
         for _ in range(3):

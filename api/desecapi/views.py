@@ -640,6 +640,10 @@ class AuthenticatedActionView(generics.GenericAPIView):
         return () if self.request.method in SAFE_METHODS else (auth.AuthenticatedBasicUserActionAuthentication,)
 
     @property
+    def permission_classes(self):
+        return () if self.request.method in SAFE_METHODS else (permissions.IsActiveUser,)
+
+    @property
     def throttle_scope(self):
         return 'account_management_passive' if self.request.method in SAFE_METHODS else 'account_management_active'
 
@@ -680,6 +684,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     html_url = '/confirm/activate-account/{code}/'
+    permission_classes = ()  # don't require that user is activated already
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
     def finalize(self):
