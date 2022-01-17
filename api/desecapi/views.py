@@ -636,7 +636,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
     @property
     def authentication_classes(self):
-        # This prevents both code evaluation and user-specific throttling when we only want a redirect
+        # This prevents both auth action code evaluation and user-specific throttling when we only want a redirect
         return () if self.request.method in SAFE_METHODS else (auth.AuthenticatedBasicUserActionAuthentication,)
 
     @property
@@ -661,7 +661,6 @@ class AuthenticatedActionView(generics.GenericAPIView):
             raise NotAcceptable
 
     def post(self, request, *args, **kwargs):
-        super().perform_authentication(request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
