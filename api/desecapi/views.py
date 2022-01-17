@@ -633,6 +633,21 @@ class AuthenticatedActionView(generics.GenericAPIView):
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ['get', 'post']  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
+    _authenticated_action = None
+
+    @property
+    def authenticated_action(self):
+        if self._authenticated_action is None:
+            serializer = self.get_serializer(data=self.request.data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                self._authenticated_action = serializer.Meta.model(**serializer.validated_data)
+            except ValueError:  # this happens when state cannot be verified
+                ex = ValidationError('This action cannot be carried out because another operation has been performed, '
+                                     'invalidating this one. (Are you trying to perform this action twice?)')
+                ex.status_code = status.HTTP_409_CONFLICT
+                raise ex
+        return self._authenticated_action
 
     @property
     def authentication_classes(self):
@@ -665,21 +680,8 @@ class AuthenticatedActionView(generics.GenericAPIView):
             raise NotAcceptable
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            self.authenticated_action = serializer.Meta.model(**serializer.validated_data)
-        except ValueError:  # this happens when state cannot be verified
-            ex = ValidationError('This action cannot be carried out because another operation has been performed, '
-                                 'invalidating this one. (Are you trying to perform this action twice?)')
-            ex.status_code = status.HTTP_409_CONFLICT
-            raise ex
-
         self.authenticated_action.act()
-        return self.finalize()
-
-    def finalize(self):
-        raise NotImplementedError
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
@@ -687,7 +689,8 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     permission_classes = ()  # don't require that user is activated already
     serializer_class = serializers.AuthenticatedActivateUserActionSerializer
 
-    def finalize(self):
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
         if not self.authenticated_action.domain:
             return self._finalize_without_domain()
         else:
@@ -740,7 +743,8 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
     html_url = '/confirm/change-email/{code}/'
     serializer_class = serializers.AuthenticatedChangeEmailUserActionSerializer
 
-    def finalize(self):
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
         return Response({
             'detail': f'Success! Your email address has been changed to {self.authenticated_action.user.email}.'
         })
@@ -750,7 +754,8 @@ class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     html_url = '/confirm/reset-password/{code}/'
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer
 
-    def finalize(self):
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
         return Response({'detail': 'Success! Your password has been changed.'})
 
 
@@ -761,9 +766,7 @@ class AuthenticatedDeleteUserActionView(AuthenticatedActionView):
     def post(self, request, *args, **kwargs):
         if self.request.user.domains.exists():
             return AccountDeleteView.response_still_has_domains
-        return super().post(request, *args, **kwargs)
-
-    def finalize(self):
+        super().post(request, *args, **kwargs)
         return Response({'detail': 'All your data has been deleted. Bye bye, see you soon! <3'})
 
 
@@ -771,7 +774,8 @@ class AuthenticatedRenewDomainBasicUserActionView(AuthenticatedActionView):
     html_url = '/confirm/renew-domain/{code}/'
     serializer_class = serializers.AuthenticatedRenewDomainBasicUserActionSerializer
 
-    def finalize(self):
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
         return Response({'detail': f'We recorded that your domain {self.authenticated_action.domain} is still in use.'})
 
 
