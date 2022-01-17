@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime, timezone
 from ipaddress import ip_address
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
@@ -159,6 +160,10 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
         serializer = AuthenticatedBasicUserActionSerializer(data={}, context=context)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+
+        email_verified = datetime.fromtimestamp(serializer.timestamp, timezone.utc)
+        user.email_verified = max(user.email_verified or email_verified, email_verified)
+        user.save()
 
         # When user.is_active is None, activation is pending.  We need to admit them to finish activation, so only
         # reject strictly False.  There are permissions to make sure that such accounts can't do anything else.

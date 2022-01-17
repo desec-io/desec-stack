@@ -926,6 +926,14 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertVerificationFailureInvalidCodeResponse(self.client.verify(reset_password_link,
                                                                              data={'new_password': 'dummy'}))
 
+    def test_action_code_updates_email_verified(self):
+        email_verified = User.objects.get(email=self.email).email_verified
+        with mock.patch('time.time', return_value=time.time() + 1):
+            self.assertResetPasswordSuccessResponse(self.reset_password(self.email))
+            confirmation_link = self.assertResetPasswordEmail(self.email)
+            self.client.verify(confirmation_link)  # even without payload
+        self.assertGreaterEqual((User.objects.get(email=self.email).email_verified - email_verified).total_seconds(), 1)
+
 
 class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
     DYN = False

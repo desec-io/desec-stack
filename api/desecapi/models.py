@@ -98,6 +98,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         verbose_name='email address',
         unique=True,
     )
+    email_verified = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True, null=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
