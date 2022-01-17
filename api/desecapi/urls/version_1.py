@@ -55,6 +55,7 @@ api_urls = [
     # Authenticated Actions
     path('v/activate-account/<code>/', views.AuthenticatedActivateUserActionView.as_view(), name='confirm-activate-account'),
     path('v/change-email/<code>/', views.AuthenticatedChangeEmailUserActionView.as_view(), name='confirm-change-email'),
+    path('v/confirm-account/<code>/', views.AuthenticatedConfirmAccountUserAction.as_view(), name='confirm-confirm-account'),
     path('v/reset-password/<code>/', views.AuthenticatedResetPasswordUserActionView.as_view(), name='confirm-reset-password'),
     path('v/delete-account/<code>/', views.AuthenticatedDeleteUserActionView.as_view(), name='confirm-delete-account'),
     path('v/renew-domain/<code>/', views.AuthenticatedRenewDomainBasicUserActionView.as_view(), name='confirm-renew-domain'),

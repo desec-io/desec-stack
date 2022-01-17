@@ -3,6 +3,7 @@ import copy
 import json
 import re
 from base64 import b64encode
+from datetime import timedelta
 
 import django.core.exceptions
 from captcha.audio import AudioCaptcha
@@ -837,6 +838,13 @@ class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedBasicUserActionS
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedChangeEmailUserAction
         fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('new_email',)
+
+
+class AuthenticatedConfirmAccountUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    validity_period = timedelta(days=14)
+
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
+        model = models.AuthenticatedNoopUserAction  # confirmation happens during authentication, so nothing left to do
 
 
 class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedBasicUserActionSerializer):

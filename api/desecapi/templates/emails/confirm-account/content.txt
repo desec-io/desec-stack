@@ -1,0 +1,25 @@
+Hi there,
+
+You have registered with deSEC a long time ago (on {{ created|date:"Y-m-d" }}), probably to
+set up a DNS domain (e.g. under dedyn.io).  At the time when you registered
+your account, we did not verify your email address.
+
+Our terms now require that deSEC account holders provide an up-to-date contact
+email address, in case we need to contact you (e.g. when there is a problem
+with your domain).  We are currently cleaning our database and making sure
+that all addresses are verified.
+
+Therefore, if you would like to continue using your deSEC account, you now
+need to verify your email address.  To do so, please use the following link
+(valid for {% widthratio link_expiration_hours 24 1 %} days):
+
+{{ confirmation_link.0 }}
+
+If you do not want to continue using deSEC, we will delete your account once
+the link has expired, without contacting you again.  In case you miss the
+deadline, we invite you to sign up again with the same email address.
+
+We apologize for the slight inconvenience, and hope you enjoy deSEC!
+
+Stay secure,
+Nils

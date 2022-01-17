@@ -750,6 +750,15 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
         })
 
 
+class AuthenticatedConfirmAccountUserAction(AuthenticatedActionView):
+    html_url = '/confirm/confirm-account/{code}'
+    serializer_class = serializers.AuthenticatedConfirmAccountUserActionSerializer
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        return Response({'detail': 'Success! Your account status has been confirmed.'})
+
+
 class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     html_url = '/confirm/reset-password/{code}/'
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer

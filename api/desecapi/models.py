@@ -169,6 +169,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
             'activate-account': slow_lane,
             'change-email': slow_lane,
             'change-email-confirmation-old-email': fast_lane,
+            'confirm-account': slow_lane,
             'password-change-confirmation': fast_lane,
             'reset-password': fast_lane,
             'delete-account': fast_lane,
@@ -1020,6 +1021,15 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
 
     def _act(self):
         self.user.change_email(self.new_email)
+
+
+class AuthenticatedNoopUserAction(AuthenticatedUserAction):
+
+    class Meta:
+        managed = False
+
+    def _act(self):
+        pass
 
 
 class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
