@@ -6,7 +6,7 @@ from ipaddress import IPv6Address
 import dns
 import dns.name
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CDS, dns.rdtypes.ANY.DLV, dns.rdtypes.ANY.DS, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
+import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
 import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
 
 
@@ -23,6 +23,15 @@ dns.rdtypes.svcbbase.IPv4HintParam.to_text = _strip_quotes_decorator(dns.rdtypes
 dns.rdtypes.svcbbase.IPv6HintParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.IPv6HintParam.to_text)
 dns.rdtypes.svcbbase.MandatoryParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.MandatoryParam.to_text)
 dns.rdtypes.svcbbase.PortParam.to_text = _strip_quotes_decorator(dns.rdtypes.svcbbase.PortParam.to_text)
+
+
+@dns.immutable.immutable
+class CERT(dns.rdtypes.ANY.CERT.CERT):
+    def to_text(self, origin=None, relativize=True, **kw):
+        certificate_type = str(self.certificate_type)  # upstream implementation calls _ctype_to_text
+        return "%s %d %s %s" % (certificate_type, self.key_tag,
+                                dns.dnssec.algorithm_to_text(self.algorithm),
+                                dns.rdata._base64ify(self.certificate, **kw))
 
 
 @dns.immutable.immutable
@@ -67,43 +76,6 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
                 assert l < 256
                 file.write(struct.pack('!B', l))
                 file.write(s)
-
-
-# TODO remove when https://github.com/rthalley/dnspython/pull/625 is in the main codebase
-class _DigestLengthMixin:
-    _digest_length_by_type = {  # octets (not hex)
-        0: 1,  # reserved in RFC 3658 Sec. 2.4, but used in RFC 8078 Sec. 4 (DS delete via CDS)
-        1: 20,  # SHA-1, RFC 3658 Sec. 2.4
-        2: 32,  # SHA-256, RFC 4509 Sec. 2.2
-        3: 32,  # GOST R 34.11-94, RFC 5933 Sec. 4 in conjunction with RFC 4490 Sec. 2.1
-        4: 48,  # SHA-384, RFC 6605 Sec. 2
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        try:
-            expected_len = _DigestLengthMixin._digest_length_by_type[self.digest_type]
-        except KeyError:
-            raise ValueError('unknown digest type')
-        actual_len = len(self.digest)
-        if actual_len != expected_len:
-            raise ValueError(f'invalid digest length {actual_len*2} (expected for this digest type: {expected_len*2}')
-
-
-@dns.immutable.immutable
-class CDS(_DigestLengthMixin, dns.rdtypes.ANY.CDS.CDS):
-    pass
-
-
-@dns.immutable.immutable
-class DLV(_DigestLengthMixin, dns.rdtypes.ANY.DLV.DLV):
-    pass
-
-
-@dns.immutable.immutable
-class DS(_DigestLengthMixin, dns.rdtypes.ANY.DS.DS):
-    pass
 
 
 def _HostnameMixin(name_field, *, allow_root):

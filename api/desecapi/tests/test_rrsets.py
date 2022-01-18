@@ -397,18 +397,22 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ('HINFO', ('"cpu" "os"', '"cpu" "os"')),
             ('HTTPS', ('01 h3POOL.exaMPLe. aLPn=h2,h3',
                        '1 h3POOL.exaMPLe. alpn=h2,h3')),
-            # ('HTTPS', ('01 h3POOL.exaMPLe. aLPn=h2,h3 ECH=MTIzLi4uCg==',  # TODO dnspython > 2.1.0
-            #            '1 h3POOL.exaMPLe. alpn=h2,h3 ech="MTIzLi4uCg=="')),
+            ('HTTPS', ('01 h3POOL.exaMPLe. aLPn=h2,h3 ECH=MTIzLi4uCg==',
+                       '1 h3POOL.exaMPLe. alpn=h2,h3 ech="MTIzLi4uCg=="')),
             # ('IPSECKEY', ('01 00 02 . ASDFAF==', '1 0 2 . ASDFAA==')),
             # ('IPSECKEY', ('01 00 02 . 000000==', '1 0 2 . 00000w==')),
             ('KX', ('010 example.com.', '10 example.com.')),
+            ('L32', ('010  10.1.2.0', '10 10.1.2.0')),
+            ('L64', ('010   2001:0Db8:2140:2000', '10 2001:0db8:2140:2000')),
             ('LOC', ('023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m',
                      '23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m')),
+            ('LP', ('010   l64-subnet1.example.com.', '10 l64-subnet1.example.com.')),
             ('MX', ('10 010.1.1.1.', '10 010.1.1.1.')),
             ('MX', ('010 010.1.1.2.', '10 010.1.1.2.')),
             ('MX', ('0 .', '0 .')),
             ('NAPTR', ('100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.',
                        '100 50 "s" "z3950+I2L+I2C" "" _z3950._tcp.gatech.edu.')),
+            ('NID', ('010 0014:4fff:ff20:Ee64', '10 0014:4fff:ff20:ee64')),
             ('NS', ('EXaMPLE.COM.', 'example.com.')),
             ('OPENPGPKEY', ('mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tS xLFJYhX+uabSgMrhOqUizJhkLx82',
                             'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82')),
@@ -425,8 +429,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ('SSHFP', ('2 2 aabbccEEddff', '2 2 aabbcceeddff')),
             ('SVCB', ('2 sVc2.example.NET. IPV6hint=2001:db8:00:0::2 port=01234',
                       '2 sVc2.example.NET. port=1234 ipv6hint=2001:db8::2')),
-            # ('SVCB', ('2 sVc2.example.NET. ECH=MjIyLi4uCg== IPV6hint=2001:db8:00:0::2 port=01234',  # TODO dnspython > 2.1.0
-            #           '2 sVc2.example.NET. port=1234 ech="MjIyLi4uCg==" ipv6hint=2001:db8::2')),
+            ('SVCB', ('2 sVc2.example.NET. ECH=MjIyLi4uCg== IPV6hint=2001:db8:00:0::2 port=01234',
+                      '2 sVc2.example.NET. port=1234 ech="MjIyLi4uCg==" ipv6hint=2001:db8::2')),
             ('TLSA', ('3 0001 1 000AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', '3 1 1 000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')),
             ('TLSA', ('003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',
                       '3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd')),
@@ -473,7 +477,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '2:FF00::/8 !1:192.168.38.0/28',
             ],
             'CAA': ['128 issue "letsencrypt.org"', '128 iodef "mailto:desec@example.com"', '1 issue "letsencrypt.org"'],
-            'CERT': ['6 0 0 sadfdd=='],
+            'CERT': ['06 0 0 sadfdd==', 'IPGP 0 0 sadfdd=='],
             'CDNSKEY': [
                 '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+ 1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mx t6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLK l3D0L/cD',
                 '257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/ qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGr CHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll 96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAst bxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6as lO7jXv16Gws=',
@@ -484,6 +488,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
                 '62703 13 2 085BF1EE0ADBBC99D4D9328229EBDCAEC5FAB20E38610072AD055474 4C7AF4A0',
                 '61655 13 4 C838A5C66FCBF83B8B6B50C3CEEC3524777FE4AF8A9FE0172ECAD242 48B0CA1A216DD0D538F20C130DD3059538204B04',
+                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
             ],
             'CNAME': ['example.com.'],
             'CSYNC': ['0 0', '66 1 A', '66 2 AAAA', '66 3 A NS AAAA', '66 15 NSEC'],
@@ -493,6 +498,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
                 '62703 13 2 085BF1EE0ADBBC99D4D9328229EBDCAEC5FAB20E38610072AD055474 4C7AF4A0',
                 '61655 13 4 C838A5C66FCBF83B8B6B50C3CEEC3524777FE4AF8A9FE0172ECAD242 48B0CA1A216DD0D538F20C130DD3059538204B04',
+                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
             ],
             'DNAME': ['example.com.'],
             'DNSKEY': [
@@ -505,6 +511,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
                 '62703 13 2 085BF1EE0ADBBC99D4D9328229EBDCAEC5FAB20E38610072AD055474 4C7AF4A0',
                 '61655 13 4 C838A5C66FCBF83B8B6B50C3CEEC3524777FE4AF8A9FE0172ECAD242 48B0CA1A216DD0D538F20C130DD3059538204B04',
+                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
             ],
             'EUI48': ['aa-bb-cc-dd-ee-ff', 'AA-BB-CC-DD-EE-FF'],
             'EUI64': ['aa-bb-cc-dd-ee-ff-00-11', 'AA-BB-CC-DD-EE-FF-00-11'],
@@ -513,11 +520,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 # from https://www.ietf.org/archive/id/draft-ietf-dnsop-svcb-https-06.html#name-examples, with ech base64'd
                 '1 . alpn=h3',
                 '0 pool.svc.example.',
-                # '1 h3pool.example. alpn=h2,h3 ech="MTIzLi4uCg=="',  # TODO dnspython > 2.1.0
-                # '2 .      alpn=h2 ech="YWJjLi4uCg=="',  # TODO dnspython > 2.1.0
+                '1 h3pool.example. alpn=h2,h3 ech="MTIzLi4uCg=="',
+                '2 .      alpn=h2 ech="YWJjLi4uCg=="',
                 # made-up (not from RFC)
-                '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',
-                # '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7  # TODO dnspython > 2.1.0
+                '1 pool.svc.example. no-default-alpn alpn=h2 port=1234 ipv4hint=192.168.123.1',
+                '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7
             ],
             # 'IPSECKEY': [
             #     '12 0 2 . asdfdf==',
@@ -526,9 +533,13 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             #     '12 3 01 example.com. asdfdf==',
             # ],
             'KX': ['4 example.com.', '28 io.'],
+            'L32': ['010   10.1.2.0', '65535 1.2.3.4'],
+            'L64': ['010   2001:0DB8:1140:1000', '10 2001:0DB8:1140:1000'],
             'LOC': ['23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m'],
+            'LP': ['10 l64-subnet1.example.com.', '65535 .'],
             'MX': ['10 example.com.', '20 1.1.1.1.'],
             'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+            'NID': ['65535   0014:4fff:ff20:ee64'],
             'NS': ['ns1.example.com.'],
             'OPENPGPKEY': [
                 'mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82',  # key incomplete
@@ -545,7 +556,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             'SVCB': [
                 '0 svc4-baz.example.net.',
                 '1 . key65333=...',
-                # '2 svc2.example.net. ech="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',  # TODO dnspython > 2.1.0
+                '2 svc2.example.net. ech="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',
             ],
             'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
                      '3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',
@@ -597,7 +608,6 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 c 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 d',
                 '6454 8 0 24396E17E36D031F71C354B06A979A67A01F503E',
-                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 aabbccddeeff',
                 '0 0 0 0',
             ],
@@ -611,7 +621,6 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 c 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 d',
                 '6454 8 0 24396E17E36D031F71C354B06A979A67A01F503E',
-                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 aabbccddeeff',
             ],
             'DNAME': ['example.com', '10 example.com.'],
@@ -628,7 +637,6 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '6454 8 c 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 d',
                 '6454 8 0 24396E17E36D031F71C354B06A979A67A01F503E',
-                '6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E',
                 '6454 8 1 aabbccddeeff',
             ],
             'EUI48': ['aa-bb-ccdd-ee-ff', 'AA-BB-CC-DD-EE-GG'],
@@ -636,18 +644,22 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             'HINFO': ['"ARMv8-A"', f'"a" "{"b"*256}"'],
             'HTTPS': [
                 # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with ech base64'd
-                # '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',  # TODO dnspython > 2.1.0
+                '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',
                 # made-up (not from RFC)
                 '0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',  # no keys in alias mode
                 '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2',  # dup
             ],
             # 'IPSECKEY': [],
             'KX': ['-1 example.com', '10 example.com'],
+            'L32': ['65536 10.1.2.0', '5 a.1.2.0', '10 10.1.02.0'],
+            'L64': ['65536 2001:0DB8:4140:4000', '5 01:0DB8:4140:4000'],
             'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
+            'LP': ['10 l64-subnet1.example.com', '-3 l64-subnet1.example.com.', '65536 l64-subnet1.example.com.'],
             'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.', '10 _foo.example.com.', '10 $url.'],
             'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu',
                       '100  50  "s"     ""  _z3950._tcp.gatech.edu.',
                       '100  50  3 2  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+            'NID': ['010 14:4fff:ff20:Ee64', 'd 0014:4fff:ff20:ee64', '20 ::14::ee64'],
             'NS': ['ns1.example.com', '127.0.0.1', '_foobar.example.dedyn.io.', '.'],
             'OPENPGPKEY': ['1 2 3'],
             'PTR': ['"example.com."', '10 *.example.com.'],
@@ -659,7 +671,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             'SVCB': [
                 '0 svc4-baz.example.net. keys=val',
                 '1 not.fully.qualified key65333=...',
-                # '2 duplicate.key. ech="MjIyLi4uCg==" ech="MjIyLi4uCg=="',  # TODO dnspython > 2.1.0
+                '2 duplicate.key. ech="MjIyLi4uCg==" ech="MjIyLi4uCg=="',
             ],
             'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
             'TXT': [

@@ -534,9 +534,10 @@ automatically.
 At least the following record types are supported: ``A``, ``AAAA``, ``AFSDB``,
 ``APL``, ``CAA``, ``CDNSKEY``, ``CDS``, ``CERT``, ``CNAME``, ``DHCID``,
 ``DNAME``, ``DNSKEY``, ``DLV``, ``DS``, ``EUI48``, ``EUI64``, ``HINFO``,
-``HTTPS``, ``KX``, ``LOC``, ``MX``, ``NAPTR``, ``NS``, ``OPENPGPKEY``,
-``PTR``, ``RP``, ``SMIMEA``, ``SPF``, ``SRV``, ``SSHFP``, ``SVCB``, ``TLSA``,
-``TXT``, ``URI``.  (The ``SOA`` record is managed automatically.)
+``HTTPS``, ``KX``, ``L32``, ``L64``, ``LOC``, ``LP``, ``MX``,
+``NAPTR``, ``NID``, ``NS``, ``OPENPGPKEY``, ``PTR``, ``RP``, ``SMIMEA``,
+``SPF``, ``SRV``, ``SSHFP``, ``SVCB``, ``TLSA``, ``TXT``, ``URI``.
+(The ``SOA`` record is managed automatically.)
 
 Special care needs to be taken with some types of records, as explained below.
 

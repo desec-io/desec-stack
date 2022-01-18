@@ -40,7 +40,7 @@ VALID_RECORDS_CANONICAL = {
         '6454 8 1 24396e17e36d031f71c354b06a979a67a01f503e',
         '0 0 0 00',
     ],
-    'CERT': ['6 0 0 sadfdQ=='],
+    'CERT': [],  # handled in non-canonical, because apply presentation format conversion on the stack (but not here)
     'CNAME': ['example.com.'],
     'CSYNC': ['0 0', '66 1 A', '66 2 AAAA', '66 3 A NS AAAA', '66 15 NSEC'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
@@ -58,17 +58,17 @@ VALID_RECORDS_CANONICAL = {
     'HINFO': ['"ARMv8-A" "Linux"'],
     'HTTPS': [
         '1 h3POOL.exaMPLe. alpn=h2,h3',
-        # '1 h3POOL.exaMPLe. alpn=h2,h3 ech="MTIzLi4uCg=="',  # TODO dnspython > 2.1.0
+        '1 h3POOL.exaMPLe. alpn=h2,h3 ech="MTIzLi4uCg=="',
     ],
     # 'IPSECKEY': ['12 0 2 . asdfdQ==', '3 1 1 127.0.0.1 asdfdQ==', '12 3 1 example.com. asdfdQ==',],
     'KX': ['4 example.com.', '28 io.', '0 .'],
-    'LOC': [
-        '23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m',
-    ],
+    'L32': ['10 10.1.2.0'],
+    'L64': ['10 2001:0db8:2140:2000'],
+    'LOC': ['23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m'],
+    'LP': ['10 l64-subnet1.example.com.'],
     'MX': ['10 example.com.', '20 1.1.1.1.'],
-    'NAPTR': [
-        '100 50 "s" "z3950+I2L+I2C" "" _z3950._tcp.gatech.edu.',
-    ],
+    'NAPTR': ['100 50 "s" "z3950+I2L+I2C" "" _z3950._tcp.gatech.edu.'],
+    'NID': ['10 0014:4fff:ff20:ee64'],
     'NS': ['ns1.example.com.'],
     'OPENPGPKEY': [
         'mQINBF3yev8BEADR9GxB6OJ5AJlXBWc3nWyWZ+yNNVBiy73XjgOs0uowbxph'
@@ -135,7 +135,7 @@ VALID_RECORDS_CANONICAL = {
     'SSHFP': ['2 2 aabbcceeddff'],
     'SVCB': [
         '2 sVc2.example.NET. port=1234 ipv6hint=2001:db8::2',
-        # '2 sVc2.example.NET. port=1234 ech="MjIyLi4uCg==" ipv6hint=2001:db8::2',  # TODO dnspython > 2.1.0
+        '2 sVc2.example.NET. port=1234 ech="MjIyLi4uCg==" ipv6hint=2001:db8::2',
     ],
     'TLSA': ['3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
@@ -168,7 +168,7 @@ VALID_RECORDS_NON_CANONICAL = {
         '06454  08   01    24396e17e36d031f71c354b06a979a67a01f503e',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
-    'CERT': ['06 00 00 sadfee=='],
+    'CERT': ['6 0 0 sadfdQ==', '06 00 00 sadfee==', 'IPGP 00 00 sadfee=='],
     'CNAME': ['EXAMPLE.TEST.'],
     'CSYNC': ['066 03  NS  AAAA A'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
@@ -193,21 +193,21 @@ VALID_RECORDS_NON_CANONICAL = {
         # from https://www.ietf.org/archive/id/draft-ietf-dnsop-svcb-https-06.html#name-examples, with ech base64'd
         '1 . alpn=h3',
         '0 pool.svc.example.',
-        # '1 h3pool.example. alpn=h2,h3 ech="MTIzLi4uCg=="',  # TODO dnspython > 2.1.0
-        # '2 .      alpn=h2 ech="YWJjLi4uCg=="',  # TODO dnspython > 2.1.0
+        '1 h3pool.example. alpn=h2,h3 ech="MTIzLi4uCg=="',
+        '2 .      alpn=h2 ech="YWJjLi4uCg=="',
         # made-up (not from RFC)
-        '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',
-        # '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7  # TODO dnspython > 2.1.0
+        '1 pool.svc.example. no-default-alpn alpn=h2 port=1234 ipv4hint=192.168.123.1',
+        '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7
     ],
     # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
     'KX': ['012 example.TEST.'],
-    'LOC': [
-        '023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m',
-    ],
+    'L32': ['010  10.1.2.0', '65535 1.2.3.4'],
+    'L64': ['010   2001:0Db8:2140:2000', '10 2001:0DB8:1140:1000'],
+    'LOC': ['023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m'],
+    'LP': ['010   l64-subnet1.example.com.', '65535 .'],
     'MX': ['10 010.1.1.1.'],
-    'NAPTR': [
-        '100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.',
-    ],
+    'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+    'NID': ['010 0014:4fff:ff20:Ee64', '65535   0014:4fff:ff20:ee64'],
     'NS': ['EXaMPLE.COM.'],
     'OPENPGPKEY': [
         'mG8EXtVIsRMFK4EEAC==',
@@ -271,7 +271,7 @@ VALID_RECORDS_NON_CANONICAL = {
     'SVCB': [
         '0 svc4-baz.example.net.',
         '1 . key65333=...',
-        # '2 svc2.example.net. ech="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',  # TODO dnspython > 2.1.0
+        '2 svc2.example.net. ech="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',
     ],
     'TLSA': ['003 00 002 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
     'TXT': [
@@ -323,18 +323,22 @@ INVALID_RECORDS = {
     'HINFO': ['"ARMv8-A"', f'"a" "{"b" * 256}"'],
     'HTTPS': [
         # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with ech base64'd
-        # '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',  # TODO dnspython > 2.1.0
+        '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',
         # made-up (not from RFC)
         '0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1',  # no keys in alias mode
         '1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2',  # dup
     ],
     # 'IPSECKEY': [],
     'KX': ['-1 example.com', '10 example.com'],
+    'L32': ['65536 10.1.2.0', '5 a.1.2.0', '10 10.1.02.0'],
+    'L64': ['65536 2001:0DB8:4140:4000', '5 01:0DB8:4140:4000'],
     'LOC': ['23 12 61.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m', 'foo', '1.1.1.1'],
+    'LP': ['10 l64-subnet1.example.com', '-3 l64-subnet1.example.com.', '65536 l64-subnet1.example.com.'],
     'MX': ['10 example.com', 'example.com.', '-5 asdf.', '65537 asdf.' '10 _foo.example.com.', '10 $url.'],
     'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu',
               '100  50  "s"     ""  _z3950._tcp.gatech.edu.',
               '100  50  3 2  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
+    'NID': ['010 14:4fff:ff20:Ee64', 'd 0014:4fff:ff20:ee64', '20 ::14::ee64'],
     'NS': ['ns1.example.com', '127.0.0.1'],
     'OPENPGPKEY': ['1 2 3'],
     'PTR': ['"example.com."', '10 *.example.com.'],
@@ -346,7 +350,7 @@ INVALID_RECORDS = {
     'SVCB': [
         '0 svc4-baz.example.net. keys=val',
         '1 not.fully.qualified key65333=...',
-        # '2 duplicate.key. ech="MjIyLi4uCg==" ech="MjIyLi4uCg=="',  # TODO dnspython > 2.1.0
+        '2 duplicate.key. ech="MjIyLi4uCg==" ech="MjIyLi4uCg=="',
     ],
     'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
     'TXT': [

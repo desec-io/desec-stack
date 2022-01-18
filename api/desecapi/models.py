@@ -41,7 +41,7 @@ from rest_framework.exceptions import APIException
 
 from desecapi import metrics
 from desecapi import pdns
-from desecapi.dns import AAAA, CDS, DLV, DS, LongQuotedTXT, MX, NS, SRV
+from desecapi.dns import AAAA, CERT, LongQuotedTXT, MX, NS, SRV
 
 logger = logging.getLogger(__name__)
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
@@ -587,10 +587,10 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
 # known, but unsupported types
 RR_SET_TYPES_UNSUPPORTED = {
     'ALIAS',  # Requires signing at the frontend, hence unsupported in desec-stack
-    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth > 4.5.0
+    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth >= 4.6.0
     'KEY',  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
     'WKS',  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
-} | {'NID', 'L32', 'L64', 'LP'}  # https://github.com/rthalley/dnspython/issues/674
+}
 # restricted types are managed in use by the API, and cannot directly be modified by the API client
 RR_SET_TYPES_AUTOMATIC = {
     # corresponding functionality is automatically managed:
@@ -602,7 +602,7 @@ RR_SET_TYPES_AUTOMATIC = {
 RR_SET_TYPES_BACKEND = pdns.SUPPORTED_RRSET_TYPES
 # validation types are types supported by the validation backend, currently: dnspython
 RR_SET_TYPES_VALIDATION = set(ANY.__all__) | set(IN.__all__) \
-                          | {'HTTPS', 'SVCB'}  # https://github.com/rthalley/dnspython/pull/624
+                          | {'L32', 'L64', 'LP', 'NID'}  # https://github.com/rthalley/dnspython/pull/751
 # manageable types are directly managed by the API client
 RR_SET_TYPES_MANAGEABLE = \
         (RR_SET_TYPES_BACKEND & RR_SET_TYPES_VALIDATION) - RR_SET_TYPES_UNSUPPORTED - RR_SET_TYPES_AUTOMATIC
@@ -774,9 +774,7 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
 
     _type_map = {
         dns.rdatatype.AAAA: AAAA,  # TODO remove when https://github.com/PowerDNS/pdns/issues/8182 is fixed
-        dns.rdatatype.CDS: CDS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
-        dns.rdatatype.DLV: DLV,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
-        dns.rdatatype.DS: DS,  # TODO remove when https://github.com/rthalley/dnspython/pull/625 is in main codebase
+        dns.rdatatype.CERT: CERT,  # do DNS name validation the same way as pdns
         dns.rdatatype.MX: MX,  # do DNS name validation the same way as pdns
         dns.rdatatype.NS: NS,  # do DNS name validation the same way as pdns
         dns.rdatatype.SRV: SRV,  # do DNS name validation the same way as pdns
