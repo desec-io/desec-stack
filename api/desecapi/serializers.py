@@ -759,8 +759,10 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         return {'code': self._pack_code(data)}
 
     def to_internal_value(self, data):
-        # calculate code TTL
+        # Allow injecting validity period from context.  This is used, for example, for authentication, where the code's
+        # integrity and timestamp is checked by AuthenticatedBasicUserActionSerializer with validity injected as needed.
         validity_period = self.context.get('validity_period', self.validity_period)
+        # calculate code TTL
         try:
             ttl = validity_period.total_seconds()
         except AttributeError:
@@ -778,11 +780,11 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
                 msg = f'This code is invalid, possibly because it expired (validity: {validity_period}).'
             raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: msg})
 
-        # add extra fields added by the user
-        unpacked_data.update(**data)
+        # add extra fields added by the user, but give precedence to fields unpacked from the code
+        data = {**data, **unpacked_data}
 
         # do the regular business
-        return super().to_internal_value(unpacked_data)
+        return super().to_internal_value(data)
 
     def act(self):
         self.instance.act()
