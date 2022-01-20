@@ -52,15 +52,12 @@
 
               <v-radio-group
                       v-model="domainType"
-                      :hint="domainType == 'dynDNS'
-                        ? 'Your first domain (you can add more later).'
-                        : 'Your first domain (you can add more later). – To use dynDNS with your custom domain, please get in touch with us.'
-                      "
+                      hint="You can also use our REST API or web interface to create domains."
                       label="Do you want to set up a domain right away?"
                       persistent-hint
                       prepend-icon="mdi-dns"
               >
-                <v-radio label="Configure your own domain (Managed DNS)." value="custom" tabindex="2"></v-radio>
+                <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
                 <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
                 <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
               </v-radio-group>
@@ -80,8 +77,8 @@
                       ref="domainField"
                       tabindex="3"
                       :hint="domainType == 'dynDNS'
-                        ? 'Enter a domain name here. After sign-up, we will send you instructions on how to configure your dynDNS client (such as you router).'
-                        : 'You can also use our REST API to create a domain.'
+                        ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as you router).'
+                        : 'Your first domain (you can add more later). – To use with dynDNS, please see the docs.'
                       "
                       persistent-hint
               />
