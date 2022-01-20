@@ -919,6 +919,15 @@ class AuthenticatedBasicUserActionListSerializer(AuthenticatedBasicUserActionMix
         return user
 
 
+class AuthenticatedChangeOutreachPreferenceUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    reason = 'change-outreach-preference'
+    validity_period = None
+
+    class Meta:
+        model = models.AuthenticatedChangeOutreachPreferenceUserAction
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('outreach_preference',)
+
+
 class AuthenticatedActivateUserActionSerializer(AuthenticatedBasicUserActionSerializer):
     captcha = CaptchaSolutionSerializer(required=False)
 

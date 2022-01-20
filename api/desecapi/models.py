@@ -169,6 +169,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
             'activate-account': slow_lane,
             'change-email': slow_lane,
             'change-email-confirmation-old-email': fast_lane,
+            'change-outreach-preference': slow_lane,
             'confirm-account': slow_lane,
             'password-change-confirmation': fast_lane,
             'reset-password': fast_lane,
@@ -959,6 +960,17 @@ class AuthenticatedEmailUserAction(AuthenticatedBasicUserAction):
     @property
     def _state_fields(self):
         return super()._state_fields + [self.user.email]
+
+
+class AuthenticatedChangeOutreachPreferenceUserAction(AuthenticatedEmailUserAction):
+    outreach_preference = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+
+    def _act(self):
+        self.user.outreach_preference = self.outreach_preference
+        self.user.save()
 
 
 class AuthenticatedUserAction(AuthenticatedEmailUserAction):

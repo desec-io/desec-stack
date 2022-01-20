@@ -1,0 +1,5 @@
+{% extends "emails/content.txt" %}
+{% block trailer %}
+Unsubscribe:
+{% load action_extras %}{% action_link action_serializer %}
+{% endblock %}

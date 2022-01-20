@@ -682,6 +682,15 @@ class AuthenticatedActionView(generics.GenericAPIView):
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
+class AuthenticatedChangeOutreachPreferenceUserActionView(AuthenticatedActionView):
+    html_url = '/confirm/change-outreach-preference/{code}/'
+    serializer_class = serializers.AuthenticatedChangeOutreachPreferenceUserActionSerializer
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        return Response({'detail': 'Thank you! We have recorded that you would not like to receive outreach messages.'})
+
+
 class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     html_url = '/confirm/activate-account/{code}/'
     permission_classes = ()  # don't require that user is activated already
