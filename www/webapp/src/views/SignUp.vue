@@ -123,12 +123,28 @@
 
               <v-layout class="justify-center">
                 <v-checkbox
-                      v-model="terms"
+                      v-model="outreach_preference"
+                      hide-details
                       type="checkbox"
-                      required
+                      :disabled="working"
+                      tabindex="5"
+                >
+                  <template slot="label">
+                    <v-flex>
+                      Tell me about deSEC developments. No ads. <small>(recommended)</small>
+                    </v-flex>
+                  </template>
+                </v-checkbox>
+              </v-layout>
+
+              <v-layout class="justify-center">
+                <v-checkbox
+                      v-model="terms"
+                      hide-details="auto"
+                      type="checkbox"
                       :disabled="working"
                       :rules="terms_rules"
-                      tabindex="5"
+                      tabindex="6"
                 >
                   <template slot="label">
                     <v-flex>
@@ -147,7 +163,7 @@
                       type="submit"
                       :disabled="working"
                       :loading="working"
-                      tabindex="6"
+                      tabindex="7"
               >Sign up</v-btn>
             </v-card-actions>
           </v-card>
@@ -194,6 +210,9 @@
       captcha_rules: [v => !!v || 'Please enter the text displayed in the picture so we are (somewhat) convinced you are human'],
       captcha_errors: [],
       captcha_kind: 'image',
+
+      /* outreach preference */
+      outreach_preference: true,
 
       /* terms field */
       terms: false,
@@ -258,6 +277,7 @@
               solution: this.captchaSolution.toUpperCase(),
             },
             domain: domain,
+            outreach_preference: this.outreach_preference,
           });
           this.$router.push({name: 'welcome', params: domain !== '' ? {domain: domain} : {}});
         } catch (ex) {
