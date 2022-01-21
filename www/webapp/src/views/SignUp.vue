@@ -224,13 +224,23 @@
       async getCaptcha(focus = false) {
         this.captchaWorking = true;
         this.captchaSolution = "";
+        this.captcha_errors = [];
         try {
           this.captcha = (await HTTP.post('captcha/', {kind: this.captcha_kind})).data;
-          if(focus) {
-            this.$refs.captchaField.focus()
+        } catch (error) {
+          if (error.response && error.response.status == 429) {
+            this.captcha = null;
+            let retryAfter = parseInt(error.response.headers['retry-after']);
+            this.captcha_errors = [`Too many attempts. Please try again in ${retryAfter} seconds.`];
+            setTimeout(() => this.captcha || this.getCaptcha(), 1000 * retryAfter);
+          } else {
+            throw error;
           }
         } finally {
           this.captchaWorking = false;
+          if(focus) {
+            this.$refs.captchaField.focus()
+          }
         }
       },
       async initialFocus() {
