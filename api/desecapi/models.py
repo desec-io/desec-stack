@@ -587,7 +587,7 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
 # known, but unsupported types
 RR_SET_TYPES_UNSUPPORTED = {
     'ALIAS',  # Requires signing at the frontend, hence unsupported in desec-stack
-    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth >= 4.6.0
+    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth >= 4.7.0
     'KEY',  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
     'WKS',  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
 }

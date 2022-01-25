@@ -46,9 +46,9 @@ from conftest import DeSECAPIV1Client
         ('other', 'CNAME'): (3603, {'cname.example.com.'}),  # configure CNAME instead of ...
         ('other', 'TXT'): (3600, {}),  # ... TXT
         ('nonexistent', 'DNAME'): (3600, {}),  # delete something that doesn't exist
-        ('sub', 'DNSKEY'): (3600, {'257 3 15 l02Woi0iS8Aa25FQkUd9RMzZHJpBoRQwAQEX1SxZJA4='}),  # non-apex DNSSEC
         ('sub', 'CDNSKEY'): (3600, {'257 3 15 l02Woi0iS8Aa25FQkUd9RMzZHJpBoRQwAQEX1SxZJA4='}),  # non-apex DNSSEC
         ('sub', 'CDS'): (3600, {'35217 15 2 401781b934e392de492ec77ae2e15d70f6575a1c0bc59c5275c04ebe80c6614c'}),  # dto.
+        # ('sub', 'DNSKEY'): (3600, {'257 3 15 l02Woi0iS8Aa25FQkUd9RMzZHJpBoRQwAQEX1SxZJA4='})  # no pdns support >= 4.6
     },
 ])
 def test(api_user_domain_rrsets: DeSECAPIV1Client, rrsets: dict):
