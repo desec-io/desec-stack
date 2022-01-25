@@ -7,6 +7,7 @@ setgid=pdns
 setuid=pdns
 secondary=yes
 secondary-do-renotify=yes
+send-signed-notify=no
 max-tcp-connections=200
 version-string=powerdns
 webserver=yes
