@@ -101,9 +101,7 @@ def get_keys(domain):
         'flags': 'flags',  # deprecated
         'keytype': 'keytype',  # deprecated
     }
-    return [{v: key[k] for k, v in field_map.items()}
-             for key in r.json()
-             if key['published'] and key['keytype'] in ['csk', 'ksk']]
+    return [{v: key.get(k, []) for k, v in field_map.items()} for key in r.json() if key['published']]
 
 
 def get_zone(domain):

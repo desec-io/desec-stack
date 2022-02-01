@@ -49,22 +49,23 @@ Field details:
 ``keys``
     :Access mode: read-only
 
-    Array with DNSSEC key information.  Each entry contains ``DNSKEY`` and
-    ``DS`` record contents (the latter being computed from the former).
-    For delegation of DNSSEC-secured domains,
+    Array with DNSSEC public key information.  Each entry contains ``DNSKEY``
+    and ``DS`` record contents.  For delegation of DNSSEC-secured domains,
     the parent domain needs to publish these ``DS`` records.  (This usually
     involves telling your registrar/registry about those records, and they
     will publish them for you.)
 
     Notes:
 
-    - Keys are returned immediately after domain creation or when retrieving a
-      specific domain. In contrast, when listing all domains, the keys field
-      is omitted for performance reasons.
+    - Keys are returned immediately after domain creation, and when retrieving
+      a specific domain.  In contrast, when listing all domains, the ``keys``
+      field is omitted for performance reasons.
 
-    - ``DS`` values are the result of hashing the ``DNSKEY`` with various
-      algorithms.  We limit the set of hash algorithms according to best
-      practice.  Currently, we use algorithms 2 (SHA-256) and 4 (SHA-384).
+    - ``DS`` values are calculated for each applicable key by applying hash
+      algorithms 2 (SHA-256) and 4 (SHA-384), respectively.
+      For keys not suitable for delegation (indicated by the first field
+      containing an even number, such as ``256``), the ``ds`` field is ``[]``.
+      The selection of hash algorithms may change as best practices evolve.
 
 ``minimum_ttl``
     :Access mode: read-only
