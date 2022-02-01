@@ -28,7 +28,8 @@ A JSON object representing a domain has the following structure::
                     "6006 13 4 2fdcf8..."
                 ],
                 "flags": 257,  # deprecated
-                "keytype": "csk"  # deprecated
+                "keytype": "csk",  # deprecated
+                "managed": true
             },
             ...
         ],
@@ -51,15 +52,19 @@ Field details:
 
     Array with DNSSEC public key information.  Each entry contains ``DNSKEY``
     and ``DS`` record contents.  For delegation of DNSSEC-secured domains,
-    the parent domain needs to publish these ``DS`` records.  (This usually
-    involves telling your registrar/registry about those records, and they
-    will publish them for you.)
+    the parent domain should publish the combined list of ``DS`` records.
+    (This usually involves telling your registrar/registry about those
+    records, and they will publish them for you.)
 
     Notes:
 
     - Keys are returned immediately after domain creation, and when retrieving
       a specific domain.  In contrast, when listing all domains, the ``keys``
       field is omitted for performance reasons.
+
+    - The ``managed`` field differentiates keys managed by deSEC (``true``)
+      from any additional keys the user may have added (``false``, see
+      :ref:`DNSKEY caveat <DNSKEY caveat>`).
 
     - ``DS`` values are calculated for each applicable key by applying hash
       algorithms 2 (SHA-256) and 4 (SHA-384), respectively.

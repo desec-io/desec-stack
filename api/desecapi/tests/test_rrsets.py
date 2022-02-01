@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
-from desecapi.models import Domain, RRset, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
+from desecapi.models import Domain, RR, RRset, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
 from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
 
@@ -942,3 +942,56 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), 1, response.data)
             self.assertContainsRRSets(response.data, [dict(subname='', records=settings.DEFAULT_NS, type='NS')])
+
+    def test_extra_dnskeys(self):
+        name = 'ietf.org'
+        dnskeys = [
+            '256 3 5 AwEAAdDECajHaTjfSoNTY58WcBah1BxPKVIHBz4IfLjfqMvium4lgKtKZLe97DgJ5/NQrNEGGQmr6fKvUj67cfrZUojZ2cGRiz'
+            'VhgkOqZ9scaTVXNuXLM5Tw7VWOVIceeXAuuH2mPIiEV6MhJYUsW6dvmNsJ4XwCgNgroAmXhoMEiWEjBB+wjYZQ5GtZHBFKVXACSWTiCtdd'
+            'HcueOeSVPi5WH94VlubhHfiytNPZLrObhUCHT6k0tNE6phLoHnXWU+6vpsYpz6GhMw/R9BFxW5PdPFIWBgoWk2/XFVRSKG9Lr61b2z1R12'
+            '6xeUwvw46RVy3hanV3vNO7LM5HniqaYclBbhk=',
+            '257 3 5 AwEAAavjQ1H6pE8FV8LGP0wQBFVL0EM9BRfqxz9p/sZ+8AByqyFHLdZcHoOGF7CgB5OKYMvGOgysuYQloPlwbq7Ws5WywbutbX'
+            'yG24lMWy4jijlJUsaFrS5EvUu4ydmuRc/TGnEXnN1XQkO+waIT4cLtrmcWjoY8Oqud6lDaJdj1cKr2nX1NrmMRowIu3DIVtGbQJmzpukpD'
+            'VZaYMMAm8M5vz4U2vRCVETLgDoQ7rhsiD127J8gVExjO8B0113jCajbFRcMtUtFTjH4z7jXP2ZzDcXsgpe4LYFuenFQAcRBRlE6oaykHR7'
+            'rlPqqmw58nIELJUFoMcb/BdRLgbyTeurFlnxs=',
+        ]
+        expected_ds = [
+            '45586 5 2 67fcd7e0b9e0366309f3b6f7476dff931d5226edc5348cd80fd82a081dfcf6ee',
+            '45586 5 4 aee6931c7790c428bca35dab9179cb27f042715e38e5a8adb6bb24c57c21c65dbd02a5b09887787f30128bfac8b6f0b5'
+        ]
+
+        domain = Domain.objects.create(name=name, owner=self.owner)
+        rrset = domain.rrset_set.create(subname='', type='DNSKEY', ttl=3600)
+        rrset.records.bulk_create([RR(rrset=rrset, content=dnskey) for dnskey in dnskeys])
+
+        url = self.reverse('v1:domain-detail', name=domain.name)
+        with self.assertPdnsRequests(
+            self.request_pdns_zone_retrieve_crypto_keys(name=domain.name)
+        ):
+            response = self.client.get(url)
+            self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data['keys'], [
+                {
+                    'dnskey': key['dnskey'],
+                    'ds': key['cds'] if key['flags'] & 1 else [],
+                    'flags': key['flags'],
+                    'keytype': key['keytype'],
+                    'managed': True,
+                }
+                for key in self.get_body_pdns_zone_retrieve_crypto_keys()
+            ] + [
+                {
+                    'dnskey': dnskeys[0],
+                    'ds': [],
+                    'flags': 256,
+                    'keytype': None,
+                    'managed': False,
+                },
+                {
+                    'dnskey': dnskeys[1],
+                    'ds': expected_ds,
+                    'flags': 257,
+                    'keytype': None,
+                    'managed': False,
+                }
+            ])

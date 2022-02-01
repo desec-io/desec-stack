@@ -339,7 +339,23 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     @property
     def keys(self):
         if not self._keys:
-            self._keys = pdns.get_keys(self)
+            self._keys = [{**key, 'managed': True} for key in pdns.get_keys(self)]
+            try:
+                unmanaged_keys = self.rrset_set.get(subname='', type='DNSKEY').records.all()
+            except RRset.DoesNotExist:
+                pass
+            else:
+                name = dns.name.from_text(self.name)
+                for rr in unmanaged_keys:
+                    key = dns.rdata.from_text(dns.rdataclass.IN, dns.rdatatype.DNSKEY, rr.content)
+                    key_is_sep = key.flags & dns.rdtypes.ANY.DNSKEY.SEP
+                    self._keys.append({
+                        'dnskey': rr.content,
+                        'ds': [dns.dnssec.make_ds(name, key, algo).to_text() for algo in (2, 4)] if key_is_sep else [],
+                        'flags': key.flags,  # deprecated
+                        'keytype': None,  # deprecated
+                        'managed': False,
+                    })
         return self._keys
 
     @property

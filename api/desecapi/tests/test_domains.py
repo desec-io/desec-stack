@@ -255,6 +255,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         ):
             response = self.client.get(url)
             self.assertStatus(response, status.HTTP_200_OK)
+            self.assertEqual(response.data.keys(), {'created', 'keys', 'minimum_ttl', 'name', 'published', 'touched'})
             self.assertEqual(response.data['name'], self.my_domain.name)
             self.assertTrue(isinstance(response.data['keys'], list))
 

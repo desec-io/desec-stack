@@ -427,31 +427,47 @@ class MockPDNSTestCase(APITestCase):
             }),
         }
 
+    @staticmethod
+    def get_body_pdns_zone_retrieve_crypto_keys():
+        common_body = {
+            'algorithm': 'ECDSAP256SHA256',
+            'bits': 256,
+            'dnskey': '257 3 13 EVBcsqrnOp6RGWtsrr9QW8cUtt/WI5C81RcCZDTGNI9elAiMQlxRdnic+7V+b7jJDE2vgY08qAbxiNh5NdzkzA==',
+            'id': 179425943,
+            'published': True,
+            'type': 'Cryptokey',
+        }
+        common_cds = [
+            '62745 13 2 5cddaeaa383e2ea7de49bd1212bf520228f0e3b334626517e5f6a68eb85b48f6',
+            '62745 13 4 b3f2565901ddcb0b78337301cf863d1045774377bca05c7ad69e17a167734b929f0a49b7edcca913eb6f5dfeac4645b8'
+        ]
+        return [
+            {
+                **common_body,
+                'flags': 257,
+                'keytype': 'csk',
+                'cds': common_cds,
+            },
+            {
+                **common_body,
+                'flags': 257,
+                'keytype': 'ksk',
+                'cds': common_cds,
+            },
+            {
+                **common_body,
+                'flags': 256,
+                'keytype': 'zsk',
+            },
+        ]
+
     @classmethod
     def request_pdns_zone_retrieve_crypto_keys(cls, name=None):
         return {
             'method': 'GET',
             'uri': cls.get_full_pdns_url(cls.PDNS_ZONE_CRYPTO_KEYS, id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
-            'body': json.dumps([
-                {
-                    'algorithm': 'ECDSAP256SHA256',
-                    'bits': 256,
-                    'dnskey': '257 3 13 EVBcsqrnOp6RGWtsrr9QW8cUtt/'
-                              'WI5C81RcCZDTGNI9elAiMQlxRdnic+7V+b7jJDE2vgY08qAbxiNh5NdzkzA==',
-                    'cds': [
-                        '62745 13 2 5cddaeaa383e2ea7de49bd1212bf520228f0e3b334626517e5f6a68eb85b48f6',
-                        '62745 13 4 b3f2565901ddcb0b78337301cf863d1045774377bca05c7ad69e17a167734b92'
-                        '9f0a49b7edcca913eb6f5dfeac4645b8'
-                    ],
-                    'flags': 257,
-                    'id': 179425943,
-                    'keytype': key_type,
-                    'published': True,
-                    'type': 'Cryptokey',
-                }
-                for key_type in ['csk', 'ksk', 'zsk']
-            ])
+            'body': json.dumps(cls.get_body_pdns_zone_retrieve_crypto_keys())
         }
 
     @classmethod
