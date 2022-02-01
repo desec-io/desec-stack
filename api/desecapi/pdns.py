@@ -98,8 +98,8 @@ def get_keys(domain):
     field_map = {
         'dnskey': 'dnskey',
         'cds': 'ds',
-        'flags': 'flags',
-        'keytype': 'keytype',
+        'flags': 'flags',  # deprecated
+        'keytype': 'keytype',  # deprecated
     }
     return [{v: key[k] for k, v in field_map.items()}
              for key in r.json()

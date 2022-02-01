@@ -27,8 +27,8 @@ A JSON object representing a domain has the following structure::
                     "6006 13 2 f34b75...",
                     "6006 13 4 2fdcf8..."
                 ],
-                "flags": 257,
-                "keytype": "csk"
+                "flags": 257,  # deprecated
+                "keytype": "csk"  # deprecated
             },
             ...
         ],
@@ -50,8 +50,8 @@ Field details:
     :Access mode: read-only
 
     Array with DNSSEC key information.  Each entry contains ``DNSKEY`` and
-    ``DS`` record contents (the latter being computed from the former), plus
-    some more technical information.  For delegation of DNSSEC-secured domains,
+    ``DS`` record contents (the latter being computed from the former).
+    For delegation of DNSSEC-secured domains,
     the parent domain needs to publish these ``DS`` records.  (This usually
     involves telling your registrar/registry about those records, and they
     will publish them for you.)
