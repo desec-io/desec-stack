@@ -225,7 +225,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             domain.save()
 
         for domain in domains:
-            for name in [domain.name, f'foo.bar.{domain.name}']:
+            for name in [domain.name, f'foo.bar.{domain.name}', f'foo.BAR.{domain.name}']:
                 response = self.client.get(self.reverse('v1:domain-list'), data={'owns_qname': name})
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertEqual(len(response.data), 1)
