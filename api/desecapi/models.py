@@ -710,9 +710,13 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
                 errors.append(f'{self.type} RRset cannot have multiple records.')
 
         # Non-apex
-        if self.type == 'CNAME':
+        if self.type in ('CNAME', 'DS',):
             if self.subname == '':
-                errors.append('CNAME RRset cannot have empty subname.')
+                errors.append(f'{self.type} RRset cannot have empty subname.')
+
+        if self.type in ('DNSKEY',):
+            if self.subname != '':
+                errors.append(f'{self.type} RRset must have empty subname.')
 
         def _error_msg(record, detail):
             return f'Record content of {self.type} {self.name} invalid: \'{record}\': {detail}'
