@@ -132,10 +132,11 @@ class ReadOnlyOnUpdateValidator(Validator):
     requires_context = True
 
     def __call__(self, value, serializer_field):
-        field_name = serializer_field.source_attrs[-1]
         instance = getattr(serializer_field.parent, 'instance', None)
-        if isinstance(instance, Model) and value != getattr(instance, field_name):
-            raise serializers.ValidationError(self.message, code='read-only-on-update')
+        if isinstance(instance, Model):
+            field_name = serializer_field.source_attrs[-1]
+            if isinstance(instance, Model) and value != getattr(instance, field_name):
+                raise serializers.ValidationError(self.message, code='read-only-on-update')
 
 
 class ConditionalExistenceModelSerializer(serializers.ModelSerializer):
@@ -431,8 +432,17 @@ class RRsetListSerializer(serializers.ListSerializer):
         return super().save(**kwargs)
 
 
+class SubnameDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        parent = serializer_field.parent
+        return ('.' + parent.initial_data.get('name', '')).removesuffix(f'.{parent.domain.name}.').removeprefix('.')
+
+
 class RRsetSerializer(ConditionalExistenceModelSerializer):
     domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    name = serializers.CharField(required=False)
     records = RRSerializer(many=True)
     ttl = serializers.IntegerField(max_value=86400)
 
@@ -440,7 +450,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         model = models.RRset
         fields = ('created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched',)
         extra_kwargs = {
-            'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
+            'subname': {'required': False, 'default': NonBulkOnlyDefault(SubnameDefault())}
         }
         list_serializer_class = RRsetListSerializer
 
@@ -461,6 +471,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def get_validators(self):
         return [
+            validators.NameSubnameValidator(),
             UniqueTogetherValidator(
                 self.domain.rrset_set,
                 ('subname', 'type'),
@@ -474,6 +485,18 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
                         ' (No other RRsets are allowed alongside CNAME.)',
             ),
         ]
+
+    def validate_name(self, value):
+        # TODO anything here, so that validation errors are associated to the correct field?
+        return value
+
+    def validate_subname(self, value):
+        # Inference of `subname` from `name` is achieved using a default field value.  As defaults are not validated,
+        # we need to do it explicitly.
+        field = self.get_fields()['subname']
+        value = field.to_internal_value(value)
+        field.run_validators(value)
+        return value
 
     @staticmethod
     def validate_type(value):
@@ -497,6 +520,8 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return value
 
     def validate(self, attrs):
+        attrs.pop('name', None)
+
         if 'records' in attrs:
             try:
                 type_ = attrs['type']

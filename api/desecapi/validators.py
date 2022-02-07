@@ -54,3 +54,19 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
             types = ', '.join(types)
             message = self.message.format(types=types)
             raise ValidationError(message, code='exclusive')
+
+
+class NameSubnameValidator:
+    requires_context = True
+
+    def __call__(self, attrs, serializer):
+        try:
+            name = attrs['name']
+        except KeyError:
+            return
+
+        if name != f"{attrs['subname']}.{serializer.domain.name}.":
+            raise ValidationError({
+                'name': 'Value inconsistent with subname.',
+                'subname': 'Value inconsistent with name.',
+            })
