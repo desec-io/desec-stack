@@ -21,8 +21,8 @@ auth_urls = [
 
     # Token management
     path('tokens/', include(tokens_router.urls)),
-    path('tokens/<token_id>/policies/', views.TokenPoliciesRoot.as_view(), name='token-policies-root'),
-    path('tokens/<token_id>/policies/domain/', include(tokendomainpolicies_router.urls)),
+    path('tokens/<uuid:token_id>/policies/', views.TokenPoliciesRoot.as_view(), name='token-policies-root'),
+    path('tokens/<uuid:token_id>/policies/domain/', include(tokendomainpolicies_router.urls)),
 ]
 
 domains_router = SimpleRouter()

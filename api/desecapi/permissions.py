@@ -76,7 +76,7 @@ class AuthTokenCorrespondsToViewToken(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return view.kwargs['token_id'] == str(request.auth.pk)
+        return view.kwargs['token_id'] == request.auth.pk
 
 
 class IsVPNClient(permissions.BasePermission):
