@@ -265,13 +265,6 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
         except (Timeout, NoNameservers):
             public_suffix = self.name.rpartition('.')[2]
             is_public_suffix = ('.' not in self.name)  # TLDs are public suffixes
-        except psl_dns.exceptions.UnsupportedRule as e:
-            # It would probably be fine to treat this as a non-public suffix (with the TLD acting as the
-            # public suffix and setting both public_suffix and is_public_suffix accordingly).
-            # However, in order to allow to investigate the situation, it's better not catch
-            # this exception. For web requests, our error handler turns it into a 503 error
-            # and makes sure admins are notified.
-            raise e
 
         if is_public_suffix:
             return public_suffix
