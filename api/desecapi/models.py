@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import binascii
+import datetime
 import ipaddress
 import json
 import logging
@@ -37,7 +38,7 @@ from dns import rdataclass, rdatatype
 from dns.exception import Timeout
 from dns.rdtypes import ANY, IN
 from dns.resolver import NoNameservers
-from netfields import CidrAddressField, NetManager
+import netfields
 from rest_framework.exceptions import APIException
 
 from desecapi import metrics
@@ -261,6 +262,12 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    pdns_master = models.CharField(max_length=128, null=True, blank=True)
+    pdns_last_check = models.IntegerField(null=True, blank=True)
+    pdns_type = models.CharField(max_length=6, default='MASTER')
+    pdns_notified_serial = models.BigIntegerField(null=True, blank=True)
+    pdns_account = models.CharField(max_length=40, null=True, blank=True)
+    pdns_meta_nsec3param = models.CharField(max_length=142, default='1 0 0 -')
 
     _keys = None
     objects = DomainManager()
@@ -401,7 +408,39 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean(validate_unique=False)
+        new = self.id is None
         super().save(*args, **kwargs)
+        if new:
+            # Create NS records
+            rr_set = RRset(
+                domain=self,
+                type='NS', subname='',
+                ttl=settings.DEFAULT_NS_TTL,
+            )
+            rr_set.save()
+
+            rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
+            RR.objects.bulk_create(rrs)  # One INSERT
+
+            # Create SOA record
+            rr_set = RRset(
+                domain=self,
+                type='SOA', subname='',
+                ttl=300,  # SOA RRset TTL: 300 (used as TTL for negative replies including NSEC3 records)
+            )
+            rr_set.save()
+            get_desec_io = dns.name.from_text('get.desec.io')
+            rr_set.save_records([dns.rdtypes.ANY.SOA.SOA(
+                rdclass=dns.rdataclass.IN,
+                rdtype=dns.rdatatype.SOA,
+                mname=get_desec_io,
+                rname=get_desec_io,
+                serial=int(f'{datetime.date.today().year:4n}{datetime.date.today().month:02n}0000'),
+                refresh=86400,
+                retry=3600,
+                expire=2419200,
+                minimum=3600,
+            ).to_text()])
 
     def update_delegation(self, child_domain: Domain):
         child_subname, child_domain_name = child_domain._partitioned_name
@@ -427,6 +466,26 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
             # Domain not real: that's it
             metrics.get('desecapi_autodelegation_deleted').inc()
 
+    def soa(self) -> RRset:
+        return self.rrset_set.get(type='SOA', subname='')
+
+    def increase_serial(self):
+        # TODO this needs to be an atomic change to the database to avoid concurrency with pdns
+        soa = self.soa()
+        soa_rr = soa.object[0]
+        soa_rr = dns.rdtypes.ANY.SOA.SOA(
+            rdclass=soa_rr.rdclass,
+            rdtype=soa_rr.rdtype,
+            mname=soa_rr.mname,
+            rname=soa_rr.rname,
+            serial=max(int(time.time()), soa_rr.serial + 1),
+            refresh=soa_rr.refresh,
+            retry=soa_rr.retry,
+            expire=soa_rr.expire,
+            minimum=soa_rr.minimum,
+        )
+        soa.save_records([soa_rr.to_text()])
+
     def delete(self):
         ret = super().delete()
         logger.warning(f'Domain {self.name} deleted (owner: {self.owner.pk})')
@@ -447,13 +506,13 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     name = models.CharField('Name', blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
-    allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
+    allowed_subnets = ArrayField(netfields.CidrAddressField(), default=_allowed_subnets_default.__func__)
     max_age = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
     max_unused_period = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
     domain_policies = models.ManyToManyField(Domain, through='TokenDomainPolicy')
 
     plain = None
-    objects = NetManager()
+    objects = netfields.NetManager()
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['id', 'user'], name='unique_id_user')]
@@ -696,6 +755,12 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     @property
     def name(self):
         return self.construct_name(self.subname, self.domain.name)
+
+    @property
+    def object(self):
+        # TODO name of this property?
+        # TODO parsing may fail in certain situations, need to be same as validation!
+        return dns.rrset.from_text(self.name, self.ttl, 'IN', self.type, *[rr.content for rr in self.records.all()])
 
     def save(self, *args, **kwargs):
         # TODO Enforce that subname and type aren't changed. https://github.com/desec-io/desec-stack/issues/553
@@ -1124,3 +1189,38 @@ class Captcha(ExportModelOperationsMixin('Captcha'), models.Model):
             and
             age <= settings.CAPTCHA_VALIDITY_PERIOD  # not expired
         )
+
+
+class PDNSSupermaster(models.Model):
+    ip = netfields.InetAddressField()
+    nameserver = models.CharField(max_length=255)
+    account = models.CharField(max_length=40)
+
+    class Meta:
+        unique_together = (("ip", "nameserver"),)
+
+
+class PDNSComment(models.Model):
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=10)
+    modified_at = models.IntegerField()
+    account = models.CharField(max_length=40)
+    comment = models.CharField(max_length=65535)
+
+
+class PDNSCryptokey(models.Model):
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
+    flags = models.IntegerField()
+    active = models.BooleanField()
+    published = models.BooleanField(default=True)
+    content = models.TextField()
+
+
+class PDNSTsigkey(models.Model):
+    name = models.CharField(max_length=255)
+    algorithm = models.CharField(max_length=50)
+    secret = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = (("name", "algorithm"),)

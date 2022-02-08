@@ -340,7 +340,6 @@ localhost.import-me.example A 127.0.0.1
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
         self.assertStatus(response, status.HTTP_201_CREATED)
         domain = Domain.objects.get(name=name)
-        self.assertRRsetDB(domain, subname='', type_='SOA', rr_contents=set())
         self.assertRRsetDB(domain, subname='', type_='NS', ttl=settings.DEFAULT_NS_TTL,
                            rr_contents=set(settings.DEFAULT_NS))
         ttl = max(300, settings.MINIMUM_TTL_DEFAULT)
@@ -583,13 +582,6 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['name'][0].code, 'name_unavailable')
-
-    def test_create_domain_atomicity(self):
-        name = self.random_domain_name()
-        with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
-            with self.assertRaises(ValueError):
-                self.client.post(self.reverse('v1:domain-list'), {'name': name})
-            self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_punycode(self):
         names = ['公司.cn', 'aéroport.ci']

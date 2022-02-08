@@ -73,30 +73,13 @@ services:
     - POSTGRES_NON_ROOT_USER=desec
     - POSTGRES_NON_ROOT_USER_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_desec}
     networks:
-    - rearapi_dbapi
+      rearapi_ns:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.14
     command: ["postgres", "-c", "hba_file=/usr/local/src/pg_hba.conf"]
     logging:
       driver: "syslog"
       options:
         tag: "desec/dbapi"
-    restart: unless-stopped
-
-  dblord:
-    build: dblord
-    image: desec/dedyn-dblord:latest
-    init: true
-    user: mysql:mysql
-    volumes:
-    - dblord_mysql:/var/lib/mysql
-    environment:
-    - DESECSTACK_IPV4_REAR_PREFIX16
-    - DESECSTACK_DBLORD_PASSWORD_pdns
-    networks:
-    - rearlord
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/dblord"
     restart: unless-stopped
 
   dbmaster:
@@ -161,7 +144,6 @@ services:
     - DESECSTACK_WATCHDOG_SECONDARIES
     networks:
       rearapi_celery:
-      rearapi_dbapi:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
       rearwww:
@@ -178,14 +160,14 @@ services:
     init: true
     environment:
     - DESECSTACK_IPV4_REAR_PREFIX16
-    - DESECSTACK_DBLORD_PASSWORD_pdns
+    - DESECSTACK_DBAPI_PASSWORD_desec
     - DESECSTACK_NSLORD_APIKEY
     - DESECSTACK_NSLORD_CARBONSERVER
     - DESECSTACK_NSLORD_CARBONOURNAME
     - DESECSTACK_NSLORD_CACHE_TTL=20
     - DESECSTACK_NSLORD_DEFAULT_TTL
     depends_on:
-    - dblord
+    - dbapi
     networks:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.11
@@ -274,7 +256,7 @@ services:
     - DJANGO_SETTINGS_MODULE=api.settings
     networks:
     - rearapi_celery
-    - rearapi_dbapi
+    - rearapi_ns
     logging:
       driver: "syslog"
       options:
@@ -315,7 +297,6 @@ services:
     - DJANGO_SETTINGS_MODULE=api.settings
     networks:
       rearapi_celery:
-      rearapi_dbapi:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
     logging:
@@ -422,7 +403,6 @@ services:
 
 volumes:
   dbapi_postgres:
-  dblord_mysql:
   dbmaster_postgres:
   openvpn-server_logs:
   prometheus:
@@ -452,13 +432,6 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.6.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.6.1
-  rearapi_dbapi:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.0/24
-        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.1
   rearapi_ns:
     driver: bridge
     ipam:

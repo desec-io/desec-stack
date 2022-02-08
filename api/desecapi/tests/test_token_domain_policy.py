@@ -233,8 +233,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             responses = []
             if value:
                 pdns_name = self._normalize_name(name).lower()
-                cm = self.assertPdnsNoRequestsBut(self.request_pdns_zone_update(name=pdns_name),
-                                                  self.request_pdns_zone_axfr(name=pdns_name))
+                cm = self.assertPdnsNoRequestsBut(self.request_pdns_zone_axfr(name=pdns_name))
             else:
                 cm = nullcontext()
 

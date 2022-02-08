@@ -34,7 +34,7 @@ class Command(BaseCommand):
             rrsets = RRset.objects.filter(
                 Q(domain__name__in=options['names']) |
                 Q(domain__owner__email__in=options['names'])
-            )
+            ).exclude(subname='', type='SOA')
 
             # Print summary
             print(f'Deleting {rrsets.distinct().count()} RRset(s) from {domains.distinct().count()} domain(s); '

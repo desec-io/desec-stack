@@ -1048,7 +1048,11 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         self.assertGreater(len(self.my_domains), 1)
         for domain in self.my_domains[1:]:
             self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_changed, domain.renewal_changed)
+            self.assertAlmostEqual(
+                (Domain.objects.get(pk=domain.pk).renewal_changed - domain.renewal_changed).total_seconds(),
+                0,
+                places=0,
+            )
 
     def test_renew_domain_notified_21_days(self):
         domain = self.my_domains[0]
@@ -1077,7 +1081,11 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
         self.assertGreater(len(self.my_domains), 1)
         for domain in self.my_domains[1:]:
             self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
-            self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_changed, domain.renewal_changed)
+            self.assertAlmostEqual(
+                (Domain.objects.get(pk=domain.pk).renewal_changed - domain.renewal_changed).total_seconds(),
+                0,
+                places=0,
+            )
 
     def test_renew_domain_warned_7_days(self):
         domains = self.my_domains[:]  # copy list so we can modify it later without side effects

@@ -1,5 +1,6 @@
 import json
 import re
+import socket
 from hashlib import sha1
 
 import requests
@@ -113,6 +114,24 @@ def get_zone(domain):
     return r.json()
 
 
+def create_zone(name):
+    """Creates a zone at nsmaster with the given name and sets it up for replication from nslord"""
+    _pdns_post(
+        NSMASTER, '/zones?rrsets=false',
+        {
+            'name': name + '.',
+            'kind': 'SLAVE',
+            'masters': [socket.gethostbyname('nslord')],
+            'master_tsig_key_ids': ['default'],
+        }
+    )
+
+
+def delete_zone(name):
+    """Removes a zone from nsmaster"""
+    _pdns_delete(NSMASTER, '/zones/' + pdns_id(name))
+
+
 def get_rrset_datas(domain):
     """
     Retrieves a dict representation of the RRsets in a given zone
@@ -123,6 +142,42 @@ def get_rrset_datas(domain):
              'records': [record['content'] for record in rrset['records']],
              'ttl': rrset['ttl']}
             for rrset in get_zone(domain)['rrsets']]
+
+
+def create_cryptokey(name):
+    """
+    Creates a new cryptokey with pdns' default settings for the given domain name.
+    It is published immediately!
+    """
+    _pdns_post(
+        NSLORD,
+        f'/zones/{pdns_id(name)}/cryptokeys',
+        {
+            'keytype': 'csk',
+            'published': True,
+            'active': True,
+        }
+    )
+
+
+def update_catalog(name, delete):
+    _pdns_patch(
+        NSMASTER, '/zones/' + pdns_id(settings.CATALOG_ZONE),
+        {
+            'rrsets': [construct_catalog_rrset(zone=name, delete=delete)]
+        }
+    )
+    metrics.get('desecapi_pdns_catalog_updated').inc()
+
+
+def catalog_add(name):
+    """Adds the given name to the catalog zone on nsmaster"""
+    update_catalog(name, delete=False)
+
+
+def catalog_remove(name):
+    """Removes the given name from the catalog zone on nsmaster"""
+    update_catalog(name, delete=True)
 
 
 def construct_catalog_rrset(zone=None, delete=False, subname=None, qtype='PTR', rdata=None):
@@ -150,3 +205,8 @@ def construct_catalog_rrset(zone=None, delete=False, subname=None, qtype='PTR', 
 
 def get_serials():
     return {zone['name']: zone['edited_serial'] for zone in _pdns_get(NSMASTER, '/zones').json()}
+
+
+def trigger_axfr(name):
+    """Instructs nsmaster to AXFR nslord for the given domain name"""
+    _pdns_put(NSMASTER, '/zones/%s/axfr-retrieve' % pdns_id(name))

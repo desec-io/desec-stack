@@ -50,7 +50,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.client.get_rr_sets(self.my_domain.name, subname=''),
         ]:
             self.assertStatus(response, status.HTTP_200_OK)
-            self.assertEqual(len(response.data), 1, response.data)
+            self.assertEqual(len(response.data), 3, response.data)
 
     def test_retrieve_my_rr_sets_pagination(self):
         def convert_links(links):
@@ -84,7 +84,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         response = self.client.get_rr_sets(self.my_domain.name)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'],
-                         f'Pagination required. You can query up to {settings.REST_FRAMEWORK["PAGE_SIZE"]} items at a time ({n+1} total). '
+                         f'Pagination required. You can query up to {settings.REST_FRAMEWORK["PAGE_SIZE"]} items at a time ({n+3} total). '
                          'Please use the `first` page link (see Link header).')
         links = convert_links(response['Link'])
         self.assertEqual(len(links), 1)
@@ -104,7 +104,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         # Next-next (last) page
         url = convert_links(response['Link'])['next']
         response = self.client.get(url)
-        assertPaginationResponse(response, n/5 + 1, ['prev'])
+        assertPaginationResponse(response, n/5 + 3, ['prev'])
 
         # Prev
         url = convert_links(response['Link'])['prev']
@@ -198,7 +198,6 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_create_my_rr_sets_restricted_at_apex(self):
         for type_, records in {
-            'CNAME': ['foobar.com.'],
             'DS': ['45586 5 1 D0FDF996D1AF2CCDBDC942B02CB02D379629E20B'],
         }.items():
             data = {'subname': '', 'ttl': 3600, 'type': type_, 'records': records}
@@ -226,12 +225,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         # Can't add a CNAME where something else is
         data = {'subname': 'a', 'ttl': 3600, 'type': 'CNAME', 'records': ['foobar.com.']}
         response = self.client.post_rr_set(self.my_domain.name, **data)
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertContains(response, 'RRset with conflicting type present in database (A)',
+                            status_code=status.HTTP_400_BAD_REQUEST)
 
         # Can't add something else where a CNAME is
         data = {'subname': 'cname', 'ttl': 3600, 'type': 'A', 'records': ['4.3.2.1']}
         response = self.client.post_rr_set(self.my_domain.name, **data)
-        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertContains(response, 'RRset with conflicting type present in database (CNAME)',
+                            status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_without_records(self):
         for subname in ['', 'create-my-rr-sets', 'foo.create-my-rr-sets', 'bar.baz.foo.create-my-rr-sets']:

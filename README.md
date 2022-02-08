@@ -6,7 +6,8 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
-- `dbapi`, `dblord`, `dbmaster`: Postgres databases for `api` and `nsmaster`, MariaDB database for `nslord`, respectively.
+- `dbapi`: Postgres database for `api` and `nslord`.
+- `dbmaster`: Postgres database for `nsmaster`.
 - `www`: nginx instance serving static web site content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
@@ -53,10 +54,9 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_API_EMAIL_PORT`: port for sending email
       - `DESECSTACK_API_SECRETKEY`: Django secret
       - `DESECSTACK_API_PSL_RESOLVER`: Resolver IP address to use for PSL lookups. If empty, the system's default resolver is used.
-      - `DESECSTACK_DBAPI_PASSWORD_desec`: database password for desecapi
+      - `DESECSTACK_DBAPI_PASSWORD_desec`: database password for desecapi and nslord
       - `DESECSTACK_MINIMUM_TTL_DEFAULT`: minimum TTL users can set for RRsets. The setting is per domain, and the default defined here is used on domain creation.
     - nslord-related
-      - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord
       - `DESECSTACK_NSLORD_CARBONSERVER`: pdns `carbon-server` setting on nslord (optional)
       - `DESECSTACK_NSLORD_CARBONOURNAME`: pdns `carbon-ourname` setting on nslord (optional)
@@ -85,7 +85,7 @@ Production:
 
 Storage
 -------
-All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desec-stack_{dbapi_postgres,dblord_mysql,dbmaster_mysql}`.
+All important data is stored in the databases managed by the `db*` containers. They use Docker volumes which, by default, reside in `/var/lib/docker/volumes/desec-stack_{dbapi_postgres,dbmaster_mysql}`.
 This is the location you will want to back up. (Be sure to follow standard MySQL/Postgres backup practices, i.e. make sure things are consistent.)
 
 API Versions and Roadmap

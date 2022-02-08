@@ -254,7 +254,10 @@ class RRsetListSerializer(serializers.ListSerializer):
         if db_conflicts: types_by_position['database'] = db_conflicts
         for position, types in types_by_position.items():
             types_by_position[position] = ', '.join(sorted(types))
-        types_by_position = [f'{position} ({types})' for position, types in types_by_position.items()]
+        types_by_position = [
+            (f"index {position}" if isinstance(position, int) else position) + f' ({types})'
+            for position, types in types_by_position.items()
+        ]
         return ', '.join(types_by_position)
 
     def to_internal_value(self, data):
@@ -320,7 +323,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                         types_by_position = self._types_by_position_string(conflicting_indices_by_type)
                         raise serializers.ValidationError({
                             'non_field_errors': [
-                                f'RRset with conflicting type present: {types_by_position}.'
+                                f'RRset with conflicting type present in request {types_by_position}.'
                                 ' (No other RRsets are allowed alongside CNAME.)'
                             ]
                         })
@@ -472,7 +475,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
                 self.domain.rrset_set,
                 ('subname',),
                 exclusion_condition=('type', 'CNAME',),
-                message='RRset with conflicting type present: database ({types}).'
+                message='RRset with conflicting type present in database ({types}).'
                         ' (No other RRsets are allowed alongside CNAME.)',
             ),
         ]

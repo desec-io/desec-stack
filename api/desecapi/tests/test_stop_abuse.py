@@ -13,7 +13,6 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         cls.create_rr_set(cls.my_domains[1], ['127.0.0.1', '127.0.1.1'], type='A', ttl=123)
         cls.create_rr_set(cls.other_domains[1], ['40.1.1.1', '40.2.2.2'], type='A', ttl=456)
         for d in cls.my_domains + cls.other_domains:
-            cls.create_rr_set(d, ['ns1.example.', 'ns2.example.'], type='NS', ttl=456)
             cls.create_rr_set(d, ['ns1.example.', 'ns2.example.'], type='NS', ttl=456, subname='subname')
             cls.create_rr_set(d, ['"foo"'], type='TXT', ttl=456)
 
@@ -24,9 +23,12 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
     def test_remove_rrsets_by_domain_name(self):
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_domain.name)):
             management.call_command('stop-abuse', self.my_domain)
-        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domain.name).count(), 1)  # only NS left
+        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domain.name).count(), 2)  # only NS, SOA left
         self.assertEqual(
-            set(models.RR.objects.filter(rrset__domain__name=self.my_domain.name).values_list('content', flat=True)),
+            set(models.RR.objects.filter(
+                rrset__domain__name=self.my_domain.name,
+                rrset__type="NS",
+            ).values_list('content', flat=True)),
             set(settings.DEFAULT_NS),
         )
 
@@ -36,9 +38,12 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
             expect_order=False,
         ):
             management.call_command('stop-abuse', self.owner.email)
-        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domain.name).count(), 1)  # only NS left
+        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domain.name).count(), 2)  # only NS, SOA left
         self.assertEqual(
-            set(models.RR.objects.filter(rrset__domain__name=self.my_domain.name).values_list('content', flat=True)),
+            set(models.RR.objects.filter(
+                rrset__domain__name=self.my_domain.name,
+                rrset__type="NS",
+            ).values_list('content', flat=True)),
             set(settings.DEFAULT_NS),
         )
 
@@ -60,7 +65,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
     def test_keep_other_owned_domains_name(self):
         with self.assertPdnsRequests(self.requests_desec_rr_sets_update(name=self.my_domain.name)):
             management.call_command('stop-abuse', self.my_domain)
-        self.assertGreater(models.RRset.objects.filter(domain__name=self.my_domains[1].name).count(), 1)
+        self.assertGreater(models.RRset.objects.filter(domain__name=self.my_domains[1].name).count(), 2)
 
     def test_dont_keep_other_owned_domains_email(self):
         with self.assertPdnsRequests(
@@ -68,7 +73,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
             expect_order=False,
         ):
             management.call_command('stop-abuse', self.owner.email)
-        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domains[1].name).count(), 1)
+        self.assertEqual(models.RRset.objects.filter(domain__name=self.my_domains[1].name).count(), 2)
 
     def test_only_disable_owner(self):
         with self.assertPdnsRequests(

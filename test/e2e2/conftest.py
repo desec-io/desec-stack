@@ -478,6 +478,19 @@ def query_replication(zone: str, qname: str, qtype: str, covers: str = None):
         return None
 
 
+def query_serial(zone: str) -> int:
+    soa_rrset = query_replication(zone, '@', 'SOA')
+    if not soa_rrset:
+        return None
+    soa = dns.rdtypes.ANY.SOA.SOA.from_text(
+        rdclass=dns.rdataclass.IN,
+        rdtype=dns.rdatatype.SOA,
+        tok=dns.tokenizer.Tokenizer(next(iter(soa_rrset))),
+        relativize=False,
+    )
+    return soa.serial
+
+
 def return_eventually(expression: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
                       retry_on: Tuple[type] = (Exception,)):
     if not callable(expression):

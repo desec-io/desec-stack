@@ -298,17 +298,17 @@ class MockPDNSTestCase(APITestCase):
             return [x.rstrip('.') + '.' for x in arg]
 
     @classmethod
-    def request_pdns_zone_create(cls, ns, **kwargs):
+    def request_pdns_zone_create(cls, **kwargs):
         return {
             'method': 'POST',
-            'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONES, ns='MASTER'),
             'status': 201,
             'body': '',
             'match_querystring': True,
             **kwargs
         }
 
-    def request_pdns_zone_create_assert_name(self, ns, name):
+    def request_pdns_zone_create_assert_name(self, name):
         def request_callback(r, _, response_headers):
             body = json.loads(r.parsed_body)
             self.failIf('name' not in body.keys(),
@@ -320,7 +320,7 @@ class MockPDNSTestCase(APITestCase):
             finally:
                 return [201, response_headers, '']
 
-        request = self.request_pdns_zone_create(ns)
+        request = self.request_pdns_zone_create()
         request.pop('status')
         # noinspection PyTypeChecker
         request['body'] = request_callback
@@ -328,87 +328,18 @@ class MockPDNSTestCase(APITestCase):
 
     @classmethod
     def request_pdns_zone_create_422(cls):
-        request = cls.request_pdns_zone_create(ns='LORD')
+        request = cls.request_pdns_zone_create()
         request['status'] = 422
         return request
 
     @classmethod
-    def request_pdns_zone_delete(cls, name=None, ns='LORD'):
+    def request_pdns_zone_delete(cls, name=None):
         return {
             'method': 'DELETE',
-            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, ns=ns, id=cls._pdns_zone_id_heuristic(name)),
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, ns='MASTER', id=cls._pdns_zone_id_heuristic(name)),
             'status': 200,
             'body': '',
         }
-
-    @classmethod
-    def request_pdns_zone_update(cls, name=None):
-        return {
-            'method': 'PATCH',
-            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE, id=cls._pdns_zone_id_heuristic(name)),
-            'status': 200,
-            'body': '',
-        }
-
-    def request_pdns_zone_update_assert_body(self, name: str = None, updated_rr_sets: Union[List[RRset], Dict] = None):
-        if updated_rr_sets is None:
-            updated_rr_sets = []
-
-        def request_callback(r, _, response_headers):
-            if not updated_rr_sets:
-                # nothing to assert
-                return [200, response_headers, '']
-
-            body = json.loads(r.parsed_body)
-            self.failIf('rrsets' not in body.keys(),
-                        'pdns zone update request malformed: did not contain a list of RR sets.')
-
-            try:  # if an assertion fails, an exception is raised. We want to send a reply anyway!
-                with SQLiteReadUncommitted():  # tests are wrapped in uncommitted transactions, so we need to see inside
-                    # convert updated_rr_sets into a plain data type, if Django models were given
-                    if isinstance(updated_rr_sets, list):
-                        updated_rr_sets_dict = {}
-                        for rr_set in updated_rr_sets:
-                            updated_rr_sets_dict[(rr_set.type, rr_set.subname, rr_set.ttl)] = rrs = []
-                            for rr in rr_set.records.all():
-                                rrs.append(rr.content)
-                    elif isinstance(updated_rr_sets, dict):
-                        updated_rr_sets_dict = updated_rr_sets
-                    else:
-                        raise ValueError('updated_rr_sets must be a list of RRSets or a dict.')
-
-                    # check expectations
-                    self.assertEqual(len(updated_rr_sets_dict), len(body['rrsets']),
-                                     'Saw an unexpected number of RR set updates: expected %i, intercepted %i.' %
-                                     (len(updated_rr_sets_dict), len(body['rrsets'])))
-                    for (exp_type, exp_subname, exp_ttl), exp_records in updated_rr_sets_dict.items():
-                        expected_name = '.'.join(filter(None, [exp_subname, name])) + '.'
-                        for seen_rr_set in body['rrsets']:
-                            if (expected_name == seen_rr_set['name'] and
-                                    exp_type == seen_rr_set['type']):
-                                # TODO replace the following asserts by assertTTL, assertRecords, ... or similar
-                                if len(exp_records):
-                                    self.assertEqual(exp_ttl, seen_rr_set['ttl'])
-                                self.assertEqual(
-                                    set(exp_records),
-                                    set([rr['content'] for rr in seen_rr_set['records']]),
-                                )
-                                break
-                        else:
-                            # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
-                            self.fail('Expected to see an pdns zone update request for RR set of domain `%s` with name '
-                                      '`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:'
-                                      '\n\n%s'
-                                      % (name, expected_name, exp_type, request['uri'],
-                                         json.dumps(body['rrsets'], indent=4)))
-            finally:
-                return [200, response_headers, '']
-
-        request = self.request_pdns_zone_update(name)
-        request.pop('status')
-        # noinspection PyTypeChecker
-        request['body'] = request_callback
-        return request
 
     @classmethod
     def request_pdns_zone_retrieve(cls, name=None):
@@ -471,6 +402,16 @@ class MockPDNSTestCase(APITestCase):
         }
 
     @classmethod
+    def request_pdns_zone_create_crypto_keys(cls, name=None):
+        return {
+            'method': 'POST',
+            'uri': cls.get_full_pdns_url(cls.PDNS_ZONE_CRYPTO_KEYS, ns='LORD', id=cls._pdns_zone_id_heuristic(name)),
+            'status': 201,
+            'body': '',
+            'match_querystring': True,
+        }
+
+    @classmethod
     def request_pdns_zone_axfr(cls, name=None):
         return {
             'method': 'PUT',
@@ -530,8 +471,7 @@ class MockPDNSTestCase(APITestCase):
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
-                self.request_pdns_zone_create(ns='LORD'),
-                self.request_pdns_zone_create(ns='MASTER')
+                self.request_pdns_zone_create_crypto_keys(),
             ],
         )
 
@@ -544,8 +484,7 @@ class MockPDNSTestCase(APITestCase):
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
-                self.request_pdns_zone_delete(ns='LORD', name=name),
-                self.request_pdns_zone_delete(ns='MASTER', name=name),
+                self.request_pdns_zone_delete(name=name),
             ],
         )
 
@@ -586,10 +525,8 @@ class MockPDNSTestCase(APITestCase):
         httpretty.reset()
         hr_core.POTENTIAL_HTTP_PORTS.add(8081)  # FIXME static dependency on settings variable
         for request in [
-            cls.request_pdns_zone_create(ns='LORD'),
-            cls.request_pdns_zone_create(ns='MASTER'),
+            cls.request_pdns_zone_create_crypto_keys(),
             cls.request_pdns_zone_axfr(),
-            cls.request_pdns_zone_update(),
             cls.request_pdns_zone_retrieve_crypto_keys(),
             cls.request_pdns_zone_retrieve()
         ]:
@@ -785,8 +722,8 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_domain_creation(cls, name=None, axfr=True, keys=True):
         soa_content = 'get.desec.io. get.desec.io. 1 86400 3600 2419200 3600'
         requests = [
-            cls.request_pdns_zone_create(ns='LORD', payload=soa_content),
-            cls.request_pdns_zone_create(ns='MASTER'),
+            cls.request_pdns_zone_create_crypto_keys(name=name),
+            cls.request_pdns_zone_create(),
             cls.request_pdns_update_catalog(),
         ]
         if axfr:
@@ -798,15 +735,13 @@ class DesecTestCase(MockPDNSTestCase):
     @classmethod
     def requests_desec_domain_deletion(cls, domain):
         requests = [
-            cls.request_pdns_zone_delete(name=domain.name, ns='LORD'),
-            cls.request_pdns_zone_delete(name=domain.name, ns='MASTER'),
+            cls.request_pdns_zone_delete(name=domain.name),
             cls.request_pdns_update_catalog(),
         ]
 
         if domain.is_locally_registrable:
             delegate_at = cls._find_auto_delegation_zone(domain.name)
             requests += [
-                cls.request_pdns_zone_update(name=delegate_at),
                 cls.request_pdns_zone_axfr(name=delegate_at),
             ]
 
@@ -816,14 +751,12 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_domain_creation_auto_delegation(cls, name=None):
         delegate_at = cls._find_auto_delegation_zone(name)
         return cls.requests_desec_domain_creation(name=name) + [
-            cls.request_pdns_zone_update(name=delegate_at),
             cls.request_pdns_zone_axfr(name=delegate_at),
         ]
 
     @classmethod
     def requests_desec_rr_sets_update(cls, name=None):
         return [
-            cls.request_pdns_zone_update(name=name),
             cls.request_pdns_zone_axfr(name=name),
         ]
 
@@ -996,10 +929,6 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def request_pdns_zone_axfr(cls, name=None):
         return super().request_pdns_zone_axfr(name.lower() if name else None)
 
-    @classmethod
-    def request_pdns_zone_update(cls, name=None):
-        return super().request_pdns_zone_update(name.lower() if name else None)
-
     def _assertDynDNS12Update(self, requests, mock_remote_addr='', **kwargs):
         with self.assertPdnsRequests(requests):
             if mock_remote_addr:
@@ -1010,7 +939,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     def assertDynDNS12Update(self, domain_name=None, mock_remote_addr='', **kwargs):
         pdns_name = self._normalize_name(domain_name).lower() if domain_name else None
         return self._assertDynDNS12Update(
-            [self.request_pdns_zone_update(name=pdns_name), self.request_pdns_zone_axfr(name=pdns_name)],
+            [self.request_pdns_zone_axfr(name=pdns_name)],
             mock_remote_addr,
             **kwargs
         )

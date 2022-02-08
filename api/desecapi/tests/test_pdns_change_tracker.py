@@ -18,24 +18,16 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         cls.simple_domain = Domain.objects.create(owner=cls.user, name=cls.random_domain_name())
         cls.full_domain = Domain.objects.create(owner=cls.user, name=cls.random_domain_name())
 
-    def assertPdnsZoneUpdate(self, name, rr_sets):
+    def assertPdnsZoneUpdate(self, name):
         def _assert_replication():
             self.assertReplication(name)
 
         return self.assertPdnsRequests(
             [
-                self.request_pdns_zone_update_assert_body(name, rr_sets),
                 self.request_pdns_zone_axfr(name),
             ],
             exit_hook=_assert_replication,
         )
-
-    def test_rrset_does_not_exist_exception(self):
-        tracker = PDNSChangeTracker()
-        tracker.__enter__()
-        tracker._rr_set_updated(RRset(domain=self.empty_domain, subname='', type='A'))
-        with self.assertRaises(ValueError):
-            tracker.__exit__(None, None, None)
 
 
 class RRTestCase(PdnsChangeTrackerTestCase):
@@ -64,13 +56,13 @@ class RRTestCase(PdnsChangeTrackerTestCase):
             RR.objects.create(rrset=cls.full_rr_set, content=content)
 
     def assertPdnsEmptyRRSetUpdate(self):
-        return self.assertPdnsZoneUpdate(self.empty_domain.name, [self.empty_rr_set])
+        return self.assertPdnsZoneUpdate(self.empty_domain.name)
 
     def assertPdnsSimpleRRSetUpdate(self):
-        return self.assertPdnsZoneUpdate(self.simple_domain.name, [self.simple_rr_set])
+        return self.assertPdnsZoneUpdate(self.simple_domain.name)
 
     def assertPdnsFullRRSetUpdate(self):
-        return self.assertPdnsZoneUpdate(self.full_domain.name, [self.full_rr_set])
+        return self.assertPdnsZoneUpdate(self.full_domain.name)
 
     def test_create_in_empty_rr_set(self):
         with self.assertPdnsEmptyRRSetUpdate(), PDNSChangeTracker():
@@ -251,6 +243,13 @@ class RRTestCase(PdnsChangeTrackerTestCase):
             rr.save()
             RR.objects.create(rrset=self.full_rr_set, content=self.ALT_CONTENT_VALUES[1])
 
+    def test_increase_serial(self):
+        old_serial = self.simple_domain.soa().object[0].serial
+        with self.assertPdnsSimpleRRSetUpdate(), PDNSChangeTracker():
+            self.simple_domain.increase_serial()
+        new_serial = self.simple_domain.soa().object[0].serial
+        self.assertGreater(new_serial, old_serial)
+
 
 class AAAARRTestCase(RRTestCase):
     SUBNAME = '*.foobar'
@@ -317,56 +316,54 @@ class RRSetTestCase(PdnsChangeTrackerTestCase):
         cls.rr_sets, cls.rrs = cls._create_rr_sets(cls.TEST_DATA, cls.full_domain)
 
     def test_empty_domain_create_single_empty(self):
-        with PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.empty_domain.name), PDNSChangeTracker():
             RRset.objects.create(domain=self.empty_domain, subname='', ttl=60, type='A')
 
     def test_empty_domain_create_single_meaty(self):
-        with self.assertPdnsZoneUpdate(self.empty_domain.name, self.empty_domain.rrset_set), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.empty_domain.name), PDNSChangeTracker():
             self._create_rr_sets(self.ADDITIONAL_TEST_DATA, self.empty_domain)
 
     def test_full_domain_create_single_empty(self):
-        with PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             RRset.objects.create(domain=self.full_domain, subname='', ttl=60, type='A')
 
     def test_empty_domain_create_many_empty(self):
-        with PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.empty_domain.name), PDNSChangeTracker():
             empty_test_data = {key: [] for key, value in self.TEST_DATA.items()}
             self._create_rr_sets(empty_test_data, self.empty_domain)
 
     def test_empty_domain_create_many_meaty(self):
-        with self.assertPdnsZoneUpdate(self.empty_domain.name, self.empty_domain.rrset_set), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.empty_domain.name), PDNSChangeTracker():
             self._create_rr_sets(self.TEST_DATA, self.empty_domain)
 
     def test_empty_domain_delete(self):
-        with PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.empty_domain.name), PDNSChangeTracker():
             self._create_rr_sets(self.TEST_DATA, self.empty_domain)
-            for rr_set in self.empty_domain.rrset_set.all():
+            for rr_set in self.empty_domain.rrset_set.exclude(type='SOA', subname='').all():
                 rr_set.delete()
 
     def test_full_domain_delete_single(self):
         index = (self.rr_sets[0].type, self.rr_sets[0].subname, self.rr_sets[0].ttl)
-        with self.assertPdnsZoneUpdate(self.full_domain.name, [self.TEST_DATA[index]]), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             self.rr_sets[0].delete()
 
     def test_full_domain_delete_multiple(self):
         data = self.TEST_DATA
         empty_data = {key: [] for key, value in data.items()}
-        with self.assertPdnsZoneUpdate(self.full_domain.name, empty_data), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             for type_, subname, _ in data.keys():
                 self.full_domain.rrset_set.get(subname=subname, type=type_).delete()
 
     def test_update_ttl(self):
         new_ttl = 765
-        data = {(type_, subname, new_ttl): records for (type_, subname, _), records in self.TEST_DATA.items()}
-        with self.assertPdnsZoneUpdate(self.full_domain.name, data), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             for rr_set in self.full_domain.rrset_set.all():
                 rr_set.ttl = new_ttl
                 rr_set.save()
 
     def test_full_domain_create_delete(self):
         data = self.TEST_DATA
-        empty_data = {key: [] for key, value in data.items()}
-        with self.assertPdnsZoneUpdate(self.full_domain.name, empty_data), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             self._create_rr_sets(self.ADDITIONAL_TEST_DATA, self.full_domain)
             for type_, subname, _ in data.keys():
                 self.full_domain.rrset_set.get(subname=subname, type=type_).delete()
@@ -375,14 +372,14 @@ class RRSetTestCase(PdnsChangeTrackerTestCase):
 class CommonRRSetTestCase(RRSetTestCase):
 
     def test_mixed_operations(self):
-        with self.assertPdnsZoneUpdate(self.full_domain.name, self.ADDITIONAL_TEST_DATA), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             self._create_rr_sets(self.ADDITIONAL_TEST_DATA, self.full_domain)
 
         rr_sets = [
             RRset.objects.get(type=type_, subname=subname)
             for (type_, subname, _) in self.ADDITIONAL_TEST_DATA.keys()
         ]
-        with self.assertPdnsZoneUpdate(self.full_domain.name, rr_sets), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             for rr_set in rr_sets:
                 rr_set.ttl = 1
                 rr_set.save()
@@ -391,7 +388,7 @@ class CommonRRSetTestCase(RRSetTestCase):
         for key in [('A', '_asdf', 123), ('AAAA', '*', 100023), ('A', 'foo', 1010)]:
             data[key] = self.TEST_DATA[key].copy()
 
-        with self.assertPdnsZoneUpdate(self.full_domain.name, data), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(self.full_domain.name), PDNSChangeTracker():
             data[('A', '_asdf', 123)].append('9.9.9.9')
             rr_set = RRset.objects.get(domain=self.full_domain, type='A', subname='_asdf')
             RR(content='9.9.9.9', rrset=rr_set).save()
@@ -473,8 +470,8 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
         name = self.random_domain_name()
         with self.assertPdnsRequests(
                 [
-                    self.request_pdns_zone_create('LORD'),
-                    self.request_pdns_zone_create('MASTER'),
+                    self.request_pdns_zone_create_crypto_keys(name),
+                    self.request_pdns_zone_create(),
                     self.request_pdns_update_catalog(),
                     self.request_pdns_zone_axfr(name)
                 ]), PDNSChangeTracker():
@@ -511,13 +508,14 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
             d.delete()
 
     def test_delete_create_empty_domain(self):
-        with PDNSChangeTracker():
-            name = self.empty_domain.name
+        # TODO should we roll the keys?
+        name = self.empty_domain.name
+        with self.assertPdnsZoneUpdate(name), PDNSChangeTracker():
             self.empty_domain.delete()
             self.empty_domain = Domain.objects.create(name=name, owner=self.user)
 
     def test_delete_create_full_domain(self):
         name = self.full_domain.name
-        with self.assertPdnsZoneUpdate(name, []), PDNSChangeTracker():
+        with self.assertPdnsZoneUpdate(name), PDNSChangeTracker():
             self.full_domain.delete()
             self.full_domain = Domain.objects.create(name=name, owner=self.user)

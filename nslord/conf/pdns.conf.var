@@ -17,14 +17,15 @@ webserver-max-bodysize=16
 carbon-server=${DESECSTACK_NSLORD_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSLORD_CARBONOURNAME}
 
-launch=gmysql
-gmysql-host=dblord
-gmysql-port=
-gmysql-dbname=pdns
-gmysql-user=pdns
-gmysql-password=${DESECSTACK_DBLORD_PASSWORD_pdns}
-gmysql-dnssec=yes
+launch=gpgsql
+gpgsql-host=dbapi
+gpgsql-port=
+gpgsql-dbname=desec
+gpgsql-user=desec
+gpgsql-password=${DESECSTACK_DBAPI_PASSWORD_desec}
+gpgsql-dnssec=yes
 
+zone-cache-refresh-interval=0
 cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
 negquery-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}
 query-cache-ttl=${DESECSTACK_NSLORD_CACHE_TTL}

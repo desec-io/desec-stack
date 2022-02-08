@@ -1,3 +1,4 @@
+import time
 from base64 import b64decode
 import os
 import socket
@@ -6,7 +7,7 @@ import dns.query
 import pytest
 
 from conftest import DeSECAPIV1Client, return_eventually, query_replication, random_domainname, assert_eventually, \
-    FaketimeShift
+    FaketimeShift, query_serial
 
 
 some_ds_records = [
@@ -21,8 +22,24 @@ def test_signature_rotation(api_user_domain: DeSECAPIV1Client):
     api_user_domain.domain_create(name)
     assert_eventually(lambda: query_replication(name, "", 'RRSIG', covers='SOA') is not None, timeout=60)
     rrsig = query_replication(name, "", 'RRSIG', covers='SOA')
+    old_serial = query_serial(name)
     with FaketimeShift(days=7):
         assert_eventually(lambda: rrsig != query_replication(name, "", 'RRSIG', covers='SOA'), timeout=60)
+        assert old_serial < query_serial(name)
+
+
+def test_zone_creation(api_user_domain: DeSECAPIV1Client):
+    t = int(time.time())
+    name = api_user_domain.domain
+    assert_eventually(lambda: query_serial(name) >= t, timeout=20, retry_on=(AssertionError, TypeError))
+
+
+def test_zone_modification(api_user_domain: DeSECAPIV1Client):
+    name = api_user_domain.domain
+    assert_eventually(lambda: query_serial(name) is not None, timeout=20)
+    old_serial = query_serial(name)
+    api_user_domain.rr_set_create(name, 'A', ['127.0.0.1'])
+    assert_eventually(lambda: query_serial(name) > old_serial, timeout=60, retry_on=(AssertionError, TypeError))
 
 
 def test_zone_deletion(api_user_domain: DeSECAPIV1Client):

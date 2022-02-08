@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import time
@@ -31,7 +32,9 @@ def test_create(api_user: DeSECAPIV1Client):
     assert len(api_user.domain_list()) == 0
     assert api_user.domain_create(random_domainname()).status_code == 201
     assert len(api_user.domain_list()) == 1
-    assert NSLordClient.query(api_user.domain, 'SOA')[0].serial >= int(time.time())
+    weeks_since_epoch = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days // 7
+    assert NSLordClient.query(api_user.domain, 'SOA')[0].serial == \
+           int(f'{datetime.date.today().year:4n}{datetime.date.today().month:02n}{weeks_since_epoch + 1:4n}')
 
 
 def test_create_and_import(api_user: DeSECAPIV1Client):
@@ -53,7 +56,6 @@ def test_create_and_import(api_user: DeSECAPIV1Client):
         ('', 'NSEC3PARAM'): (None, None),
         ('', 'CDS'): (None, None),
         ('', 'DNSKEY'): (None, None),
-        ('', 'SOA'): (None, None),
     }, via_dns=False)
     assert NSLordClient.query(api_user.domain, 'NSEC3PARAM')[0].to_text() == '1 0 0 -'
 

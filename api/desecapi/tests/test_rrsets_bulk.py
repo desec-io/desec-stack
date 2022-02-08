@@ -152,8 +152,10 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         )
         self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), [
-            {"non_field_errors":["RRset with conflicting type present: 1 (CNAME). (No other RRsets are allowed alongside CNAME.)"]},
-            {"non_field_errors":["RRset with conflicting type present: 0 (A), database (A, TXT). (No other RRsets are allowed alongside CNAME.)"]},
+            {"non_field_errors": ["RRset with conflicting type present in request index 1 (CNAME). "
+                                  "(No other RRsets are allowed alongside CNAME.)"]},
+            {"non_field_errors": ["RRset with conflicting type present in request index 0 (A), database (A, TXT). "
+                                  "(No other RRsets are allowed alongside CNAME.)"]},
         ])
 
     def test_bulk_post_accepts_empty_list(self):
