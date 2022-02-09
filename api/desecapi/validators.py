@@ -1,6 +1,56 @@
 from django.db import DataError
+from django.db.models import Model
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator
+from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator, UniqueValidator
+
+class Validator:
+
+    message = 'This field did not pass validation.'
+
+    def __init__(self, message=None):
+        self.field_name = None
+        self.message = message or self.message
+        self.instance = None
+
+    def __call__(self, value):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return '<%s>' % self.__class__.__name__
+
+
+class ReadOnlyOnUpdateValidator(Validator):
+
+    message = 'Can only be written on create.'
+    requires_context = True
+
+    def __call__(self, value, serializer_field):
+        instance = getattr(serializer_field.parent, 'instance', None)
+        if isinstance(instance, Model):
+            field_name = serializer_field.source_attrs[-1]
+            if isinstance(instance, Model) and value != getattr(instance, field_name):
+                raise ValidationError(self.message, code='read-only-on-update')
+
+
+class CustomFieldNameUniqueValidator(UniqueValidator):
+    """
+    Does exactly what rest_framework's UniqueValidator does, however allows to further customize the
+    query that is used to determine the uniqueness.
+    More specifically, we allow that the field name the value is queried against is passed when initializing
+    this validator. (At the time of writing, UniqueValidator insists that the field's name is used for the
+    database query field; only how the lookup must match is allowed to be changed.)
+    """
+
+    def __init__(self, queryset, message=None, lookup='exact', lookup_field=None):
+        self.lookup_field = lookup_field
+        super().__init__(queryset, message, lookup)
+
+    def filter_queryset(self, value, queryset, field_name):
+        """
+        Filter the queryset to all instances matching the given value on the specified lookup field.
+        """
+        filter_kwargs = {'%s__%s' % (self.lookup_field or field_name, self.lookup): value}
+        return qs_filter(queryset, **filter_kwargs)
 
 
 def qs_exclude(queryset, **kwargs):
