@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 from datetime import timedelta
 
+import dns.name
 from celery.schedules import crontab
 from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HASHERS
 from kombu import Queue, Exchange
@@ -157,6 +158,7 @@ DESECSTACK_DOMAIN = os.environ['DESECSTACK_DOMAIN']
 
 # default NS records
 DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
+DEFAULT_NS_OBJ = {dns.name.from_text(name) for name in DEFAULT_NS}
 DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
 
 # DNS Access (must support PTR queries)

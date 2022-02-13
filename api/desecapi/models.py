@@ -14,6 +14,7 @@ from functools import cached_property
 from hashlib import sha256
 
 import dns
+import dns.rcode
 import pgtrigger
 import psl_dns
 import rest_framework.authtoken.models
@@ -241,6 +242,11 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    exists = models.BooleanField(null=True, blank=True)
+    is_delegated = models.BooleanField(null=True, blank=True)
+    is_secure = models.BooleanField(null=True, blank=True)
+    has_other_ns = models.BooleanField(null=True, blank=True)
+    status_updated = models.DateTimeField(null=True, blank=True)
 
     _keys = None
     objects = DomainManager()
@@ -415,6 +421,18 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
         else:
             # Domain not real: that's it
             metrics.get('desecapi_autodelegation_deleted').inc()
+
+    def query_status(self):
+        """Update the domain status with values based on DNS responses by `settings.RESOLVER`."""
+        d = dns.name.from_text(self.name)
+        q = dns.message.make_query(d, rdatatype.NS, rdataclass.IN, want_dnssec=True)
+        r = dns.query.tcp(q, where=settings.RESOLVER, timeout=1)
+        ns_set = {rr.target for rr in r.get_rrset(1, d, rdataclass.IN, rdatatype.NS) or []}
+        self.status_updated = timezone.now()  # TODO TZ or no TZ?
+        self.exists = r.rcode() == dns.rcode.NOERROR
+        self.delegated = ns_set.issuperset(settings.DEFAULT_NS_OBJ)
+        self.secure = dns.flags.AD in r.flags
+        self.other_ns = bool(ns_set - settings.DEFAULT_NS_OBJ)
 
     def delete(self):
         ret = super().delete()
