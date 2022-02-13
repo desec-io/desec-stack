@@ -44,7 +44,7 @@ from desecapi import pdns
 from desecapi.dns import AAAA, CERT, LongQuotedTXT, MX, NS, SRV
 
 logger = logging.getLogger(__name__)
-psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=.5)
+psl = psl_dns.PSL(resolver=settings.RESOLVER, timeout=.5)
 
 
 def validate_lower(value):

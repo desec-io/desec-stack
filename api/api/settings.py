@@ -159,8 +159,10 @@ DESECSTACK_DOMAIN = os.environ['DESECSTACK_DOMAIN']
 DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
 DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
 
+# DNS Access (must support PTR queries)
+RESOLVER = os.environ.get('DESECSTACK_API_RESOLVER')
+
 # Public Suffix settings
-PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
 LOCAL_PUBLIC_SUFFIXES = {'dedyn.%s' % os.environ['DESECSTACK_DOMAIN']}
 
 # PowerDNS-related
