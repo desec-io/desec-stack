@@ -47,7 +47,7 @@ the API.  When several rates are given, all are enforced at the same time.
 |                                |          | more requests, consider using bulk requests.                                              |
 |                                | 15/min   |                                                                                           |
 |                                |          |                                                                                           |
-|                                | 30/h     |                                                                                           |
+|                                | 100/h    |                                                                                           |
 |                                |          |                                                                                           |
 |                                | 300/day  |                                                                                           |
 +--------------------------------+----------+-------------------------------------------------------------------------------------------+

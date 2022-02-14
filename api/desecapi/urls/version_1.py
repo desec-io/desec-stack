@@ -41,6 +41,8 @@ api_urls = [
     path('domains/<name>/rrsets/@/<type>/', views.RRsetDetail.as_view(), kwargs={'subname': ''}),
     re_path(r'^domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)@/(?P<type>[^/]+)/$',
             views.RRsetDetail.as_view(), name='rrset@'),
+    re_path(r'^domains/(?P<name>[^/]+)/rrsets/(?P<subname>[^/]*)[.](?P=name)[.]/(?P<type>[^/]+)/$',
+            views.RRsetDetail.as_view(), name='rrsetFQDN'),
     path('domains/<name>/rrsets/<subname>/<type>/', views.RRsetDetail.as_view()),
 
     # DynDNS update

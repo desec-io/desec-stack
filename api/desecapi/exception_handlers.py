@@ -1,7 +1,6 @@
 import logging
 
 from django.db.utils import IntegrityError, OperationalError
-from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
@@ -52,7 +51,6 @@ def exception_handler(exc, context):
     handlers = {
         IntegrityError: _409,
         OSError: _500,  # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
-        UnsupportedRule: _500,  # The PSL encountered an unsupported rule
         PDNSException: _500,  # nslord/nsmaster returned an error
     }
 

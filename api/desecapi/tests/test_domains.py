@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
-from psl_dns.exceptions import UnsupportedRule
 from rest_framework import status
 
 from desecapi.models import Domain
@@ -351,14 +350,6 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         with psl_cm, self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
             response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
             self.assertStatus(response, status.HTTP_201_CREATED)
-
-    def test_create_domain_under_unsupported_public_suffix_rule(self):
-        # Show lenience if the PSL library produces an UnsupportedRule exception
-        name = 'unsupported.wildcard.test'
-        psl_cm = self.get_psl_context_manager(UnsupportedRule)
-        with psl_cm, self.assertPdnsRequests():
-            response = self.client.post(self.reverse('v1:domain-list'), {'name': name})
-            self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def test_create_domain_policy(self):
         for name in ['1.2.3..4.test.dedyn.io', 'test..de', '*.' + self.random_domain_name(), 'a' * 64 + '.bla.test']:

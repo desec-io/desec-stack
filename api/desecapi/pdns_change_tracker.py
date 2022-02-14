@@ -384,7 +384,10 @@ class PDNSChangeTracker:
 
     # noinspection PyUnusedLocal
     def _on_rr_post_delete(self, signal, sender, instance: RR, using, **kwargs):
-        self._rr_set_updated(instance.rrset)
+        try:
+            self._rr_set_updated(instance.rrset)
+        except RRset.DoesNotExist:
+            pass
 
     # noinspection PyUnusedLocal
     def _on_rr_set_post_save(self, signal, sender, instance: RRset, created, update_fields, raw, using, **kwargs):
