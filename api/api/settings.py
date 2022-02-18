@@ -157,7 +157,7 @@ DESECSTACK_DOMAIN = os.environ['DESECSTACK_DOMAIN']
 
 # default NS records
 DEFAULT_NS = [name + '.' for name in os.environ['DESECSTACK_NS'].strip().split()]
-DEFAULT_NS_TTL = os.environ['DESECSTACK_NSLORD_DEFAULT_TTL']
+DEFAULT_NS_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
 
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get('DESECSTACK_API_PSL_RESOLVER')
