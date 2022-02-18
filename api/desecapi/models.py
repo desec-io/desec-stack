@@ -433,6 +433,7 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
         self.delegated = ns_set.issuperset(settings.DEFAULT_NS_OBJ)
         self.secure = dns.flags.AD in r.flags
         self.other_ns = bool(ns_set - settings.DEFAULT_NS_OBJ)
+        # TODO store published DS records? This could help identifying which keys are deployed
 
     def delete(self):
         ret = super().delete()
