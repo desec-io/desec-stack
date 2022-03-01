@@ -782,15 +782,18 @@ class DesecTestCase(MockPDNSTestCase):
         return parents[0]
 
     @classmethod
-    def requests_desec_domain_creation(cls, name=None):
+    def requests_desec_domain_creation(cls, name=None, axfr=True, keys=True):
         soa_content = 'get.desec.io. get.desec.io. 1 86400 3600 2419200 3600'
-        return [
+        requests = [
             cls.request_pdns_zone_create(ns='LORD', payload=soa_content),
             cls.request_pdns_zone_create(ns='MASTER'),
             cls.request_pdns_update_catalog(),
-            cls.request_pdns_zone_axfr(name=name),
-            cls.request_pdns_zone_retrieve_crypto_keys(name=name),
         ]
+        if axfr:
+            requests.append(cls.request_pdns_zone_axfr(name=name))
+        if keys:
+            requests.append(cls.request_pdns_zone_retrieve_crypto_keys(name=name))
+        return requests
 
     @classmethod
     def requests_desec_domain_deletion(cls, domain):

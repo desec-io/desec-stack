@@ -192,7 +192,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             'max.length.x01234567890123456789012345678901234567890123456789012345678901.com',
         ]:
             with self.assertPdnsRequests(
-                self.requests_desec_domain_creation(name=name)[:-1]  # no serializer, no cryptokeys API call
+                self.requests_desec_domain_creation(name=name, keys=False)  # no serializer, no cryptokeys API call
             ), PDNSChangeTracker():
                 Domain(owner=self.owner, name=name).save()
 
@@ -333,7 +333,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = 'amazonaws.com'
-        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)[:-1]), PDNSChangeTracker():
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name, keys=False)), PDNSChangeTracker():
             Domain(owner=self.create_user(), name=name).save()
             self.assertTrue(Domain.objects.filter(name=name).exists())
 
