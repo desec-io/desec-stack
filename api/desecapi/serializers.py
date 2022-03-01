@@ -590,7 +590,7 @@ class DomainSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, include_keys=False, **kwargs):
         self.include_keys = include_keys
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_fields(self):
         fields = super().get_fields()
