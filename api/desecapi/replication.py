@@ -52,11 +52,13 @@ class Repository:
                 stdout=subprocess.PIPE,
                 env={'HOME': '/'},  # Celery does not adjust $HOME when dropping privleges
         ) as p:
-            rcode = p.wait()
-            stderr = p.stderr.read()
-            stdout = p.stdout.read()
             try:
+                stdout, stderr = p.communicate(input=None, timeout=60)
+                rcode = p.returncode
                 stderr, stdout = stderr.decode(), stdout.decode()
+            except subprocess.TimeoutExpired:
+                p.kill()
+                raise
             except UnicodeDecodeError:
                 GitRepositoryException('git stdout or stderr was not valid unicode!',
                                        cmd=cmd, rcode=rcode, stderr=stderr, stdout=stdout)
