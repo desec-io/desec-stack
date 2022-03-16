@@ -435,7 +435,7 @@ class RRsetListSerializer(serializers.ListSerializer):
 class RRsetSerializer(ConditionalExistenceModelSerializer):
     domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
     records = RRSerializer(many=True)
-    ttl = serializers.IntegerField(max_value=86400)
+    ttl = serializers.IntegerField(max_value=settings.MAXIMUM_TTL)
 
     class Meta:
         model = models.RRset
