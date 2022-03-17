@@ -617,6 +617,8 @@ export default {
     error(e) {
       if (safeget(['response', 'data', 'detail'], e)) {
         e = e.response.data.detail;
+      } else if (safeget(['response', 'status'], e) == 413) {
+        e = 'Too much data. Try to reduce the length of your inputs.';
       } else if (safeget(['response', 'data'], e)) {
         e = safeget(['response', 'data'], e);
       }
