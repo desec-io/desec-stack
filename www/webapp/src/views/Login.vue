@@ -121,8 +121,6 @@ export default {
     ],
     hide_password: true,
     errors: [],
-    reset_dialog: false,
-    reset_errors: [],
   }),
   methods: {
     async login() {
@@ -164,26 +162,6 @@ export default {
           this.errors = ['Cannot contact our servers. Are you offline?'];
         } else {
           this.errors = [error.message];
-        }
-      }
-      this.working = false;
-    },
-    async reset() {
-      this.working = true;
-      this.reset_errors = [];
-      try {
-        await HTTP.post('auth/account/reset-password/', { email: this.email });
-        this.reset_dialog = false;
-        this.$router.replace({ path: '/reset' });
-      } catch (error) {
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          this.reset_errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
-        } else if (error.request) {
-          this.reset_errors = ['Cannot contact our servers. Are you offline?'];
-        } else {
-          this.reset_errors = [error.message];
         }
       }
       this.working = false;

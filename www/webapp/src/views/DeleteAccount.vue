@@ -107,9 +107,6 @@
       email_errors: [],
     }),
     mounted() {
-      if ('email' in this.$route.params && this.$route.params.email !== undefined) {
-        this.new_email = this.$route.params.email;
-      }
       this.initialFocus();
     },
     async created() {
