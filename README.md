@@ -288,6 +288,15 @@ While there are certainly many ways to get started hacking desec-stack, here is 
        http GET https://desec.${DOMAIN}/api/v1/
 
     Congratulations, you have desec-stack up and running.
+
+    A convenient way to create a test user account is via
+
+       docker-compose exec api python3 manage.py shell -c 'from desecapi.models import User; User.objects.create_user(email="test@example.com", password="test1234");'
+
+    but users can also be created by signing up via the web GUI.
+    The latter, however, requires that you can read email that is sent from your local setup.
+    This can be achieved, e.g., by using mailtrap.io.
+
     Of course, as this setup is only on your local machine, DNS information will not be published into the public DNS.
     However, the desec-stack nameserver is available on localhost port 5321.
     To check if desec-stack is working as expected, you can query the desec-stack nameserver locally for any information that you saved using your API.
