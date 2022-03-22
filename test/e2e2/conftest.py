@@ -457,7 +457,7 @@ def return_eventually(expression: callable, min_pause: float = .1, max_pause: fl
             return expression()
         except retry_on as e:
             if (datetime.now() - started).total_seconds() > timeout:
-                tsprint(f'{expression.__code__} failed with {e}, no more retries')
+                tsprint(f'{expression.__code__} failed for more than {timeout}s, no more retries. Last exception: {e}')
                 raise e
             time.sleep(wait)
             wait = min(2 * wait, max_pause)

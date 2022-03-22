@@ -19,7 +19,8 @@ some_ds_records = [
 def test_signature_rotation(api_user_domain: DeSECAPIV1Client):
     name = random_domainname()
     api_user_domain.domain_create(name)
-    rrsig = return_eventually(lambda: query_replication(name, "", 'RRSIG', covers='SOA'), timeout=20)
+    assert_eventually(lambda: query_replication(name, "", 'RRSIG', covers='SOA') is not None, timeout=60)
+    rrsig = query_replication(name, "", 'RRSIG', covers='SOA')
     with FaketimeShift(days=7):
         assert_eventually(lambda: rrsig != query_replication(name, "", 'RRSIG', covers='SOA'), timeout=60)
 
@@ -81,6 +82,7 @@ def test_signature_rotation_performance(api_user_domain: DeSECAPIV1Client):
                     lambda: soa_rrsig[name] != query_replication(name, "", 'RRSIG', covers='SOA'),
                     timeout=600,  # depending on number of domains in the database, this value requires increase
                 )
+
 
 def test_tsig_axfr(api_user_domain: DeSECAPIV1Client):
     ns_ip = socket.gethostbyname('nsmaster')
