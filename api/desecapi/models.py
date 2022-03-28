@@ -573,14 +573,14 @@ class Donation(ExportModelOperationsMixin('Donation'), models.Model):
         MONTHLY = 1
         QUARTERLY = 3
 
-    created = models.DateTimeField(default=_created_default.__func__)
+    created = models.DateTimeField(default=_created_default)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
     bic = models.CharField(max_length=11, blank=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     message = models.CharField(max_length=255, blank=True)
-    due = models.DateTimeField(default=_due_default.__func__)
-    mref = models.CharField(max_length=32, default=_mref_default.__func__)
+    due = models.DateTimeField(default=_due_default)
+    mref = models.CharField(max_length=32, default=_mref_default)
     interval = models.IntegerField(choices=Interval.choices, default=Interval.ONCE)
     email = models.EmailField(max_length=255, blank=True)
 
