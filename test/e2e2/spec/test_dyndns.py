@@ -41,7 +41,10 @@ def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
             }
             for qtype in ['A', 'AAAA']
         }
-        rrs_dns = {qtype: NSLordClient.query(params.get('hostname', domain), qtype)[1] for qtype in ['A', 'AAAA']}
+        rrs_dns = {
+            qtype: {rr.to_text() for rr in NSLordClient.query(params.get('hostname', domain), qtype) or []}
+            for qtype in ['A', 'AAAA']
+        }
 
         for expected_net, qtype in [(expected_ipv4, 'A'), (expected_ipv6, 'AAAA')]:
             assert len(rrs_api[qtype]) == (1 if expected_net else 0)

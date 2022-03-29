@@ -9,7 +9,7 @@ def test_create(api_user: DeSECAPIV1Client):
 
 def test_get(api_user_domain: DeSECAPIV1Client):
     domain = api_user_domain.get(f"/domains/{api_user_domain.domain}/").json()
-    assert NSLordClient.query(api_user_domain.domain, 'CDS')[1] == set(domain['keys'][0]['ds'])
+    assert {rr.to_text() for rr in NSLordClient.query(api_user_domain.domain, 'CDS')} == set(domain['keys'][0]['ds'])
     assert domain['name'] == api_user_domain.domain
 
 

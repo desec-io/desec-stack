@@ -331,9 +331,11 @@ def api_user_domain_rrsets(api_user_domain, init_rrsets: dict) -> DeSECAPIV1Clie
     """
 
     def _normalize_rrset(rrset, qtype):
+        if not rrset:
+            return None, None
+        ttl, records = rrset.ttl, {rr.to_text() for rr in rrset}
         if qtype not in ('CDS', 'CDNSKEY', 'DNSKEY'):
-            return rrset
-        ttl, records = rrset
+            return ttl, records
         return ttl, {' '.join(map(lambda x: x.replace(' ', ''), record.split(' ', 3))) for record in records}
 
     def _assert_rrsets(self, rrsets):
@@ -405,10 +407,10 @@ class NSClient:
             section = dns.message.AUTHORITY if qtype == dns.rdatatype.from_text('NS') else dns.message.ANSWER
             response = answer.find_rrset(section, qname, dns.rdataclass.IN, qtype)
             tsprint(f'DNS <<< {response}')
-            return response.ttl, {i.to_text() for i in response.items}
+            return response
         except KeyError:
             tsprint('DNS <<< !!! not found !!! Complete Answer below:\n' + answer.to_text())
-            return None, set()
+            return None
 
 
 class NSLordClient(NSClient):
