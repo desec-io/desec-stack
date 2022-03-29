@@ -51,10 +51,10 @@ from conftest import DeSECAPIV1Client
         # ('sub', 'DNSKEY'): (3600, {'257 3 15 l02Woi0iS8Aa25FQkUd9RMzZHJpBoRQwAQEX1SxZJA4='})  # no pdns support >= 4.6
     },
 ])
-def test(api_user_domain_rrsets: DeSECAPIV1Client, rrsets: dict):
+def test(api_user_domain_rrsets: DeSECAPIV1Client, rrsets: dict, init_rrsets: dict):
     api_user_domain_rrsets.patch(f"/domains/{api_user_domain_rrsets.domain}/rrsets/", data=[
         {"subname": k[0], "type": k[1], "ttl": v[0], "records": list(v[1])}
         for k, v in rrsets.items()
         if v is not None
     ])
-    api_user_domain_rrsets.assert_rrsets(rrsets)
+    api_user_domain_rrsets.assert_rrsets(rrsets, init_rrsets)
