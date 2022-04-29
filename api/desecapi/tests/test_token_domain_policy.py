@@ -69,7 +69,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, self.default_data | data)
 
-        # Inspection of other tokens forbitten
+        # Inspection of other tokens forbidden
         ## List
         response = self.client.list_policies(self.token_manage, using=self.token)
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)

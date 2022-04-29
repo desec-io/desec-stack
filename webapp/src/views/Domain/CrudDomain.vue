@@ -10,7 +10,7 @@ export default {
     return {
       minimumTTL: 60,
       fullWidth: true,
-      createable: true,
+      creatable: true,
       updatable: true,
       destroyable: true,
       headlines: {

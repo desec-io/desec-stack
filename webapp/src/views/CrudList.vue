@@ -70,7 +70,7 @@
                   />
                 </template>
                 <v-dialog
-                        v-if="createable"
+                        v-if="creatable"
                         v-model="createDialog"
                         activator="#create"
                         max-width="500px"
@@ -398,7 +398,7 @@ export default {
     dirtyError: new Set(),
     /* to be overwritten */
     // features
-    createable: true,
+    creatable: true,
     updatable: false,
     destroyable: true,
     // optics
@@ -509,7 +509,7 @@ export default {
     },
     /** *
      * Delete an item from table and server.
-     * Errors are handeled by calling the error function.
+     * Errors are handled by calling the error function.
      * On success, the destroy dialog will be closed (if opened)
      * @param item
      */

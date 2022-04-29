@@ -7,7 +7,7 @@ export default {
   extends: CrudList,
   data() {
     return {
-        createable: true,
+        creatable: true,
         updatable: true,
         destroyable: true,
         headlines: {

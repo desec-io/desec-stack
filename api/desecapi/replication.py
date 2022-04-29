@@ -50,7 +50,7 @@ class Repository:
                 cwd=self.path,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                env={'HOME': '/'},  # Celery does not adjust $HOME when dropping privleges
+                env={'HOME': '/'},  # Celery does not adjust $HOME when dropping privileges
         ) as p:
             try:
                 stdout, stderr = p.communicate(input=None, timeout=60)

@@ -204,7 +204,7 @@ by applying a filter on the endpoint used for `Listing Domains`_, like so::
     curl -X GET https://desec.io/api/v1/domains/?owns_qname={qname} \
         --header "Authorization: Token {token}"
 
-If your account has a domain that is reponsible for the name ``qname``, the
+If your account has a domain that is responsible for the name ``qname``, the
 API returns a JSON array containing only that domain object in the response
 body.  Otherwise, the JSON array will be empty.
 

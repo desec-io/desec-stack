@@ -12,7 +12,7 @@ export default {
   data() {
     const self = this;
     return {
-        createable: true,
+        creatable: true,
         updatable: false,
         destroyable: true,
         limit_domains: 0,

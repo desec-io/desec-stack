@@ -37,7 +37,7 @@ from conftest import DeSECAPIV1Client
         ('other', 'TXT'): (7000, {}),
     },
     {  # complex usecase
-        ('', 'A'): (3600, {'1.2.3.4', '255.254.253.252'}),  # create apex reocrd
+        ('', 'A'): (3600, {'1.2.3.4', '255.254.253.252'}),  # create apex record
         ('*', 'MX'): (3601, {'0 mx.example.net.'}),  # create wildcard record
         ('www', 'AAAA'): (3602, {}),  # remove existing record
         ('www', 'A'): (7000, {'4.3.2.1', '7.6.5.4'}),  # update existing record
