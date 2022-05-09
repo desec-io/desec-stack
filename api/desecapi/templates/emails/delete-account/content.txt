@@ -1,4 +1,4 @@
-Hi there,
+{% load action_extras %}Hi there,
 
 Sad to see you leave! 😢 We know there's always room for improvement.
 If your wish to leave deSEC is due to any shortcomings of our service,
@@ -6,9 +6,9 @@ please shoot us an email so that we can improve whatever is not right.
 
 Otherwise, we will delete your account, including all related data.
 Before we do so, we need you to confirm once more that this is what you
-really, really want by clicking the following link (valid for {{ link_expiration_hours }} hours):
+really, really want by clicking the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
 
-{{ confirmation_link.0 }}
+{% action_link action_serializer %}
 
 Note that this action is irreversible! We cannot recover your account.
 

@@ -1,19 +1,19 @@
-Hi,
+{% load action_extras %}Hi,
 
 You requested to change the email address associated with your deSEC
 account from:
 
-{{ old_email }}
+{{ action_serializer.instance.user.email }}
 
 to:
 
-{{ new_email }}
+{{ action_serializer.instance.new_email }}
 
 As we may need to contact you under this address in the future, you
 need to verify your new email address before we can make the change.
-To do so, please use the following link (valid for {{ link_expiration_hours }} hours):
+To do so, please use the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
 
-{{ confirmation_link.0 }}
+{% action_link action_serializer %}
 
 After your confirmation, we will perform the change.
 

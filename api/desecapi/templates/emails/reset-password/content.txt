@@ -1,14 +1,14 @@
-Hi,
+{% load action_extras %}Hi,
 
 We received a request to reset the password for your deSEC account.
 This may happen when someone uses the "Reset Password" function on our
-web site, or when you created a new account just now that does not yet
+website, or when you created a new account just now that does not yet
 have a password.
 
 To ensure that the request is legitimate, we need you to confirm it
-using the following link (valid for {{ link_expiration_hours }} hours):
+using the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
 
-{{ confirmation_link.0 }}
+{% action_link action_serializer %}
 
 After your confirmation, you can provide your new password.
 

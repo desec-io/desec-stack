@@ -515,7 +515,7 @@ class AccountCreateView(generics.CreateAPIView):
             # send email if needed
             domain = serializer.validated_data.get('domain')
             if domain or activation_required:
-                user.send_confirmation_email('activate-account', params=dict(domain=domain))
+                serializers.AuthenticatedActivateUserActionSerializer.build_and_save(user=user, domain=domain)
 
         # This request is unauthenticated, so don't expose whether we did anything.
         message = 'Welcome! Please check your mailbox.' if activation_required else 'Welcome!'
@@ -543,7 +543,7 @@ class AccountDeleteView(APIView):
     def post(self, request, *args, **kwargs):
         if request.user.domains.exists():
             return self.response_still_has_domains
-        request.user.send_confirmation_email('delete-account')
+        serializers.AuthenticatedDeleteUserActionSerializer.build_and_save(user=request.user)
 
         return Response(data={'detail': 'Please check your mailbox for further account deletion instructions.'},
                         status=status.HTTP_202_ACCEPTED)
@@ -589,8 +589,7 @@ class AccountChangeEmailView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_email = serializer.validated_data['new_email']
-        request.user.send_confirmation_email('change-email', recipient=new_email, old_email=request.user.email,
-                                             params=dict(new_email=new_email))
+        serializers.AuthenticatedChangeEmailUserActionSerializer.build_and_save(user=request.user, new_email=new_email)
 
         # At this point, we know that we are talking to the user, so we can tell that we sent an email.
         return Response(data={'detail': 'Please check your mailbox to confirm email address change.'},
@@ -610,7 +609,7 @@ class AccountResetPasswordView(generics.GenericAPIView):
         except models.User.DoesNotExist:
             pass
         else:
-            user.send_confirmation_email('reset-password')
+            serializers.AuthenticatedResetPasswordUserActionSerializer.build_and_save(user=user)
 
         # This request is unauthenticated, so don't expose whether we did anything.
         return Response(data={'detail': 'Please check your mailbox for further password reset instructions. '
@@ -705,7 +704,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:  # e.g. domain name unavailable
-            self.authenticated_action.user.delete()
+            self.request.user.delete()
             reasons = ', '.join([detail.code for detail in e.detail.get('name', [])])
             raise ValidationError(
                 f'The requested domain {self.authenticated_action.domain} could not be registered (reason: {reasons}). '
@@ -713,11 +712,11 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             )
         # TODO the following line is subject to race condition and can fail, as for the domain name, we have that
         #  time-of-check != time-of-action
-        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.authenticated_action.user))
+        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.request.user))
 
     def _finalize_without_domain(self):
-        if not is_password_usable(self.authenticated_action.user.password):
-            self.authenticated_action.user.send_confirmation_email('reset-password')
+        if not is_password_usable(self.request.user.password):
+            serializers.AuthenticatedResetPasswordUserActionSerializer.build_and_save(user=self.request.user)
             return Response({'detail': 'Success! We sent you instructions on how to set your password.'})
         return Response({'detail': 'Success! Your account has been activated, and you can now log in.'})
 

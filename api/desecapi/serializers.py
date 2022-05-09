@@ -876,20 +876,53 @@ class AuthenticatedActionSerializer(serializers.ModelSerializer):
         raise ValueError
 
 
-class AuthenticatedBasicUserActionSerializer(AuthenticatedActionSerializer):
+class AuthenticatedBasicUserActionMixin():
+    def save(self, **kwargs):
+        context = {**self.context, 'action_serializer': self}
+        return self.action_user.send_email(self.reason, context=context, **kwargs)
+
+
+class AuthenticatedBasicUserActionSerializer(AuthenticatedBasicUserActionMixin, AuthenticatedActionSerializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=models.User.objects.all(),
         error_messages={'does_not_exist': 'This user does not exist.'},
         pk_field=serializers.UUIDField()
     )
 
+    reason = None
+
     class Meta:
         model = models.AuthenticatedBasicUserAction
         fields = AuthenticatedActionSerializer.Meta.fields + ('user',)
 
+    @property
+    def action_user(self):
+        return self.instance.user
+
+    @classmethod
+    def build_and_save(cls, **kwargs):
+        action = cls.Meta.model(**kwargs)
+        return cls(action).save()
+
+
+class AuthenticatedBasicUserActionListSerializer(AuthenticatedBasicUserActionMixin, serializers.ListSerializer):
+
+    @property
+    def reason(self):
+        return self.child.reason
+
+    @property
+    def action_user(self):
+        user = self.instance[0].user
+        if any(instance.user != user for instance in self.instance):
+            raise ValueError('Actions must belong to the same user.')
+        return user
+
 
 class AuthenticatedActivateUserActionSerializer(AuthenticatedBasicUserActionSerializer):
     captcha = CaptchaSolutionSerializer(required=False)
+
+    reason = 'activate-account'
 
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedActivateUserAction
@@ -919,12 +952,18 @@ class AuthenticatedChangeEmailUserActionSerializer(AuthenticatedBasicUserActionS
         required=True,
     )
 
+    reason = 'change-email'
+
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedChangeEmailUserAction
         fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('new_email',)
 
+    def save(self):
+        return super().save(recipient=self.instance.new_email)
+
 
 class AuthenticatedConfirmAccountUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    reason = 'confirm-account'
     validity_period = timedelta(days=14)
 
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
@@ -934,12 +973,15 @@ class AuthenticatedConfirmAccountUserActionSerializer(AuthenticatedBasicUserActi
 class AuthenticatedResetPasswordUserActionSerializer(AuthenticatedBasicUserActionSerializer):
     new_password = serializers.CharField(write_only=True)
 
+    reason = 'reset-password'
+
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedResetPasswordUserAction
         fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ('new_password',)
 
 
 class AuthenticatedDeleteUserActionSerializer(AuthenticatedBasicUserActionSerializer):
+    reason = 'delete-account'
 
     class Meta(AuthenticatedBasicUserActionSerializer.Meta):
         model = models.AuthenticatedDeleteUserAction
@@ -957,7 +999,9 @@ class AuthenticatedDomainBasicUserActionSerializer(AuthenticatedBasicUserActionS
 
 
 class AuthenticatedRenewDomainBasicUserActionSerializer(AuthenticatedDomainBasicUserActionSerializer):
+    reason = 'renew-domain'
     validity_period = None
 
     class Meta(AuthenticatedDomainBasicUserActionSerializer.Meta):
         model = models.AuthenticatedRenewDomainBasicUserAction
+        list_serializer_class = AuthenticatedBasicUserActionListSerializer

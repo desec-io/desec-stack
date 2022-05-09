@@ -49,16 +49,17 @@ class Command(BaseCommand):
             domain_user_map[domain.owner].append(domain)
 
         # Prepare and send emails, and keep renewal status in sync
-        deletion_date = timezone.localdate() + datetime.timedelta(days=notice_days)
+        context = {'deletion_date': timezone.localdate() + datetime.timedelta(days=notice_days)}
         for user, domains in domain_user_map.items():
             with transaction.atomic():
                 # Update renewal status of the user's affected domains, but don't commit before sending the email
+                actions = []
                 for domain in domains:
                     domain.renewal_state += 1
                     domain.renewal_changed = timezone.now()
                     domain.save(update_fields=['renewal_state', 'renewal_changed'])
-                domains = [{'domain': domain} for domain in domains]
-                user.send_confirmation_email('renew-domain', deletion_date=deletion_date, params=domains)
+                    actions.append(models.AuthenticatedRenewDomainBasicUserAction(user=user, domain=domain))
+                serializers.AuthenticatedRenewDomainBasicUserActionSerializer(actions, many=True, context=context).save()
 
     @classmethod
     def delete_domains(cls, inactive_days):

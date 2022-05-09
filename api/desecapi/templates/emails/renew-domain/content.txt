@@ -1,8 +1,8 @@
-Hi there,
+{% load action_extras %}Hi there,
 
 You are the owner of the following domain name(s):
-{% for link in confirmation_link %}
-  * {{ link.1.domain.name }}
+{% for instance in action_serializer.instance %}
+  * {{ instance.domain.name }}
 {% endfor %}
 We noticed that the DNS information of the above domain(s) have not
 received any updates for more than 6 months.
@@ -18,9 +18,9 @@ your account, we will also delete your account on this date.
 
 To retain your domain name (and account), either change a DNS record
 before that date, or click the following link(s):
-{% for link in confirmation_link %}
-  * {{ link.1.domain.name }}
-    {{ link.0 }}
+{% for instance in action_serializer.instance %}
+  * {{ instance.domain.name }}
+    {% action_link action_serializer forloop.counter0 %}
 {% endfor %}
 In case you have questions, feel free to contact us!
 

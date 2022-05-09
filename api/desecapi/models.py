@@ -30,7 +30,6 @@ from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Concat, Length
 from django.template.loader import get_template
-from django.urls import resolve, reverse
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from dns import rdataclass, rdatatype
@@ -194,24 +193,6 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         ).send()
         metrics.get('desecapi_messages_queued').labels(reason, self.pk, lanes[reason]).observe(num_queued)
         return num_queued
-
-    def send_confirmation_email(self, reason, recipient=None, params=None, **kwargs):
-        def _generate_link(**kwargs):
-            action = action_serializer.Meta.model(user=self, **kwargs)
-            action_data = action_serializer(action).data
-            return f'https://desec.{settings.DESECSTACK_DOMAIN}' + reverse(view_name, args=[action_data['code']])
-
-        view_name = f'v1:confirm-{reason}'
-        url = reverse(view_name, args=['code'])  # dummy value; parameter is required for reverse URL resolution
-        action_serializer = resolve(url).func.view_class.serializer_class
-        if action_serializer.validity_period is not None:
-            kwargs['link_expiration_hours'] = action_serializer.validity_period // timedelta(hours=1)
-
-        if isinstance(params, list):
-            kwargs['confirmation_link'] = [(_generate_link(**(param or {})), param) for param in params]
-        else:
-            kwargs['confirmation_link'] = (_generate_link(**(params or {})), params)
-        self.send_email(reason, recipient=recipient, context=dict(kwargs, params=params))
 
 
 validate_domain_name = [
