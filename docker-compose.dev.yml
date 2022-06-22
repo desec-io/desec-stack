@@ -73,8 +73,7 @@ services:
     working_dir: /usr/src/app/
     command: "npm run serve --fix"
     environment:
-    - HOST=0.0.0.0
-    - PORT=443
+    - CODESANDBOX_SSE=1  # so that ws: protocol ends up as auto: in node_modules/@vue/cli-service/lib/commands/serve.js
     networks:
     - rearwebapp
     logging:
