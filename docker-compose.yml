@@ -218,6 +218,7 @@ services:
   webapp:
     build: webapp
     environment:
+    - CYPRESS_INSTALL_BINARY=0  # workaround as Cypress otherwise needs write access to /root/.cache/
     - VUE_APP_DESECSTACK_DOMAIN=${DESECSTACK_DOMAIN}
     - VUE_APP_DESECSTACK_NS=${DESECSTACK_NS}
     - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID=${DESECSTACK_API_SEPA_CREDITOR_ID}
