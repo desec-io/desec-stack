@@ -1,7 +1,7 @@
 captcha~=0.4.0
 celery~=5.2.1
 coverage~=6.2
-cryptography~=36.0.1
+cryptography~=37.0.4
 Django~=4.0.3
 django-cors-headers~=3.10.1
 djangorestframework~=3.13.1
@@ -16,5 +16,5 @@ prometheus-client~=0.12.0  # added to control django-prometheus' dependency vers
 psl-dns~=1.1.0
 pylibmc~=1.6.1
 pyyaml~=6.0
-requests~=2.27.1
+requests~=2.28.1
 uwsgi~=2.0.20
