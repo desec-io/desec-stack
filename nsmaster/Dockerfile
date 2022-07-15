@@ -19,7 +19,7 @@ RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu bionic-auth-46 main' 
 RUN set -ex \
 	&& apt-key adv --keyserver keyserver.ubuntu.com --recv 0x1B0C6205FD380FBB \
 	&& apt-get update \
-	&& apt-get install -y pdns-server pdns-backend-mysql \
+	&& apt-get install -y pdns-server pdns-backend-mysql pdns-backend-pgsql postgresql-client-10 \
 	# credentials management via envsubst
 	&& apt-get -y install gettext-base \
 	# VPN route

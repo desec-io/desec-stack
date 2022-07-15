@@ -6,7 +6,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
-- `dbapi`, `dblord`, `dbmaster`: Postgres database for `api`, MariaDB databases for `nslord` and `nsmaster`, respectively.
+- `dbapi`, `dblord`, `dbmaster`: Postgres databases for `api` and `nsmaster`, MariaDB database for `nslord`, respectively.
 - `www`: nginx instance serving static web site content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue

@@ -103,6 +103,30 @@ services:
     build: dbmaster
     image: desec/dedyn-dbmaster:latest
     init: true
+    user: postgres:postgres
+    shm_size: 256M
+    volumes:
+    - dbmaster_postgres:/var/lib/postgresql/data
+    - ./dbmaster/pg_hba.conf:/usr/local/src/pg_hba.conf:ro
+    environment:
+    - POSTGRES_DB=pdns
+    - POSTGRES_HOST_AUTH_METHOD=reject
+    - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    - POSTGRES_NON_ROOT_USER=pdns
+    - POSTGRES_NON_ROOT_USER_PASSWORD=${DESECSTACK_DBMASTER_PASSWORD_pdns}
+    networks:
+    - rearmaster
+    command: ["postgres", "-c", "hba_file=/usr/local/src/pg_hba.conf"]
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/dbmaster"
+    restart: unless-stopped
+
+  dbmaster-legacy:
+    build: dbmaster-legacy
+    image: desec/dedyn-dbmaster-legacy:latest
+    init: true
     user: mysql:mysql
     volumes:
     - dbmaster_mysql:/var/lib/mysql
@@ -114,7 +138,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        tag: "desec/dbmaster"
+        tag: "desec/dbmaster-legacy"
     restart: unless-stopped
 
   api:
@@ -208,6 +232,7 @@ services:
     - DESECSTACK_NSMASTER_TSIGKEY
     depends_on:
     - dbmaster
+    - dbmaster-legacy
     networks:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
@@ -218,7 +243,7 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nsmaster"
-    restart: unless-stopped
+    restart: "no"
 
   rabbitmq:
     image: rabbitmq:3.8-alpine
@@ -418,6 +443,7 @@ volumes:
   dbapi_postgres:
   dblord_mysql:
   dbmaster_mysql:
+  dbmaster_postgres:
   openvpn-server_logs:
   prometheus:
   rabbitmq_data:

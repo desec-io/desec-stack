@@ -17,7 +17,13 @@ webserver-max-bodysize=16
 carbon-server=${DESECSTACK_NSMASTER_CARBONSERVER}
 carbon-ourname=${DESECSTACK_NSMASTER_CARBONOURNAME}
 
-launch=gpgsql
+launch=gmysql,gpgsql
+gmysql-host=dbmaster-legacy
+gmysql-port=
+gmysql-dbname=pdns
+gmysql-user=pdns
+gmysql-password=${DESECSTACK_DBMASTER_PASSWORD_pdns}
+gmysql-dnssec=yes
 gpgsql-host=dbmaster
 gpgsql-port=5432
 gpgsql-dbname=pdns
