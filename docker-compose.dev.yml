@@ -1,4 +1,4 @@
-version: '2.2'
+version: '2.3'
 
 # mostly extending from main .yml
 services:
@@ -68,12 +68,21 @@ services:
       driver: "json-file"
 
   webapp:
+    build:
+      context: www
+      target: webapp
     volumes:
-    - ./webapp/:/usr/src/app/
+    - ./www/webapp/:/usr/src/app/
     working_dir: /usr/src/app/
-    command: "npm run serve --fix"
+    command: bash -c "npm install && npm run serve --fix"
     environment:
     - CODESANDBOX_SSE=1  # so that ws: protocol ends up as auto: in node_modules/@vue/cli-service/lib/commands/serve.js
+    - CYPRESS_CACHE_FOLDER=/tmp/.cache  # https://github.com/cypress-io/cypress/issues/1281#issuecomment-404823001
+    - VUE_APP_DESECSTACK_NS=${DESECSTACK_NS}
+    - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID=${DESECSTACK_API_SEPA_CREDITOR_ID}
+    - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME=${DESECSTACK_API_SEPA_CREDITOR_NAME}
+    - VUE_APP_LOCAL_PUBLIC_SUFFIXES=dedyn.${DESECSTACK_DOMAIN}
+    - VUE_APP_EMAIL=support@desec.${DESECSTACK_DOMAIN}
     networks:
     - rearwebapp
     logging:

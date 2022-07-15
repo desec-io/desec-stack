@@ -81,7 +81,3 @@ jobs:
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
         docker-compose down -v
-
-    - name: Webapp dependency installation check
-      run: |
-        docker-compose run webapp npm install

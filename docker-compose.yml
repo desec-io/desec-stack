@@ -1,8 +1,14 @@
-version: '2.2'
+version: '2.3'
 
 services:
   www:
-    build: www
+    build:
+      context: www
+      args:
+      - DESECSTACK_API_SEPA_CREDITOR_ID=${DESECSTACK_API_SEPA_CREDITOR_ID}
+      - DESECSTACK_API_SEPA_CREDITOR_NAME=${DESECSTACK_API_SEPA_CREDITOR_NAME}
+      - DESECSTACK_DOMAIN=${DESECSTACK_DOMAIN}
+      - DESECSTACK_NS=${DESECSTACK_NS}
     image: desec/dedyn-www:latest
     init: true
     cap_add:
@@ -12,7 +18,6 @@ services:
     - "443:443"
     volumes:
     - ${DESECSTACK_WWW_CERTS}:/etc/ssl/private:ro
-    - webapp_dist:/usr/share/nginx/html:ro
     - ./www/html:/var/www/html:ro
     environment:
     - DESECSTACK_DOMAIN
@@ -215,25 +220,6 @@ services:
         tag: "desec/nsmaster"
     restart: unless-stopped
 
-  webapp:
-    build: webapp
-    environment:
-    - CYPRESS_INSTALL_BINARY=0  # workaround as Cypress otherwise needs write access to /root/.cache/
-    - VUE_APP_DESECSTACK_NS=${DESECSTACK_NS}
-    - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID=${DESECSTACK_API_SEPA_CREDITOR_ID}
-    - VUE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME=${DESECSTACK_API_SEPA_CREDITOR_NAME}
-    - VUE_APP_LOCAL_PUBLIC_SUFFIXES=dedyn.${DESECSTACK_DOMAIN}
-    - VUE_APP_EMAIL=support@desec.${DESECSTACK_DOMAIN}
-    volumes:
-    - ./webapp/:/usr/src/app/
-    - webapp_dist:/usr/src/app/dist
-    working_dir: /usr/src/app/
-    command: bash -c "npm install && npm run build -- --no-clean"
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/webapp"
-
   rabbitmq:
     image: rabbitmq:3.8-alpine
     init: true
@@ -435,7 +421,6 @@ volumes:
   openvpn-server_logs:
   prometheus:
   rabbitmq_data:
-  webapp_dist:
   zones:
   celerybeat:
   gitzones_keys:
