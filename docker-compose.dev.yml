@@ -28,10 +28,6 @@ services:
     logging:
       driver: "json-file"
 
-  dbmaster-legacy:
-    logging:
-      driver: "json-file"
-
   api:
     environment:
     - DESECSTACK_API_DEBUG=True

@@ -1,2 +1,0 @@
-[mysqld]
-wait_timeout = 28800

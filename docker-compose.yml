@@ -123,24 +123,6 @@ services:
         tag: "desec/dbmaster"
     restart: unless-stopped
 
-  dbmaster-legacy:
-    build: dbmaster-legacy
-    image: desec/dedyn-dbmaster-legacy:latest
-    init: true
-    user: mysql:mysql
-    volumes:
-    - dbmaster_mysql:/var/lib/mysql
-    environment:
-    - DESECSTACK_IPV4_REAR_PREFIX16
-    - DESECSTACK_DBMASTER_PASSWORD_pdns
-    networks:
-    - rearmaster
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/dbmaster-legacy"
-    restart: unless-stopped
-
   api:
     build: api
     image: desec/dedyn-api:latest
@@ -232,7 +214,6 @@ services:
     - DESECSTACK_NSMASTER_TSIGKEY
     depends_on:
     - dbmaster
-    - dbmaster-legacy
     networks:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
@@ -243,7 +224,7 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nsmaster"
-    restart: "no"
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3.8-alpine
@@ -442,7 +423,6 @@ services:
 volumes:
   dbapi_postgres:
   dblord_mysql:
-  dbmaster_mysql:
   dbmaster_postgres:
   openvpn-server_logs:
   prometheus:
