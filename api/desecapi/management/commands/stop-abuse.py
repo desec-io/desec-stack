@@ -21,12 +21,14 @@ class Command(BaseCommand):
                 Q(name__in=options['names']) |
                 Q(owner__email__in=options['names'])
             )
+            domain_names = domains.distinct().values_list('name', flat=True)
 
             # users to lock: all associated with any of the domains and all given
             users = User.objects.filter(
                 Q(domains__name__in=options['names']) |
                 Q(email__in=options['names'])
             )
+            user_emails = users.distinct().values_list('email', flat=True)
 
             # rrsets to delete: all belonging to (all domains given and all domains belonging to a user given)
             rrsets = RRset.objects.filter(
@@ -34,8 +36,15 @@ class Command(BaseCommand):
                 Q(domain__owner__email__in=options['names'])
             )
 
-            print(f'Deleting {rrsets.count()} RRset(s) from {domains.count()} domain(s); '
-                  f'disabling {users.count()} associated user account(s).')
+            # Print summary
+            print(f'Deleting {rrsets.distinct().count()} RRset(s) from {domains.distinct().count()} domain(s); '
+                  f'disabling {users.distinct().count()} associated user account(s).')
+
+            # Print details
+            for d in domain_names:
+                print(f'Truncating domain {d}')
+            for e in user_emails:
+                print(f'Locking user {e}')
 
             # delete rrsets and create default NS records
             rrsets.delete()
