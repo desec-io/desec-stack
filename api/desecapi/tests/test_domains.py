@@ -303,6 +303,227 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertFalse(domain.is_locally_registrable)
             self.assertEqual(domain.renewal_state, Domain.RenewalState.IMMORTAL);
 
+    def test_create_domain_zonefile_import(self):
+        zonefile = """$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example IN SOA ns1.example.com. hostmaster.example.com. (
+2022021300 ; serial
+10800 ; refresh (3 hours)
+3600 ; retry (1 hour)
+2419000 ; expire (3 weeks 6 days 23 hours 56 minutes 40 seconds)
+43200 ; minimum (12 hours)
+)
+import-me.example NS ns1.example.com.
+import-me.example NS ns2.example.com.
+import-me.example NS ns3.example.com.
+import-me.example NS ns4.example.com.
+import-me.example NS ns5.example.com.
+$TTL 300 ; 5 mins
+import-me.example A 10.1.1.1
+*.import-me.example A 10.1.1.1
+import-me.example TXT "v=spf1 -all"
+_dmarc.import-me.example TXT "v=DMARC1; p=reject;"
+xxx.import-me.example NS ns4.example.
+xxx.import-me.example NS ns5.example.
+
+$TTL 43200 ; 12 hours
+localhost.import-me.example A 127.0.0.1
+
+# show zone import-me.example
+"""
+        name = 'import-me.example'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        domain = Domain.objects.get(name=name)
+        self.assertRRsetDB(domain, subname='', type_='SOA', rr_contents=set())
+        self.assertRRsetDB(domain, subname='', type_='NS', ttl=settings.DEFAULT_NS_TTL,
+                           rr_contents=set(settings.DEFAULT_NS))
+        ttl = max(300, settings.MINIMUM_TTL_DEFAULT)
+        self.assertRRsetDB(domain, subname='', type_='A', ttl=ttl, rr_contents={'10.1.1.1'})
+        self.assertRRsetDB(domain, subname='*', type_='A', ttl=ttl, rr_contents={'10.1.1.1'})
+        self.assertRRsetDB(domain, subname='', type_='TXT', ttl=ttl, rr_contents={'"v=spf1 -all"'})
+        self.assertRRsetDB(domain, subname='_dmarc', type_='TXT', ttl=ttl,
+                           rr_contents={'"v=DMARC1; p=reject;"'})
+        self.assertRRsetDB(domain, subname='xxx', type_='NS', ttl=ttl,
+                           rr_contents={'ns4.example.', 'ns5.example.'})
+        self.assertRRsetDB(domain, subname='localhost', type_='A', ttl=43200, rr_contents={'127.0.0.1'})
+
+    def test_create_domain_zonefile_import_cname_exclusivity(self):
+        zonefile = """$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example IN SOA ns1.example.com. hostmaster.example.com. 2022021300 10800 3600 2419000 43200
+import-me.example NS ns1.example.com.
+www.import-me.example CNAME a.example.
+www.import-me.example A 127.0.0.1
+"""
+        name = 'import-me.example'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {'zonefile': ['No other records with the same name are allowed alongside a CNAME record.']},
+        )
+
+    def test_create_domain_zonefile_import_name_non_apex_soa(self):
+        zonefile = """$ORIGIN .
+$TTL 43200 ; 12 hours
+asdf.import-me.example IN SOA ns1.example.com. hostmaster.example.com. 2022021300 10800 3600 2419000 43200
+import-me.example NS ns1.example.com.
+www.import-me.example CNAME a.example.
+www.import-me.example A 127.0.0.1
+"""
+        name = 'import-me.example'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {'zonefile': [f'Zonefile includes an SOA record for a name different from {name}.']},
+        )
+
+    def test_create_domain_zonefile_import_syntax_error_line(self):
+        zonefile = """$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example IN SOA ns1.example.com. hostmaster.example.com. 2022021300 10800 3600 2419000 43200
+import-me.example NS ns1.example.com.
+www.import-me.example CNAME a.example.
+www.import-me.example A asdf
+"""
+        name = 'import-me.example'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {'zonefile': [f'Zonefile contains syntax error in line 6.']},
+        )
+
+    def test_create_domain_zonefile_import_foreign_rrset(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example IN SOA ns1.example.com. hostmaster.example.com. 2022021300 10800 3600 2419000 43200
+import-me.example NS ns1.example.com.
+import-me.example A 127.0.0.1
+inject.{self.other_domain.name}. CNAME a.example.
+"""
+        name = 'import-me.example'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+        self.assertRRsetDB(self.other_domain, subname='inject', type_='CNAME', rr_contents=set())
+
+    def test_create_domain_zonefile_import_no_soa(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example A 127.0.0.1
+import-me.example A 127.0.0.2
+import-me.example MX 10 example.com.
+"""
+        name = 'import-me.example'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+        self.assertRRsetDB(Domain.objects.get(name=name), subname='', type_='MX', rr_contents={'10 example.com.'})
+
+    def test_create_domain_zonefile_import_names(self):
+        """ensures that names on the right-hand-side which are below the zone's name are handled correctly"""
+        zonefile = """example.net. 3600 MX 10 mail.example.net.
+example.net. 3600 MX 10 mail.example.org.
+example.net. 3600 PTR mail.example.net.
+example.net. 3600 PTR mail.example.org."""
+        name = 'example.net'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+        self.assertRRsetDB(Domain.objects.get(name=name), subname='', type_='MX',
+                           rr_contents={'10 mail.example.net.', '10 mail.example.org.'})
+        self.assertRRsetDB(Domain.objects.get(name=name), subname='', type_='PTR',
+                           rr_contents={'mail.example.net.', 'mail.example.org.'})
+
+    def test_create_domain_zonefile_import_non_canonical(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example AAAA 0000::1
+"""
+        name = 'import-me.example'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+        self.assertRRsetDB(Domain.objects.get(name=name), subname='', type_='AAAA', ttl=43200, rr_contents={'::1'})
+
+    def test_create_domain_zonefile_import_validation(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example MX 10 $url.
+"""
+        name = 'import-me.example'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"zonefile": ["import-me.example/MX: Cannot parse record contents: invalid exchange: \\$url."]},
+        )
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+
+    def test_create_domain_zonefile_import_unsupported_type(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example WKS 10.0.0.1 6 0 1 2 21 23
+"""
+        name = 'import-me.example'
+        response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"zonefile": [
+                'import-me.example/WKS: The WKS RR set type is currently unsupported.',
+            ]},
+        )
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+
+    def test_create_domain_zonefile_ignore_automatically_managed_rrsets(self):
+        zonefile = f"""$ORIGIN .
+$TTL 43200 ; 12 hours
+import-me.example A 127.0.0.1
+import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6ZrLLLm6ZpvCh/vyqWCEkf2Krwkt8 Fi1/VJgfLMoXZSj6koOzJBMYYCiMm0JP WgQwG54fcw6YJQaOfWX1BA==
+"""
+        name = 'import-me.example'
+        with self.assertPdnsRequests(
+                self.requests_desec_domain_creation(name, axfr=False, keys=False) +
+                self.requests_desec_rr_sets_update(name) +
+                [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': zonefile})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+        domain = Domain.objects.get(name=name)
+        self.assertRRsetDB(domain, subname='', type_='A', ttl=43200, rr_contents={'127.0.0.1'})
+        self.assertRRsetDB(domain, subname='', type_='RRSIG', rr_contents=set())
+
+    def test_create_domain_zonefile_empty(self):
+        name = 'import-me.example'
+        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+            response = self.client.post(self.reverse('v1:domain-list'), {'name': name, 'zonefile': ''})
+        self.assertResponse(response, status.HTTP_201_CREATED)
+
     def test_create_api_known_domain(self):
         url = self.reverse('v1:domain-list')
 

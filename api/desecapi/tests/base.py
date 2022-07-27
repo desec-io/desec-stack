@@ -6,7 +6,7 @@ import string
 from contextlib import nullcontext
 from functools import partial, reduce
 from json import JSONDecodeError
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Set
 from unittest import mock
 
 from django.conf import settings
@@ -841,6 +841,23 @@ class DesecTestCase(MockPDNSTestCase):
                         key, value, response_rr[key], response_rr
                     )
                 )
+
+    def assertRRsetDB(self, domain: Domain, subname: str, type_: str, ttl: int = None,
+                      rr_contents: Set[str] = None):
+        if rr_contents is not None:
+            try:
+                has_rr_contents = {rr.content for rr in domain.rrset_set.get(subname=subname, type=type_).records.all()}
+            except RRset.DoesNotExist:
+                has_rr_contents = set()
+            self.assertSetEqual(
+                has_rr_contents, rr_contents,
+                f'{domain.name}: RRset for subname="{subname}" and type={type_} did not have the expected records '
+                f'{rr_contents}, but had {has_rr_contents}.',
+            )
+        if ttl is not None:
+            has_ttl = domain.rrset_set.get(subname=subname, type=type_).ttl
+            self.assertEqual(has_ttl, ttl, f'{domain.name}: RRset for subname="{subname}" and type={type_} did not '
+                                           f'have the expected TTL of {ttl}, but had {has_ttl}.')
 
     @staticmethod
     def _count_occurrences_by_mask(rr_sets, masks):

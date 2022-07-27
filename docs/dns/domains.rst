@@ -36,7 +36,8 @@ A JSON object representing a domain has the following structure::
         "minimum_ttl": 3600,
         "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z",
-        "touched": "2018-09-18T17:21:38.348112Z"
+        "touched": "2018-09-18T17:21:38.348112Z",
+        "zonefile": "import-me.example A 127.0.0.1 ..."
     }
 
 Field details:
@@ -114,6 +115,27 @@ Field details:
     This usually is the same as ``published``, unless there have been RRset
     write operations that did not trigger publication, such as rewriting an
     RRset with identical values.
+
+``zonefile``
+    :Access mode: write-only, no read
+
+    Optionally, includes a string in zonefile format with record data to be
+    imported during domain creation.
+
+    Note that not everything given in the zonefile will be imported. Record
+    types that are :ref:`automatically managed by the deSEC API <automatic
+    types>` such as RRSIG, CDNSKEY, CDS, etc. will be silently ignored.
+    Records with names that fall outside of the domain that is created will
+    also be silently ignored.
+
+    Also, NS record at the apex and any DNSKEY records will be
+    silently ignored; instead, NS records pointing to deSEC's name servers
+    and DNSKEY records for freshly generated keys will be created.
+
+    :ref:`Record types that are not supported <unsupported types>` by the API
+    will raise an error, as will records with invalid content.
+    If an error occurs during the import of the zonefile, the domain will not
+    be created.
 
 
 Creating a Domain

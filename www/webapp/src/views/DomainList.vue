@@ -52,6 +52,19 @@ export default {
             datatype: 'TimeAgo',
             searchable: false,
           },
+          zonefile: {
+            name: 'item.zonefile',
+            text: 'Zonefile',
+            textCreate: 'Zonefile for import (paste here)',
+            align: 'left',
+            value: 'zonefile',
+            writeOnCreate: true,
+            datatype: 'GenericTextarea',
+            searchable: false,
+            fieldProps: () => ({ hint: 'Note: automatically managed records will be ignored!' }),
+            hideFromTable: true,
+            advanced: true,
+          }
         },
         actions: [
           {

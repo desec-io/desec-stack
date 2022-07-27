@@ -542,19 +542,10 @@ At least the following record types are supported: ``A``, ``AAAA``, ``AFSDB``,
 Special care needs to be taken with some types of records, as explained below.
 
 
-Restricted Types
-````````````````
+.. _`automatic types`:
 
-``ALIAS``/``ANAME``
-    Due to conflicts with the security guarantees we would like to give, we do
-    not support these record types (`detailed explanation`_).  Attempts to
-    create such records will result in a ``400 Bad Request`` response.
-
-    If you need redirect functionality at the zone apex, consider using the
-    ``HTTPS`` record type which serves exactly this purpose.  (Note that as of
-    06/2021, this record type is not yet supported in all browsers.)
-
-.. _detailed explanation: https://talk.desec.io/t/clarification-on-alias-records/113/2
+Automatically Managed Types
+```````````````````````````
 
 ``DNSKEY``, ``DS``, ``CDNSKEY``, ``CDS``, ``NSEC3PARAM``, ``RRSIG``
     These record types are meant to provide DNSSEC-related information in
@@ -584,6 +575,23 @@ Restricted Types
 
     If you are interested in the value of the ``SOA`` record, you can retrieve
     it using a standard DNS query.
+
+
+.. _`unsupported types`:
+
+Unsupported Types
+`````````````````
+
+``ALIAS``/``ANAME``
+    Due to conflicts with the security guarantees we would like to give, we do
+    not support these record types (`detailed explanation`_).  Attempts to
+    create such records will result in a ``400 Bad Request`` response.
+
+    If you need redirect functionality at the zone apex, consider using the
+    ``HTTPS`` record type which serves exactly this purpose.  (Note that as of
+    06/2021, this record type is not yet supported in all browsers.)
+
+.. _detailed explanation: https://talk.desec.io/t/clarification-on-alias-records/113/2
 
 
 Caveats

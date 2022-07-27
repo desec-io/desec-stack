@@ -227,10 +227,13 @@ class DeSECAPIV1Client:
     def domain_list(self) -> requests.Response:
         return self.get("/domains/").json()
 
-    def domain_create(self, name) -> requests.Response:
+    def domain_create(self, name, zonefile=None) -> requests.Response:
         if name in self.domains:
             raise ValueError
-        response = self.post("/domains/", data={"name": name})
+        data = {"name": name}
+        if zonefile is not None:
+            data['zonefile'] = zonefile
+        response = self.post("/domains/", data=data)
         self.domains[name] = response.json()
         return response
 
