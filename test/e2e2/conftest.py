@@ -427,14 +427,14 @@ class NSClient:
             where=cls.where,
             timeout=2
         )
-        try:
-            section = dns.message.AUTHORITY if qtype == dns.rdatatype.from_text('NS') else dns.message.ANSWER
-            response = answer.find_rrset(section, qname, dns.rdataclass.IN, qtype)
-            tsprint(f'DNS <<< {response}')
-            return response
-        except KeyError:
+        response = answer.get_rrset(dns.message.ANSWER, qname, dns.rdataclass.IN, qtype)
+        if response is None:
+            response = answer.get_rrset(dns.message.AUTHORITY, qname, dns.rdataclass.IN, qtype)
+        if response is None:
             tsprint('DNS <<< !!! not found !!! Complete Answer below:\n' + answer.to_text())
-            return None
+        else:
+            tsprint(f'DNS <<< {response}')
+        return response
 
 
 class NSLordClient(NSClient):
