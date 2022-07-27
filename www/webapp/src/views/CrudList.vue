@@ -340,6 +340,7 @@ import TimeAgo from '@/components/Field/TimeAgo';
 import Checkbox from '@/components/Field/Checkbox';
 import Code from '@/components/Field/Code';
 import GenericText from '@/components/Field/GenericText';
+import GenericTextarea from '@/components/Field/GenericTextarea';
 import Record from '@/components/Field/Record';
 import RecordList from '@/components/Field/RecordList';
 import Switchbox from '@/components/Field/Switchbox';
@@ -369,6 +370,7 @@ export default {
     Checkbox,
     Code,
     GenericText,
+    GenericTextarea,
     Record,
     RecordList,
     TTL,
