@@ -452,6 +452,7 @@ export default {
       if (!this.showAdvanced) {
         cols = cols.filter(col => !(col.advanced || false));
       }
+      cols = cols.filter(col => !(col.hideFromTable || false));
       cols.push({
         text: 'Actions',
         sortable: false,
