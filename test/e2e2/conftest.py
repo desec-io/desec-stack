@@ -308,11 +308,12 @@ class DeSECAPIV1Client:
                 return ttl, records
             return ttl, {' '.join(map(lambda x: x.replace(' ', ''), record.split(' ', 3))) for record in records}
 
-        rrsets_dns = {
-            (subname, qtype): normalize_rrset(NSLordClient.query(f'{subname}.{self.domain}'.lstrip('.'), qtype), qtype)
-            for (subname, qtype) in rrsets_to_check.keys()
-        }
-        rrsets_dns = {k: v for k, v in rrsets_dns.items() if v != (None, None)}
+        def rrsets_dns():
+            rrsets_unfiltered = {
+                (subname, qtype): normalize_rrset(NSLordClient.query(f'{subname}.{self.domain}'.lstrip('.'), qtype), qtype)
+                for (subname, qtype) in rrsets_to_check.keys()
+            }
+            return {k: v for k, v in rrsets_unfiltered.items() if v != (None, None)}
 
         # Query API for RR set values
         rrsets_api = {
@@ -321,13 +322,14 @@ class DeSECAPIV1Client:
             if (rrset['subname'], rrset['type']) in rrsets_to_check
         }
 
-        # Assert DNS responses fulfil expectations
-        assert rrsets_dns.keys() & rrsets_unexpected.keys() == set()
-        assert rrsets_expected == rrsets_dns
-
         # Assert API responses fulfil expectations
         assert rrsets_api.keys() & rrsets_unexpected.keys() == set()
         assert rrsets_expected == rrsets_api
+
+        # Assert DNS responses fulfil expectations
+        assert_eventually(lambda: rrsets_dns().keys() & rrsets_unexpected.keys() == set())
+        assert_eventually(lambda: rrsets_expected == rrsets_dns())
+
 
 
 class DeSECAPIV2Client(DeSECAPIV1Client):
