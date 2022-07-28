@@ -25,23 +25,7 @@
               <v-toolbar-title>Log In</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
-              <v-alert
-                :value="!!errors && !!errors.length"
-                type="error"
-              >
-                <div v-if="errors.length > 1">
-                  <li
-                    v-for="error of errors"
-                    :key="error.message"
-                  >
-                    <b>{{ error.message }}</b>
-                    {{ error }}
-                  </li>
-                </div>
-                <div v-else>
-                  {{ errors[0] }}
-                </div>
-              </v-alert>
+              <error-alert v-bind:errors="errors"></error-alert>
               <v-text-field
                 v-model="email"
                 label="Email"
@@ -103,10 +87,14 @@
 </template>
 
 <script>
-import { HTTP } from '../utils';
+import { HTTP, digestError } from '../utils';
+import ErrorAlert from "@/components/ErrorAlert";
 
 export default {
   name: 'Login',
+  components: {
+    ErrorAlert,
+  },
   data: () => ({
     valid: false,
     working: false,
@@ -125,7 +113,7 @@ export default {
   methods: {
     async login() {
       this.working = true;
-      this.errors = [];
+      this.errors.splice(0, this.errors.length);
       try {
         const response = await HTTP.post('auth/login/', {
           email: this.email,
@@ -141,27 +129,14 @@ export default {
         } else {
           this.$router.replace({ name: 'domains' });
         }
-      } catch (error) {
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          if (error.response.status < 500 && typeof error.response.data === 'object') {
-            // 3xx or 4xx
-            if ('email' in error.response.data) {
-              this.email_errors = [error.response.data.email[0]];
-            } else if ('non_field_errors' in error.response.data) {
-              this.errors = error.response.data.non_field_errors;
-            } else {
-              this.errors = [error.response.data.detail];
-            }
+      } catch (ex) {
+        let errors = digestError(ex);
+        for (const c in errors) {
+          if (c === 'email') {
+            this.email_errors = errors.email;
           } else {
-            // 5xx
-            this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
+            this.errors.push(...errors[c])
           }
-        } else if (error.request) {
-          this.errors = ['Cannot contact our servers. Are you offline?'];
-        } else {
-          this.errors = [error.message];
         }
       }
       this.working = false;

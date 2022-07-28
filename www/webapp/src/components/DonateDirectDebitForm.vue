@@ -20,17 +20,7 @@
       <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
     <v-form v-if="!done" @submit.prevent="donate" ref="form">
-      <v-alert :value="!!(errors && errors.length)" type="error">
-        <div v-if="errors.length > 1">
-          <li v-for="error of errors" :key="error.message" >
-            <b>{{ error.message }}</b>
-            {{ error }}
-          </li>
-        </div>
-        <div v-else>
-          {{ errors[0] }}
-        </div>
-      </v-alert>
+      <error-alert v-bind:errors="errors"></error-alert>
 
       <v-radio-group
           v-model="interval"
@@ -111,6 +101,8 @@
 <script>
   import axios from 'axios';
   import {email_pattern} from '../validation';
+  import {digestError} from "../utils";
+  import ErrorAlert from '@/components/ErrorAlert';
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -120,6 +112,9 @@
 
   export default {
     name: 'DonateDirectDebitForm',
+    components: {
+      ErrorAlert,
+    },
     data: () => ({
       valid: false,
       working: false,
@@ -171,7 +166,7 @@
           return;
         }
         this.working = true;
-        this.errors = [];
+        this.errors.splice(0, this.errors.length);
         try {
           let response = await HTTP.post('donation/', {
             amount: this.amount,
@@ -184,32 +179,16 @@
           });
           this.mref = response.data.mref;
           this.done = true;
-        } catch (error) {
-          if (error.response) {
-            // status is not 2xx
-            if (error.response.status < 500 && typeof error.response.data === 'object') {
-              // 3xx or 4xx
-              let extracted = false;
-              if ('email' in error.response.data) {
-                this.email_errors = [error.response.data.email[0]];
-                extracted = true;
-              }
-              if ('amount' in error.response.data) {
-                this.amount_errors = [error.response.data.amount[0]];
-                extracted = true;
-              }
-              // TODO extract more errors
-              if (!extracted) {
-                this.errors = [error.response];
-              }
+        } catch (ex) {
+          let errors = digestError(ex);
+          for (const c in errors) {
+            if (c === 'email') {
+              this.email_errors = errors[c];
+            } else if (c === 'amount') {
+              this.amount_errors = errors[c];
             } else {
-              // 5xx
-              this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
+              this.errors.push(...errors[c]);
             }
-          } else if (error.request) {
-            this.errors = ['Cannot contact our servers. Are you offline?'];
-          } else {
-            this.errors = [error.message];
           }
         }
         this.working = false;

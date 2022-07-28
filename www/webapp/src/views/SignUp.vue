@@ -23,17 +23,7 @@
               <v-toolbar-title>Create new Account</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
-              <v-alert :value="!!(errors && errors.length)" type="error">
-                <div v-if="errors.length > 1">
-                  <li v-for="error of errors" :key="error.message" >
-                    <b>{{ error.message }}</b>
-                    {{ error }}
-                  </li>
-                </div>
-                <div v-else>
-                  {{ errors[0] }}
-                </div>
-              </v-alert>
+              <error-alert v-bind:errors="errors"></error-alert>
 
               <v-text-field
                       v-model="email"
@@ -170,6 +160,8 @@
 <script>
   import axios from 'axios';
   import {domain_pattern, email_pattern} from '../validation';
+  import {digestError} from "../utils";
+  import ErrorAlert from "@/components/ErrorAlert";
 
   const LOCAL_PUBLIC_SUFFIXES = process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
@@ -181,6 +173,9 @@
 
   export default {
     name: 'SignUp',
+    components: {
+      ErrorAlert,
+    },
     data: () => ({
       valid: false,
       working: false,
@@ -249,7 +244,7 @@
           return;
         }
         this.working = true;
-        this.errors = [];
+        this.errors.splice(0, this.errors.length);
         let domain = this.domain === '' ? undefined : this.domain.toLowerCase();
         if (domain && this.domainType == 'dynDNS') {
            domain += '.' + this.LOCAL_PUBLIC_SUFFIXES[0];
@@ -265,42 +260,22 @@
             domain: domain,
           });
           this.$router.push({name: 'welcome', params: domain !== '' ? {domain: domain} : {}});
-        } catch (error) {
-          if (error.response) {
-            // status is not 2xx
-            if (error.response.status < 500 && typeof error.response.data === 'object') {
-              // 3xx or 4xx
-              let extracted = false;
-              this.getCaptcha(true);
-              if ('captcha' in error.response.data) {
-                if ('non_field_errors' in error.response.data.captcha) {
-                  this.captcha_errors = [error.response.data.captcha.non_field_errors[0]];
-                  extracted = true;
-                }
-                if ('solution' in error.response.data.captcha) {
-                  this.captcha_errors = error.response.data.captcha.solution;
-                  extracted = true;
-                }
-              }
-              if ('domain' in error.response.data) {
-                this.domain_errors = [error.response.data.domain[0]];
-                extracted = true;
-              }
-              if ('email' in error.response.data) {
-                this.email_errors = [error.response.data.email[0]];
-                extracted = true;
-              }
-              if (!extracted) {
-                this.errors = error.response;
-              }
+        } catch (ex) {
+          this.getCaptcha(true);
+          let errors = digestError(ex);
+          for (const c in errors) {
+            if (c === undefined) {
+              this.errors.push(...errors[c]);
+            } else if (c === 'captcha') {
+              this.captcha_errors.push(...(errors[c]['non_field_errors'] ?? []));
+              this.captcha_errors.push(...(errors[c]['solution'] ?? []));
+            } else if (c === 'domain') {
+              this.domain_errors.push(...errors[c]);
+            } else if (c === 'email') {
+              this.email_errors.push(...errors[c]);
             } else {
-              // 5xx
-              this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
+              this.errors.push(...errors[c]);
             }
-          } else if (error.request) {
-            this.errors = ['Cannot contact our servers. Are you offline?'];
-          } else {
-            this.errors = [error.message];
           }
         }
         this.working = false;

@@ -22,17 +22,7 @@
                             <v-toolbar-title>Change Account Email Address</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
-                            <v-alert :value="!!(errors && errors.length)" type="error">
-                                <div v-if="errors.length > 1">
-                                    <li v-for="error of errors" :key="error.message">
-                                        <b>{{ error.message }}</b>
-                                        {{ error }}
-                                    </li>
-                                </div>
-                                <div v-else>
-                                    {{ errors[0] }}
-                                </div>
-                            </v-alert>
+                            <error-alert v-bind:errors="errors"></error-alert>
                             <v-alert v-if="done" type="success">
                                 <p>
                                     Please check your new email address for messages. If the new email address is not
@@ -100,9 +90,14 @@
 <script>
   import { HTTP, withWorking } from '@/utils';
   import {email_pattern} from '../validation';
+  import {digestError} from "../utils";
+  import ErrorAlert from "@/components/ErrorAlert";
 
   export default {
     name: 'ChangeEmail',
+    components: {
+      ErrorAlert,
+    },
     data: () => ({
       valid: false,
       working: false,
@@ -145,7 +140,7 @@
           return;
         }
         this.working = true;
-        this.errors = [];
+        this.errors.splice(0, this.errors.length);
         try {
           await HTTP.post('auth/account/change-email/', {
             email: this.email,
@@ -153,20 +148,10 @@
             new_email: this.new_email
           });
           this.done = true;
-        } catch (error) {
-          if (error.response) {
-            // status is not 2xx
-            if (error.response.status < 500 && typeof error.response.data === 'object') {
-              // 3xx or 4xx
-              this.errors = [error.response.data.detail];
-            } else {
-              // 5xx
-              this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
-            }
-          } else if (error.request) {
-            this.errors = ['Cannot contact our servers. Are you offline?'];
-          } else {
-            this.errors = [error.message];
+        } catch (ex) {
+          let errors = digestError(ex);
+          for (const c in errors) {
+            this.errors.push(...errors[c]);
           }
         }
         this.working = false;

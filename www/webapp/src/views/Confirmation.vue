@@ -21,17 +21,7 @@
             <v-toolbar-title class="capitalize">{{ this.$route.params.action | replace(/-/g, ' ') }} Confirmation</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <v-alert :value="!!(errors && errors.length)" type="error">
-              <div v-if="errors.length > 1">
-                <li v-for="error of errors" :key="error.message" >
-                  <b>{{ error.message }}</b>
-                  {{ error }}
-                </li>
-              </div>
-              <div v-else-if="errors.length == 1">
-                {{ errors[0].detail || errors[0][0] || errors[0]}}
-              </div>
-            </v-alert>
+            <error-alert v-bind:errors="errors"></error-alert>
             <v-form @submit.prevent="confirm" class="mb-4" v-model="valid" ref="form">
               <div
                       :is="this.actionHandler"
@@ -67,6 +57,8 @@
   import GenericActionHandler from '@/components/GenericActionHandler.vue';
   import ActivateAccountActionHandler from '@/components/ActivateAccountActionHandler.vue';
   import ResetPasswordActionHandler from '@/components/ResetPasswordActionHandler.vue';
+  import {digestError} from "../utils";
+  import ErrorAlert from '@/components/ErrorAlert';
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -79,6 +71,7 @@
       GenericActionHandler,
       ActivateAccountActionHandler,
       ResetPasswordActionHandler,
+      ErrorAlert,
     },
     data: () => ({
       actionHandler: null,
@@ -96,20 +89,23 @@
     methods: {
       async confirm() {
         this.post_response = {}
-        this.errors = []
+        this.clearErrors();
         this.working = true
         let action = this.$route.params.action
         try {
           this.post_response = await HTTP.post(`v/${action}/${this.$route.params.code}/`, this.post_payload);
           this.success = true
-        } catch (error) {
-          this.post_response = error.response
-          this.errors.push(error.response.data)
+        } catch (ex) {
+          let errors = digestError(ex);
+          this.post_response = ex.response
+          for (const c in errors) {
+            this.errors.push(...errors[c])
+          }
         }
         this.working = false
       },
       clearErrors() {
-        this.errors = []
+        this.errors.splice(0, this.errors.length);
       }
     },
     filters: {

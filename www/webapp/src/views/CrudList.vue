@@ -93,13 +93,7 @@
                               :indeterminate="true"
                       />
 
-                      <v-alert
-                              :value="createDialogError"
-                              type="error"
-                              style="overflow: auto"
-                      >
-                        {{ errors[errors.length - 1] }}
-                      </v-alert>
+                      <error-alert v-if="createDialogError" v-bind:errors="errors"></error-alert>
 
                       <v-alert
                               :value="createDialogSuccess"
@@ -286,12 +280,7 @@
                 >
                   {{ texts.destroyWarning(destroyDialogItem) }}
                 </v-alert>
-                <v-alert
-                  :value="!!destroyDialogError"
-                  type="error"
-                >
-                  {{ errors[errors.length - 1] }}
-                </v-alert>
+                <error-alert v-if="destroyDialogError" v-bind:errors="errors"></error-alert>
 
                 <v-card-text>
                   {{ texts.destroy(destroyDialogItem) }}
@@ -334,7 +323,7 @@
 </template>
 
 <script>
-import { HTTP, withWorking } from '@/utils';
+import { HTTP, withWorking, digestError } from '@/utils';
 import RRSetType from '@/components/Field/RRSetType';
 import TimeAgo from '@/components/Field/TimeAgo';
 import Checkbox from '@/components/Field/Checkbox';
@@ -345,6 +334,7 @@ import Record from '@/components/Field/Record';
 import RecordList from '@/components/Field/RecordList';
 import Switchbox from '@/components/Field/Switchbox';
 import TTL from '@/components/Field/TTL';
+import ErrorAlert from '@/components/ErrorAlert'
 
 const filter = function (obj, predicate) {
   const result = {};
@@ -357,9 +347,6 @@ const filter = function (obj, predicate) {
 
   return result;
 };
-
-// safely access deeply nested objects
-const safeget = (path, object) => path.reduce((xs, x) => ((xs && xs[x]) ? xs[x] : null), object);
 
 export default {
   name: 'CrudList',
@@ -374,6 +361,7 @@ export default {
     Record,
     RecordList,
     TTL,
+    ErrorAlert,
   },
   data() { return {
     createDialog: false,
@@ -614,33 +602,18 @@ export default {
      * Handle the error e by displaying it to the user.
      * @param e
      */
-    error(e) {
-      if (safeget(['response', 'data', 'detail'], e)) {
-        e = e.response.data.detail;
-      } else if (safeget(['response', 'status'], e) == 413) {
-        e = 'Too much data. Try to reduce the length of your inputs.';
-      } else if (safeget(['response', 'data'], e)) {
-        e = safeget(['response', 'data'], e);
-      }
-      if (!safeget(['response'], e) && safeget(['request'], e)) {
-        e = `Cannot reach server at ${HTTP.baseURL ? HTTP.baseURL : window.location.hostname}. Are you offline?`;
-      }
-      this.errors.push(e);
-      if (this.destroyDialog) {
-        this.destroyDialogError = e;
-      } else if (this.createDialog) {
-        // see if e contains field-specific errors
-        if (Object.keys(e).every(key => Object.prototype.hasOwnProperty.call(this.columns, key))) {
-          // assume we obtained field-specific error(s),
-          // so let's assign them to the input fields
-          for (const c in e) {
-            this.columns[c].createErrors = e[c];
-          }
+    error(ex) {
+      this.errors.splice(0, this.errors.length);
+      let errors = digestError(ex);
+      for (const c in errors) {
+        if (this.columns[c] !== undefined) {
+          this.columns[c].createErrors = errors[c]
         } else {
-          this.createDialogError = true;
+          this.errors.push(...errors[c])
+          this.createDialogError = this.createDialog;
+          this.destroyDialogError = this.destroyDialog;
+          this.snackbar = !this.createDialog && !this.destroyDialog;
         }
-      } else {
-        this.snackbar = true;
       }
     },
     /** *

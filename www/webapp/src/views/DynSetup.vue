@@ -21,17 +21,7 @@
             <v-toolbar-title>Domain Registration Completed</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <v-alert :value="!!(errors && errors.length)" type="error">
-              <div v-if="errors.length > 1">
-                <li v-for="error of errors" :key="error.message" >
-                  <b>{{ error.message }}</b>
-                  {{ error }}
-                </li>
-              </div>
-              <div v-else>
-                {{ errors[0] }}
-              </div>
-            </v-alert>
+            <error-alert v-bind:errors="errors"></error-alert>
             <p>
               Congratulations, you are now the owner of <span class="fixed-width">{{ $route.params.domain }}</span>!
             </p>
@@ -179,6 +169,8 @@
 
 <script>
   import axios from 'axios';
+  import {digestError} from "../utils";
+  import ErrorAlert from "@/components/ErrorAlert";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -188,6 +180,9 @@
 
   export default {
     name: 'DynSetup',
+    components: {
+      ErrorAlert,
+    },
     data: () => ({
       working: false,
       domain: undefined,
@@ -213,7 +208,7 @@
     methods: {
       async check() {
         this.working = true;
-        this.errors = [];
+        this.errors.splice(0, this.errors.length);
         try {
           let responseDomain = await HTTP.get(`domains/${this.domain}/`, {headers: {'Authorization': `Token ${this.token}`}});
           this.lastChanged = responseDomain.data.published;
@@ -242,25 +237,13 @@
           return this.errorHandler(error);
         }
       },
-      errorHandler(error) {
-        if (error.response) {
-          // status is not 2xx
-          if (error.response.status < 500) {
-            // 3xx or 4xx
-            if (error.response.status === 404) {
-              return null;
-            }
-            this.errors = error.response;
-          } else {
-            // 5xx
-            this.errors = ['Something went wrong at the server, but we currently do not know why. The support was already notified.'];
-          }
-        } else if (error.request) {
-          this.errors = ['Cannot contact our servers. Are you offline?'];
-        } else {
-          this.errors = [error.message];
+      errorHandler(ex) {
+        if (ex.response && ex.response.status === 404)
+          return;
+        let errors = digestError(ex);
+        for (const c in errors) {
+          this.errors.push(...errors[c])
         }
-        throw this.errors
       },
     },
   };
