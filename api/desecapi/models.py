@@ -161,7 +161,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         logger.warning(f'User {pk} deleted')
         return ret
 
-    def send_email(self, reason, context=None, recipient=None):
+    def send_email(self, reason, context=None, recipient=None, subject=None, template=None):
         fast_lane = 'email_fast_lane'
         slow_lane = 'email_slow_lane'
         immediate_lane = 'email_immediate_lane'
@@ -181,12 +181,13 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
             raise ValueError(f'Cannot send email to user {self.pk} without a good reason: {reason}')
 
         context = context or {}
-        content = get_template(f'emails/{reason}/content.txt').render(context)
+        template = template or get_template(f'emails/{reason}/content.txt')
+        content = template.render(context)
         content += f'\nSupport Reference: user_id = {self.pk}\n'
 
         logger.warning(f'Queuing email for user account {self.pk} (reason: {reason}, lane: {lanes[reason]})')
         num_queued = EmailMessage(
-            subject=get_template(f'emails/{reason}/subject.txt').render(context).strip(),
+            subject=(subject or get_template(f'emails/{reason}/subject.txt').render(context)).strip(),
             body=content,
             from_email=get_template('emails/from.txt').render(),
             to=[recipient or self.email],
