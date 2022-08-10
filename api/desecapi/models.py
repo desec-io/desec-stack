@@ -181,12 +181,11 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
         context = context or {}
         content = get_template(f'emails/{reason}/content.txt').render(context)
         content += f'\nSupport Reference: user_id = {self.pk}\n'
-        footer = get_template('emails/footer.txt').render()
 
         logger.warning(f'Queuing email for user account {self.pk} (reason: {reason}, lane: {lanes[reason]})')
         num_queued = EmailMessage(
             subject=get_template(f'emails/{reason}/subject.txt').render(context).strip(),
-            body=content + footer,
+            body=content,
             from_email=get_template('emails/from.txt').render(),
             to=[recipient or self.email],
             connection=get_connection(lane=lanes[reason], debug={'user': self.pk, 'reason': reason})

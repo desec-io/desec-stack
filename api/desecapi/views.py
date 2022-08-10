@@ -480,9 +480,8 @@ class DonationList(generics.CreateAPIView):
         if instance.email:
             content_tmpl = get_template('emails/donation/donor-content.txt')
             subject_tmpl = get_template('emails/donation/donor-subject.txt')
-            footer_tmpl = get_template('emails/footer.txt')
             email = EmailMessage(subject_tmpl.render(context),
-                                 content_tmpl.render(context) + footer_tmpl.render(),
+                                 content_tmpl.render(context),
                                  from_tmpl.render(context),
                                  [instance.email])
             email.send()

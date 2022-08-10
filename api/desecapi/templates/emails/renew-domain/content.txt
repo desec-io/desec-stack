@@ -1,4 +1,5 @@
-{% load action_extras %}Hi there,
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi there,
 
 You are the owner of the following domain name(s):
 {% for instance in action_serializer.instance %}
@@ -26,3 +27,4 @@ In case you have questions, feel free to contact us!
 
 Stay secure,
 The deSEC Team
+{% endblock %}

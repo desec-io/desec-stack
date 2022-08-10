@@ -1,4 +1,5 @@
-{% load action_extras %}Hi there,
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi there,
 
 Thank you for registering with deSEC!{% if domain is not None %} You are about to set up the
 following domain: {{ domain }}{% endif %}
@@ -25,3 +26,4 @@ We hope you enjoy deSEC!
 
 Stay secure,
 Nils
+{% endblock %}

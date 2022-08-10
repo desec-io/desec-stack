@@ -1,4 +1,5 @@
-{% load action_extras %}Hi there,
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi there,
 
 You have registered with deSEC a long time ago (on {{ action_serializer.action_user.created|date:"Y-m-d" }}), probably to
 set up a DNS domain (e.g. under dedyn.io).  At the time when you registered
@@ -23,3 +24,4 @@ We apologize for the slight inconvenience, and hope you enjoy deSEC!
 
 Stay secure,
 Nils
+{% endblock %}

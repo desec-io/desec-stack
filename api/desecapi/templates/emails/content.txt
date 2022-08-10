@@ -1,5 +1,5 @@
-
--- 
+{% block content %}{% endblock %}
+--
 Like our community service? 💛
 Please consider donating at
 
@@ -12,3 +12,4 @@ Germany
 
 Vorstandsvorsitz: Nils Wisiol
 Registergericht: AG Berlin (Charlottenburg) VR 37525
+{% block trailer %}{% endblock %}

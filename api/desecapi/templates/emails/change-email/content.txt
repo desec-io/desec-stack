@@ -1,4 +1,5 @@
-{% load action_extras %}Hi,
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi,
 
 You requested to change the email address associated with your deSEC
 account from:
@@ -19,3 +20,4 @@ After your confirmation, we will perform the change.
 
 Stay secure,
 The deSEC Team
+{% endblock %}

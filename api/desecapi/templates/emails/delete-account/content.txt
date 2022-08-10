@@ -1,4 +1,5 @@
-{% load action_extras %}Hi there,
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi there,
 
 Sad to see you leave! 😢 We know there's always room for improvement.
 If your wish to leave deSEC is due to any shortcomings of our service,
@@ -14,3 +15,4 @@ Note that this action is irreversible! We cannot recover your account.
 
 Wherever you go, stay secure!
 The deSEC Team
+{% endblock %}
