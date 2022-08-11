@@ -448,36 +448,6 @@ class NSLordClient(NSClient):
     where = os.environ["DESECSTACK_IPV4_REAR_PREFIX16"] + '.0.129'
 
 
-def query_replication(zone: str, qname: str, qtype: str, covers: str = None):
-    if qtype == 'RRSIG':
-        assert covers, 'If querying RRSIG, covers parameter must be set to a RR type, e.g. SOA.'
-    else:
-        assert not covers
-        covers = dns.rdatatype.NONE
-
-    zonefile = os.path.join('/zones', zone + '.zone')
-    zone = dns.name.from_text(zone, origin=dns.name.root)
-    qname = dns.name.from_text(qname, origin=zone)
-
-    if not os.path.exists(zonefile):
-        tsprint(f'RPL <<< Zone file for {zone} not found '
-                f'(number of zones: {len(list(filter(lambda f: f.endswith(".zone"), os.listdir("/zones"))))})')
-        return None
-
-    try:
-        tsprint(f'RPL >>> {qname}/{qtype} in {zone}')
-        z = dns.zone.from_file(f=zonefile, origin=zone, relativize=False)
-        v = {i.to_text() for i in z.find_rrset(qname, qtype, covers=covers).items}
-        tsprint(f'RPL <<< {v}')
-        return v
-    except KeyError:
-        tsprint(f'RPL <<< RR Set {qname}/{qtype} not found')
-        return {}
-    except dns.zone.NoSOA:
-        tsprint(f'RPL <<< Zone {zone} not found')
-        return None
-
-
 def return_eventually(expression: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
                       retry_on: Tuple[type] = (Exception,)):
     if not callable(expression):

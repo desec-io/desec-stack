@@ -1,3 +1,0 @@
-#!/bin/sh
-printf '%s\n' "No interactive login."
-exit 128

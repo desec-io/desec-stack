@@ -28,16 +28,6 @@ services:
     volumes:
     - faketime:/etc/faketime/:ro
 
-  celery-replication:
-    environment:
-    - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
-    # faketime setup
-    - LD_PRELOAD=/lib/libfaketime.so
-    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
-    - FAKETIME_NO_CACHE=1
-    volumes:
-    - faketime:/etc/faketime/:ro
-
   nslord:
     networks:
       front:
@@ -77,7 +67,6 @@ services:
     - FAKETIME_NO_CACHE=1
     volumes:
     - autocert:/autocert/:ro
-    - zones:/zones:ro
     - faketime:/etc/faketime/:rw
     mac_address: 06:42:ac:10:00:7f
     depends_on:

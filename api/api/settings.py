@@ -12,9 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 from datetime import timedelta
 
-from celery.schedules import crontab
 from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HASHERS
-from kombu import Queue, Exchange
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -180,29 +178,6 @@ TASK_CONFIG = {  # The first entry is the default queue
     'email_fast_lane': {'rate_limit': '1/s'},
     'email_immediate_lane': {'rate_limit': None},
 }
-CELERY_TIMEZONE = 'UTC'  # timezone for task schedule below
-CELERY_BEAT_SCHEDULE = {
-    'rotate_signatures': {
-        'task': 'desecapi.replication.update_all',
-        'schedule': crontab(minute=0, hour=0, day_of_week='thursday'),
-        'options': {'priority': 5},  # priority must be higher than rotation jobs for individual domains
-    },
-    'remove_history': {
-        'task': 'desecapi.replication.remove_history',
-        'schedule': crontab(minute=42, hour='*/3'),
-        'options': {'priority': 5},
-    },
-}
-CELERY_TASK_QUEUES = [
-    Queue(
-        'replication',
-        Exchange('replication'),
-        routing_key='replication',
-        queue_arguments={'x-max-priority': 10},  # make the replication queue a priority-queue
-    ),
-    # Other queues are created automatically
-]
-CELERY_BEAT_MAX_LOOP_INTERVAL = 15  # Low value important for running e2e2 tests in reasonable time
 
 # pdns accepts request payloads of this size.
 # This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550

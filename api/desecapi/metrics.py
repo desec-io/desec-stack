@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Histogram, Summary
+from prometheus_client import Counter, Histogram
 
 metrics = {}
 
@@ -13,10 +13,6 @@ def set_counter(name, *args, **kwargs):
 
 def set_histogram(name, *args, **kwargs):
     metrics[name] = Histogram(name, *args, **kwargs)
-
-
-def set_summary(name, *args, **kwargs):
-    metrics[name] = Summary(name, *args, **kwargs)
 
 
 # models.py metrics

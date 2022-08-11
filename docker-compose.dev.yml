@@ -59,10 +59,6 @@ services:
     logging:
       driver: "json-file"
 
-  celery-replication:
-    logging:
-      driver: "json-file"
-
   memcached:
     logging:
       driver: "json-file"

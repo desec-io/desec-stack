@@ -239,8 +239,6 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
                             validators=validate_domain_name)
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
-    replicated = models.DateTimeField(null=True, blank=True)
-    replication_duration = models.DurationField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
     renewal_changed = models.DateTimeField(auto_now_add=True)

@@ -132,12 +132,9 @@ services:
     - nslord
     - nsmaster
     - celery-email
-    - celery-replication
     - memcached
     tmpfs:
     - /var/local/django_metrics:size=500m
-    volumes:
-    - zones:/zones:rw
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_NS
@@ -250,8 +247,6 @@ services:
     - dbapi
     - nslord
     - rabbitmq
-    volumes:
-    - zones:/zones:rw
     environment:
     - DESECSTACK_DOMAIN
     - DESECSTACK_NS
@@ -279,49 +274,6 @@ services:
       driver: "syslog"
       options:
         tag: "desec/celery-email"
-    restart: unless-stopped
-
-  celery-replication:
-    build: api
-    image: desec/dedyn-api:latest
-    init: true
-    command: celery -A api worker -E -B -s /var/run/celerybeat-schedule/db -Q replication -n replication -c 1 -l info --uid nobody --gid nogroup
-    depends_on:
-    - dbapi
-    - nslord
-    - rabbitmq
-    volumes:
-    - zones:/zones:rw
-    - celerybeat:/var/run/celerybeat-schedule
-    environment:
-    - DESECSTACK_DOMAIN
-    - DESECSTACK_NS
-    - DESECSTACK_API_ADMIN
-    - DESECSTACK_API_SEPA_CREDITOR_ID
-    - DESECSTACK_API_SEPA_CREDITOR_NAME
-    - DESECSTACK_API_EMAIL_HOST
-    - DESECSTACK_API_EMAIL_HOST_USER
-    - DESECSTACK_API_EMAIL_HOST_PASSWORD
-    - DESECSTACK_API_EMAIL_PORT
-    - DESECSTACK_API_SECRETKEY
-    - DESECSTACK_API_PSL_RESOLVER
-    - DESECSTACK_DBAPI_PASSWORD_desec
-    - DESECSTACK_IPV4_REAR_PREFIX16
-    - DESECSTACK_IPV6_SUBNET
-    - DESECSTACK_NSLORD_APIKEY
-    - DESECSTACK_NSLORD_DEFAULT_TTL
-    - DESECSTACK_NSMASTER_APIKEY
-    - DESECSTACK_MINIMUM_TTL_DEFAULT
-    - DJANGO_SETTINGS_MODULE=api.settings
-    networks:
-      rearapi_celery:
-      rearapi_dbapi:
-      rearapi_ns:
-        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/celery-replication"
     restart: unless-stopped
 
   memcached:
@@ -403,23 +355,6 @@ services:
         tag: "desec/prometheus"
     restart: unless-stopped
 
-  gitzones:
-    build: gitzones
-    image: desec/gitzones:latest
-    init: true
-    environment:
-      - DESECSTACK_DOMAIN
-    volumes:
-      - zones:/zones:ro
-      - gitzones_keys:/etc/ssh/keys/:rw
-    ports:
-      - "222:22"
-    logging:
-      driver: "syslog"
-      options:
-        tag: "desec/gitzones"
-    restart: unless-stopped
-
 volumes:
   dbapi_postgres:
   dblord_mysql:
@@ -427,9 +362,6 @@ volumes:
   openvpn-server_logs:
   prometheus:
   rabbitmq_data:
-  zones:
-  celerybeat:
-  gitzones_keys:
 
 networks:
   # Note that it is required that the front network ranks lower (in lexical order)

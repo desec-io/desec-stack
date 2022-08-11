@@ -1,7 +1,7 @@
 import ipaddress
 import os
 
-from conftest import DeSECAPIV1Client, query_replication, NSLordClient, assert_eventually
+from conftest import DeSECAPIV1Client, NSLordClient, assert_eventually
 
 import base64
 import pytest
@@ -51,7 +51,6 @@ def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
             assert len(rrs_dns[qtype]) == (1 if expected_net else 0)
             assert _ips_in_network(rrs_api[qtype], expected_net)
             assert _ips_in_network(rrs_dns[qtype], expected_net)
-            assert_eventually(lambda: _ips_in_network(query_replication(domain, '', qtype), expected_net))
 
     headers = {}
     params = {}

@@ -17,7 +17,6 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
-from desecapi import replication
 from desecapi.models import User, Domain, Token, RRset, RR, psl, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED, \
     RR_SET_TYPES_MANAGEABLE
 
@@ -489,10 +488,6 @@ class MockPDNSTestCase(APITestCase):
             'priority': 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
         }
 
-    def __init__(self, methodName: str = ...) -> None:
-        super().__init__(methodName)
-        self._mock_replication = None
-
     def assertPdnsRequests(self, *expected_requests, expect_order=True, exit_hook=None):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
@@ -577,9 +572,6 @@ class MockPDNSTestCase(APITestCase):
                             for hashed in Token.objects.filter(user=user).values_list('key', flat=True)))
         self.assertEqual(len(Token.make_hash(plain).split('$')), 4)
 
-    def assertReplication(self, name):
-        replication.update.delay.assert_called_with(name)
-
     @classmethod
     def setUpTestData(cls):
         httpretty.enable(allow_net_connect=False)
@@ -611,7 +603,6 @@ class MockPDNSTestCase(APITestCase):
         httpretty.disable()
 
     def setUp(self):
-        # configure mocks for nslord
         def request_callback(r, _, response_headers):
             try:
                 request = json.loads(r.parsed_body)
@@ -649,15 +640,6 @@ class MockPDNSTestCase(APITestCase):
                     status=599,
                     priority=-100,
                 )
-
-        # configure mocks for replication
-        self._mock_replication = mock.patch('desecapi.replication.update.delay', return_value=None, wraps=None)
-        self._mock_replication.start()
-
-    def tearDown(self) -> None:
-        if self._mock_replication:
-            self._mock_replication.stop()
-        super().tearDown()
 
 
 class DesecTestCase(MockPDNSTestCase):
