@@ -344,6 +344,18 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertIn('Subname can only use (lowercase)', str(response.data))
 
+    def test_create_my_rr_sets_subname_too_long(self):
+        name = '9.1.f.1.0.6.1.d.f.2.2.b.9.1.6.3.c.2.f.7.9.5.2.4.7.8.3.2.6.6.c.6.9.3.5.6.9.2.4.d.c.e.a.e.f.1.8' \
+               '.b.a.c.9.0.6.2.c.b.c.1.6.3.8.2.7.9.0.5.2.a.c.f.f.2.6.a.c.3.c.e.3.0.6.1.8.0.7.4.0.1.0.0.2.ip6.test'
+        domain = self.create_domain(name=name, owner=self.owner)
+
+        subname = 'e.8.c.f.e.0.9.f.4.9.1.f.1.0.6.1.d.f.2.2.b.9.1.6.3.c.9.3.5.6.9.2.4.d.c.e.a.e.f.1.8.b.a.c.9.0' \
+                  '.6.2.c.b.c.1.6.3.8.2.6.7.9.0.5.2.a.c.f.f.2.6'
+        data = {'subname': subname, 'records': ['1.2.3.4'], 'ttl': 3600, 'type': 'A'}
+        response = self.client.post_rr_set(domain.name, **data)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['subname'][0].code, 'name_too_long')
+
     def test_create_my_rr_sets_subname_too_many_dots(self):
         for subname in ['dottest.', '.dottest', 'dot..test']:
             data = {'subname': subname, 'records': ['10 example.com.'], 'ttl': 3600, 'type': 'MX'}

@@ -6,6 +6,7 @@ from base64 import b64encode
 from datetime import timedelta
 
 import django.core.exceptions
+import dns.name
 import dns.zone
 from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
@@ -496,6 +497,14 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         request = self.context.get('request')
         if request and request.method == 'POST' and not value:
             raise serializers.ValidationError('This field must not be empty when using POST.')
+        return value
+
+    def validate_subname(self, value):
+        try:
+            dns.name.from_text(value, dns.name.from_text(self.domain.name))
+        except dns.name.NameTooLong:
+            raise serializers.ValidationError(
+                'This field combined with the domain name must not exceed 255 characters.', code='name_too_long')
         return value
 
     def validate(self, attrs):
