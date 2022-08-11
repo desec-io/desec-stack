@@ -511,7 +511,7 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
         when=pgtrigger.Before,
         condition=pgtrigger.Q(old__domain__isnull=True, new__domain__isnull=False),
     ),
-    # Ideally, this would be a deferred trigger, but depends on https://github.com/Opus10/django-pgtrigger/issues/14
+    # Ideally, a deferred trigger (https://github.com/Opus10/django-pgtrigger/issues/14). Available in 3.4.0.
     pgtrigger.Trigger(
         name='default_policy_on_delete',
         operation=pgtrigger.Delete,

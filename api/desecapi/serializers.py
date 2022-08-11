@@ -531,7 +531,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def exists(self, arg):
         if isinstance(arg, models.RRset):
-            return arg.records.exists()
+            return arg.records.exists() if arg.pk else False
         else:
             return bool(arg.get('records')) if 'records' in arg.keys() else True
 
