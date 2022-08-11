@@ -56,7 +56,7 @@ function _digestError(error) {
           if ('detail' in data) {
             return [data.detail];
           } else if ('non_field_errors' in data) {
-            return data.non_field_errors;
+            return Array.isArray(data.non_field_errors) ? data.non_field_errors : [data.non_field_errors];
           } else {
             return data;
           }
