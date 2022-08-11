@@ -32,7 +32,6 @@ from rest_framework.test import APIClient
 
 from api import settings
 from desecapi.models import Domain, User, Captcha
-from desecapi.serializers import AuthenticatedActionSerializer
 from desecapi.tests.base import DesecTestCase, DomainOwnerTestCase, PublicSuffixMockMixin
 
 
@@ -451,11 +450,23 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         confirmation_link = self.assertRegistrationEmail(email)
 
         if tampered_domain is not None:
+            self.assertNotEqual(domain, tampered_domain)
+
             path = urlparse(confirmation_link).path
+            serializer_class = resolve(path).func.cls.serializer_class
             code = resolve(path).kwargs.get('code')
-            _, data = AuthenticatedActionSerializer._unpack_code(code, ttl=None)
+
+            serializer = serializer_class(data={}, context={'code': code})
+            serializer.is_valid()
+            self.assertEqual(serializer.validated_data['domain'], domain)  # preparation check: domain as expected
+
+            serializer = serializer_class(data={'domain': tampered_domain}, context={'code': code})
+            serializer.is_valid()
+            self.assertEqual(serializer.validated_data['domain'], domain)  # extra domain from data not injected
+
+            _, data = serializer_class._unpack_code(code, ttl=None)
             data['domain'] = tampered_domain
-            tampered_code = AuthenticatedActionSerializer._pack_code(data)
+            tampered_code = serializer_class._pack_code(data)
             confirmation_link = confirmation_link.replace(code, tampered_code)
             response = self.client.verify(confirmation_link)
             self.assertVerificationFailureInvalidCodeResponse(response)
