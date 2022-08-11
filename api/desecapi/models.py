@@ -22,9 +22,9 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser, BaseUserManager
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import ArrayField, CIEmailField, RangeOperators
+from django.core import validators
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, get_connection
-from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.expressions import RawSQL
@@ -199,7 +199,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
 
 validate_domain_name = [
     validate_lower,
-    RegexValidator(
+    validators.RegexValidator(
         regex=r'^(([a-z0-9_-]{1,63})\.)*[a-z0-9-]{1,63}$',
         message='Domain names must be labels separated by dots. Labels may consist of up to 63 letters, digits, '
                 'hyphens, and underscores. The last label may not contain an underscore.',
@@ -424,6 +424,8 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     def _allowed_subnets_default():
         return [ipaddress.IPv4Network('0.0.0.0/0'), ipaddress.IPv6Network('::/0')]
 
+    _validators = [validators.MinValueValidator(timedelta(0)), validators.MaxValueValidator(timedelta(days=365*1000))]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -431,8 +433,8 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
     allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
-    max_age = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
-    max_unused_period = models.DurationField(null=True, default=None, validators=[MinValueValidator(timedelta(0))])
+    max_age = models.DurationField(null=True, default=None, validators=_validators)
+    max_unused_period = models.DurationField(null=True, default=None, validators=_validators)
     domain_policies = models.ManyToManyField(Domain, through='TokenDomainPolicy')
 
     plain = None
@@ -636,7 +638,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         blank=True,
         validators=[
             validate_lower,
-            RegexValidator(
+            validators.RegexValidator(
                 regex=r'^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))$',
                 message='Subname can only use (lowercase) a-z, 0-9, ., -, and _, '
                         'may start with a \'*.\', or just be \'*\'. Components may not exceed 63 characters.',
@@ -648,7 +650,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         max_length=10,
         validators=[
             validate_upper,
-            RegexValidator(
+            validators.RegexValidator(
                 regex=r'^[A-Z][A-Z0-9]*$',
                 message='Type must be uppercase alphanumeric and start with a letter.',
                 code='invalid_type'
