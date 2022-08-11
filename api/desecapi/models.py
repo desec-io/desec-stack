@@ -211,14 +211,14 @@ validate_domain_name = [
 
 class DomainManager(Manager):
     def filter_qname(self, qname: str, **kwargs) -> models.query.QuerySet:
+        qs = self.annotate(name_length=Length('name'))  # callers expect this to be present after returning
         try:
             Domain._meta.get_field('name').run_validators(qname.removeprefix('*.').lower())
         except ValidationError:
-            raise ValueError
-        return self.annotate(
+            return qs.none()
+        return qs.annotate(
             dotted_name=Concat(Value('.'), 'name', output_field=CharField()),
             dotted_qname=Value(f'.{qname}', output_field=CharField()),
-            name_length=Length('name'),
         ).filter(dotted_qname__endswith=F('dotted_name'), **kwargs)
 
 

@@ -208,7 +208,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_list_domains_owns_qname(self):
         # Domains outside this account or non-existent
-        for domain in ['non-existent.net', self.other_domain.name]:
+        for domain in ['non-existent.net', self.other_domain.name, 'domain.invalid/']:
             for name in [domain, f'foo.bar.{domain}']:
                 response = self.client.get(self.reverse('v1:domain-list'), data={'owns_qname': name})
                 self.assertStatus(response, status.HTTP_200_OK)
@@ -735,6 +735,5 @@ class DomainManagerTestCase(DesecTestCase):
                     self.assertListEqual(list(qs), expected)
 
     def test_filter_qname_invalid(self):
-        for qname in ['foo@bar.com', '*.*.example.com', '*foo.example.com', 'foo.*.example.com']:
-            with self.assertRaises(ValueError):
-                Domain.objects.filter_qname(qname)
+        for qname in ['foo@bar.com', '*.*.a.example', '*foo.b.example', 'foo.*.example', 'example.com/', 'a_B_example']:
+            self.assertFalse(Domain.objects.filter_qname(qname))
