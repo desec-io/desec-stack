@@ -981,19 +981,6 @@ class AuthenticatedUserAction(AuthenticatedBasicUserAction):
         # re-use after the state has been changed and changed back.
         return super()._state_fields + [self.user.email, self.user.password, self.user.is_active]
 
-    def validate_legacy_state(self, value):
-        return value == self.state_of(self._state_fields[:-1] + [False])
-
-    def validate_state(self, value):
-        is_valid = super().validate_state(value)
-
-        # Retry with state structure before migration 0019 (activation link transition period)
-        # TODO Remove once legacy links have expired (DESECSTACK_API_AUTHACTION_VALIDITY hours after deployment)
-        if not is_valid and self._state_fields[-1] is None and self.user.last_login is None:
-            is_valid = self.validate_legacy_state(value)
-
-        return is_valid
-
 
 class AuthenticatedActivateUserAction(AuthenticatedUserAction):
     domain = models.CharField(max_length=191)
