@@ -603,7 +603,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 domain="co.uk",
                 expect_failure_response=self.assertRegistrationFailureDomainUnavailableResponse,
             )
-        local_public_suffix = random.sample(self.AUTO_DELEGATION_DOMAINS, 1)[0]
+        local_public_suffix = random.sample(list(self.AUTO_DELEGATION_DOMAINS), 1)[0]
         with self.get_psl_context_manager(local_public_suffix):
             self._test_registration_with_domain(
                 domain=self.random_domain_name(suffix=local_public_suffix)

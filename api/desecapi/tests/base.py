@@ -979,7 +979,7 @@ class DesecTestCase(MockPDNSTestCase):
         if not suffix:
             suffix = cls.PUBLIC_SUFFIXES
         if isinstance(suffix, set):
-            suffix = random.sample(suffix, 1)[0]
+            suffix = random.sample(list(suffix), 1)[0]
         return (
             random.choice(string.ascii_letters)
             + cls.random_string()

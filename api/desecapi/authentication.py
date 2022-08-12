@@ -1,5 +1,5 @@
 import base64
-import datetime
+from datetime import datetime, UTC
 from ipaddress import ip_address
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
@@ -178,9 +178,7 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
 
-        email_verified = datetime.datetime.fromtimestamp(
-            serializer.timestamp, datetime.timezone.utc
-        )
+        email_verified = datetime.fromtimestamp(serializer.timestamp, UTC)
         user.email_verified = max(user.email_verified or email_verified, email_verified)
         user.save()
 
