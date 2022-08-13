@@ -1139,6 +1139,24 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
             for domain in domains:
                 self.assertLess(Domain.objects.get(pk=domain.pk).renewal_state, Domain.RenewalState.NOTIFIED)
 
+    def test_renew_domain_inactive_user(self):
+        domain = self.my_domains[0]
+        for is_active in (False, None):
+            self.owner.is_active = is_active
+            self.owner.save()
+            for days in [5, 182, 184]:
+                for published_days_ago  in [1, 183+21, 183+28]:
+                    domain.published = timezone.now() - timedelta(days=published_days_ago)
+                    domain.renewal_changed = timezone.now() - timedelta(days=days)
+                    domain.rrset_set.update(touched=domain.renewal_changed)
+                    for renewal_state, _ in Domain.RenewalState.choices:
+                        domain.renewal_state = renewal_state
+                        domain.save()
+
+                        self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, renewal_state)
+                        call_command('scavenge-unused')
+                        self.assertEqual(Domain.objects.get(pk=domain.pk).renewal_state, renewal_state)
+
 
 class RenewDynTestCase(RenewTestCase):
     DYN = True

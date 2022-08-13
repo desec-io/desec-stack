@@ -17,7 +17,8 @@ notice_days_warn = 7
 
 
 class Command(BaseCommand):
-    base_queryset = models.Domain.objects.exclude(renewal_state=models.Domain.RenewalState.IMMORTAL)
+    base_queryset = models.Domain.objects\
+        .exclude(renewal_state=models.Domain.RenewalState.IMMORTAL).filter(owner__is_active=True)
     _rrsets_outer_queryset = models.RRset.objects.filter(domain=OuterRef('pk')).values('domain')  # values() is GROUP BY
     _max_touched = Subquery(_rrsets_outer_queryset.annotate(max_touched=Max('touched')).values('max_touched'))
 
