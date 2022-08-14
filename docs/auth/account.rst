@@ -100,8 +100,8 @@ human-readable error message that may look like::
     }
 
 
-Zone Creation during Account Registration
-*****************************************
+Domain Creation during Account Registration
+*******************************************
 
 Along with your account creation request, you can provide a domain name as
 follows::
@@ -119,11 +119,12 @@ follows::
         }
     EOF
 
-If the ``domain`` field is present in the request payload, a DNS zone will be
-created for this domain name once you activate your account using the
-verification link that we will send to your email address. If the zone cannot
-be created (for example, because the domain name is unavailable), your account
-will be deleted, and you can start over with a fresh registration.
+If the ``domain`` field is present in the request payload, a DNS domain will
+be created for this domain name once you activate your account using the
+verification link that we will send to your email address.
+If the domain cannot be created (for example, because the domain name is
+unavailable), your account will be deleted, and you can start over with a
+fresh registration.
 
 
 .. _log-in:
@@ -206,7 +207,7 @@ Field details:
 ``limit_domains``
     :Access mode: read-only
 
-    Maximum number of DNS zones the user can create.
+    Maximum number of domains the user can create.
 
 
 Password Reset
