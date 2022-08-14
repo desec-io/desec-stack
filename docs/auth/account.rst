@@ -68,10 +68,12 @@ Please consider the following when registering an account:
   Reset`_ procedure.
 
 - Your email address is required for account recovery in case you forgot your
-  password, for contacting support, etc. We also send out announcements for
-  technical changes occasionally. It is thus deSEC's policy to require users
-  provide an email address and to confirm its validity by clicking a
-  verification link sent to that address.
+  password, for contacting support, etc.
+  It is thus deSEC's policy to require users to provide an email address and
+  confirm its validity by clicking a verification link sent to that address.
+  (We occasionally also send out announcements of developments at deSEC.  To
+  opt out, you can add the ``outreach_preference: false`` field to the
+  payload.  Note that you will still receive messages about breaking changes.)
 
 - To facilitate automatic sign-ups, the ``captcha`` field in the registration
   request can be omitted; in this case, the field is required later when
@@ -184,7 +186,8 @@ A JSON object representing your user account will be returned::
         "created": "2019-10-16T18:09:17.715702Z",
         "email": "youremailaddress@example.com",
         "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
-        "limit_domains": 15
+        "limit_domains": 15,
+        "outreach_preference": true
     }
 
 Field details:
@@ -208,6 +211,25 @@ Field details:
     :Access mode: read-only
 
     Maximum number of domains the user can create.
+
+``outreach_preference``
+    :Access mode: read, write
+    :Type: boolean
+
+    Whether the user is okay with us reaching out by email to inform about
+    developments at deSEC (no ads).  Defaults to ``true``.
+
+
+Modify Account Settings
+```````````````````````
+
+To change basic information about your account, you can use the usual REST API
+functionality such as ``PATCH`` requests on the ``/api/v1/auth/account/``
+endpoint.
+
+Currently, this only allows changing the ``outreach_preference`` field.
+Other fields are either read-only (such as ``limit_domains``) or can be
+changed through a special procedure only (see e.g. `Password Reset`_).
 
 
 Password Reset
