@@ -111,6 +111,7 @@ Field details:
 
     Token name.  It is meant for user reference only and carries no
     operational meaning.  If omitted, the empty string is assumed.
+    The maximum length is 178.
 
     Certain API operations will automatically populate the ``name`` field with
     suitable values such as "login" or "dyndns".
