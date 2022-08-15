@@ -53,7 +53,7 @@ jobs:
 
     - name: Check for missing migrations
       run: |
-        docker-compose -f docker-compose.yml run -T api python manage.py makemigrations --check
+        docker-compose -f docker-compose.yml run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
         docker-compose -f docker-compose.yml down -v
 
     - name: Run e2e2 Tests

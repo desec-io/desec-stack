@@ -2,7 +2,8 @@
 
 # wait for dependencies
 echo "waiting for dependencies ..."
-./wait
+./wait-dbapi
+./wait-ns
 
 # start cron
 /root/cronhook/start-cron.sh &

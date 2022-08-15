@@ -2,7 +2,8 @@
 
 # wait for dependencies
 echo "waiting for dependencies ..."
-./wait
+./wait-dbapi
+./wait-ns
 
 # set permissions for Django metrics (docker-compose.yml setting does not work, see #333)
 chmod 1777 /var/local/django_metrics
