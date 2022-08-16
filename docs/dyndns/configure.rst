@@ -91,7 +91,7 @@ Password :superscript:`3`       <your authorization token>
   details.
 
 *Note 3*
-  A valid access token for the domain. **Not** you deSEC account password!
+  A valid access token for the domain. **Not** your deSEC account password!
 
 
 Option 2: Use ddclient
