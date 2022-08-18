@@ -5,8 +5,12 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
 
 env:
   DESECSTACK_DOMAIN: your.hostname.example.com
