@@ -1,5 +1,4 @@
 from base64 import urlsafe_b64encode
-from enum import Enum
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
