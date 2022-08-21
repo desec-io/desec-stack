@@ -90,6 +90,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     is_active = models.BooleanField(default=True, null=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
+    credentials_changed = models.DateTimeField(auto_now_add=True)
     limit_domains = models.PositiveIntegerField(default=_limit_domains_default.__func__, null=True, blank=True)
     needs_captcha = models.BooleanField(default=True)
     outreach_preference = models.BooleanField(default=True)
@@ -134,6 +135,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
     def change_email(self, email):
         old_email = self.email
         self.email = email
+        self.credentials_changed = timezone.now()
         self.validate_unique()
         self.save()
 
@@ -141,6 +143,7 @@ class User(ExportModelOperationsMixin('User'), AbstractBaseUser):
 
     def change_password(self, raw_password):
         self.set_password(raw_password)
+        self.credentials_changed = timezone.now()
         self.save()
         self.send_email('password-change-confirmation')
 
@@ -942,6 +945,10 @@ class AuthenticatedBasicUserAction(AuthenticatedAction):
 class AuthenticatedEmailUserAction(AuthenticatedBasicUserAction):
     """
     Abstract AuthenticatedAction involving a user instance with unmodified email address.
+
+    Only child class is now AuthenticatedChangeOutreachPreferenceUserAction. Conceptually, we could
+    flatten the Authenticated*Action class hierarchy, but that would break migration 0024 that depends
+    on it (see https://docs.djangoproject.com/en/4.1/topics/migrations/#historical-models).
     """
 
     class Meta:
@@ -963,7 +970,7 @@ class AuthenticatedChangeOutreachPreferenceUserAction(AuthenticatedEmailUserActi
         self.user.save()
 
 
-class AuthenticatedUserAction(AuthenticatedEmailUserAction):
+class AuthenticatedUserAction(AuthenticatedBasicUserAction):
     """
     Abstract AuthenticatedBasicUserAction, incorporating the user's id, email, password, and is_active flag into the
     Message Authentication Code state.
@@ -971,11 +978,20 @@ class AuthenticatedUserAction(AuthenticatedEmailUserAction):
     class Meta:
         managed = False
 
+    def validate_legacy_state(self, value):
+        # NEW: (1) classname, (2) user.id, (3) user.credentials_changed, (4) user.is_active, (7 ...) [subclasses]
+        # OLD: (1) classname, (2) user.id, (3) user.email, (4) user.password, (5) user.is_active, (6 ...) [subclasses]
+        legacy_state_fields = self._state_fields[:2] + [self.user.email, self.user.password] + self._state_fields[3:]
+        return value == self.state_of(legacy_state_fields)
+
+    def validate_state(self, value):
+        # Retry with structure before migration 0027 for transition period
+        # TODO Remove once old links expired (>= 2022-08-29 && DESECSTACK_API_AUTHACTION_VALIDITY hours after deploying)
+        return super().validate_state(value) or self.validate_legacy_state(value)
+
     @property
     def _state_fields(self):
-        # TODO consider adding a "last change" attribute of the user to the state to avoid code
-        # re-use after the state has been changed and changed back.
-        return super()._state_fields + [self.user.password, self.user.is_active]
+        return super()._state_fields + [self.user.credentials_changed.isoformat(), self.user.is_active]
 
 
 class AuthenticatedActivateUserAction(AuthenticatedUserAction):
@@ -1036,8 +1052,8 @@ class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
 
 class AuthenticatedDomainBasicUserAction(AuthenticatedBasicUserAction):
     """
-    Abstract AuthenticatedUserAction involving an domain instance, incorporating the domain's id, name as well as the
-    owner ID into the Message Authentication Code state.
+    Abstract AuthenticatedBasicUserAction involving an domain instance, incorporating the domain's id, name as well as
+    the owner ID into the Message Authentication Code state.
     """
     domain = models.ForeignKey(Domain, on_delete=models.DO_NOTHING)
 
