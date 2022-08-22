@@ -1,4 +1,6 @@
 from django.db import DataError
+from django.db.models import Model
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator
 
@@ -54,3 +56,30 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
             types = ', '.join(types)
             message = self.message.format(types=types)
             raise ValidationError(message, code='exclusive')
+
+
+class Validator:
+
+    message = 'This field did not pass validation.'
+
+    def __init__(self, message=None):
+        self.field_name = None
+        self.message = message or self.message
+        self.instance = None
+
+    def __call__(self, value):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return '<%s>' % self.__class__.__name__
+
+class ReadOnlyOnUpdateValidator(Validator):
+
+    message = 'Can only be written on create.'
+    requires_context = True
+
+    def __call__(self, value, serializer_field):
+        field_name = serializer_field.source_attrs[-1]
+        instance = getattr(serializer_field.parent, 'instance', None)
+        if isinstance(instance, Model) and value != getattr(instance, field_name):
+            raise serializers.ValidationError(self.message, code='read-only-on-update')
