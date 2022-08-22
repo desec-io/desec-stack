@@ -20,7 +20,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, qs_filter
 
 from api import settings
-from desecapi import crypto, metrics, models, validators
+from desecapi import crypto, models, validators
 from desecapi.models import validate_domain_name
 
 
@@ -101,17 +101,6 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
             return super().save(**kwargs)
         except django.core.exceptions.ValidationError as exc:
             raise serializers.ValidationError(exc.message_dict, code='precedence')
-
-
-class RequiredOnPartialUpdateCharField(serializers.CharField):
-    """
-    This field is always required, even for partial updates (e.g. using PATCH).
-    """
-    def validate_empty_values(self, data):
-        if data is serializers.empty:
-            self.fail('required')
-
-        return super().validate_empty_values(data)
 
 
 class Validator:
