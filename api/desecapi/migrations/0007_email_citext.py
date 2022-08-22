@@ -8,14 +8,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0006_cname_exclusivity'),
+        ("desecapi", "0006_cname_exclusivity"),
     ]
 
     operations = [
         CITextExtension(),
         migrations.AlterField(
-            model_name='user',
-            name='email',
-            field=django.contrib.postgres.fields.citext.CIEmailField(max_length=254, unique=True, verbose_name='email address'),
+            model_name="user",
+            name="email",
+            field=django.contrib.postgres.fields.citext.CIEmailField(
+                max_length=254, unique=True, verbose_name="email address"
+            ),
         ),
     ]

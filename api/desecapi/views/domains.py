@@ -14,20 +14,22 @@ from desecapi.serializers import DomainSerializer
 from .base import IdempotentDestroyMixin
 
 
-class DomainViewSet(IdempotentDestroyMixin,
-                    mixins.CreateModelMixin,
-                    mixins.RetrieveModelMixin,
-                    mixins.DestroyModelMixin,
-                    mixins.ListModelMixin,
-                    viewsets.GenericViewSet):
+class DomainViewSet(
+    IdempotentDestroyMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = DomainSerializer
-    lookup_field = 'name'
-    lookup_value_regex = r'[^/]+'
+    lookup_field = "name"
+    lookup_value_regex = r"[^/]+"
 
     @property
     def permission_classes(self):
         ret = [IsAuthenticated, permissions.IsOwner]
-        if self.action == 'create':
+        if self.action == "create":
             ret.append(permissions.WithinDomainLimit)
         if self.request.method not in SAFE_METHODS:
             ret.append(permissions.TokenNoDomainPolicy)
@@ -35,13 +37,17 @@ class DomainViewSet(IdempotentDestroyMixin,
 
     @property
     def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_domains'
+        return (
+            "dns_api_read"
+            if self.request.method in SAFE_METHODS
+            else "dns_api_write_domains"
+        )
 
     @property
     def pagination_class(self):
         # Turn off pagination when filtering for covered qname, as pagination would re-order by `created` (not what we
         # want here) after taking a slice (that's forbidden anyway). But, we don't need pagination in this case anyways.
-        if 'owns_qname' in self.request.query_params:
+        if "owns_qname" in self.request.query_params:
             return None
         else:
             return api_settings.DEFAULT_PAGINATION_CLASS
@@ -49,14 +55,14 @@ class DomainViewSet(IdempotentDestroyMixin,
     def get_queryset(self):
         qs = self.request.user.domains
 
-        owns_qname = self.request.query_params.get('owns_qname')
+        owns_qname = self.request.query_params.get("owns_qname")
         if owns_qname is not None:
-            qs = qs.filter_qname(owns_qname).order_by('-name_length')[:1]
+            qs = qs.filter_qname(owns_qname).order_by("-name_length")[:1]
 
         return qs
 
     def get_serializer(self, *args, **kwargs):
-        include_keys = (self.action in ['create', 'retrieve'])
+        include_keys = self.action in ["create", "retrieve"]
         return super().get_serializer(*args, include_keys=include_keys, **kwargs)
 
     def perform_create(self, serializer):
@@ -83,10 +89,12 @@ class DomainViewSet(IdempotentDestroyMixin,
 
 class SerialListView(APIView):
     permission_classes = (permissions.IsVPNClient,)
-    throttle_classes = []  # don't break slaves when they ask too often (our cached responses are cheap)
+    throttle_classes = (
+        []
+    )  # don't break slaves when they ask too often (our cached responses are cheap)
 
     def get(self, request, *args, **kwargs):
-        key = 'desecapi.views.serials'
+        key = "desecapi.views.serials"
         serials = cache.get(key)
         if serials is None:
             serials = get_serials()

@@ -14,7 +14,7 @@ from desecapi.models import Token, User
 
 class AccountCreateView(generics.CreateAPIView):
     serializer_class = serializers.RegisterAccountSerializer
-    throttle_scope = 'account_management_active'
+    throttle_scope = "account_management_active"
 
     def create(self, request, *args, **kwargs):
         # Create user and send trigger email verification.
@@ -26,10 +26,12 @@ class AccountCreateView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
         except ValidationError as e:
             # Hide existing users
-            email_detail = e.detail.pop('email', [])
-            email_detail = [detail for detail in email_detail if detail.code != 'unique']
+            email_detail = e.detail.pop("email", [])
+            email_detail = [
+                detail for detail in email_detail if detail.code != "unique"
+            ]
             if email_detail:
-                e.detail['email'] = email_detail
+                e.detail["email"] = email_detail
             if e.detail:
                 raise e
         else:
@@ -37,19 +39,26 @@ class AccountCreateView(generics.CreateAPIView):
             user = serializer.save(is_active=None if activation_required else True)
 
             # send email if needed
-            domain = serializer.validated_data.get('domain')
+            domain = serializer.validated_data.get("domain")
             if domain or activation_required:
-                serializers.AuthenticatedActivateUserActionSerializer.build_and_save(user=user, domain=domain)
+                serializers.AuthenticatedActivateUserActionSerializer.build_and_save(
+                    user=user, domain=domain
+                )
 
         # This request is unauthenticated, so don't expose whether we did anything.
-        message = 'Welcome! Please check your mailbox.' if activation_required else 'Welcome!'
-        return Response(data={'detail': message}, status=status.HTTP_202_ACCEPTED)
+        message = (
+            "Welcome! Please check your mailbox." if activation_required else "Welcome!"
+        )
+        return Response(data={"detail": message}, status=status.HTTP_202_ACCEPTED)
 
 
 class AccountView(generics.RetrieveUpdateAPIView):
-    permission_classes = (IsAuthenticated, permissions.TokenNoDomainPolicy,)
+    permission_classes = (
+        IsAuthenticated,
+        permissions.TokenNoDomainPolicy,
+    )
     serializer_class = serializers.UserSerializer
-    throttle_scope = 'account_management_passive'
+    throttle_scope = "account_management_passive"
 
     def get_object(self):
         return self.request.user
@@ -59,30 +68,43 @@ class AccountDeleteView(APIView):
     authentication_classes = (authentication.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     response_still_has_domains = Response(
-        data={'detail': 'To delete your user account, first delete all of your domains.'},
+        data={
+            "detail": "To delete your user account, first delete all of your domains."
+        },
         status=status.HTTP_409_CONFLICT,
     )
-    throttle_scope = 'account_management_active'
+    throttle_scope = "account_management_active"
 
     def post(self, request, *args, **kwargs):
         if request.user.domains.exists():
             return self.response_still_has_domains
-        serializers.AuthenticatedDeleteUserActionSerializer.build_and_save(user=request.user)
+        serializers.AuthenticatedDeleteUserActionSerializer.build_and_save(
+            user=request.user
+        )
 
-        return Response(data={'detail': 'Please check your mailbox for further account deletion instructions.'},
-                        status=status.HTTP_202_ACCEPTED)
+        return Response(
+            data={
+                "detail": "Please check your mailbox for further account deletion instructions."
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class AccountLoginView(generics.GenericAPIView):
     authentication_classes = (authentication.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.TokenSerializer
-    throttle_scope = 'account_management_passive'
+    throttle_scope = "account_management_passive"
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-        token = Token.objects.create(user=user, name="login", perm_manage_tokens=True,
-                                     max_age=timedelta(days=7), max_unused_period=timedelta(hours=1))
+        token = Token.objects.create(
+            user=user,
+            name="login",
+            perm_manage_tokens=True,
+            max_age=timedelta(days=7),
+            max_unused_period=timedelta(hours=1),
+        )
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 
         data = self.get_serializer(token, include_plain=True).data
@@ -106,36 +128,48 @@ class AccountChangeEmailView(generics.GenericAPIView):
     authentication_classes = (authentication.EmailPasswordPayloadAuthentication,)
     permission_classes = (IsAuthenticated,)
     serializer_class = serializers.ChangeEmailSerializer
-    throttle_scope = 'account_management_active'
+    throttle_scope = "account_management_active"
 
     def post(self, request, *args, **kwargs):
         # Check password and extract `new_email` field
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        new_email = serializer.validated_data['new_email']
-        serializers.AuthenticatedChangeEmailUserActionSerializer.build_and_save(user=request.user, new_email=new_email)
+        new_email = serializer.validated_data["new_email"]
+        serializers.AuthenticatedChangeEmailUserActionSerializer.build_and_save(
+            user=request.user, new_email=new_email
+        )
 
         # At this point, we know that we are talking to the user, so we can tell that we sent an email.
-        return Response(data={'detail': 'Please check your mailbox to confirm email address change.'},
-                        status=status.HTTP_202_ACCEPTED)
+        return Response(
+            data={
+                "detail": "Please check your mailbox to confirm email address change."
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 class AccountResetPasswordView(generics.GenericAPIView):
     serializer_class = serializers.ResetPasswordSerializer
-    throttle_scope = 'account_management_active'
+    throttle_scope = "account_management_active"
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            email = serializer.validated_data['email']
+            email = serializer.validated_data["email"]
             user = User.objects.get(email=email, is_active=True)
         except User.DoesNotExist:
             pass
         else:
-            serializers.AuthenticatedResetPasswordUserActionSerializer.build_and_save(user=user)
+            serializers.AuthenticatedResetPasswordUserActionSerializer.build_and_save(
+                user=user
+            )
 
         # This request is unauthenticated, so don't expose whether we did anything.
-        return Response(data={'detail': 'Please check your mailbox for further password reset instructions. '
-                                        'If you did not receive an email, please contact support.'},
-                        status=status.HTTP_202_ACCEPTED)
+        return Response(
+            data={
+                "detail": "Please check your mailbox for further password reset instructions. "
+                "If you did not receive an email, please contact support."
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )

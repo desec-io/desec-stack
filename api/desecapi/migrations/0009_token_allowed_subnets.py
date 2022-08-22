@@ -9,13 +9,17 @@ import netfields.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0008_token_perm_manage_tokens'),
+        ("desecapi", "0008_token_perm_manage_tokens"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='allowed_subnets',
-            field=django.contrib.postgres.fields.ArrayField(base_field=netfields.fields.CidrAddressField(max_length=43), default=desecapi.models.Token._allowed_subnets_default, size=None),
+            model_name="token",
+            name="allowed_subnets",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=netfields.fields.CidrAddressField(max_length=43),
+                default=desecapi.models.Token._allowed_subnets_default,
+                size=None,
+            ),
         ),
     ]

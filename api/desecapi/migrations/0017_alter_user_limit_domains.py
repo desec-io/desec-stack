@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0016_default_auto_field'),
+        ("desecapi", "0016_default_auto_field"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='limit_domains',
-            field=models.PositiveIntegerField(blank=True, default=desecapi.models.User._limit_domains_default, null=True),
+            model_name="user",
+            name="limit_domains",
+            field=models.PositiveIntegerField(
+                blank=True,
+                default=desecapi.models.User._limit_domains_default,
+                null=True,
+            ),
         ),
     ]

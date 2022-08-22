@@ -24,26 +24,35 @@ from .base import validate_lower, validate_upper
 # RR set types: the good, the bad, and the ugly
 # known, but unsupported types
 RR_SET_TYPES_UNSUPPORTED = {
-    'ALIAS',  # Requires signing at the frontend, hence unsupported in desec-stack
-    'IPSECKEY',  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth >= 4.7.0
-    'KEY',  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
-    'WKS',  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
+    "ALIAS",  # Requires signing at the frontend, hence unsupported in desec-stack
+    "IPSECKEY",  # broken in pdns, https://github.com/PowerDNS/pdns/issues/10589 TODO enable with pdns auth >= 4.7.0
+    "KEY",  # Application use restricted by RFC 3445, DNSSEC use replaced by DNSKEY and handled automatically
+    "WKS",  # General usage not recommended, "SHOULD NOT" be used in SMTP (RFC 1123)
 }
 # restricted types are managed in use by the API, and cannot directly be modified by the API client
 RR_SET_TYPES_AUTOMATIC = {
     # corresponding functionality is automatically managed:
-    'KEY', 'NSEC', 'NSEC3', 'OPT', 'RRSIG',
+    "KEY",
+    "NSEC",
+    "NSEC3",
+    "OPT",
+    "RRSIG",
     # automatically managed by the API:
-    'NSEC3PARAM', 'SOA'
+    "NSEC3PARAM",
+    "SOA",
 }
 # backend types are types that are the types supported by the backend(s)
 RR_SET_TYPES_BACKEND = pdns.SUPPORTED_RRSET_TYPES
 # validation types are types supported by the validation backend, currently: dnspython
-RR_SET_TYPES_VALIDATION = set(ANY.__all__) | set(IN.__all__) \
-                          | {'L32', 'L64', 'LP', 'NID'}  # https://github.com/rthalley/dnspython/pull/751
+RR_SET_TYPES_VALIDATION = (
+    set(ANY.__all__) | set(IN.__all__) | {"L32", "L64", "LP", "NID"}
+)  # https://github.com/rthalley/dnspython/pull/751
 # manageable types are directly managed by the API client
-RR_SET_TYPES_MANAGEABLE = \
-        (RR_SET_TYPES_BACKEND & RR_SET_TYPES_VALIDATION) - RR_SET_TYPES_UNSUPPORTED - RR_SET_TYPES_AUTOMATIC
+RR_SET_TYPES_MANAGEABLE = (
+    (RR_SET_TYPES_BACKEND & RR_SET_TYPES_VALIDATION)
+    - RR_SET_TYPES_UNSUPPORTED
+    - RR_SET_TYPES_AUTOMATIC
+)
 
 
 class RRsetManager(Manager):
@@ -54,34 +63,34 @@ class RRsetManager(Manager):
         return rrset
 
 
-class RRset(ExportModelOperationsMixin('RRset'), models.Model):
+class RRset(ExportModelOperationsMixin("RRset"), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     touched = models.DateTimeField(auto_now=True, db_index=True)
-    domain = models.ForeignKey('Domain', on_delete=models.CASCADE)
+    domain = models.ForeignKey("Domain", on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
         blank=True,
         validators=[
             validate_lower,
             validators.RegexValidator(
-                regex=r'^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))$',
-                message='Subname can only use (lowercase) a-z, 0-9, ., -, and _, '
-                        'may start with a \'*.\', or just be \'*\'. Components may not exceed 63 characters.',
-                code='invalid_subname'
-            )
-        ]
+                regex=r"^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))$",
+                message="Subname can only use (lowercase) a-z, 0-9, ., -, and _, "
+                "may start with a '*.', or just be '*'. Components may not exceed 63 characters.",
+                code="invalid_subname",
+            ),
+        ],
     )
     type = models.CharField(
         max_length=10,
         validators=[
             validate_upper,
             validators.RegexValidator(
-                regex=r'^[A-Z][A-Z0-9]*$',
-                message='Type must be uppercase alphanumeric and start with a letter.',
-                code='invalid_type'
-            )
-        ]
+                regex=r"^[A-Z][A-Z0-9]*$",
+                message="Type must be uppercase alphanumeric and start with a letter.",
+                code="invalid_type",
+            ),
+        ],
     )
     ttl = models.PositiveIntegerField()
 
@@ -90,10 +99,10 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     class Meta:
         constraints = [
             ExclusionConstraint(
-                name='cname_exclusivity',
+                name="cname_exclusivity",
                 expressions=[
-                    ('domain', RangeOperators.EQUAL),
-                    ('subname', RangeOperators.EQUAL),
+                    ("domain", RangeOperators.EQUAL),
+                    ("subname", RangeOperators.EQUAL),
                     (RawSQL("int4(type = 'CNAME')", ()), RangeOperators.NOT_EQUAL),
                 ],
             ),
@@ -102,7 +111,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
 
     @staticmethod
     def construct_name(subname, domain_name):
-        return '.'.join(filter(None, [subname, domain_name])) + '.'
+        return ".".join(filter(None, [subname, domain_name])) + "."
 
     @property
     def name(self):
@@ -127,21 +136,27 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         errors = []
 
         # Singletons
-        if self.type in ('CNAME', 'DNAME',):
+        if self.type in (
+            "CNAME",
+            "DNAME",
+        ):
             if len(records_presentation_format) > 1:
-                errors.append(f'{self.type} RRset cannot have multiple records.')
+                errors.append(f"{self.type} RRset cannot have multiple records.")
 
         # Non-apex
-        if self.type in ('CNAME', 'DS',):
-            if self.subname == '':
-                errors.append(f'{self.type} RRset cannot have empty subname.')
+        if self.type in (
+            "CNAME",
+            "DS",
+        ):
+            if self.subname == "":
+                errors.append(f"{self.type} RRset cannot have empty subname.")
 
-        if self.type in ('DNSKEY',):
-            if self.subname != '':
-                errors.append(f'{self.type} RRset must have empty subname.')
+        if self.type in ("DNSKEY",):
+            if self.subname != "":
+                errors.append(f"{self.type} RRset must have empty subname.")
 
         def _error_msg(record, detail):
-            return f'Record content of {self.type} {self.name} invalid: \'{record}\': {detail}'
+            return f"Record content of {self.type} {self.name} invalid: '{record}': {detail}"
 
         records_canonical_format = set()
         for r in records_presentation_format:
@@ -151,8 +166,13 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
                 errors.append(_error_msg(r, str(ex)))
             else:
                 if r_canonical_format in records_canonical_format:
-                    errors.append(_error_msg(r, f'Duplicate record content: this is identical to '
-                                                f'\'{r_canonical_format}\''))
+                    errors.append(
+                        _error_msg(
+                            r,
+                            f"Duplicate record content: this is identical to "
+                            f"'{r_canonical_format}'",
+                        )
+                    )
                 else:
                     records_canonical_format.add(r_canonical_format)
 
@@ -192,7 +212,12 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
         RR.objects.bulk_create(rrs)  # One INSERT
 
     def __str__(self):
-        return '<RRSet %s domain=%s type=%s subname=%s>' % (self.pk, self.domain.name, self.type, self.subname)
+        return "<RRSet %s domain=%s type=%s subname=%s>" % (
+            self.pk,
+            self.domain.name,
+            self.type,
+            self.subname,
+        )
 
 
 class RRManager(Manager):
@@ -207,9 +232,9 @@ class RRManager(Manager):
         return ret
 
 
-class RR(ExportModelOperationsMixin('RR'), models.Model):
+class RR(ExportModelOperationsMixin("RR"), models.Model):
     created = models.DateTimeField(auto_now_add=True)
-    rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name='records')
+    rrset = models.ForeignKey(RRset, on_delete=models.CASCADE, related_name="records")
     content = models.TextField()
 
     objects = RRManager()
@@ -239,40 +264,54 @@ class RR(ExportModelOperationsMixin('RR'), models.Model):
                 rdclass=rdataclass.IN,
                 rdtype=rdtype,
                 tok=dns.tokenizer.Tokenizer(any_presentation_format),
-                relativize=False
+                relativize=False,
             ).to_digestable()
 
             if len(wire) > 64000:
-                raise ValidationError(f'Ensure this value has no more than 64000 byte in wire format (it has {len(wire)}).')
+                raise ValidationError(
+                    f"Ensure this value has no more than 64000 byte in wire format (it has {len(wire)})."
+                )
 
             parser = dns.wire.Parser(wire, current=0)
             with parser.restrict_to(len(wire)):
-                rdata = cls.from_wire_parser(rdclass=rdataclass.IN, rdtype=rdtype, parser=parser)
+                rdata = cls.from_wire_parser(
+                    rdclass=rdataclass.IN, rdtype=rdtype, parser=parser
+                )
 
             # Convert to canonical presentation format, disable chunking of records.
             # Exempt types which have chunksize hardcoded (prevents "got multiple values for keyword argument 'chunksize'").
-            chunksize_exception_types = (dns.rdatatype.OPENPGPKEY, dns.rdatatype.EUI48, dns.rdatatype.EUI64)
+            chunksize_exception_types = (
+                dns.rdatatype.OPENPGPKEY,
+                dns.rdatatype.EUI48,
+                dns.rdatatype.EUI64,
+            )
             if rdtype in chunksize_exception_types:
                 return rdata.to_text()
             else:
                 return rdata.to_text(chunksize=0)
         except binascii.Error:
             # e.g., odd-length string
-            raise ValueError('Cannot parse hexadecimal or base64 record contents')
+            raise ValueError("Cannot parse hexadecimal or base64 record contents")
         except dns.exception.SyntaxError as e:
             # e.g., A/127.0.0.999
-            if 'quote' in e.args[0]:
-                raise ValueError(f'Data for {type_} records must be given using quotation marks.')
+            if "quote" in e.args[0]:
+                raise ValueError(
+                    f"Data for {type_} records must be given using quotation marks."
+                )
             else:
-                raise ValueError(f'Record content for type {type_} malformed: {",".join(e.args)}')
+                raise ValueError(
+                    f'Record content for type {type_} malformed: {",".join(e.args)}'
+                )
         except dns.name.NeedAbsoluteNameOrOrigin:
-            raise ValueError('Hostname must be fully qualified (i.e., end in a dot: "example.com.")')
+            raise ValueError(
+                'Hostname must be fully qualified (i.e., end in a dot: "example.com.")'
+            )
         except ValueError as ex:
             # e.g., string ("asdf") cannot be parsed into int on base 10
-            raise ValueError(f'Cannot parse record contents: {ex}')
+            raise ValueError(f"Cannot parse record contents: {ex}")
         except Exception as e:
             # TODO see what exceptions raise here for faulty input
             raise e
 
     def __str__(self):
-        return '<RR %s %s rr_set=%s>' % (self.pk, self.content, self.rrset.pk)
+        return "<RR %s %s rr_set=%s>" % (self.pk, self.content, self.rrset.pk)

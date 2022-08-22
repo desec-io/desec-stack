@@ -31,42 +31,51 @@ class EmptyPayloadMixin:
 
 class RRsetView:
     serializer_class = RRsetSerializer
-    permission_classes = (IsAuthenticated, permissions.IsDomainOwner, permissions.TokenHasDomainRRsetsPermission,)
+    permission_classes = (
+        IsAuthenticated,
+        permissions.IsDomainOwner,
+        permissions.TokenHasDomainRRsetsPermission,
+    )
 
     @property
     def domain(self):
         try:
-            return self.request.user.domains.get(name=self.kwargs['name'])
+            return self.request.user.domains.get(name=self.kwargs["name"])
         except models.Domain.DoesNotExist:
             raise Http404
 
     @property
     def throttle_scope(self):
-        return 'dns_api_read' if self.request.method in SAFE_METHODS else 'dns_api_write_rrsets'
+        return (
+            "dns_api_read"
+            if self.request.method in SAFE_METHODS
+            else "dns_api_write_rrsets"
+        )
 
     @property
     def throttle_scope_bucket(self):
         # Note: bucket should remain constant even when domain is recreated
-        return None if self.request.method in SAFE_METHODS else self.kwargs['name']
+        return None if self.request.method in SAFE_METHODS else self.kwargs["name"]
 
     def get_queryset(self):
         return self.domain.rrset_set
 
     def get_serializer_context(self):
         # noinspection PyUnresolvedReferences
-        return {**super().get_serializer_context(), 'domain': self.domain}
+        return {**super().get_serializer_context(), "domain": self.domain}
 
     def perform_update(self, serializer):
         with PDNSChangeTracker():
             super().perform_update(serializer)
 
 
-class RRsetDetail(RRsetView, IdempotentDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
-
+class RRsetDetail(
+    RRsetView, IdempotentDestroyMixin, generics.RetrieveUpdateDestroyAPIView
+):
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
 
-        filter_kwargs = {k: self.kwargs[k] for k in ['subname', 'type']}
+        filter_kwargs = {k: self.kwargs[k] for k in ["subname", "type"]}
         obj = generics.get_object_or_404(queryset, **filter_kwargs)
 
         # May raise a permission denied
@@ -86,22 +95,30 @@ class RRsetDetail(RRsetView, IdempotentDestroyMixin, generics.RetrieveUpdateDest
             super().perform_destroy(instance)
 
 
-class RRsetList(RRsetView, EmptyPayloadMixin, generics.ListCreateAPIView, generics.UpdateAPIView):
-
+class RRsetList(
+    RRsetView, EmptyPayloadMixin, generics.ListCreateAPIView, generics.UpdateAPIView
+):
     def get_queryset(self):
         rrsets = super().get_queryset()
 
-        for filter_field in ('subname', 'type'):
+        for filter_field in ("subname", "type"):
             value = self.request.query_params.get(filter_field)
 
             if value is not None:
                 # TODO consider moving this
-                if filter_field == 'type' and value in models.records.RR_SET_TYPES_AUTOMATIC:
-                    raise PermissionDenied("You cannot tinker with the %s RRset." % value)
+                if (
+                    filter_field == "type"
+                    and value in models.records.RR_SET_TYPES_AUTOMATIC
+                ):
+                    raise PermissionDenied(
+                        "You cannot tinker with the %s RRset." % value
+                    )
 
-                rrsets = rrsets.filter(**{'%s__exact' % filter_field: value})
+                rrsets = rrsets.filter(**{"%s__exact" % filter_field: value})
 
-        return rrsets.all()  # without .all(), cache is sometimes inconsistent with actual state in bulk tests. (Why?)
+        return (
+            rrsets.all()
+        )  # without .all(), cache is sometimes inconsistent with actual state in bulk tests. (Why?)
 
     def get_object(self):
         # For this view, the object we're operating on is the queryset that one can also GET. Serializing a queryset
@@ -113,11 +130,11 @@ class RRsetList(RRsetView, EmptyPayloadMixin, generics.ListCreateAPIView, generi
     def get_serializer(self, *args, **kwargs):
         kwargs = kwargs.copy()
 
-        if 'many' not in kwargs:
-            if self.request.method in ['POST']:
-                kwargs['many'] = isinstance(kwargs.get('data'), list)
-            elif self.request.method in ['PATCH', 'PUT']:
-                kwargs['many'] = True
+        if "many" not in kwargs:
+            if self.request.method in ["POST"]:
+                kwargs["many"] = isinstance(kwargs.get("data"), list)
+            elif self.request.method in ["PATCH", "PUT"]:
+                kwargs["many"] = True
 
         return super().get_serializer(*args, **kwargs)
 

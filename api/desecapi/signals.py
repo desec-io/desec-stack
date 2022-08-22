@@ -5,5 +5,7 @@ from desecapi import models
 
 
 @receiver(post_save, sender=models.Domain, dispatch_uid=__name__)
-def domain_handler(sender, instance: models.Domain, created, raw, using, update_fields, **kwargs):
+def domain_handler(
+    sender, instance: models.Domain, created, raw, using, update_fields, **kwargs
+):
     pass

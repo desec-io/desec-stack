@@ -14,7 +14,7 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
 
     def _get_dyndns12(self):
         with self.assertPdnsNoRequestsBut(self.requests_desec_rr_sets_update()):
-            return self.client.get(self.reverse('v1:dyndns12update'))
+            return self.client.get(self.reverse("v1:dyndns12update"))
 
     def assertDynDNS12Status(self, code=HTTP_200_OK, authorization=None):
         if authorization:
@@ -27,43 +27,61 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
             self.client.set_credentials_basic_auth(username, token)
             self.assertDynDNS12Status(code)
 
-        assertDynDNS12AuthenticationStatus('', self.token.plain, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(self.owner.get_username(), self.token.plain, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(self.my_domain.name, self.token.plain, HTTP_200_OK)
-        assertDynDNS12AuthenticationStatus(' ' + self.my_domain.name, self.token.plain, HTTP_401_UNAUTHORIZED)
-        assertDynDNS12AuthenticationStatus('wrong', self.token.plain, HTTP_401_UNAUTHORIZED)
-        assertDynDNS12AuthenticationStatus('', 'wrong', HTTP_401_UNAUTHORIZED)
-        assertDynDNS12AuthenticationStatus(self.user.get_username(), 'wrong', HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus("", self.token.plain, HTTP_200_OK)
+        assertDynDNS12AuthenticationStatus(
+            self.owner.get_username(), self.token.plain, HTTP_200_OK
+        )
+        assertDynDNS12AuthenticationStatus(
+            self.my_domain.name, self.token.plain, HTTP_200_OK
+        )
+        assertDynDNS12AuthenticationStatus(
+            " " + self.my_domain.name, self.token.plain, HTTP_401_UNAUTHORIZED
+        )
+        assertDynDNS12AuthenticationStatus(
+            "wrong", self.token.plain, HTTP_401_UNAUTHORIZED
+        )
+        assertDynDNS12AuthenticationStatus("", "wrong", HTTP_401_UNAUTHORIZED)
+        assertDynDNS12AuthenticationStatus(
+            self.user.get_username(), "wrong", HTTP_401_UNAUTHORIZED
+        )
 
     def test_malformed_basic_auth(self):
         for authorization in [
-            'asdf:asdf:sadf',
-            'asdf',
-            'bull[%]shit',
-            '你好',
-            '💩💩💩💩',
-            '💩💩:💩💩',
+            "asdf:asdf:sadf",
+            "asdf",
+            "bull[%]shit",
+            "你好",
+            "💩💩💩💩",
+            "💩💩:💩💩",
         ]:
-            self.assertDynDNS12Status(authorization=authorization, code=HTTP_401_UNAUTHORIZED)
+            self.assertDynDNS12Status(
+                authorization=authorization, code=HTTP_401_UNAUTHORIZED
+            )
 
 
 class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
-
     def setUp(self):
         super().setUp()
         # Refresh token from database, but keep plain value
-        self.token, self.token.plain = Token.objects.get(pk=self.token.pk), self.token.plain
+        self.token, self.token.plain = (
+            Token.objects.get(pk=self.token.pk),
+            self.token.plain,
+        )
 
-    def assertAuthenticationStatus(self, code, plain=None, expired=False ,**kwargs):
+    def assertAuthenticationStatus(self, code, plain=None, expired=False, **kwargs):
         plain = plain or self.token.plain
         self.client.set_credentials_token_auth(plain)
 
         # only forward REMOTE_ADDR if not None
-        if kwargs.get('REMOTE_ADDR') is None:
-            kwargs.pop('REMOTE_ADDR', None)
+        if kwargs.get("REMOTE_ADDR") is None:
+            kwargs.pop("REMOTE_ADDR", None)
 
-        response = self.client.get(self.reverse('v1:root'), **kwargs)
-        body = json.dumps({'detail': 'Invalid token.'}) if code == HTTP_401_UNAUTHORIZED else None
+        response = self.client.get(self.reverse("v1:root"), **kwargs)
+        body = (
+            json.dumps({"detail": "Invalid token."})
+            if code == HTTP_401_UNAUTHORIZED
+            else None
+        )
         self.assertResponse(response, code, body)
 
         if expired:
@@ -78,16 +96,18 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
     def test_token_subnets(self):
         datas = [  # Format: allowed_subnets, status, client_ip | None, [client_ip, ...]
             ([], HTTP_401_UNAUTHORIZED, None),
-            (['127.0.0.1'], HTTP_200_OK, None),
-            (['1.2.3.4'], HTTP_401_UNAUTHORIZED, None),
-            (['1.2.3.4'], HTTP_200_OK, '1.2.3.4'),
-            (['1.2.3.0/24'], HTTP_200_OK, '1.2.3.4'),
-            (['1.2.3.0/24'], HTTP_401_UNAUTHORIZED, 'bade::affe'),
-            (['bade::/64'], HTTP_200_OK, 'bade::affe'),
-            (['bade::/64', '1.2.3.0/24'], HTTP_200_OK, 'bade::affe', '1.2.3.66'),
+            (["127.0.0.1"], HTTP_200_OK, None),
+            (["1.2.3.4"], HTTP_401_UNAUTHORIZED, None),
+            (["1.2.3.4"], HTTP_200_OK, "1.2.3.4"),
+            (["1.2.3.0/24"], HTTP_200_OK, "1.2.3.4"),
+            (["1.2.3.0/24"], HTTP_401_UNAUTHORIZED, "bade::affe"),
+            (["bade::/64"], HTTP_200_OK, "bade::affe"),
+            (["bade::/64", "1.2.3.0/24"], HTTP_200_OK, "bade::affe", "1.2.3.66"),
         ]
 
-        for allowed_subnets, status, client_ips in ((*data[:2], data[2:]) for data in datas):
+        for allowed_subnets, status, client_ips in (
+            (*data[:2], data[2:]) for data in datas
+        ):
             self.token.allowed_subnets = allowed_subnets
             self.token.save()
             for client_ip in client_ips:
@@ -99,7 +119,10 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         self.token.save()
 
         self.assertAuthenticationStatus(HTTP_200_OK)
-        with mock.patch('desecapi.models.timezone.now', return_value=timezone.now() + timedelta(days=3650)):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=timezone.now() + timedelta(days=3650),
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
 
         # Maximum age zero: token cannot be used
@@ -113,9 +136,15 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         self.token.save()
 
         second = timedelta(seconds=1)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + period - second):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + period - second,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + period + second):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + period + second,
+        ):
             self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, expired=True)
 
     def test_token_max_unused_period(self):
@@ -134,24 +163,46 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
 
         # Can't use after period if token was never used (last_used is None)
         self.assertIsNone(self.token.last_used)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + period + second):
-            self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, plain=plain, expired=True)
-            self.assertIsNone(Token.objects.get(pk=self.token.pk).last_used)  # unchanged
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + period + second,
+        ):
+            self.assertAuthenticationStatus(
+                HTTP_401_UNAUTHORIZED, plain=plain, expired=True
+            )
+            self.assertIsNone(
+                Token.objects.get(pk=self.token.pk).last_used
+            )  # unchanged
 
         # Can use after half the period
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + period/2):
+        with mock.patch(
+            "desecapi.models.timezone.now", return_value=self.token.created + period / 2
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK, plain=plain)
         self.token = Token.objects.get(pk=self.token.pk)  # update last_used field
 
         # Can't use once another period is over
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.last_used + period + second):
-            self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, plain=plain, expired=True)
-            self.assertEqual(self.token.last_used, Token.objects.get(pk=self.token.pk).last_used)  # unchanged
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.last_used + period + second,
+        ):
+            self.assertAuthenticationStatus(
+                HTTP_401_UNAUTHORIZED, plain=plain, expired=True
+            )
+            self.assertEqual(
+                self.token.last_used, Token.objects.get(pk=self.token.pk).last_used
+            )  # unchanged
 
         # ... but one second before, and also for one more period
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.last_used + period - second):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.last_used + period - second,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK, plain=plain)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.last_used + 2*period - 2*second):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.last_used + 2 * period - 2 * second,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK, plain=plain)
 
         # No maximum age: can use now and in ten years
@@ -159,7 +210,10 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         self.token.save()
 
         self.assertAuthenticationStatus(HTTP_200_OK, plain=plain)
-        with mock.patch('desecapi.models.timezone.now', return_value=timezone.now() + timedelta(days=3650)):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=timezone.now() + timedelta(days=3650),
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK, plain=plain)
 
     def test_token_max_age_max_unused_period(self):
@@ -169,28 +223,48 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
         self.token.save()
 
         # max_unused_period wins if tighter than max_age
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 1.25*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 1.25 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, expired=True)
 
         # Can use immediately
         self.assertAuthenticationStatus(HTTP_200_OK)
 
         # Can use continuously within max_unused_period
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 0.75*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 0.75 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 1.5*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now", return_value=self.token.created + 1.5 * hour
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
 
         # max_unused_period wins again if tighter than max_age
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 2.75*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 2.75 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, expired=True)
 
         # Can use continuously within max_unused_period
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 2.25*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 2.25 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 2.75*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 2.75 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_200_OK)
 
         # max_age wins again if tighter than max_unused_period
-        with mock.patch('desecapi.models.timezone.now', return_value=self.token.created + 3.25*hour):
+        with mock.patch(
+            "desecapi.models.timezone.now",
+            return_value=self.token.created + 3.25 * hour,
+        ):
             self.assertAuthenticationStatus(HTTP_401_UNAUTHORIZED, expired=True)

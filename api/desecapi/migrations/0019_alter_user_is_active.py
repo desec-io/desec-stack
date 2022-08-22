@@ -6,7 +6,9 @@ from django.db import migrations, models
 def forwards_func(apps, schema_editor):
     User = apps.get_model("desecapi", "User")
     db_alias = schema_editor.connection.alias
-    User.objects.using(db_alias).filter(is_active=False, last_login__isnull=True).update(is_active=None)
+    User.objects.using(db_alias).filter(
+        is_active=False, last_login__isnull=True
+    ).update(is_active=None)
 
 
 def reverse_func(apps, schema_editor):
@@ -18,13 +20,13 @@ def reverse_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0018_tokendomainpolicy'),
+        ("desecapi", "0018_tokendomainpolicy"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='is_active',
+            model_name="user",
+            name="is_active",
             field=models.BooleanField(default=True, null=True),
         ),
         migrations.RunPython(forwards_func, reverse_func),

@@ -9,12 +9,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0001_initial_squashed_again'),
+        ("desecapi", "0001_initial_squashed_again"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='donation',
-            options={'managed': False},
+            name="donation",
+            options={"managed": False},
         ),
     ]

@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0025_alter_token_max_age_alter_token_max_unused_period'),
+        ("desecapi", "0025_alter_token_max_age_alter_token_max_unused_period"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='domain',
-            name='replicated',
+            model_name="domain",
+            name="replicated",
         ),
         migrations.RemoveField(
-            model_name='domain',
-            name='replication_duration',
+            model_name="domain",
+            name="replication_duration",
         ),
     ]

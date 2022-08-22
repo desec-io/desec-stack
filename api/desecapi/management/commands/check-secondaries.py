@@ -17,7 +17,7 @@ def query_serial(zone, server):
     Checks a zone's serial on a server.
     :return: serial if received; None if the server did not know; False on error
     """
-    query = dns.message.make_query(zone, 'SOA')
+    query = dns.message.make_query(zone, "SOA")
     try:
         response = dns.query.tcp(query, server, timeout=5)
     except dns.exception.Timeout:
@@ -30,18 +30,32 @@ def query_serial(zone, server):
 
 
 class Command(BaseCommand):
-    help = 'Check secondaries for consistency with nsmaster.'
+    help = "Check secondaries for consistency with nsmaster."
 
     def __init__(self, *args, **kwargs):
-        self.servers = {gethostbyname(server): server for server in settings.WATCHDOG_SECONDARIES}
+        self.servers = {
+            gethostbyname(server): server for server in settings.WATCHDOG_SECONDARIES
+        }
         super().__init__(*args, **kwargs)
 
     def add_arguments(self, parser):
-        parser.add_argument('domain-name', nargs='*',
-                            help='Domain name to check. If omitted, will check all recently published domains.')
-        parser.add_argument('--delay', type=int, default=120, help='Delay SOA checks to allow pending AXFRs to finish.')
-        parser.add_argument('--window', type=int, default=settings.WATCHDOG_WINDOW_SEC,
-                            help='Check domains that were published no longer than this many seconds ago.')
+        parser.add_argument(
+            "domain-name",
+            nargs="*",
+            help="Domain name to check. If omitted, will check all recently published domains.",
+        )
+        parser.add_argument(
+            "--delay",
+            type=int,
+            default=120,
+            help="Delay SOA checks to allow pending AXFRs to finish.",
+        )
+        parser.add_argument(
+            "--window",
+            type=int,
+            default=settings.WATCHDOG_WINDOW_SEC,
+            help="Check domains that were published no longer than this many seconds ago.",
+        )
 
     def find_outdated_servers(self, zone, local_serial):
         """
@@ -56,15 +70,29 @@ class Command(BaseCommand):
         return outdated
 
     def handle(self, *args, **options):
-        threshold = timezone.now() - timedelta(seconds=options['window'])
-        recent_domain_names = Domain.objects.filter(published__gt=threshold).values_list('name', flat=True)
-        serials = {zone: s for zone, s in pdns.get_serials().items() if zone.rstrip('.') in recent_domain_names}
+        threshold = timezone.now() - timedelta(seconds=options["window"])
+        recent_domain_names = Domain.objects.filter(
+            published__gt=threshold
+        ).values_list("name", flat=True)
+        serials = {
+            zone: s
+            for zone, s in pdns.get_serials().items()
+            if zone.rstrip(".") in recent_domain_names
+        }
 
-        if options['domain-name']:
-            serials = {zone: serial for zone, serial in serials.items() if zone.rstrip('.') in options['domain-name']}
+        if options["domain-name"]:
+            serials = {
+                zone: serial
+                for zone, serial in serials.items()
+                if zone.rstrip(".") in options["domain-name"]
+            }
 
-        print('Sleeping for {} seconds before checking {} domains ...'.format(options['delay'], len(serials)))
-        sleep(options['delay'])
+        print(
+            "Sleeping for {} seconds before checking {} domains ...".format(
+                options["delay"], len(serials)
+            )
+        )
+        sleep(options["delay"])
 
         outdated_zone_count = 0
         outdated_secondaries = set()
@@ -77,17 +105,25 @@ class Command(BaseCommand):
                 if serial is False:
                     timeouts.setdefault(server, [])
                     timeouts[server].append(zone)
-            outdated_serials = {k: serial for k, serial in outdated_serials.items() if serial is not False}
+            outdated_serials = {
+                k: serial
+                for k, serial in outdated_serials.items()
+                if serial is not False
+            }
 
             if outdated_serials:
                 outdated_secondaries.update(outdated_serials.keys())
-                output.append(f'{zone} ({local_serial}) is outdated on {outdated_serials}')
+                output.append(
+                    f"{zone} ({local_serial}) is outdated on {outdated_serials}"
+                )
                 print(output[-1])
                 outdated_zone_count += 1
             else:
-                print(f'{zone} ok')
+                print(f"{zone} ok")
 
-        output.append(f'Checked {len(serials)} domains, {outdated_zone_count} were outdated.')
+        output.append(
+            f"Checked {len(serials)} domains, {outdated_zone_count} were outdated."
+        )
         print(output[-1])
 
         self.report(outdated_secondaries, output, timeouts)
@@ -97,18 +133,22 @@ class Command(BaseCommand):
             return
 
         subject = f'{timeouts and "CRITICAL ALERT" or "ALERT"} {len(outdated_secondaries)} secondaries out of sync'
-        message = ''
+        message = ""
 
         if timeouts:
-            message += f'The following servers had timeouts:\n\n{timeouts}\n\n'
+            message += f"The following servers had timeouts:\n\n{timeouts}\n\n"
 
         if outdated_secondaries:
-            message += f'The following {len(outdated_secondaries)} secondaries are out of sync:\n'
+            message += f"The following {len(outdated_secondaries)} secondaries are out of sync:\n"
             for outdated_secondary in outdated_secondaries:
-                message += f'* {outdated_secondary}\n'
-            message += '\n'
+                message += f"* {outdated_secondary}\n"
+            message += "\n"
 
-        message += f'Current secondary IPs: {self.servers}\n'
-        message += '\n'.join(output)
+        message += f"Current secondary IPs: {self.servers}\n"
+        message += "\n".join(output)
 
-        mail_admins(subject, message, connection=get_connection('django.core.mail.backends.smtp.EmailBackend'))
+        mail_admins(
+            subject,
+            message,
+            connection=get_connection("django.core.mail.backends.smtp.EmailBackend"),
+        )

@@ -4,7 +4,6 @@ from desecapi.tests.base import DomainOwnerTestCase
 
 
 class TokenPoliciesTestCase(DomainOwnerTestCase):
-
     def setUp(self):
         super().setUp()
         self.client.credentials()  # remove default credential (corresponding to domain owner)
@@ -12,20 +11,24 @@ class TokenPoliciesTestCase(DomainOwnerTestCase):
         self.other_token = self.create_token(self.user)
 
     def test_policies(self):
-        url = DomainOwnerTestCase.reverse('v1:token-policies-root', token_id=self.token.id)
+        url = DomainOwnerTestCase.reverse(
+            "v1:token-policies-root", token_id=self.token.id
+        )
 
         kwargs = {}
         response = self.client.get(url, **kwargs)
         self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
 
-        kwargs.update(HTTP_AUTHORIZATION=f'Token {self.token_manage.plain}')
+        kwargs.update(HTTP_AUTHORIZATION=f"Token {self.token_manage.plain}")
         response = self.client.get(url, **kwargs)
         self.assertStatus(response, status.HTTP_200_OK)
 
-        kwargs.update(HTTP_AUTHORIZATION=f'Token {self.token.plain}')
+        kwargs.update(HTTP_AUTHORIZATION=f"Token {self.token.plain}")
         response = self.client.get(url, **kwargs)
         self.assertStatus(response, status.HTTP_200_OK)
 
-        url = DomainOwnerTestCase.reverse('v1:token-policies-root', token_id=self.token_manage.id)
+        url = DomainOwnerTestCase.reverse(
+            "v1:token-policies-root", token_id=self.token_manage.id
+        )
         response = self.client.get(url, **kwargs)
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)

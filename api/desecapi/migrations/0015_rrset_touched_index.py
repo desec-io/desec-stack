@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0014_replication'),
+        ("desecapi", "0014_replication"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='rrset',
-            name='touched',
+            model_name="rrset",
+            name="touched",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

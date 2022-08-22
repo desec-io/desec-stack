@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0021_authenticatednoopuseraction'),
+        ("desecapi", "0021_authenticatednoopuseraction"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='outreach_preference',
+            model_name="user",
+            name="outreach_preference",
             field=models.BooleanField(default=True),
         ),
     ]

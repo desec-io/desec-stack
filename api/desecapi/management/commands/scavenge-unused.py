@@ -17,40 +17,57 @@ notice_days_warn = 7
 
 
 class Command(BaseCommand):
-    base_queryset = models.Domain.objects\
-        .exclude(renewal_state=models.Domain.RenewalState.IMMORTAL).filter(owner__is_active=True)
-    _rrsets_outer_queryset = models.RRset.objects.filter(domain=OuterRef('pk')).values('domain')  # values() is GROUP BY
-    _max_touched = Subquery(_rrsets_outer_queryset.annotate(max_touched=Max('touched')).values('max_touched'))
+    base_queryset = models.Domain.objects.exclude(
+        renewal_state=models.Domain.RenewalState.IMMORTAL
+    ).filter(owner__is_active=True)
+    _rrsets_outer_queryset = models.RRset.objects.filter(domain=OuterRef("pk")).values(
+        "domain"
+    )  # values() is GROUP BY
+    _max_touched = Subquery(
+        _rrsets_outer_queryset.annotate(max_touched=Max("touched")).values(
+            "max_touched"
+        )
+    )
 
     @classmethod
     def renew_touched_domains(cls):
         recently_active_domains = cls.base_queryset.annotate(
-            last_active=Greatest(cls._max_touched, 'published')
+            last_active=Greatest(cls._max_touched, "published")
         ).filter(
             last_active__date__gte=timezone.localdate() - datetime.timedelta(days=183),
-            renewal_changed__lt=F('last_active'),
+            renewal_changed__lt=F("last_active"),
         )
 
-        print('Renewing domains:', *recently_active_domains.values_list('name', flat=True))
-        recently_active_domains.update(renewal_state=models.Domain.RenewalState.FRESH, renewal_changed=F('last_active'))
+        print(
+            "Renewing domains:", *recently_active_domains.values_list("name", flat=True)
+        )
+        recently_active_domains.update(
+            renewal_state=models.Domain.RenewalState.FRESH,
+            renewal_changed=F("last_active"),
+        )
 
     @classmethod
     def warn_domain_deletion(cls, renewal_state, notice_days, inactive_days):
         # We act when `renewal_changed` is at least this date (or older)
-        inactive_threshold = timezone.localdate() - datetime.timedelta(days=inactive_days)
+        inactive_threshold = timezone.localdate() - datetime.timedelta(
+            days=inactive_days
+        )
         # Filter candidates which have the state of interest, at least since the calculated date
-        expiry_candidates = cls.base_queryset.filter(renewal_state=renewal_state,
-                                                     renewal_changed__date__lte=inactive_threshold)
+        expiry_candidates = cls.base_queryset.filter(
+            renewal_state=renewal_state, renewal_changed__date__lte=inactive_threshold
+        )
 
         # Group domains by user, so that we can send one message per user
         domain_user_map = {}
-        for domain in expiry_candidates.order_by('name'):
+        for domain in expiry_candidates.order_by("name"):
             if domain.owner not in domain_user_map:
                 domain_user_map[domain.owner] = []
             domain_user_map[domain.owner].append(domain)
 
         # Prepare and send emails, and keep renewal status in sync
-        context = {'deletion_date': timezone.localdate() + datetime.timedelta(days=notice_days)}
+        context = {
+            "deletion_date": timezone.localdate() + datetime.timedelta(days=notice_days)
+        }
         for user, domains in domain_user_map.items():
             with transaction.atomic():
                 # Update renewal status of the user's affected domains, but don't commit before sending the email
@@ -58,17 +75,27 @@ class Command(BaseCommand):
                 for domain in domains:
                     domain.renewal_state += 1
                     domain.renewal_changed = timezone.now()
-                    domain.save(update_fields=['renewal_state', 'renewal_changed'])
-                    actions.append(models.AuthenticatedRenewDomainBasicUserAction(user=user, domain=domain))
-                serializers.AuthenticatedRenewDomainBasicUserActionSerializer(actions, many=True, context=context).save()
+                    domain.save(update_fields=["renewal_state", "renewal_changed"])
+                    actions.append(
+                        models.AuthenticatedRenewDomainBasicUserAction(
+                            user=user, domain=domain
+                        )
+                    )
+                serializers.AuthenticatedRenewDomainBasicUserActionSerializer(
+                    actions, many=True, context=context
+                ).save()
 
     @classmethod
     def delete_domains(cls, inactive_days):
-        expired_domains = cls.base_queryset.filter(renewal_state=models.Domain.RenewalState.WARNED).annotate(
-            last_active=Greatest(cls._max_touched, 'published')
-        ).filter(
-            renewal_changed__date__lte=timezone.localdate() - datetime.timedelta(days=notice_days_warn),
-            last_active__date__lte=timezone.localdate() - datetime.timedelta(days=inactive_days),
+        expired_domains = (
+            cls.base_queryset.filter(renewal_state=models.Domain.RenewalState.WARNED)
+            .annotate(last_active=Greatest(cls._max_touched, "published"))
+            .filter(
+                renewal_changed__date__lte=timezone.localdate()
+                - datetime.timedelta(days=notice_days_warn),
+                last_active__date__lte=timezone.localdate()
+                - datetime.timedelta(days=inactive_days),
+            )
         )
 
         for domain in expired_domains:
@@ -88,17 +115,28 @@ class Command(BaseCommand):
 
             # Announce domain deletion in `notice_days_notice` days if not yet notified (FRESH) and inactive for
             # `inactive_days` days. Updates status from FRESH to NOTIFIED.
-            self.warn_domain_deletion(models.Domain.RenewalState.FRESH, notice_days_notify, fresh_days)
+            self.warn_domain_deletion(
+                models.Domain.RenewalState.FRESH, notice_days_notify, fresh_days
+            )
 
             # After `notice_days_notify - notice_days_warn` more days, warn again if the status has not changed
             # Updates status from NOTIFIED to WARNED.
-            self.warn_domain_deletion(models.Domain.RenewalState.NOTIFIED, notice_days_warn,
-                                      notice_days_notify - notice_days_warn)
+            self.warn_domain_deletion(
+                models.Domain.RenewalState.NOTIFIED,
+                notice_days_warn,
+                notice_days_notify - notice_days_warn,
+            )
 
             # Finally, delete domains inactive for `inactive_days + notice_days_notify` days if status has not changed
             self.delete_domains(fresh_days + notice_days_notify)
         except Exception as e:
-            subject = 'Renewal Exception!'
-            message = f'{type(e)}\n\n{str(e)}'
-            print(f'Chores exception: {type(e)}, {str(e)}')
-            mail_admins(subject, message, connection=get_connection('django.core.mail.backends.smtp.EmailBackend'))
+            subject = "Renewal Exception!"
+            message = f"{type(e)}\n\n{str(e)}"
+            print(f"Chores exception: {type(e)}, {str(e)}")
+            mail_admins(
+                subject,
+                message,
+                connection=get_connection(
+                    "django.core.mail.backends.smtp.EmailBackend"
+                ),
+            )

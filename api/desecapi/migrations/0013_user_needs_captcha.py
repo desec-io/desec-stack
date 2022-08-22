@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0012_rrset_label_length'),
+        ("desecapi", "0012_rrset_label_length"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='needs_captcha',
+            model_name="user",
+            name="needs_captcha",
             field=models.BooleanField(default=False),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='needs_captcha',
+            model_name="user",
+            name="needs_captcha",
             field=models.BooleanField(default=True),
         ),
     ]

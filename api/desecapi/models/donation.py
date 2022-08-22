@@ -8,7 +8,7 @@ from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 
 
-class Donation(ExportModelOperationsMixin('Donation'), models.Model):
+class Donation(ExportModelOperationsMixin("Donation"), models.Model):
     @staticmethod
     def _created_default():
         return timezone.now()

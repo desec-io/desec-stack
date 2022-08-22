@@ -14,24 +14,25 @@ from desecapi import metrics
 
 def captcha_default_content(kind: str) -> str:
     if kind == Captcha.Kind.IMAGE:
-        alphabet = (string.ascii_uppercase + string.digits).translate({ord(c): None for c in 'IO0'})
+        alphabet = (string.ascii_uppercase + string.digits).translate(
+            {ord(c): None for c in "IO0"}
+        )
         length = 5
     elif kind == Captcha.Kind.AUDIO:
         alphabet = string.digits
         length = 8
     else:
-        raise ValueError(f'Unknown Captcha kind: {kind}')
+        raise ValueError(f"Unknown Captcha kind: {kind}")
 
-    content = ''.join([secrets.choice(alphabet) for _ in range(length)])
-    metrics.get('desecapi_captcha_content_created').labels(kind).inc()
+    content = "".join([secrets.choice(alphabet) for _ in range(length)])
+    metrics.get("desecapi_captcha_content_created").labels(kind).inc()
     return content
 
 
-class Captcha(ExportModelOperationsMixin('Captcha'), models.Model):
-
+class Captcha(ExportModelOperationsMixin("Captcha"), models.Model):
     class Kind(models.TextChoices):
-        IMAGE = 'image'
-        AUDIO = 'audio'
+        IMAGE = "image"
+        AUDIO = "audio"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
@@ -48,6 +49,5 @@ class Captcha(ExportModelOperationsMixin('Captcha'), models.Model):
         self.delete()
         return (
             str(solution).upper().strip() == self.content  # solution correct
-            and
-            age <= settings.CAPTCHA_VALIDITY_PERIOD  # not expired
+            and age <= settings.CAPTCHA_VALIDITY_PERIOD  # not expired
         )

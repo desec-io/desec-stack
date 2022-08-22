@@ -32,7 +32,9 @@ class ConditionalExistenceModelSerializer(serializers.ModelSerializer):
         raise NotImplementedError
 
     def to_representation(self, instance):
-        return None if not self.exists(instance) else super().to_representation(instance)
+        return (
+            None if not self.exists(instance) else super().to_representation(instance)
+        )
 
     @property
     def data(self):
@@ -71,36 +73,38 @@ class NonBulkOnlyDefault:
     operations.
     Implementation inspired by CreateOnlyDefault.
     """
+
     requires_context = True
 
     def __init__(self, default):
         self.default = default
 
     def __call__(self, serializer_field):
-        is_many = getattr(serializer_field.root, 'many', False)
+        is_many = getattr(serializer_field.root, "many", False)
         if is_many:
             raise serializers.SkipField()
         if callable(self.default):
-            if getattr(self.default, 'requires_context', False):
+            if getattr(self.default, "requires_context", False):
                 return self.default(serializer_field)
             else:
                 return self.default()
         return self.default
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, repr(self.default))
+        return "%s(%s)" % (self.__class__.__name__, repr(self.default))
 
 
 class RRSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.RR
-        fields = ('content',)
+        fields = ("content",)
 
     def to_internal_value(self, data):
         if not isinstance(data, str):
-            raise serializers.ValidationError('Must be a string.', code='must-be-a-string')
-        return super().to_internal_value({'content': data})
+            raise serializers.ValidationError(
+                "Must be a string.", code="must-be-a-string"
+            )
+        return super().to_internal_value({"content": data})
 
     def to_representation(self, instance):
         return instance.content
@@ -110,12 +114,12 @@ class RRsetListSerializer(serializers.ListSerializer):
     default_error_messages = {
         **serializers.Serializer.default_error_messages,
         **serializers.ListSerializer.default_error_messages,
-        **{'not_a_list': 'Expected a list of items but got {input_type}.'},
+        **{"not_a_list": "Expected a list of items but got {input_type}."},
     }
 
     @staticmethod
     def _key(data_item):
-        return data_item.get('subname'), data_item.get('type')
+        return data_item.get("subname"), data_item.get("type")
 
     @staticmethod
     def _types_by_position_string(conflicting_indices_by_type):
@@ -124,24 +128,33 @@ class RRsetListSerializer(serializers.ListSerializer):
             for position in conflict_positions:
                 types_by_position.setdefault(position, []).append(type_)
         # Sort by position, None at the end
-        types_by_position = dict(sorted(types_by_position.items(), key=lambda x: (x[0] is None, x)))
+        types_by_position = dict(
+            sorted(types_by_position.items(), key=lambda x: (x[0] is None, x))
+        )
         db_conflicts = types_by_position.pop(None, None)
-        if db_conflicts: types_by_position['database'] = db_conflicts
+        if db_conflicts:
+            types_by_position["database"] = db_conflicts
         for position, types in types_by_position.items():
-            types_by_position[position] = ', '.join(sorted(types))
-        types_by_position = [f'{position} ({types})' for position, types in types_by_position.items()]
-        return ', '.join(types_by_position)
+            types_by_position[position] = ", ".join(sorted(types))
+        types_by_position = [
+            f"{position} ({types})" for position, types in types_by_position.items()
+        ]
+        return ", ".join(types_by_position)
 
     def to_internal_value(self, data):
         if not isinstance(data, list):
-            message = self.error_messages['not_a_list'].format(input_type=type(data).__name__)
-            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: [message]}, code='not_a_list')
+            message = self.error_messages["not_a_list"].format(
+                input_type=type(data).__name__
+            )
+            raise serializers.ValidationError(
+                {api_settings.NON_FIELD_ERRORS_KEY: [message]}, code="not_a_list"
+            )
 
         if not self.allow_empty and len(data) == 0:
             if self.parent and self.partial:
                 raise serializers.SkipField()
             else:
-                self.fail('empty')
+                self.fail("empty")
 
         partial = self.partial
 
@@ -156,13 +169,19 @@ class RRsetListSerializer(serializers.ListSerializer):
         for idx, item in enumerate(data):
             # Validate data types before using anything from it
             if not isinstance(item, dict):
-                errors[idx].update(non_field_errors=f"Expected a dictionary, but got {type(item).__name__}.")
+                errors[idx].update(
+                    non_field_errors=f"Expected a dictionary, but got {type(item).__name__}."
+                )
                 continue
             s, t = self._key(item)  # subname, type
             if not (isinstance(s, str) or s is None):
-                errors[idx].update(subname=f"Expected a string, but got {type(s).__name__}.")
+                errors[idx].update(
+                    subname=f"Expected a string, but got {type(s).__name__}."
+                )
             if not (isinstance(t, str) or t is None):
-                errors[idx].update(type=f"Expected a string, but got {type(t).__name__}.")
+                errors[idx].update(
+                    type=f"Expected a string, but got {type(t).__name__}."
+                )
             if errors[idx]:
                 continue
 
@@ -170,7 +189,9 @@ class RRsetListSerializer(serializers.ListSerializer):
             # (although invalid), we make indices[s][t] a set to properly keep track. We also check and record RRsets
             # which are known in the database (once per subname), using index `None` (for checking CNAME exclusivity).
             if s not in indices:
-                types = self.child.domain.rrset_set.filter(subname=s).values_list('type', flat=True)
+                types = self.child.domain.rrset_set.filter(subname=s).values_list(
+                    "type", flat=True
+                )
                 indices[s] = {type_: {None} for type_ in types}
             items = indices[s].setdefault(t, set())
             items.add(idx)
@@ -179,7 +200,7 @@ class RRsetListSerializer(serializers.ListSerializer):
         for idx, item in enumerate(data):
             if errors[idx]:
                 continue
-            if item.get('records') == []:
+            if item.get("records") == []:
                 s, t = self._key(item)
                 collapsed_indices[s][t] -= {idx, None}
 
@@ -193,31 +214,40 @@ class RRsetListSerializer(serializers.ListSerializer):
                 s, t = self._key(item)
                 data_indices = indices[s][t] - {None}
                 if len(data_indices) > 1:
-                    raise serializers.ValidationError({
-                        'non_field_errors': [
-                            'Same subname and type as in position(s) %s, but must be unique.' %
-                            ', '.join(map(str, data_indices - {idx}))
-                        ]
-                    })
+                    raise serializers.ValidationError(
+                        {
+                            "non_field_errors": [
+                                "Same subname and type as in position(s) %s, but must be unique."
+                                % ", ".join(map(str, data_indices - {idx}))
+                            ]
+                        }
+                    )
 
                 # see if other rows violate CNAME exclusivity
-                if item.get('records') != []:
-                    conflicting_indices_by_type = {k: v for k, v in collapsed_indices[s].items()
-                                                   if (k == 'CNAME') != (t == 'CNAME')}
+                if item.get("records") != []:
+                    conflicting_indices_by_type = {
+                        k: v
+                        for k, v in collapsed_indices[s].items()
+                        if (k == "CNAME") != (t == "CNAME")
+                    }
                     if any(conflicting_indices_by_type.values()):
-                        types_by_position = self._types_by_position_string(conflicting_indices_by_type)
-                        raise serializers.ValidationError({
-                            'non_field_errors': [
-                                f'RRset with conflicting type present: {types_by_position}.'
-                                ' (No other RRsets are allowed alongside CNAME.)'
-                            ]
-                        })
+                        types_by_position = self._types_by_position_string(
+                            conflicting_indices_by_type
+                        )
+                        raise serializers.ValidationError(
+                            {
+                                "non_field_errors": [
+                                    f"RRset with conflicting type present: {types_by_position}."
+                                    " (No other RRsets are allowed alongside CNAME.)"
+                                ]
+                            }
+                        )
 
                 # determine if this is a partial update (i.e. PATCH):
                 # we allow partial update if a partial update method (i.e. PATCH) is used, as indicated by self.partial,
                 # and if this is not actually a create request because it is unknown and nonempty
                 unknown = self._key(item) not in known_instances.keys()
-                nonempty = item.get('records', None) != []
+                nonempty = item.get("records", None) != []
                 self.partial = partial and not (unknown and nonempty)
                 self.child.instance = known_instances.get(self._key(item), None)
 
@@ -265,21 +295,28 @@ class RRsetListSerializer(serializers.ListSerializer):
         :param validated_data: List of RRset data objects, i.e. dictionaries.
         :return: List of RRset objects (Django.Model subclass) that have been created or updated.
         """
-        def is_empty(data_item):
-            return data_item.get('records', None) == []
 
-        query = Q(pk__in=[])  # start out with an always empty query, see https://stackoverflow.com/q/35893867/6867099
+        def is_empty(data_item):
+            return data_item.get("records", None) == []
+
+        query = Q(
+            pk__in=[]
+        )  # start out with an always empty query, see https://stackoverflow.com/q/35893867/6867099
         for item in validated_data:
-            query |= Q(type=item['type'], subname=item['subname'])  # validation has ensured these fields exist
+            query |= Q(
+                type=item["type"], subname=item["subname"]
+            )  # validation has ensured these fields exist
         instance = instance.filter(query)
 
         instance_index = {(rrset.subname, rrset.type): rrset for rrset in instance}
         data_index = {self._key(data): data for data in validated_data}
 
         if data_index.keys() | instance_index.keys() != data_index.keys():
-            raise ValueError('Given set of known RRsets (`instance`) is not a subset of RRsets referred to in'
-                             ' `validated_data`. While this would produce a correct result, this is illegal due to its'
-                             ' inefficiency.')
+            raise ValueError(
+                "Given set of known RRsets (`instance`) is not a subset of RRsets referred to in"
+                " `validated_data`. While this would produce a correct result, this is illegal due to its"
+                " inefficiency."
+            )
 
         everything = instance_index.keys() | data_index.keys()
         known = instance_index.keys()
@@ -303,64 +340,78 @@ class RRsetListSerializer(serializers.ListSerializer):
             instance_index[(subname, type_)].delete()
 
         for subname, type_ in created:
-            ret.append(self.child.create(
-                validated_data=data_index[(subname, type_)]
-            ))
+            ret.append(self.child.create(validated_data=data_index[(subname, type_)]))
 
         for subname, type_ in updated:
-            ret.append(self.child.update(
-                instance=instance_index[(subname, type_)],
-                validated_data=data_index[(subname, type_)]
-            ))
+            ret.append(
+                self.child.update(
+                    instance=instance_index[(subname, type_)],
+                    validated_data=data_index[(subname, type_)],
+                )
+            )
 
         return ret
 
     def save(self, **kwargs):
-        kwargs.setdefault('domain', self.child.domain)
+        kwargs.setdefault("domain", self.child.domain)
         return super().save(**kwargs)
 
 
 class RRsetSerializer(ConditionalExistenceModelSerializer):
-    domain = serializers.SlugRelatedField(read_only=True, slug_field='name')
+    domain = serializers.SlugRelatedField(read_only=True, slug_field="name")
     records = RRSerializer(many=True)
     ttl = serializers.IntegerField(max_value=settings.MAXIMUM_TTL)
 
     class Meta:
         model = models.RRset
-        fields = ('created', 'domain', 'subname', 'name', 'records', 'ttl', 'type', 'touched',)
+        fields = (
+            "created",
+            "domain",
+            "subname",
+            "name",
+            "records",
+            "ttl",
+            "type",
+            "touched",
+        )
         extra_kwargs = {
-            'subname': {'required': False, 'default': NonBulkOnlyDefault('')}
+            "subname": {"required": False, "default": NonBulkOnlyDefault("")}
         }
         list_serializer_class = RRsetListSerializer
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self.domain = self.context['domain']
+            self.domain = self.context["domain"]
         except KeyError:
-            raise ValueError('RRsetSerializer() must be given a domain object (to validate uniqueness constraints).')
-        self.minimum_ttl = self.context.get('minimum_ttl', self.domain.minimum_ttl)
+            raise ValueError(
+                "RRsetSerializer() must be given a domain object (to validate uniqueness constraints)."
+            )
+        self.minimum_ttl = self.context.get("minimum_ttl", self.domain.minimum_ttl)
 
     def get_fields(self):
         fields = super().get_fields()
-        fields['subname'].validators.append(ReadOnlyOnUpdateValidator())
-        fields['type'].validators.append(ReadOnlyOnUpdateValidator())
-        fields['ttl'].validators.append(MinValueValidator(limit_value=self.minimum_ttl))
+        fields["subname"].validators.append(ReadOnlyOnUpdateValidator())
+        fields["type"].validators.append(ReadOnlyOnUpdateValidator())
+        fields["ttl"].validators.append(MinValueValidator(limit_value=self.minimum_ttl))
         return fields
 
     def get_validators(self):
         return [
             UniqueTogetherValidator(
                 self.domain.rrset_set,
-                ('subname', 'type'),
-                message='Another RRset with the same subdomain and type exists for this domain.',
+                ("subname", "type"),
+                message="Another RRset with the same subdomain and type exists for this domain.",
             ),
             ExclusionConstraintValidator(
                 self.domain.rrset_set,
-                ('subname',),
-                exclusion_condition=('type', 'CNAME',),
-                message='RRset with conflicting type present: database ({types}).'
-                        ' (No other RRsets are allowed alongside CNAME.)',
+                ("subname",),
+                exclusion_condition=(
+                    "type",
+                    "CNAME",
+                ),
+                message="RRset with conflicting type present: database ({types})."
+                " (No other RRsets are allowed alongside CNAME.)",
             ),
         ]
 
@@ -369,20 +420,28 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         if value not in models.RR_SET_TYPES_MANAGEABLE:
             # user cannot manage this type, let's try to tell her the reason
             if value in models.RR_SET_TYPES_AUTOMATIC:
-                raise serializers.ValidationError(f'You cannot tinker with the {value} RR set. It is managed '
-                                                  f'automatically.')
-            elif value.startswith('TYPE'):
-                raise serializers.ValidationError('Generic type format is not supported.')
+                raise serializers.ValidationError(
+                    f"You cannot tinker with the {value} RR set. It is managed "
+                    f"automatically."
+                )
+            elif value.startswith("TYPE"):
+                raise serializers.ValidationError(
+                    "Generic type format is not supported."
+                )
             else:
-                raise serializers.ValidationError(f'The {value} RR set type is currently unsupported.')
+                raise serializers.ValidationError(
+                    f"The {value} RR set type is currently unsupported."
+                )
         return value
 
     def validate_records(self, value):
         # `records` is usually allowed to be empty (for idempotent delete), except for POST requests which are intended
         # for RRset creation only. We use the fact that DRF generic views pass the request in the serializer context.
-        request = self.context.get('request')
-        if request and request.method == 'POST' and not value:
-            raise serializers.ValidationError('This field must not be empty when using POST.')
+        request = self.context.get("request")
+        if request and request.method == "POST" and not value:
+            raise serializers.ValidationError(
+                "This field must not be empty when using POST."
+            )
         return value
 
     def validate_subname(self, value):
@@ -390,19 +449,27 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             dns.name.from_text(value, dns.name.from_text(self.domain.name))
         except dns.name.NameTooLong:
             raise serializers.ValidationError(
-                'This field combined with the domain name must not exceed 255 characters.', code='name_too_long')
+                "This field combined with the domain name must not exceed 255 characters.",
+                code="name_too_long",
+            )
         return value
 
     def validate(self, attrs):
-        if 'records' in attrs:
+        if "records" in attrs:
             try:
-                type_ = attrs['type']
+                type_ = attrs["type"]
             except KeyError:  # on the RRsetDetail endpoint, the type is not in attrs
                 type_ = self.instance.type
 
             try:
-                attrs['records'] = [{'content': models.RR.canonical_presentation_format(rr['content'], type_)}
-                                    for rr in attrs['records']]
+                attrs["records"] = [
+                    {
+                        "content": models.RR.canonical_presentation_format(
+                            rr["content"], type_
+                        )
+                    }
+                    for rr in attrs["records"]
+                ]
             except ValueError as ex:
                 raise serializers.ValidationError(str(ex))
 
@@ -411,16 +478,24 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
             # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
             # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
-            qname = models.RRset.construct_name(attrs.get('subname', ''), self.domain.name)
-            conservative_total_length = 32 + len(qname) + sum(12 + len(rr['content']) for rr in attrs['records'])
+            qname = models.RRset.construct_name(
+                attrs.get("subname", ""), self.domain.name
+            )
+            conservative_total_length = (
+                32
+                + len(qname)
+                + sum(12 + len(rr["content"]) for rr in attrs["records"])
+            )
 
             # Add some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
             conservative_total_length += 256
 
             excess_length = conservative_total_length - 65535  # max response size
             if excess_length > 0:
-                raise serializers.ValidationError(f'Total length of RRset exceeds limit by {excess_length} bytes.',
-                                                  code='max_length')
+                raise serializers.ValidationError(
+                    f"Total length of RRset exceeds limit by {excess_length} bytes.",
+                    code="max_length",
+                )
 
         return attrs
 
@@ -428,20 +503,20 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         if isinstance(arg, models.RRset):
             return arg.records.exists() if arg.pk else False
         else:
-            return bool(arg.get('records')) if 'records' in arg.keys() else True
+            return bool(arg.get("records")) if "records" in arg.keys() else True
 
     def create(self, validated_data):
-        rrs_data = validated_data.pop('records')
+        rrs_data = validated_data.pop("records")
         rrset = models.RRset.objects.create(**validated_data)
         self._set_all_record_contents(rrset, rrs_data)
         return rrset
 
     def update(self, instance: models.RRset, validated_data):
-        rrs_data = validated_data.pop('records', None)
+        rrs_data = validated_data.pop("records", None)
         if rrs_data is not None:
             self._set_all_record_contents(instance, rrs_data)
 
-        ttl = validated_data.pop('ttl', None)
+        ttl = validated_data.pop("ttl", None)
         if ttl and instance.ttl != ttl:
             instance.ttl = ttl
             instance.save()  # also updates instance.touched
@@ -452,7 +527,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return instance
 
     def save(self, **kwargs):
-        kwargs.setdefault('domain', self.domain)
+        kwargs.setdefault("domain", self.domain)
         return super().save(**kwargs)
 
     @staticmethod
@@ -463,8 +538,8 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         :param rrset: the RRset at which we overwrite all RRs
         :param rrs: list of RR representations
         """
-        record_contents = [rr['content'] for rr in rrs]
+        record_contents = [rr["content"] for rr in rrs]
         try:
             rrset.save_records(record_contents)
         except django.core.exceptions.ValidationError as e:
-            raise serializers.ValidationError(e.messages, code='record-content')
+            raise serializers.ValidationError(e.messages, code="record-content")

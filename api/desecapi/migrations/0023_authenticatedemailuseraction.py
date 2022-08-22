@@ -7,18 +7,28 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0022_user_outreach_preference'),
+        ("desecapi", "0022_user_outreach_preference"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AuthenticatedEmailUserAction',
+            name="AuthenticatedEmailUserAction",
             fields=[
-                ('authenticatedbasicuseraction_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='desecapi.authenticatedbasicuseraction')),
+                (
+                    "authenticatedbasicuseraction_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="desecapi.authenticatedbasicuseraction",
+                    ),
+                ),
             ],
             options={
-                'managed': False,
+                "managed": False,
             },
-            bases=('desecapi.authenticatedbasicuseraction',),
+            bases=("desecapi.authenticatedbasicuseraction",),
         ),
     ]

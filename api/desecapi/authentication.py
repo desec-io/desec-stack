@@ -9,10 +9,14 @@ from rest_framework.authentication import (
     BaseAuthentication,
     get_authorization_header,
     TokenAuthentication as RestFrameworkTokenAuthentication,
-    BasicAuthentication)
+    BasicAuthentication,
+)
 
 from desecapi.models import Domain, Token
-from desecapi.serializers import AuthenticatedBasicUserActionSerializer, EmailPasswordSerializer
+from desecapi.serializers import (
+    AuthenticatedBasicUserActionSerializer,
+    EmailPasswordSerializer,
+)
 
 
 class DynAuthenticationMixin:
@@ -20,7 +24,10 @@ class DynAuthenticationMixin:
         user, token = TokenAuthentication().authenticate_credentials(key)
         # Make sure username is not misleading
         try:
-            if username in ['', user.email] or Domain.objects.filter_qname(username.lower(), owner=user).exists():
+            if (
+                username in ["", user.email]
+                or Domain.objects.filter_qname(username.lower(), owner=user).exists()
+            ):
                 return user, token
         except ValueError:
             pass
@@ -34,7 +41,9 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
     # It thus exposes the failure reason when under timing attack.
     def authenticate(self, request):
         try:
-            user, token = super().authenticate(request)  # may raise exceptions.AuthenticationFailed if token is invalid
+            user, token = super().authenticate(
+                request
+            )  # may raise exceptions.AuthenticationFailed if token is invalid
         except TypeError:  # no token given
             return None  # unauthenticated
 
@@ -48,12 +57,12 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
         # In case the stack is run behind an application proxy, the address will be the proxy's address. Extracting the
         # real client address is currently not supported. For further information on this case, see
         # https://www.django-rest-framework.org/api-guide/throttling/#how-clients-are-identified
-        client_ip = ip_address(request.META.get('REMOTE_ADDR'))
+        client_ip = ip_address(request.META.get("REMOTE_ADDR"))
 
         # This can likely be done within Postgres with django-postgres-extensions (client_ip <<= ANY allowed_subnets).
         # However, the django-postgres-extensions package is unmaintained, and the GitHub repo has been archived.
         if not any(client_ip in subnet for subnet in token.allowed_subnets):
-            raise exceptions.AuthenticationFailed('Invalid token.')
+            raise exceptions.AuthenticationFailed("Invalid token.")
 
         return user, token
 
@@ -65,7 +74,7 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
             return None  # unauthenticated
 
         if not token.is_valid:
-            raise exceptions.AuthenticationFailed('Invalid token.')
+            raise exceptions.AuthenticationFailed("Invalid token.")
         token.last_used = timezone.now()
         token.save()
         return user, token
@@ -93,30 +102,33 @@ class BasicTokenAuthentication(BaseAuthentication, DynAuthenticationMixin):
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
 
-        if not auth or auth[0].lower() != b'basic':
+        if not auth or auth[0].lower() != b"basic":
             return None
 
         if len(auth) == 1:
-            msg = 'Invalid basic auth token header. No credentials provided.'
+            msg = "Invalid basic auth token header. No credentials provided."
             raise exceptions.AuthenticationFailed(msg)
         elif len(auth) > 2:
-            msg = 'Invalid basic auth token header. Basic authentication string should not contain spaces.'
+            msg = "Invalid basic auth token header. Basic authentication string should not contain spaces."
             raise exceptions.AuthenticationFailed(msg)
 
         try:
-            username, key = base64.b64decode(auth[1]).decode(HTTP_HEADER_ENCODING).split(':')
+            username, key = (
+                base64.b64decode(auth[1]).decode(HTTP_HEADER_ENCODING).split(":")
+            )
             return self.authenticate_credentials(username, key)
         except Exception:
             raise exceptions.AuthenticationFailed("badauth")
 
     def authenticate_header(self, request):
-        return 'Basic'
+        return "Basic"
 
 
 class URLParamAuthentication(BaseAuthentication, DynAuthenticationMixin):
     """
     Authentication against username/password as provided in URL parameters.
     """
+
     model = Token
 
     def authenticate(self, request):
@@ -125,15 +137,17 @@ class URLParamAuthentication(BaseAuthentication, DynAuthenticationMixin):
         using URL parameters.  Otherwise raises `AuthenticationFailed`.
         """
 
-        if 'username' not in request.query_params:
-            msg = 'No username URL parameter provided.'
+        if "username" not in request.query_params:
+            msg = "No username URL parameter provided."
             raise exceptions.AuthenticationFailed(msg)
-        if 'password' not in request.query_params:
-            msg = 'No password URL parameter provided.'
+        if "password" not in request.query_params:
+            msg = "No password URL parameter provided."
             raise exceptions.AuthenticationFailed(msg)
 
         try:
-            return self.authenticate_credentials(request.query_params['username'], request.query_params['password'])
+            return self.authenticate_credentials(
+                request.query_params["username"], request.query_params["password"]
+            )
         except Exception:
             raise exceptions.AuthenticationFailed("badauth")
 
@@ -144,7 +158,9 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
     def authenticate(self, request):
         serializer = EmailPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return self.authenticate_credentials(serializer.data['email'], serializer.data['password'], request)
+        return self.authenticate_credentials(
+            serializer.data["email"], serializer.data["password"], request
+        )
 
 
 class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
@@ -152,26 +168,29 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
     Authenticates a request based on whether the serializer determines the validity of the given verification code
     based on the view's 'code' kwarg and the view serializer's code validity period.
     """
+
     def authenticate(self, request):
-        view = request.parser_context['view']
+        view = request.parser_context["view"]
         return self.authenticate_credentials(view.get_serializer_context())
 
     def authenticate_credentials(self, context):
         serializer = AuthenticatedBasicUserActionSerializer(data={}, context=context)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
 
-        email_verified = datetime.datetime.fromtimestamp(serializer.timestamp, datetime.timezone.utc)
+        email_verified = datetime.datetime.fromtimestamp(
+            serializer.timestamp, datetime.timezone.utc
+        )
         user.email_verified = max(user.email_verified or email_verified, email_verified)
         user.save()
 
         # When user.is_active is None, activation is pending.  We need to admit them to finish activation, so only
         # reject strictly False.  There are permissions to make sure that such accounts can't do anything else.
         if user.is_active == False:
-            raise exceptions.AuthenticationFailed('User inactive.')
+            raise exceptions.AuthenticationFailed("User inactive.")
         return user, None
 
 
 class TokenHasher(PBKDF2PasswordHasher):
-    algorithm = 'pbkdf2_sha256_iter1'
+    algorithm = "pbkdf2_sha256_iter1"
     iterations = 1

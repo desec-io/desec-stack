@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0013_user_needs_captcha'),
+        ("desecapi", "0013_user_needs_captcha"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='domain',
-            name='replicated',
+            model_name="domain",
+            name="replicated",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='domain',
-            name='replication_duration',
+            model_name="domain",
+            name="replication_duration",
             field=models.DurationField(blank=True, null=True),
         ),
     ]

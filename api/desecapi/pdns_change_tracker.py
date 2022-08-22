@@ -7,8 +7,16 @@ from django.utils import timezone
 
 from desecapi import metrics
 from desecapi.models import RRset, RR, Domain
-from desecapi.pdns import _pdns_post, NSLORD, NSMASTER, _pdns_delete, _pdns_patch, _pdns_put, pdns_id, \
-    construct_catalog_rrset
+from desecapi.pdns import (
+    _pdns_post,
+    NSLORD,
+    NSMASTER,
+    _pdns_delete,
+    _pdns_patch,
+    _pdns_put,
+    pdns_id,
+    construct_catalog_rrset,
+)
 
 
 class PDNSChangeTracker:
@@ -55,7 +63,7 @@ class PDNSChangeTracker:
 
         @property
         def domain_name_normalized(self):
-            return self._domain_name + '.'
+            return self._domain_name + "."
 
         @property
         def domain_pdns_id(self):
@@ -72,9 +80,16 @@ class PDNSChangeTracker:
             raise NotImplementedError()
 
         def update_catalog(self, delete=False):
-            content = _pdns_patch(NSMASTER, '/zones/' + pdns_id(settings.CATALOG_ZONE),
-                               {'rrsets': [construct_catalog_rrset(zone=self.domain_name, delete=delete)]})
-            metrics.get('desecapi_pdns_catalog_updated').inc()
+            content = _pdns_patch(
+                NSMASTER,
+                "/zones/" + pdns_id(settings.CATALOG_ZONE),
+                {
+                    "rrsets": [
+                        construct_catalog_rrset(zone=self.domain_name, delete=delete)
+                    ]
+                },
+            )
+            metrics.get("desecapi_pdns_catalog_updated").inc()
             return content
 
     class CreateDomain(PDNSChange):
@@ -84,38 +99,44 @@ class PDNSChangeTracker:
 
         def pdns_do(self):
             _pdns_post(
-                NSLORD, '/zones?rrsets=false',
+                NSLORD,
+                "/zones?rrsets=false",
                 {
-                    'name': self.domain_name_normalized,
-                    'kind': 'MASTER',
-                    'dnssec': True,
-                    'nsec3param': '1 0 0 -',
-                    'nameservers': settings.DEFAULT_NS,
-                    'rrsets': [{
-                        'name': self.domain_name_normalized,
-                        'type': 'SOA',
-                        # SOA RRset TTL: 300 (used as TTL for negative replies including NSEC3 records)
-                        'ttl': 300,
-                        'records': [{
-                            # SOA refresh: 1 day (only needed for nslord --> nsmaster replication after RRSIG rotation)
-                            # SOA retry = 1h
-                            # SOA expire: 4 weeks (all signatures will have expired anyways)
-                            # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
-                            'content': 'get.desec.io. get.desec.io. 1 86400 3600 2419200 3600',
-                            'disabled': False
-                        }],
-                    }],
-                }
+                    "name": self.domain_name_normalized,
+                    "kind": "MASTER",
+                    "dnssec": True,
+                    "nsec3param": "1 0 0 -",
+                    "nameservers": settings.DEFAULT_NS,
+                    "rrsets": [
+                        {
+                            "name": self.domain_name_normalized,
+                            "type": "SOA",
+                            # SOA RRset TTL: 300 (used as TTL for negative replies including NSEC3 records)
+                            "ttl": 300,
+                            "records": [
+                                {
+                                    # SOA refresh: 1 day (only needed for nslord --> nsmaster replication after RRSIG rotation)
+                                    # SOA retry = 1h
+                                    # SOA expire: 4 weeks (all signatures will have expired anyways)
+                                    # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
+                                    "content": "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600",
+                                    "disabled": False,
+                                }
+                            ],
+                        }
+                    ],
+                },
             )
 
             _pdns_post(
-                NSMASTER, '/zones?rrsets=false',
+                NSMASTER,
+                "/zones?rrsets=false",
                 {
-                    'name': self.domain_name_normalized,
-                    'kind': 'SLAVE',
-                    'masters': [socket.gethostbyname('nslord')],
-                    'master_tsig_key_ids': ['default'],
-                }
+                    "name": self.domain_name_normalized,
+                    "kind": "SLAVE",
+                    "masters": [socket.gethostbyname("nslord")],
+                    "master_tsig_key_ids": ["default"],
+                },
             )
 
             self.update_catalog()
@@ -123,7 +144,8 @@ class PDNSChangeTracker:
         def api_do(self):
             rr_set = RRset(
                 domain=Domain.objects.get(name=self.domain_name),
-                type='NS', subname='',
+                type="NS",
+                subname="",
                 ttl=settings.DEFAULT_NS_TTL,
             )
             rr_set.save()
@@ -132,7 +154,7 @@ class PDNSChangeTracker:
             RR.objects.bulk_create(rrs)  # One INSERT
 
         def __str__(self):
-            return 'Create Domain %s' % self.domain_name
+            return "Create Domain %s" % self.domain_name
 
     class DeleteDomain(PDNSChange):
         @property
@@ -140,15 +162,15 @@ class PDNSChangeTracker:
             return False
 
         def pdns_do(self):
-            _pdns_delete(NSLORD, '/zones/' + self.domain_pdns_id)
-            _pdns_delete(NSMASTER, '/zones/' + self.domain_pdns_id)
+            _pdns_delete(NSLORD, "/zones/" + self.domain_pdns_id)
+            _pdns_delete(NSMASTER, "/zones/" + self.domain_pdns_id)
             self.update_catalog(delete=True)
 
         def api_do(self):
             pass
 
         def __str__(self):
-            return 'Delete Domain %s' % self.domain_name
+            return "Delete Domain %s" % self.domain_name
 
     class CreateUpdateDeleteRRSets(PDNSChange):
         def __init__(self, domain_name, additions, modifications, deletions):
@@ -163,44 +185,54 @@ class PDNSChangeTracker:
 
         def pdns_do(self):
             data = {
-                'rrsets':
-                    [
-                        {
-                            'name': RRset.construct_name(subname, self._domain_name),
-                            'type': type_,
-                            'ttl': 1,  # some meaningless integer required by pdns's syntax
-                            'changetype': 'REPLACE',  # don't use "DELETE" due to desec-stack#220, PowerDNS/pdns#7501
-                            'records': []
-                        }
-                        for type_, subname in self._deletions
-                    ] + [
-                        {
-                            'name': RRset.construct_name(subname, self._domain_name),
-                            'type': type_,
-                            'ttl': RRset.objects.values_list('ttl', flat=True).get(domain__name=self._domain_name,
-                                                                                   type=type_, subname=subname),
-                            'changetype': 'REPLACE',
-                            'records': [
-                                {'content': rr.content, 'disabled': False}
-                                for rr in RR.objects.filter(
-                                    rrset__domain__name=self._domain_name,
-                                    rrset__type=type_,
-                                    rrset__subname=subname)
-                            ]
-                        }
-                        for type_, subname in (self._additions | self._modifications) - self._deletions
-                    ]
+                "rrsets": [
+                    {
+                        "name": RRset.construct_name(subname, self._domain_name),
+                        "type": type_,
+                        "ttl": 1,  # some meaningless integer required by pdns's syntax
+                        "changetype": "REPLACE",  # don't use "DELETE" due to desec-stack#220, PowerDNS/pdns#7501
+                        "records": [],
+                    }
+                    for type_, subname in self._deletions
+                ]
+                + [
+                    {
+                        "name": RRset.construct_name(subname, self._domain_name),
+                        "type": type_,
+                        "ttl": RRset.objects.values_list("ttl", flat=True).get(
+                            domain__name=self._domain_name, type=type_, subname=subname
+                        ),
+                        "changetype": "REPLACE",
+                        "records": [
+                            {"content": rr.content, "disabled": False}
+                            for rr in RR.objects.filter(
+                                rrset__domain__name=self._domain_name,
+                                rrset__type=type_,
+                                rrset__subname=subname,
+                            )
+                        ],
+                    }
+                    for type_, subname in (self._additions | self._modifications)
+                    - self._deletions
+                ]
             }
 
-            if data['rrsets']:
-                _pdns_patch(NSLORD, '/zones/' + self.domain_pdns_id, data)
+            if data["rrsets"]:
+                _pdns_patch(NSLORD, "/zones/" + self.domain_pdns_id, data)
 
         def api_do(self):
             pass
 
         def __str__(self):
-            return 'Update RRsets of %s: additions=%s, modifications=%s, deletions=%s' % \
-                   (self.domain_name, list(self._additions), list(self._modifications), list(self._deletions))
+            return (
+                "Update RRsets of %s: additions=%s, modifications=%s, deletions=%s"
+                % (
+                    self.domain_name,
+                    list(self._additions),
+                    list(self._modifications),
+                    list(self._deletions),
+                )
+            )
 
     def __init__(self):
         self._domain_additions = set()
@@ -221,30 +253,44 @@ class PDNSChangeTracker:
             return f()
 
     def _manage_signals(self, method):
-        if method not in ['connect', 'disconnect']:
+        if method not in ["connect", "disconnect"]:
             raise ValueError()
-        getattr(post_save, method)(self._on_rr_post_save, sender=RR, dispatch_uid=self.__module__)
-        getattr(post_delete, method)(self._on_rr_post_delete, sender=RR, dispatch_uid=self.__module__)
-        getattr(post_save, method)(self._on_rr_set_post_save, sender=RRset, dispatch_uid=self.__module__)
-        getattr(post_delete, method)(self._on_rr_set_post_delete, sender=RRset, dispatch_uid=self.__module__)
-        getattr(post_save, method)(self._on_domain_post_save, sender=Domain, dispatch_uid=self.__module__)
-        getattr(post_delete, method)(self._on_domain_post_delete, sender=Domain, dispatch_uid=self.__module__)
+        getattr(post_save, method)(
+            self._on_rr_post_save, sender=RR, dispatch_uid=self.__module__
+        )
+        getattr(post_delete, method)(
+            self._on_rr_post_delete, sender=RR, dispatch_uid=self.__module__
+        )
+        getattr(post_save, method)(
+            self._on_rr_set_post_save, sender=RRset, dispatch_uid=self.__module__
+        )
+        getattr(post_delete, method)(
+            self._on_rr_set_post_delete, sender=RRset, dispatch_uid=self.__module__
+        )
+        getattr(post_save, method)(
+            self._on_domain_post_save, sender=Domain, dispatch_uid=self.__module__
+        )
+        getattr(post_delete, method)(
+            self._on_domain_post_delete, sender=Domain, dispatch_uid=self.__module__
+        )
 
     def __enter__(self):
         PDNSChangeTracker._active_change_trackers += 1
-        assert PDNSChangeTracker._active_change_trackers == 1, 'Nesting %s is not supported.' % self.__class__.__name__
+        assert PDNSChangeTracker._active_change_trackers == 1, (
+            "Nesting %s is not supported." % self.__class__.__name__
+        )
         self._domain_additions = set()
         self._domain_deletions = set()
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
-        self._manage_signals('connect')
+        self._manage_signals("connect")
         self.transaction = atomic()
         self.transaction.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         PDNSChangeTracker._active_change_trackers -= 1
-        self._manage_signals('disconnect')
+        self._manage_signals("disconnect")
 
         if exc_type:
             # An exception occurred inside our context, exit db transaction and dismiss pdns changes
@@ -262,13 +308,15 @@ class PDNSChangeTracker:
                     axfr_required.add(change.domain_name)
             except Exception as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
-                exc = ValueError(f'For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}')
+                exc = ValueError(
+                    f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}"
+                )
                 raise exc from e
 
         self.transaction.__exit__(None, None, None)
 
         for name in axfr_required:
-            _pdns_put(NSMASTER, '/zones/%s/axfr-retrieve' % pdns_id(name))
+            _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(name))
         Domain.objects.filter(name__in=axfr_required).update(published=timezone.now())
 
     def _compute_changes(self):
@@ -307,16 +355,21 @@ class PDNSChangeTracker:
             # Conditions (b) and (c) are already covered in the modifications and deletions list,
             # we filter the additions list to remove newly-added, but empty RR sets
             additions -= {
-                (type_, subname) for (type_, subname) in additions
+                (type_, subname)
+                for (type_, subname) in additions
                 if not RR.objects.filter(
                     rrset__domain__name=domain_name,
                     rrset__type=type_,
-                    rrset__subname=subname).exists()
+                    rrset__subname=subname,
+                ).exists()
             }
 
             if additions | modifications | deletions:
-                changes.append(PDNSChangeTracker.CreateUpdateDeleteRRSets(
-                    domain_name, additions, modifications, deletions))
+                changes.append(
+                    PDNSChangeTracker.CreateUpdateDeleteRRSets(
+                        domain_name, additions, modifications, deletions
+                    )
+                )
 
         return changes
 
@@ -349,7 +402,9 @@ class PDNSChangeTracker:
             modifications.add(item)
             assert item not in deletions
         else:
-            raise ValueError('An RR set cannot be created and deleted at the same time.')
+            raise ValueError(
+                "An RR set cannot be created and deleted at the same time."
+            )
 
     def _domain_updated(self, domain: Domain, created=False, deleted=False):
         if not created and not deleted:
@@ -361,7 +416,9 @@ class PDNSChangeTracker:
         deletions = self._domain_deletions
 
         if created and deleted:
-            raise ValueError('A domain set cannot be created and deleted at the same time.')
+            raise ValueError(
+                "A domain set cannot be created and deleted at the same time."
+            )
 
         if created:
             if name in deletions:
@@ -375,7 +432,9 @@ class PDNSChangeTracker:
                 deletions.add(name)
 
     # noinspection PyUnusedLocal
-    def _on_rr_post_save(self, signal, sender, instance: RR, created, update_fields, raw, using, **kwargs):
+    def _on_rr_post_save(
+        self, signal, sender, instance: RR, created, update_fields, raw, using, **kwargs
+    ):
         self._rr_set_updated(instance.rrset)
 
     # noinspection PyUnusedLocal
@@ -386,7 +445,17 @@ class PDNSChangeTracker:
             pass
 
     # noinspection PyUnusedLocal
-    def _on_rr_set_post_save(self, signal, sender, instance: RRset, created, update_fields, raw, using, **kwargs):
+    def _on_rr_set_post_save(
+        self,
+        signal,
+        sender,
+        instance: RRset,
+        created,
+        update_fields,
+        raw,
+        using,
+        **kwargs,
+    ):
         self._rr_set_updated(instance, created=created)
 
     # noinspection PyUnusedLocal
@@ -394,7 +463,17 @@ class PDNSChangeTracker:
         self._rr_set_updated(instance, deleted=True)
 
     # noinspection PyUnusedLocal
-    def _on_domain_post_save(self, signal, sender, instance: Domain, created, update_fields, raw, using, **kwargs):
+    def _on_domain_post_save(
+        self,
+        signal,
+        sender,
+        instance: Domain,
+        created,
+        update_fields,
+        raw,
+        using,
+        **kwargs,
+    ):
         self._domain_updated(instance, created=created)
 
     # noinspection PyUnusedLocal
@@ -402,10 +481,13 @@ class PDNSChangeTracker:
         self._domain_updated(instance, deleted=True)
 
     def __str__(self):
-        all_rr_sets = self._rr_set_additions.keys() | self._rr_set_modifications.keys() | self._rr_set_deletions.keys()
+        all_rr_sets = (
+            self._rr_set_additions.keys()
+            | self._rr_set_modifications.keys()
+            | self._rr_set_deletions.keys()
+        )
         all_domains = self._domain_additions | self._domain_deletions
-        return '<%s: %i added or deleted domains; %i added, modified or deleted RR sets>' % (
-            self.__class__.__name__,
-            len(all_domains),
-            len(all_rr_sets)
+        return (
+            "<%s: %i added or deleted domains; %i added, modified or deleted RR sets>"
+            % (self.__class__.__name__, len(all_domains), len(all_rr_sets))
         )

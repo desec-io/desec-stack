@@ -8,13 +8,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0011_captcha_kind'),
+        ("desecapi", "0011_captcha_kind"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='rrset',
-            name='subname',
-            field=models.CharField(blank=True, max_length=178, validators=[desecapi.models.validate_lower, django.core.validators.RegexValidator(code='invalid_subname', message="Subname can only use (lowercase) a-z, 0-9, ., -, and _, may start with a '*.', or just be '*'. Components may not exceed 63 characters.", regex='^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))$')]),
+            model_name="rrset",
+            name="subname",
+            field=models.CharField(
+                blank=True,
+                max_length=178,
+                validators=[
+                    desecapi.models.validate_lower,
+                    django.core.validators.RegexValidator(
+                        code="invalid_subname",
+                        message="Subname can only use (lowercase) a-z, 0-9, ., -, and _, may start with a '*.', or just be '*'. Components may not exceed 63 characters.",
+                        regex="^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))$",
+                    ),
+                ],
+            ),
         ),
     ]

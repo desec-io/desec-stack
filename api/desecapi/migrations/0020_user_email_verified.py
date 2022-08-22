@@ -11,20 +11,20 @@ def forwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
     User.objects.using(db_alias).filter(
         Q(is_active=True) | Q(last_login__isnull=False),
-        created__date__gte=datetime.date(2019, 11, 1)
-    ).update(email_verified=F('created'))
+        created__date__gte=datetime.date(2019, 11, 1),
+    ).update(email_verified=F("created"))
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0019_alter_user_is_active'),
+        ("desecapi", "0019_alter_user_is_active"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='email_verified',
+            model_name="user",
+            name="email_verified",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.RunPython(forwards_func, migrations.RunPython.noop),

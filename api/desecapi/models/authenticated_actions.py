@@ -31,13 +31,14 @@ class AuthenticatedAction(models.Model):
     (3) when provided with data that allows instantiation and a valid state hash, take the defined action, possibly with
         additional parameters chosen by the third party that do not belong to the verified state.
     """
+
     _validated = False
 
     class Meta:
         managed = False
 
     def __init__(self, *args, **kwargs):
-        state = kwargs.pop('state', None)
+        state = kwargs.pop("state", None)
         super().__init__(*args, **kwargs)
 
         if state is not None:
@@ -65,7 +66,7 @@ class AuthenticatedAction(models.Model):
 
         :return: List of values to be signed.
         """
-        name = '.'.join([self.__module__, self.__class__.__qualname__])
+        name = ".".join([self.__module__, self.__class__.__qualname__])
         return [name]
 
     @staticmethod
@@ -91,7 +92,7 @@ class AuthenticatedAction(models.Model):
 
     def act(self):
         if not self._validated:
-            raise RuntimeError('Action state could not be verified.')
+            raise RuntimeError("Action state could not be verified.")
         return self._act()
 
 
@@ -99,7 +100,8 @@ class AuthenticatedBasicUserAction(AuthenticatedAction):
     """
     Abstract AuthenticatedAction involving a user instance.
     """
-    user = models.ForeignKey('User', on_delete=models.DO_NOTHING)
+
+    user = models.ForeignKey("User", on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -142,13 +144,18 @@ class AuthenticatedUserAction(AuthenticatedBasicUserAction):
     Abstract AuthenticatedBasicUserAction, incorporating the user's id, email, password, and is_active flag into the
     Message Authentication Code state.
     """
+
     class Meta:
         managed = False
 
     def validate_legacy_state(self, value):
         # NEW: (1) classname, (2) user.id, (3) user.credentials_changed, (4) user.is_active, (7 ...) [subclasses]
         # OLD: (1) classname, (2) user.id, (3) user.email, (4) user.password, (5) user.is_active, (6 ...) [subclasses]
-        legacy_state_fields = self._state_fields[:2] + [self.user.email, self.user.password] + self._state_fields[3:]
+        legacy_state_fields = (
+            self._state_fields[:2]
+            + [self.user.email, self.user.password]
+            + self._state_fields[3:]
+        )
         return value == self.state_of(legacy_state_fields)
 
     def validate_state(self, value):
@@ -158,7 +165,10 @@ class AuthenticatedUserAction(AuthenticatedBasicUserAction):
 
     @property
     def _state_fields(self):
-        return super()._state_fields + [self.user.credentials_changed.isoformat(), self.user.is_active]
+        return super()._state_fields + [
+            self.user.credentials_changed.isoformat(),
+            self.user.is_active,
+        ]
 
 
 class AuthenticatedActivateUserAction(AuthenticatedUserAction):
@@ -190,7 +200,6 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
 
 
 class AuthenticatedNoopUserAction(AuthenticatedUserAction):
-
     class Meta:
         managed = False
 
@@ -209,7 +218,6 @@ class AuthenticatedResetPasswordUserAction(AuthenticatedUserAction):
 
 
 class AuthenticatedDeleteUserAction(AuthenticatedUserAction):
-
     class Meta:
         managed = False
 
@@ -222,7 +230,8 @@ class AuthenticatedDomainBasicUserAction(AuthenticatedBasicUserAction):
     Abstract AuthenticatedBasicUserAction involving an domain instance, incorporating the domain's id, name as well as
     the owner ID into the Message Authentication Code state.
     """
-    domain = models.ForeignKey('Domain', on_delete=models.DO_NOTHING)
+
+    domain = models.ForeignKey("Domain", on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -237,7 +246,6 @@ class AuthenticatedDomainBasicUserAction(AuthenticatedBasicUserAction):
 
 
 class AuthenticatedRenewDomainBasicUserAction(AuthenticatedDomainBasicUserAction):
-
     class Meta:
         managed = False
 
@@ -248,4 +256,4 @@ class AuthenticatedRenewDomainBasicUserAction(AuthenticatedDomainBasicUserAction
     def _act(self):
         self.domain.renewal_state = Domain.RenewalState.FRESH
         self.domain.renewal_changed = timezone.now()
-        self.domain.save(update_fields=['renewal_state', 'renewal_changed'])
+        self.domain.save(update_fields=["renewal_state", "renewal_changed"])

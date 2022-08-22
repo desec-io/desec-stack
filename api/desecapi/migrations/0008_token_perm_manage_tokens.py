@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0007_email_citext'),
+        ("desecapi", "0007_email_citext"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='token',
-            name='perm_manage_tokens',
+            model_name="token",
+            name="perm_manage_tokens",
             field=models.BooleanField(default=True),
         ),
         migrations.AlterField(
-            model_name='token',
-            name='perm_manage_tokens',
+            model_name="token",
+            name="perm_manage_tokens",
             field=models.BooleanField(default=False),
         ),
     ]

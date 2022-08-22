@@ -13,31 +13,36 @@ class DonationList(generics.CreateAPIView):
         instance = serializer.save()
 
         context = {
-            'donation': instance,
-            'creditoridentifier': settings.SEPA['CREDITOR_ID'],
-            'creditorname': settings.SEPA['CREDITOR_NAME'],
+            "donation": instance,
+            "creditoridentifier": settings.SEPA["CREDITOR_ID"],
+            "creditorname": settings.SEPA["CREDITOR_NAME"],
         }
 
         # internal desec notification
-        content_tmpl = get_template('emails/donation/desec-content.txt')
-        subject_tmpl = get_template('emails/donation/desec-subject.txt')
-        attachment_tmpl = get_template('emails/donation/desec-attachment-jameica.txt')
-        from_tmpl = get_template('emails/from.txt')
-        email = EmailMessage(subject_tmpl.render(context),
-                             content_tmpl.render(context),
-                             from_tmpl.render(context),
-                             [settings.DEFAULT_FROM_EMAIL],
-                             attachments=[('jameica-directdebit.xml', attachment_tmpl.render(context), 'text/xml')],
-                             reply_to=[instance.email] if instance.email else None
-                             )
+        content_tmpl = get_template("emails/donation/desec-content.txt")
+        subject_tmpl = get_template("emails/donation/desec-subject.txt")
+        attachment_tmpl = get_template("emails/donation/desec-attachment-jameica.txt")
+        from_tmpl = get_template("emails/from.txt")
+        email = EmailMessage(
+            subject_tmpl.render(context),
+            content_tmpl.render(context),
+            from_tmpl.render(context),
+            [settings.DEFAULT_FROM_EMAIL],
+            attachments=[
+                ("jameica-directdebit.xml", attachment_tmpl.render(context), "text/xml")
+            ],
+            reply_to=[instance.email] if instance.email else None,
+        )
         email.send()
 
         # donor notification
         if instance.email:
-            content_tmpl = get_template('emails/donation/donor-content.txt')
-            subject_tmpl = get_template('emails/donation/donor-subject.txt')
-            email = EmailMessage(subject_tmpl.render(context),
-                                 content_tmpl.render(context),
-                                 from_tmpl.render(context),
-                                 [instance.email])
+            content_tmpl = get_template("emails/donation/donor-content.txt")
+            subject_tmpl = get_template("emails/donation/donor-subject.txt")
+            email = EmailMessage(
+                subject_tmpl.render(context),
+                content_tmpl.render(context),
+                from_tmpl.render(context),
+                [instance.email],
+            )
             email.send()

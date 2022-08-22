@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0003_rr_content'),
+        ("desecapi", "0003_rr_content"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='domain',
-            name='renewal_state',
-            field=models.IntegerField(choices=[(0, 'Immortal'), (1, 'Fresh'), (2, 'Notified'), (3, 'Warned')], default=0),
+            model_name="domain",
+            name="renewal_state",
+            field=models.IntegerField(
+                choices=[(0, "Immortal"), (1, "Fresh"), (2, "Notified"), (3, "Warned")],
+                default=0,
+            ),
         ),
     ]

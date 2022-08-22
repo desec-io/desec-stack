@@ -44,6 +44,7 @@ class TokenDomainPolicyBasePermission(permissions.BasePermission):
     """
     Base permission to check whether a token authorizes specific actions on a domain.
     """
+
     perm_field = None
 
     def _has_object_permission(self, request, view, obj):
@@ -70,14 +71,16 @@ class TokenHasDomainDynDNSPermission(TokenHasDomainBasePermission):
     """
     Custom permission to check whether a token authorizes using the dynDNS interface for the view domain.
     """
-    perm_field = 'perm_dyndns'
+
+    perm_field = "perm_dyndns"
 
 
 class TokenHasDomainRRsetsPermission(TokenHasDomainBasePermission):
     """
     Custom permission to check whether a token authorizes accessing RRsets for the view domain.
     """
-    perm_field = 'perm_rrsets'
+
+    perm_field = "perm_rrsets"
 
 
 class AuthTokenCorrespondsToViewToken(permissions.BasePermission):
@@ -86,18 +89,19 @@ class AuthTokenCorrespondsToViewToken(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return view.kwargs['token_id'] == request.auth.pk
+        return view.kwargs["token_id"] == request.auth.pk
 
 
 class IsVPNClient(permissions.BasePermission):
     """
     Permission that requires that the user is accessing using an IP from the VPN net.
     """
-    message = 'Inadmissible client IP.'
+
+    message = "Inadmissible client IP."
 
     def has_permission(self, request, view):
-        ip = IPv4Address(request.META.get('REMOTE_ADDR'))
-        return ip in IPv4Network('10.8.0.0/24')
+        ip = IPv4Address(request.META.get("REMOTE_ADDR"))
+        return ip in IPv4Network("10.8.0.0/24")
 
 
 class HasManageTokensPermission(permissions.BasePermission):
@@ -113,7 +117,13 @@ class WithinDomainLimit(permissions.BasePermission):
     """
     Permission that requires that the user still has domain limit quota available.
     """
-    message = 'Domain limit exceeded. Please contact support to create additional domains.'
+
+    message = (
+        "Domain limit exceeded. Please contact support to create additional domains."
+    )
 
     def has_permission(self, request, view):
-        return request.user.limit_domains is None or request.user.domains.count() < request.user.limit_domains
+        return (
+            request.user.limit_domains is None
+            or request.user.domains.count() < request.user.limit_domains
+        )

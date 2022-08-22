@@ -18,7 +18,8 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
     Should be applied to the serializer class, not to an individual field.
     No-op if parent serializer is a list serializer (many=True). We expect the list serializer to assure exclusivity.
     """
-    message = 'This field violates an exclusion constraint.'
+
+    message = "This field violates an exclusion constraint."
 
     def __init__(self, queryset, fields, exclusion_condition, message=None):
         super().__init__(queryset, fields, message)
@@ -39,7 +40,7 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
 
     def __call__(self, attrs, serializer, *args, **kwargs):
         # Ignore validation if the many flag is set
-        if getattr(serializer.root, 'many', False):
+        if getattr(serializer.root, "many", False):
             return
 
         self.enforce_required_fields(attrs, serializer)
@@ -52,15 +53,15 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
             value for field, value in attrs.items() if field in self.fields
         ]
         if None not in checked_values and qs_exists(queryset):
-            types = queryset.values_list('type', flat=True)
-            types = ', '.join(types)
+            types = queryset.values_list("type", flat=True)
+            types = ", ".join(types)
             message = self.message.format(types=types)
-            raise ValidationError(message, code='exclusive')
+            raise ValidationError(message, code="exclusive")
 
 
 class Validator:
 
-    message = 'This field did not pass validation.'
+    message = "This field did not pass validation."
 
     def __init__(self, message=None):
         self.field_name = None
@@ -71,15 +72,16 @@ class Validator:
         raise NotImplementedError
 
     def __repr__(self):
-        return '<%s>' % self.__class__.__name__
+        return "<%s>" % self.__class__.__name__
+
 
 class ReadOnlyOnUpdateValidator(Validator):
 
-    message = 'Can only be written on create.'
+    message = "Can only be written on create."
     requires_context = True
 
     def __call__(self, value, serializer_field):
         field_name = serializer_field.source_attrs[-1]
-        instance = getattr(serializer_field.parent, 'instance', None)
+        instance = getattr(serializer_field.parent, "instance", None)
         if isinstance(instance, Model) and value != getattr(instance, field_name):
-            raise serializers.ValidationError(self.message, code='read-only-on-update')
+            raise serializers.ValidationError(self.message, code="read-only-on-update")

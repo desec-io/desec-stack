@@ -10,6 +10,7 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
     """
     Like DRF's ScopedRateThrottle, but supports several rates per scope, e.g. for burst vs. sustained limit.
     """
+
     def parse_rate(self, rates):
         return [super(ScopedRatesThrottle, self).parse_rate(rate) for rate in rates]
 
@@ -27,9 +28,9 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
             return True
 
         # Amend scope with optional bucket
-        bucket = getattr(view, self.scope_attr + '_bucket', None)
+        bucket = getattr(view, self.scope_attr + "_bucket", None)
         if bucket is not None:
-            self.scope += ':' + sha1(bucket.encode()).hexdigest()
+            self.scope += ":" + sha1(bucket.encode()).hexdigest()
 
         self.now = self.timer()
         self.num_requests, self.duration = zip(*self.parse_rate(self.rate))
@@ -37,7 +38,9 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
         self.history = {key: [] for key in self.key}
         self.history.update(self.cache.get_many(self.key))
 
-        for num_requests, duration, key in zip(self.num_requests, self.duration, self.key):
+        for num_requests, duration, key in zip(
+            self.num_requests, self.duration, self.key
+        ):
             history = self.history[key]
             # Drop any requests from the history which have now passed the
             # throttle duration
@@ -45,9 +48,16 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
                 history.pop()
             if len(history) >= num_requests:
                 # Prepare variables used by the Throttle's wait() method that gets called by APIView.check_throttles()
-                self.num_requests, self.duration, self.key, self.history = num_requests, duration, key, history
+                self.num_requests, self.duration, self.key, self.history = (
+                    num_requests,
+                    duration,
+                    key,
+                    history,
+                )
                 response = self.throttle_failure()
-                metrics.get('desecapi_throttle_failure').labels(request.method, scope, request.user.pk, bucket).inc()
+                metrics.get("desecapi_throttle_failure").labels(
+                    request.method, scope, request.user.pk, bucket
+                ).inc()
                 return response
             self.history[key] = history
         return self.throttle_success()
@@ -65,4 +75,4 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
 
     def get_cache_key(self, request, view):
         key = super().get_cache_key(request, view)
-        return [f'{key}_{duration}' for duration in self.duration]
+        return [f"{key}_{duration}" for duration in self.duration]

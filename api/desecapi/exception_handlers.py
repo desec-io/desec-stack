@@ -17,25 +17,35 @@ def exception_handler(exc, context):
     """
 
     def _log():
-        logger = logging.getLogger('django.request')
-        logger.error('{} Supplementary Information'.format(exc.__class__),
-                     exc_info=exc, stack_info=False)
+        logger = logging.getLogger("django.request")
+        logger.error(
+            "{} Supplementary Information".format(exc.__class__),
+            exc_info=exc,
+            stack_info=False,
+        )
 
     def _409():
-        return Response({'detail': f'Conflict: {exc}'}, status=status.HTTP_409_CONFLICT)
+        return Response({"detail": f"Conflict: {exc}"}, status=status.HTTP_409_CONFLICT)
 
     def _500():
-        return Response({'detail': "Internal Server Error. We're on it!"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"detail": "Internal Server Error. We're on it!"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     def _503():
-        return Response({'detail': 'Please try again later.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(
+            {"detail": "Please try again later."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     # Catch DB OperationalError and log an extra error for additional context
     if (
-        isinstance(exc, OperationalError) and
-        isinstance(exc.args, (list, dict, tuple)) and
-        exc.args and
-        exc.args[0] in (
+        isinstance(exc, OperationalError)
+        and isinstance(exc.args, (list, dict, tuple))
+        and exc.args
+        and exc.args[0]
+        in (
             2002,  # Connection refused (Socket)
             2003,  # Connection refused (TCP)
             2005,  # Unresolved host name
@@ -45,7 +55,7 @@ def exception_handler(exc, context):
         )
     ):
         _log()
-        metrics.get('desecapi_database_unavailable').inc()
+        metrics.get("desecapi_database_unavailable").inc()
         return _503()
 
     handlers = {

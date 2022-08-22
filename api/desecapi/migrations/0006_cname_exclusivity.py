@@ -9,13 +9,23 @@ import django.db.models.expressions
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('desecapi', '0005_subname_validation'),
+        ("desecapi", "0005_subname_validation"),
     ]
 
     operations = [
         BtreeGistExtension(),
         migrations.AddConstraint(
-            model_name='rrset',
-            constraint=django.contrib.postgres.constraints.ExclusionConstraint(expressions=[('domain', '='), ('subname', '='), (django.db.models.expressions.RawSQL("int4(type = 'CNAME')", ()), '<>')], name='cname_exclusivity'),
+            model_name="rrset",
+            constraint=django.contrib.postgres.constraints.ExclusionConstraint(
+                expressions=[
+                    ("domain", "="),
+                    ("subname", "="),
+                    (
+                        django.db.models.expressions.RawSQL("int4(type = 'CNAME')", ()),
+                        "<>",
+                    ),
+                ],
+                name="cname_exclusivity",
+            ),
         ),
     ]
