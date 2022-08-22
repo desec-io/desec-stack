@@ -269,8 +269,6 @@ class RRsetListSerializer(serializers.ListSerializer):
             else:
                 self.fail('empty')
 
-        ret = []
-        errors = [{} for _ in data]
         partial = self.partial
 
         # build look-up objects for instances and data, so we can look them up with their keys
@@ -278,11 +276,14 @@ class RRsetListSerializer(serializers.ListSerializer):
             known_instances = {(x.subname, x.type): x for x in self.instance}
         except TypeError:  # in case self.instance is None (as during POST)
             known_instances = {}
+
+        errors = [{} for _ in data]
         indices = {}
         for idx, item in enumerate(data):
-            # Validate item type before using anything from it
+            # Validate data types before using anything from it
             if not isinstance(item, dict):
-                self.fail('invalid', datatype=type(item).__name__)
+                errors[idx].update(non_field_errors=f"Expected a dictionary, but got {type(item).__name__}.")
+                continue
             s, t = self._key(item)  # subname, type
             if not (isinstance(s, str) or s is None):
                 errors[idx].update(subname=f"Expected a string, but got {type(s).__name__}.")
@@ -290,6 +291,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                 errors[idx].update(type=f"Expected a string, but got {type(t).__name__}.")
             if errors[idx]:
                 continue
+
             # Construct an index of the RRsets in `data` by `s` and `t`. As (subname, type) may be given multiple times
             # (although invalid), we make indices[s][t] a set to properly keep track. We also check and record RRsets
             # which are known in the database (once per subname), using index `None` (for checking CNAME exclusivity).
@@ -308,6 +310,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                 collapsed_indices[s][t] -= {idx, None}
 
         # Iterate over all rows in the data given
+        ret = []
         for idx, item in enumerate(data):
             if errors[idx]:
                 continue
