@@ -270,7 +270,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                 self.fail('empty')
 
         ret = []
-        errors = []
+        errors = [{} for _ in data]
         partial = self.partial
 
         # build look-up objects for instances and data, so we can look them up with their keys
@@ -284,6 +284,12 @@ class RRsetListSerializer(serializers.ListSerializer):
             if not isinstance(item, dict):
                 self.fail('invalid', datatype=type(item).__name__)
             s, t = self._key(item)  # subname, type
+            if not (isinstance(s, str) or s is None):
+                errors[idx].update(subname=f"Expected a string, but got {type(s).__name__}.")
+            if not (isinstance(t, str) or t is None):
+                errors[idx].update(type=f"Expected a string, but got {type(t).__name__}.")
+            if errors[idx]:
+                continue
             # Construct an index of the RRsets in `data` by `s` and `t`. As (subname, type) may be given multiple times
             # (although invalid), we make indices[s][t] a set to properly keep track. We also check and record RRsets
             # which are known in the database (once per subname), using index `None` (for checking CNAME exclusivity).
@@ -295,12 +301,16 @@ class RRsetListSerializer(serializers.ListSerializer):
 
         collapsed_indices = copy.deepcopy(indices)
         for idx, item in enumerate(data):
+            if errors[idx]:
+                continue
             if item.get('records') == []:
                 s, t = self._key(item)
                 collapsed_indices[s][t] -= {idx, None}
 
         # Iterate over all rows in the data given
         for idx, item in enumerate(data):
+            if errors[idx]:
+                continue
             try:
                 # see if other rows have the same key
                 s, t = self._key(item)
@@ -337,10 +347,9 @@ class RRsetListSerializer(serializers.ListSerializer):
                 # with partial value and instance in place, let the validation begin!
                 validated = self.child.run_validation(item)
             except serializers.ValidationError as exc:
-                errors.append(exc.detail)
+                errors[idx].update(exc.detail)
             else:
                 ret.append(validated)
-                errors.append({})
 
         self.partial = partial
 
