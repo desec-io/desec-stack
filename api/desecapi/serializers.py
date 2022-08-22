@@ -21,6 +21,7 @@ from rest_framework.validators import UniqueTogetherValidator, UniqueValidator, 
 
 from api import settings
 from desecapi import crypto, metrics, models, validators
+from desecapi.models import validate_domain_name
 
 
 class CaptchaSerializer(serializers.ModelSerializer):
@@ -755,7 +756,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterAccountSerializer(UserSerializer):
-    domain = serializers.CharField(required=False, validators=models.validate_domain_name)
+    domain = serializers.CharField(required=False, validators=validate_domain_name)
     captcha = CaptchaSolutionSerializer(required=False)
 
     class Meta:

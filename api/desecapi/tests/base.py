@@ -17,8 +17,9 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
 
-from desecapi.models import User, Domain, Token, RRset, RR, psl, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED, \
-    RR_SET_TYPES_MANAGEABLE
+from desecapi.models import User, Domain, Token, RRset, RR
+from desecapi.models.domains import psl
+from desecapi.models.records import RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED, RR_SET_TYPES_MANAGEABLE
 
 
 class DesecAPIClient(APIClient):

@@ -109,7 +109,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('content', models.CharField(default=desecapi.models.captcha_default_content, max_length=24)),
+                ('content', models.CharField(default=desecapi.models.captcha.captcha_default_content, max_length=24)),
             ],
         ),
         migrations.CreateModel(

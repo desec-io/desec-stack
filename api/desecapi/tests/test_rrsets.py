@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
-from desecapi.models import Domain, RR, RRset, RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
+from desecapi.models import Domain, RR, RRset
+from desecapi.models.records import RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
 from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
 
