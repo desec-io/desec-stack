@@ -229,7 +229,7 @@ class Domain(ExportModelOperationsMixin('Domain'), models.Model):
     name = models.CharField(max_length=191,
                             unique=True,
                             validators=validate_domain_name)
-    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='domains')
+    owner = models.ForeignKey('User', on_delete=models.PROTECT, related_name='domains')
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(choices=RenewalState.choices, default=RenewalState.IMMORTAL)
@@ -418,14 +418,14 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey('User', on_delete=models.CASCADE)
     name = models.CharField('Name', blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     perm_manage_tokens = models.BooleanField(default=False)
     allowed_subnets = ArrayField(CidrAddressField(), default=_allowed_subnets_default.__func__)
     max_age = models.DurationField(null=True, default=None, validators=_validators)
     max_unused_period = models.DurationField(null=True, default=None, validators=_validators)
-    domain_policies = models.ManyToManyField(Domain, through='TokenDomainPolicy')
+    domain_policies = models.ManyToManyField('Domain', through='TokenDomainPolicy')
 
     plain = None
     objects = NetManager()
@@ -514,11 +514,11 @@ class Token(ExportModelOperationsMixin('Token'), rest_framework.authtoken.models
 )
 class TokenDomainPolicy(ExportModelOperationsMixin('TokenDomainPolicy'), models.Model):
     token = models.ForeignKey(Token, on_delete=models.CASCADE)
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, null=True)
+    domain = models.ForeignKey('Domain', on_delete=models.CASCADE, null=True)
     perm_dyndns = models.BooleanField(default=False)
     perm_rrsets = models.BooleanField(default=False)
     # Token user, filled via trigger. Used by compound FK constraints to tie domain.owner to token.user (see migration).
-    token_user = models.ForeignKey(User, on_delete=models.CASCADE, db_constraint=False, related_name='+')
+    token_user = models.ForeignKey('User', on_delete=models.CASCADE, db_constraint=False, related_name='+')
 
     class Meta:
         constraints = [
@@ -622,7 +622,7 @@ class RRset(ExportModelOperationsMixin('RRset'), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
     touched = models.DateTimeField(auto_now=True, db_index=True)
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
+    domain = models.ForeignKey('Domain', on_delete=models.CASCADE)
     subname = models.CharField(
         max_length=178,
         blank=True,
@@ -932,7 +932,7 @@ class AuthenticatedBasicUserAction(AuthenticatedAction):
     """
     Abstract AuthenticatedAction involving a user instance.
     """
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    user = models.ForeignKey('User', on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -1055,7 +1055,7 @@ class AuthenticatedDomainBasicUserAction(AuthenticatedBasicUserAction):
     Abstract AuthenticatedBasicUserAction involving an domain instance, incorporating the domain's id, name as well as
     the owner ID into the Message Authentication Code state.
     """
-    domain = models.ForeignKey(Domain, on_delete=models.DO_NOTHING)
+    domain = models.ForeignKey('Domain', on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = False
