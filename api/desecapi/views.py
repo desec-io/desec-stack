@@ -757,7 +757,7 @@ class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
         })
 
 
-class AuthenticatedConfirmAccountUserAction(AuthenticatedActionView):
+class AuthenticatedConfirmAccountUserActionView(AuthenticatedActionView):
     html_url = '/confirm/confirm-account/{code}'
     serializer_class = serializers.AuthenticatedConfirmAccountUserActionSerializer
 
