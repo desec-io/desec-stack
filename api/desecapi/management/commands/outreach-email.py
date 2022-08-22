@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('email', nargs='*', help='User(s) to contact, identified by their email addresses. '
-                            'Defaults to everyone with outreach_preference = True.')
+                            'Defaults to everyone with outreach_preference = True, excluding inactive users.')
         parser.add_argument('--contentfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
                             help='File to take email content from. Defaults to stdin.')
         parser.add_argument('--reason', nargs='?', default='change-outreach-preference',
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         if options['email']:
             users = User.objects.filter(email__in=options['email'])
         elif content:
-            users = User.objects.filter(outreach_preference=True)
+            users = User.objects.exclude(is_active=False).filter(outreach_preference=True)
         else:
             raise RuntimeError('To send default content, specify recipients explicitly.')
 
