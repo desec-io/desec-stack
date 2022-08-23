@@ -285,8 +285,8 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             # Domain not real: that's it
             metrics.get("desecapi_autodelegation_deleted").inc()
 
-    def delete(self):
-        ret = super().delete()
+    def delete(self, *args, **kwargs):
+        ret = super().delete(*args, **kwargs)
         logger.warning(f"Domain {self.name} deleted (owner: {self.owner.pk})")
         return ret
 

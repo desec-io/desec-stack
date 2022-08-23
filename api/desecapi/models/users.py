@@ -102,9 +102,9 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         self.save()
         self.send_email("password-change-confirmation")
 
-    def delete(self):
+    def delete(self, *args, **kwargs):
         pk = self.pk
-        ret = super().delete()
+        ret = super().delete(*args, **kwargs)
         logger.warning(f"User {pk} deleted")
         return ret
 

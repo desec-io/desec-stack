@@ -27,11 +27,11 @@ class DonationSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_bic(value):
-        return re.sub(r"[\s]", "", value)
+        return re.sub(r"\s", "", value)
 
     @staticmethod
     def validate_iban(value):
-        return re.sub(r"[\s]", "", value)
+        return re.sub(r"\s", "", value)
 
     def create(self, validated_data):
         return self.Meta.model(**validated_data)

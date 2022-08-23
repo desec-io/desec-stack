@@ -174,7 +174,7 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
                     }
                 )
 
-    def delete(self):
+    def delete(self, *args, **kwargs):
         # Can't delete default policy when others exist
         if (self.domain is None) and self.token.tokendomainpolicy_set.exclude(
             domain__isnull=True
@@ -184,7 +184,7 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
                     "domain": "Policy precedence: Can't delete default policy when there exist others."
                 }
             )
-        return super().delete()
+        return super().delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         self.clean()

@@ -1,21 +1,11 @@
 import argparse
 import sys
 
-from django.core.exceptions import ImproperlyConfigured
 from django.core.management import BaseCommand
 from django.template import engines
-from django.template.backends.django import DjangoTemplates
 from django.urls import resolve, reverse
 
 from desecapi.models import User
-
-
-def _get_default_template_backend():
-    # Ad-hoc implementation of https://github.com/django/django/pull/15944
-    for backend in engines.all():
-        if isinstance(backend, DjangoTemplates):
-            return backend
-    raise ImproperlyConfigured("No DjangoTemplates backend is configured.")
 
 
 class Command(BaseCommand):
@@ -67,7 +57,7 @@ class Command(BaseCommand):
         template_code = '{%% extends "%s" %%}' % base_file
         if content:
             template_code += "{% block content %}" + content + "{% endblock %}"
-        template = _get_default_template_backend().from_string(template_code)
+        template = engines["django"].from_string(template_code)
 
         if options["email"]:
             users = User.objects.filter(email__in=options["email"])

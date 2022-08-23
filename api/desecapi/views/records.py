@@ -15,12 +15,7 @@ class EmptyPayloadMixin:
         # noinspection PyUnresolvedReferences
         request = super().initialize_request(request, *args, **kwargs)
 
-        try:
-            no_data = request.stream is None
-        except:
-            no_data = True
-
-        if no_data:
+        if request.stream is None:
             # In this case, data and files are both empty, so we can set request.data=None (instead of the default {}).
             # This allows distinguishing missing payload from empty dict payload.
             # See https://github.com/encode/django-rest-framework/pull/7195
@@ -40,12 +35,14 @@ class RRsetView:
     @property
     def domain(self):
         try:
+            # noinspection PyUnresolvedReferences
             return self.request.user.domains.get(name=self.kwargs["name"])
         except models.Domain.DoesNotExist:
             raise Http404
 
     @property
     def throttle_scope(self):
+        # noinspection PyUnresolvedReferences
         return (
             "dns_api_read"
             if self.request.method in SAFE_METHODS
@@ -55,6 +52,7 @@ class RRsetView:
     @property
     def throttle_scope_bucket(self):
         # Note: bucket should remain constant even when domain is recreated
+        # noinspection PyUnresolvedReferences
         return None if self.request.method in SAFE_METHODS else self.kwargs["name"]
 
     def get_queryset(self):
@@ -66,6 +64,7 @@ class RRsetView:
 
     def perform_update(self, serializer):
         with PDNSChangeTracker():
+            # noinspection PyUnresolvedReferences
             super().perform_update(serializer)
 
 

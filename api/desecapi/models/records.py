@@ -279,7 +279,7 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
                 )
 
             # Convert to canonical presentation format, disable chunking of records.
-            # Exempt types which have chunksize hardcoded (prevents "got multiple values for keyword argument 'chunksize'").
+            # Exempt types with hardcoded chunksize (prevents "got multiple values for keyword argument 'chunksize'").
             chunksize_exception_types = (
                 dns.rdatatype.OPENPGPKEY,
                 dns.rdatatype.EUI48,

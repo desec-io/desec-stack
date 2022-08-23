@@ -1,14 +1,12 @@
 import django.core.exceptions
-from netfields import rest_framework as netfields_rf
+from netfields.rest_framework import CidrAddressField
 from rest_framework import serializers
 
 from desecapi.models import Token, TokenDomainPolicy
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    allowed_subnets = serializers.ListField(
-        child=netfields_rf.CidrAddressField(), required=False
-    )
+    allowed_subnets = serializers.ListField(child=CidrAddressField(), required=False)
     token = serializers.ReadOnlyField(source="plain")
     is_valid = serializers.ReadOnlyField()
 
@@ -30,7 +28,7 @@ class TokenSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, include_plain=False, **kwargs):
         self.include_plain = include_plain
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_fields(self):
         fields = super().get_fields()

@@ -6,8 +6,8 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 
-import desecapi.authentication as auth
 from desecapi import permissions, serializers
+from desecapi.authentication import AuthenticatedBasicUserActionAuthentication
 from desecapi.models import Token
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
@@ -27,7 +27,6 @@ class AuthenticatedActionView(generics.GenericAPIView):
     else                HTTP 406 Not Acceptable             perform action      405 Method Not Allowed
     """
 
-    authenticated_action = None
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ["get", "post"]  # GET is for redirect only
     renderer_classes = [JSONRenderer, StaticHTMLRenderer]
@@ -57,7 +56,7 @@ class AuthenticatedActionView(generics.GenericAPIView):
         return (
             ()
             if self.request.method in SAFE_METHODS
-            else (auth.AuthenticatedBasicUserActionAuthentication,)
+            else (AuthenticatedBasicUserActionAuthentication,)
         )
 
     @property
