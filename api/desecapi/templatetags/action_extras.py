@@ -23,3 +23,8 @@ def action_link(action_serializer, idx=None):
 @register.simple_tag
 def action_link_expiration_hours(action_serializer):
     return action_serializer.validity_period // timedelta(hours=1)
+
+
+@register.simple_tag
+def action_link_expiration_minutes(action_serializer):
+    return action_serializer.validity_period // timedelta(minutes=1)

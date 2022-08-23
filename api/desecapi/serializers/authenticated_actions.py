@@ -235,6 +235,17 @@ class AuthenticatedConfirmAccountUserActionSerializer(
         )  # confirmation happens during authentication, so nothing left to do
 
 
+class AuthenticatedCreateTOTPFactorUserActionSerializer(
+    AuthenticatedBasicUserActionSerializer
+):
+    reason = "create-totp"
+    validity_period = timedelta(hours=1)
+
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
+        model = models.AuthenticatedCreateTOTPFactorUserAction
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + ("name",)
+
+
 class AuthenticatedResetPasswordUserActionSerializer(
     AuthenticatedBasicUserActionSerializer
 ):

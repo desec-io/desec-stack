@@ -11,6 +11,9 @@ tokendomainpolicies_router.register(
     r"", views.TokenDomainPolicyViewSet, basename="token_domain_policies"
 )
 
+totp_router = SimpleRouter()
+totp_router.register(r"", views.TOTPViewSet, basename="totp")
+
 auth_urls = [
     # User management
     path("", views.AccountCreateView.as_view(), name="register"),
@@ -39,6 +42,7 @@ auth_urls = [
         "tokens/<uuid:token_id>/policies/domain/",
         include(tokendomainpolicies_router.urls),
     ),
+    path("totp/", include(totp_router.urls)),
 ]
 
 domains_router = SimpleRouter()
@@ -97,6 +101,11 @@ api_urls = [
         "v/confirm-account/<code>/",
         views.AuthenticatedConfirmAccountUserActionView.as_view(),
         name="confirm-confirm-account",
+    ),
+    path(
+        "v/create-totp/<code>/",
+        views.AuthenticatedCreateTOTPFactorUserActionView.as_view(),
+        name="confirm-create-totp",
     ),
     path(
         "v/reset-password/<code>/",

@@ -169,6 +169,16 @@ header to the token's secret value, prefixed with ``Token``::
         --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 
+2-Factor Authentication
+```````````````````````
+
+2-Factor Authentication can be set up through the web interface.
+
+The underlying API keeps evolving as more factors like FIDO2 are
+getting added, and endpoints are subject to change without notice.
+A description will be added once the interface is final.
+
+
 .. _retrieve-account-information:
 
 Retrieve Account Information

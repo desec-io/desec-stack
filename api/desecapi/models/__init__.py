@@ -3,6 +3,7 @@ from .base import validate_domain_name, validate_lower, validate_upper
 from .captcha import Captcha
 from .domains import Domain
 from .donation import Donation
+from .mfa import BaseFactor, TOTPFactor
 from .records import (
     RR,
     RRset,

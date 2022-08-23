@@ -206,6 +206,16 @@ class AuthenticatedConfirmAccountUserActionView(AuthenticatedActionView):
         return Response({"detail": "Success! Your account status has been confirmed."})
 
 
+class AuthenticatedCreateTOTPFactorUserActionView(AuthenticatedActionView):
+    html_url = "/confirm/create-totp/{code}/"
+    serializer_class = serializers.AuthenticatedCreateTOTPFactorUserActionSerializer
+
+    def post(self, request, *args, **kwargs):
+        factor = self.authenticated_action.act()
+        serializer = serializers.TOTPFactorSerializer(factor, include_secret=True)
+        return Response(serializer.data)
+
+
 class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     html_url = "/confirm/reset-password/{code}/"
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer

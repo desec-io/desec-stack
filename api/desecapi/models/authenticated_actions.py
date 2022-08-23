@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from .domains import Domain
+from .mfa import TOTPFactor
 
 
 class AuthenticatedAction(models.Model):
@@ -182,6 +183,18 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
 
     def _act(self):
         self.user.change_email(self.new_email)
+
+
+class AuthenticatedCreateTOTPFactorUserAction(AuthenticatedUserAction):
+    name = models.CharField(blank=True, max_length=64)
+
+    class Meta:
+        managed = False
+
+    def _act(self):
+        factor = TOTPFactor(user=self.user, name=self.name)
+        factor.save()
+        return factor
 
 
 class AuthenticatedNoopUserAction(AuthenticatedBasicUserAction):

@@ -120,6 +120,7 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
             "change-email-confirmation-old-email": fast_lane,
             "change-outreach-preference": slow_lane,
             "confirm-account": slow_lane,
+            "create-totp": fast_lane,
             "password-change-confirmation": fast_lane,
             "reset-password": fast_lane,
             "delete-account": fast_lane,

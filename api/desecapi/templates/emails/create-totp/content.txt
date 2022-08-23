@@ -1,0 +1,14 @@
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi,
+
+We received a request to create a TOTP token for your deSEC account.
+For security reasons, we need you to confirm this request using the
+following link (valid for {% action_link_expiration_minutes action_serializer %} minutes):
+
+{% action_link action_serializer %}
+
+The setup process will continue after your confirmation.
+
+Stay secure,
+The deSEC Team
+{% endblock %}
