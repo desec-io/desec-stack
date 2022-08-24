@@ -33,6 +33,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     user = models.ForeignKey("User", on_delete=models.CASCADE)
     name = models.CharField("Name", blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
+    mfa = models.BooleanField(default=None, null=True)
     perm_manage_tokens = models.BooleanField(default=False)
     allowed_subnets = ArrayField(
         CidrAddressField(), default=_allowed_subnets_default.__func__

@@ -13,6 +13,49 @@ class IsActiveUser(permissions.BasePermission):
         return request.user and request.user.is_active
 
 
+class IsAPIToken(permissions.BasePermission):
+    """
+    Allows access only with API token (.mfa is None).
+    """
+
+    message = "API token required."
+    code = "api_token_required"
+
+    def has_permission(self, request, view):
+        return request.auth.mfa is None
+
+
+class IsLoginToken(permissions.BasePermission):
+    """
+    Allows access only with login token (.mfa is not None).
+
+    DRF permission negation is flawed, so ~IsAPIToken does not give the correct behavior:
+    https://github.com/encode/django-rest-framework/issues/6598#issuecomment-484824743
+    """
+
+    message = "Login token required."
+    code = "login_token_required"
+
+    def has_permission(self, request, view):
+        return request.auth.mfa is not None
+
+
+class MFARequiredIfEnabled(permissions.BasePermission):
+    """
+    Allows access only to when
+        - the token is a human token that has passed MFA, or
+        - the token is a human token that has not passed MFA, but the user has not enabled MFA at all.
+    """
+
+    message = "Multi-factor authentication required."
+    code = "mfa_required"
+
+    def has_permission(self, request, view):
+        return request.auth.mfa or (
+            request.auth.mfa is False and not request.user.mfa_enabled
+        )
+
+
 class IsOwner(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object to view or edit it.

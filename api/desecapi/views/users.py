@@ -55,6 +55,7 @@ class AccountCreateView(generics.CreateAPIView):
 class AccountView(generics.RetrieveUpdateAPIView):
     permission_classes = (
         IsAuthenticated,
+        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
         permissions.TokenNoDomainPolicy,
     )
     serializer_class = serializers.UserSerializer
@@ -100,10 +101,10 @@ class AccountLoginView(generics.GenericAPIView):
         user = self.request.user
         token = Token.objects.create(
             user=user,
-            name="login",
             perm_manage_tokens=True,
             max_age=timedelta(days=7),
             max_unused_period=timedelta(hours=1),
+            mfa=False,
         )
         user_logged_in.send(sender=user.__class__, request=self.request, user=user)
 

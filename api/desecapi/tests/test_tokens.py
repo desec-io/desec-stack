@@ -142,6 +142,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 data.get("perm_manage_tokens", False),
             )
             self.assertIsNone(response.data["last_used"])
+            self.assertIsNone(Token.objects.get(pk=response.data["id"]).mfa)
 
         self.assertEqual(
             len(Token.objects.filter(user=self.owner).all()), n + len(datas)

@@ -38,6 +38,7 @@ class RRsetView(DomainViewMixin):
     serializer_class = RRsetSerializer
     permission_classes = (
         IsAuthenticated,
+        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
         permissions.IsDomainOwner,
         permissions.TokenHasDomainRRsetsPermission,
     )

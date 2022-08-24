@@ -18,6 +18,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = TokenSerializer
     permission_classes = (
         IsAuthenticated,
+        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
         permissions.HasManageTokensPermission,
     )
     throttle_scope = "account_management_passive"
@@ -38,6 +39,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
 class TokenPoliciesRoot(APIView):
     permission_classes = [
         IsAuthenticated,
+        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
         permissions.HasManageTokensPermission
         | permissions.AuthTokenCorrespondsToViewToken,
     ]
@@ -61,7 +63,10 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
 
     @property
     def permission_classes(self):
-        ret = [IsAuthenticated]
+        ret = [
+            IsAuthenticated,
+            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+        ]
         if self.request.method in SAFE_METHODS:
             ret.append(
                 permissions.HasManageTokensPermission

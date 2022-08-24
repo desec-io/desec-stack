@@ -33,7 +33,11 @@ class DomainViewSet(
 
     @property
     def permission_classes(self):
-        ret = [IsAuthenticated, permissions.IsOwner]
+        ret = [
+            IsAuthenticated,
+            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+            permissions.IsOwner,
+        ]
         if self.action == "create":
             ret.append(permissions.WithinDomainLimit)
         if self.action == "zonefile":
