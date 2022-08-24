@@ -4,6 +4,9 @@ node_modules
 /tests/e2e/videos/
 /tests/e2e/screenshots/
 
+# Build output
+/dist/
+
 # local env files
 .env.local
 .env.*.local
