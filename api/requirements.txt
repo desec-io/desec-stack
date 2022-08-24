@@ -11,6 +11,7 @@ django-pgtrigger~=2.5.1  # Upgrade to 3.x on occasion. Trigger management syntax
 django-prometheus~=2.2.0
 dnspython~=2.2.0
 httpretty~=1.0.5
+pyotp~=2.6.0
 psycopg2~=2.9.2
 prometheus-client~=0.12.0  # added to control django-prometheus' dependency version
 psl-dns~=1.1.0

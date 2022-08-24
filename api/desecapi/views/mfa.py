@@ -1,10 +1,12 @@
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from desecapi import permissions
 from desecapi.serializers import (
     AuthenticatedCreateTOTPFactorUserActionSerializer,
+    TOTPCodeSerializer,
     TOTPFactorSerializer,
 )
 
@@ -31,3 +33,11 @@ class TOTPViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         AuthenticatedCreateTOTPFactorUserActionSerializer.build_and_save(
             user=self.request.user, name=serializer.validated_data.get("name", "")
         )
+
+    @action(detail=True, methods=["post"])
+    def verify(self, request, pk=None):
+        serializer = TOTPCodeSerializer(
+            data=request.data, context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response({"detail": "The code was correct."})

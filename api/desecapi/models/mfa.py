@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import base64
+from datetime import datetime
+from functools import cached_property
 import secrets
 import uuid
 
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
+from pyotp import TOTP, utils as pyotp_utils
 
 
 class BaseFactor(models.Model):
@@ -36,6 +40,37 @@ class TOTPFactor(BaseFactor):
     secret = models.BinaryField(max_length=32, default=_secret_default.__func__)
     last_verified_timestep = models.PositiveIntegerField(default=0)
 
+    @cached_property
+    def _totp(self):
+        # TODO switch to self.secret once https://github.com/pyauth/pyotp/pull/138 is released
+        return TOTP(self.base32_secret, digits=6)
+
     @property
     def base32_secret(self):
         return base64.b32encode(self.secret).rstrip(b"=").decode("ascii")
+
+    @property
+    def uri(self):
+        return self._totp.provisioning_uri(
+            name=self.name,
+            issuer_name=f"desec.{settings.DESECSTACK_DOMAIN}",
+        )
+
+    @transaction.atomic
+    def verify(self, code):
+        now = timezone.now()
+        timestep_now = self._totp.timecode(now)
+
+        for offset in (-1, 0, 1):
+            timestep = timestep_now + offset
+            if not (self.last_verified_timestep < timestep):
+                continue
+            if pyotp_utils.strings_equal(str(code), self._totp.generate_otp(timestep)):
+                if not self.user.mfa_enabled:  # enabling MFA
+                    self.user.credentials_changed = now
+                    self.user.save()
+                self.last_used = now
+                self.last_verified_timestep = timestep
+                self.save()
+                return True
+        return False

@@ -12,7 +12,7 @@ from .authenticated_actions import (
 from .captcha import CaptchaSerializer, CaptchaSolutionSerializer
 from .domains import DomainSerializer
 from .donation import DonationSerializer
-from .mfa import TOTPFactorSerializer
+from .mfa import TOTPCodeSerializer, TOTPFactorSerializer
 from .records import RRsetSerializer
 from .tokens import TokenDomainPolicySerializer, TokenSerializer
 from .users import (

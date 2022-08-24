@@ -9,8 +9,8 @@ class TOTPFactorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TOTPFactor
-        fields = ("id", "created", "last_used", "name", "secret", "user")
-        read_only_fields = ("id", "created", "last_used", "secret", "user")
+        fields = ("id", "created", "last_used", "name", "secret", "uri", "user")
+        read_only_fields = ("id", "created", "last_used", "secret", "uri", "user")
         extra_kwargs = {
             # needed for uniqueness, https://github.com/encode/django-rest-framework/issues/7489
             "name": {"default": ""}
@@ -31,6 +31,7 @@ class TOTPFactorSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
         if not self.include_secret:
             fields.pop("secret")
+            fields.pop("uri")
         return fields
 
     def to_representation(self, instance):
@@ -38,3 +39,17 @@ class TOTPFactorSerializer(serializers.ModelSerializer):
         if "secret" in ret:
             ret["secret"] = instance.base32_secret
         return ret
+
+
+class TOTPCodeSerializer(serializers.Serializer):
+    # length requirements preserve leading zeros
+    code = serializers.RegexField("^[0-9]+$", max_length=6, min_length=6)
+
+    class Meta:
+        fields = ("code",)
+
+    def validate_code(self, value):
+        factor = self.context["view"].get_object()
+        if not factor.verify(value):
+            raise serializers.ValidationError("Invalid code.")
+        return value

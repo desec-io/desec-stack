@@ -82,6 +82,10 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
+    @property
+    def mfa_enabled(self):
+        return self.basefactor_set.exclude(last_used__isnull=True).exists()
+
     def activate(self):
         self.is_active = True
         self.needs_captcha = False
