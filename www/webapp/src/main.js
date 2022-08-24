@@ -5,7 +5,11 @@ import store from './store'
 import vuetify from './plugins/vuetify'
 import VueClipboard from 'vue-clipboard2'
 import Vuelidate from 'vuelidate'
-import 'roboto-fontface/css/roboto/roboto-fontface.css'
+import "@fontsource/roboto/300.css" /* light */
+import "@fontsource/roboto/400.css" /* regular */
+import "@fontsource/roboto/400-italic.css" /* regular-italic */
+import "@fontsource/roboto/500.css" /* medium */
+import "@fontsource/roboto/700.css" /* bold */
 import '@mdi/font/css/materialdesignicons.css'
 import VueTimeago from 'vue-timeago'
 
