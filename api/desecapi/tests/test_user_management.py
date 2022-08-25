@@ -16,7 +16,6 @@ Furthermore, domain renewals and unused domain/account scavenging are tested.
 """
 from datetime import timedelta
 import random
-import re
 import time
 from unittest import mock
 from urllib.parse import urlparse
@@ -172,59 +171,6 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         # noinspection PyTypeChecker
         with self.assertRaises(User.DoesNotExist):
             User.objects.get(email=email)
-
-    def assertNoEmailSent(self):
-        self.assertFalse(
-            mail.outbox,
-            "Expected no email to be sent, but %i were sent. First subject line is '%s'."
-            % (len(mail.outbox), mail.outbox[0].subject if mail.outbox else "<n/a>"),
-        )
-
-    def assertEmailSent(
-        self,
-        subject_contains="",
-        body_contains=None,
-        recipient=None,
-        reset=True,
-        pattern=None,
-    ):
-        total = 1
-        self.assertEqual(
-            len(mail.outbox),
-            total,
-            "Expected %i message in the outbox, but found %i."
-            % (total, len(mail.outbox)),
-        )
-        email = mail.outbox[-1]
-        self.assertTrue(
-            subject_contains in email.subject,
-            "Expected '%s' in the email subject, but found '%s'"
-            % (subject_contains, email.subject),
-        )
-        if type(body_contains) != list:
-            body_contains = [] if body_contains is None else [body_contains]
-        for elem in body_contains:
-            self.assertTrue(
-                elem in email.body,
-                f"Expected '{elem}' in the email body, but found '{email.body}'",
-            )
-        if recipient is not None:
-            if isinstance(recipient, list):
-                self.assertListEqual(recipient, email.recipients())
-            else:
-                self.assertIn(recipient, email.recipients())
-        body = email.body
-        self.assertIn("user_id = ", body)
-        if reset:
-            mail.outbox = []
-        return body if not pattern else re.search(pattern, body).group(1)
-
-    def assertConfirmationLinkRedirect(self, confirmation_link):
-        response = self.client.get(confirmation_link)
-        self.assertResponse(response, status.HTTP_406_NOT_ACCEPTABLE)
-        response = self.client.get(confirmation_link, HTTP_ACCEPT="text/html")
-        self.assertResponse(response, status.HTTP_302_FOUND)
-        self.assertNoEmailSent()
 
     def assertRegistrationEmail(self, recipient, reset=True):
         return self.assertEmailSent(

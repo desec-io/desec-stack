@@ -11,8 +11,10 @@ from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.core import mail
 from django.db import connection
 from httpretty import httpretty, core as hr_core
+from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.utils import json
@@ -1133,6 +1135,59 @@ class DesecTestCase(MockPDNSTestCase):
             self.SUPPORTED_RR_SET_TYPES,
             "Either some RR types given are unsupported, or not all "
             "supported RR types were in the given set.",
+        )
+
+    def assertEmailSent(
+        self,
+        subject_contains="",
+        body_contains=None,
+        recipient=None,
+        reset=True,
+        pattern=None,
+    ):
+        total = 1
+        self.assertEqual(
+            len(mail.outbox),
+            total,
+            "Expected %i message in the outbox, but found %i."
+            % (total, len(mail.outbox)),
+        )
+        email = mail.outbox[-1]
+        self.assertTrue(
+            subject_contains in email.subject,
+            "Expected '%s' in the email subject, but found '%s'"
+            % (subject_contains, email.subject),
+        )
+        if type(body_contains) != list:
+            body_contains = [] if body_contains is None else [body_contains]
+        for elem in body_contains:
+            self.assertTrue(
+                elem in email.body,
+                f"Expected '{elem}' in the email body, but found '{email.body}'",
+            )
+        if recipient is not None:
+            if isinstance(recipient, list):
+                self.assertListEqual(recipient, email.recipients())
+            else:
+                self.assertIn(recipient, email.recipients())
+        body = email.body
+        self.assertIn("user_id = ", body)
+        if reset:
+            mail.outbox = []
+        return body if not pattern else re.search(pattern, body).group(1)
+
+    def assertConfirmationLinkRedirect(self, confirmation_link):
+        response = self.client.get(confirmation_link)
+        self.assertResponse(response, status.HTTP_406_NOT_ACCEPTABLE)
+        response = self.client.get(confirmation_link, HTTP_ACCEPT="text/html")
+        self.assertResponse(response, status.HTTP_302_FOUND)
+        self.assertNoEmailSent()
+
+    def assertNoEmailSent(self):
+        self.assertFalse(
+            mail.outbox,
+            "Expected no email to be sent, but %i were sent. First subject line is '%s'."
+            % (len(mail.outbox), mail.outbox[0].subject if mail.outbox else "<n/a>"),
         )
 
 
