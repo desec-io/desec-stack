@@ -564,8 +564,11 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def _test_reset_password(self, email, new_password=None, **kwargs):
         new_password = new_password or self.random_password()
-        self.assertResetPasswordSuccessResponse(self.reset_password(email))
-        confirmation_link = self.assertResetPasswordEmail(email)
+        try:
+            confirmation_link = kwargs.pop("confirmation_link")
+        except KeyError:
+            self.assertResetPasswordSuccessResponse(self.reset_password(email))
+            confirmation_link = self.assertResetPasswordEmail(email)
         self.assertConfirmationLinkRedirect(confirmation_link)
         self.assertResetPasswordVerificationSuccessResponse(
             self.client.verify(
@@ -663,7 +666,8 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
 
     def test_registration_without_domain_and_password(self):
         email, password = self._test_registration(self.random_username(), None)
-        self.assertResetPasswordEmail(email)
+        confirmation_link = self.assertResetPasswordEmail(email)
+        self._test_reset_password(email, confirmation_link=confirmation_link)
 
     def test_registration_with_tampered_domain(self):
         PublicSuffixMockMixin.setUpMockPatch(self)

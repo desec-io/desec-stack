@@ -119,6 +119,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
 
     def post(self, request, *args, **kwargs):
         super().post(request, *args, **kwargs)
+        self.request.user.refresh_from_db()  # subsequent action link generation needs current state
         if not self.authenticated_action.domain:
             return self._finalize_without_domain()
         else:
