@@ -184,7 +184,7 @@ class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
         self.user.change_email(self.new_email)
 
 
-class AuthenticatedNoopUserAction(AuthenticatedUserAction):
+class AuthenticatedNoopUserAction(AuthenticatedBasicUserAction):
     class Meta:
         managed = False
 
