@@ -44,9 +44,9 @@ class RRsetView:
     def throttle_scope(self):
         # noinspection PyUnresolvedReferences
         return (
-            "dns_api_read"
+            "dns_api_cheap"
             if self.request.method in SAFE_METHODS
-            else "dns_api_write_rrsets"
+            else "dns_api_per_domain_expensive"
         )
 
     @property

@@ -33,17 +33,17 @@ the API.  When several rates are given, all are enforced at the same time.
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``dyndns``                              | 1/min    | dynDNS updates (per domain).                                                              |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_read``                        | 10/s     | DNS read operations (e.g. fetching an RRset)                                              |
+| ``dns_api_cheap``                       | 10/s     | DNS read operations (e.g. fetching an RRset)                                              |
 |                                         |          |                                                                                           |
 |                                         | 50/min   |                                                                                           |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_write_domains``               | 10/s     | DNS write operations: domain creation/deletion                                            |
+| ``dns_api_expensive``                   | 10/s     | DNS write operations: domain creation/deletion                                            |
 |                                         |          |                                                                                           |
 |                                         | 300/min  |                                                                                           |
 |                                         |          |                                                                                           |
 |                                         | 1000/h   |                                                                                           |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_write_rrsets``                | 2/s      | DNS write operations: RRset creation/deletion/modification (per domain).  If you require  |
+| ``dns_api_per_domain_expensive``        | 2/s      | RRset creation/deletion/modification (per domain).  If you require                        |
 |                                         |          | more requests, consider using bulk requests.                                              |
 |                                         | 15/min   |                                                                                           |
 |                                         |          |                                                                                           |

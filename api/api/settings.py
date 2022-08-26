@@ -109,9 +109,9 @@ REST_FRAMEWORK = {
         'account_management_active': ['3/min'],  # things with side effect, e.g. sending mail or zone creation on signup
         'account_management_passive': ['10/min'],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         'dyndns': ['1/min'],  # dynDNS updates, domain-scoped; anything above 1/min is a client misconfiguration
-        'dns_api_read': ['10/s', '50/min'],  # DNS API requests that do not involve pdns
-        'dns_api_write_domains': ['10/s', '300/min', '1000/h'],  # domains/ endpoint
-        'dns_api_write_rrsets': ['2/s', '15/min', '100/h', '300/d'],  # rrsets/ endpoint, domain-scoped on the view
+        'dns_api_cheap': ['10/s', '50/min'],  # DNS API requests that do not involve pdns
+        'dns_api_expensive': ['10/s', '300/min', '1000/h'],  # DNS API requests affecting domains as a whole
+        'dns_api_per_domain_expensive': ['2/s', '15/min', '100/h', '300/d'],  # DNS API requests affecting RRset(s) of a single domain
         # UserRateThrottle
         'user': '2000/d',  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },

@@ -38,9 +38,9 @@ class DomainViewSet(
     @property
     def throttle_scope(self):
         return (
-            "dns_api_read"
+            "dns_api_cheap"
             if self.request.method in SAFE_METHODS
-            else "dns_api_write_domains"
+            else "dns_api_expensive"
         )
 
     @property
