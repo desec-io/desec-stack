@@ -36,11 +36,8 @@ following details in your router configuration:
 - Hostname (same as your username)
 - Token secret (long random string for authentication, displayed after sign-up)
 
-**Advanced API users:** The dynDNS token technically is a regular API token.
-You can also use the token to make requests to our REST API. (Currently, all
-tokens are equally powerful, i.e. a token used for dynDNS updates can also be
-used to perform other kinds of API operations. Token scoping is on our
-roadmap.)
+**Advanced API users:** The dynDNS token technically is a regular API token
+with permissions restricted to DNS management (but not account management).
 
 IPv6 Support
 ------------
