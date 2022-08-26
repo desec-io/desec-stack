@@ -237,6 +237,10 @@ export default {
       },
     },
     tabmenumore: {
+      'totp': {
+        'name': 'totp',
+        'text': 'Manage 2-Factor Authentication',
+      },
       'change-email': {
         'name': 'change-email',
         'text': 'Change Email Address',

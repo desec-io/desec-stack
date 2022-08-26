@@ -59,6 +59,18 @@ const routes = [
     component: () => import(/* webpackChunkName: "account" */ '../views/ResetPassword.vue')
   },
   {
+    path: '/totp/',
+    name: 'totp',
+    component: () => import(/* webpackChunkName: "account" */ '../views/TOTPList.vue'),
+    meta: {guest: false},
+  },
+  {
+    path: '/totp-verify/',
+    name: 'TOTPVerify',
+    component: () => import(/* webpackChunkName: "signup" */ '../views/Console/TOTPVerifyDialog.vue'),
+    props: (route) => ({...route.params}),
+  },
+  {
     path: '/change-email/:email?',
     name: 'change-email',
     component: () => import(/* webpackChunkName: "account" */ '../views/ChangeEmail.vue'),

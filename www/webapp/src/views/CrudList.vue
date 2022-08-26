@@ -577,10 +577,14 @@ export default {
         );
         const r = await withWorking(this.error, () => HTTP.post(url, self.createDialogItem))
         if (r) {
-          this.createDialogItem = r.data;
-          this.createDialogSuccess = true;
-          const l = this.rows.push(r.data);
-          this.postcreate(this.rows[l - 1]);
+          if (r.status == 201) {
+            this.createDialogItem = r.data;
+            this.createDialogSuccess = true;
+            const l = this.rows.push(r.data);
+            this.postcreate(this.rows[l - 1]);
+          } else {
+            this.postcreate(r, self.createDialogItem);
+          }
         }
       }
       this.createDialogWorking = false;

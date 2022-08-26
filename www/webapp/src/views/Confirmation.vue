@@ -56,6 +56,7 @@
   import axios from 'axios';
   import GenericActionHandler from '@/components/GenericActionHandler.vue';
   import ActivateAccountActionHandler from '@/components/ActivateAccountActionHandler.vue';
+  import CreateTOTPActionHandler from '@/components/CreateTOTPActionHandler.vue';
   import ResetPasswordActionHandler from '@/components/ResetPasswordActionHandler.vue';
   import {digestError} from "../utils";
   import ErrorAlert from '@/components/ErrorAlert';
@@ -70,13 +71,18 @@
     components: {
       GenericActionHandler,
       ActivateAccountActionHandler,
+      CreateTOTPActionHandler,
       ResetPasswordActionHandler,
       ErrorAlert,
     },
     data: () => ({
       actionHandler: null,
       errors: [],
-      handler_map: {'reset-password': 'ResetPasswordActionHandler', 'activate-account': 'ActivateAccountActionHandler'},
+      handler_map: {
+        'activate-account': 'ActivateAccountActionHandler',
+        'create-totp': 'CreateTOTPActionHandler',
+        'reset-password': 'ResetPasswordActionHandler',
+      },
       post_payload: {},
       post_response: {},
       success: false,
