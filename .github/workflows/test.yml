@@ -59,11 +59,10 @@ jobs:
       uses: actions/checkout@v2
     - name: Build images
       uses: ./.github/workflows/build
+      with:
+        images: api dbapi nslord nsmaster dblord dbmaster
     - name: Check for missing migrations
-      run: |
-        cd $GITHUB_WORKSPACE
-        docker-compose -f docker-compose.yml run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
-        docker-compose -f docker-compose.yml down -v
+      run: docker-compose run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
 
   test-e2e2:
     # runs e2e2 tests
@@ -74,17 +73,13 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
     - name: Run e2e2 Tests
-      run: |
-        cd $GITHUB_WORKSPACE
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
+      run: docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
     - name: e2e2 Tests Logs and Cleanup
       if: always()
       run: |
-        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
-        docker-compose down -v
 
   test-api:
     # runs API tests
@@ -92,16 +87,15 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v2
-    - uses: ./.github/workflows/build
+    - name: Build images
+      uses: ./.github/workflows/build
+      with:
+        images: api dbapi nslord nsmaster dblord dbmaster
     - name: Run API Tests
-      run: |
-        cd $GITHUB_WORKSPACE
-        docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
+      run: docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
     - name: API Tests Logs and Cleanup
       if: always()
       run: |
-        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml ps
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
-        docker-compose down -v

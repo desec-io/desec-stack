@@ -1,5 +1,9 @@
 name: build
 description: Builds all docker images
+inputs:
+  images:
+    required: false
+    description: Which images to build; empty for all
 
 runs:
   using: composite
@@ -8,7 +12,7 @@ runs:
     uses: actions/checkout@v2
   - name: Build Images
     shell: bash
-    run: |
-      cd $GITHUB_WORKSPACE
-      docker-compose build
-      docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
+    run: docker-compose build ${{ inputs.images }}
+  - name: Build e2e2 Image
+    shell: bash
+    run: docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
