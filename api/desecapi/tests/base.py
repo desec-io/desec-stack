@@ -881,7 +881,7 @@ class DesecTestCase(MockPDNSTestCase):
             return ".".join([str(random.randrange(256)) for _ in range(4)])
         elif proto == 6:
             return "2001:" + ":".join(
-                ["%x" % random.randrange(16 ** 4) for _ in range(7)]
+                ["%x" % random.randrange(16**4) for _ in range(7)]
             )
         else:
             raise ValueError(

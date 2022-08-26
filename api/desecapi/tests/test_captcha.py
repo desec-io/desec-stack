@@ -110,7 +110,7 @@ class AudioCaptchaWorkflowTestCase(CaptchaWorkflowTestCase):
     kind = "audio"
 
     def test_length(self):
-        self.assertTrue(10 ** 5 < len(self.obtain().data["challenge"]) < 10 ** 6)
+        self.assertTrue(10**5 < len(self.obtain().data["challenge"]) < 10**6)
 
     def test_parses(self):
         for _ in range(10):
