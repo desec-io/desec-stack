@@ -40,7 +40,7 @@ Here's a quick intro how to get started:
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
-   The response body will contain an ``token`` which is used to
+   The response body will contain a ``token`` secret which is used to
    authenticate requests to the DNS management endpoints as demonstrated in
    the next step.
 
@@ -51,7 +51,7 @@ Here's a quick intro how to get started:
 #. Create a DNS zone::
 
     curl -X POST https://desec.io/api/v1/domains/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'
 

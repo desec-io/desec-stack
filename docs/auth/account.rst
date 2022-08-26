@@ -148,7 +148,7 @@ email address and password to the ``/auth/login/`` endpoint::
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
 If email address and password match our records, the server will reply with
-``200 OK`` and return the token in the ``token`` field of the response body::
+``200 OK`` and return the token secret in the ``token`` field of the response body::
 
     {
         "created": "2018-09-06T09:07:43.762697Z",
@@ -163,7 +163,7 @@ In case of credential mismatch, the server replies with ``401 Unauthorized``.
 additional token will be created. Existing tokens will *remain valid*.
 
 To authorize subsequent requests with the new token, set the HTTP ``Authorization``
-header to the token value, prefixed with ``Token``::
+header to the token's secret value, prefixed with ``Token``::
 
     curl -X GET https://desec.io/api/v1/ \
         --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"

@@ -20,7 +20,7 @@ pretty-print JSON output, process the data through ``jq``:  ``curl ... | jq .``.
 sometimes do not work. In this case, try moving the request payload in front
 of the ``curl`` call, like this::
 
-    echo {"name": "example.com"} | curl -X POST https://desec.io/api/v1/domains/ --header "Authorization: Token {token}" --header "Content-Type: application/json" --data @-
+    echo {"name": "example.com"} | curl -X POST https://desec.io/api/v1/domains/ --header "Authorization: Token {secret}" --header "Content-Type: application/json" --data @-
 
 
 .. toctree::

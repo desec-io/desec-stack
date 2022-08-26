@@ -41,7 +41,7 @@ API will return a ``401 Unauthorized`` status code.
 
 Preferred method: HTTP Basic Authentication (with token)
 --------------------------------------------------------
-Encode your username and token (provided during registration) in the
+Encode your username and token secret (provided during registration) in the
 ``Authorization: Basic ...`` header. This is the method virtually all dynDNS
 clients use out of the box.
 
@@ -52,7 +52,7 @@ account password (if you have one). Instead, enter your token!
 HTTP Token Authentication
 ------------------------------------------
 Send an ``Authorization: Token  ...`` header along with your request, where
-``...`` is the token issued at registration (or manually created later).
+``...`` is the token secret issued at registration (or manually created later).
 
 Query string method (discouraged)
 ---------------------------------
@@ -61,7 +61,7 @@ Set the ``username`` and ``password`` query string parameters (``GET
 
 **Important:** We **strongly discourage** using this method as it comes with a
 subtle disadvantage: We log all HTTP request URLs for a few days to facilitate
-debugging. As a consequence, this method will cause your secret token to end
+debugging. As a consequence, this method will cause your token secret to end
 up in our log files in clear text. The method is provided as an emergency
 solution where folks need to deal with old and/or crappy clients. If this is
 the case, we suggest looking for another client.
@@ -147,22 +147,22 @@ with your respective values.
 
 Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
 
-  curl --user <your domain>:<your authorization token> https://update.dedyn.io/
+  curl --user <your domain>:<your token secret> https://update.dedyn.io/
 
   curl https://update.dedyn.io/?hostname=<your domain> \
-    --header "Authorization: Token <your authorization token>"
+    --header "Authorization: Token <your token secret>"
 
 Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
 
-  curl --user <your domain>:<your authorization token> https://update6.dedyn.io/
+  curl --user <your domain>:<your token secret> https://update6.dedyn.io/
 
   curl https://update6.dedyn.io/?hostname=<your domain> \
-    --header "Authorization: Token <your authorization token>"
+    --header "Authorization: Token <your token secret>"
 
 Basic authentication with simultaneous update of IPv4 and IPv6::
 
-  curl --user <your domain>:<your authorization token> \
+  curl --user <your domain>:<your token secret> \
     "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
 
   curl "https://update6.dedyn.io/?hostname=<your domain>?myipv4=1.2.3.4&myipv6=fd08::1234" \
-    --header "Authorization: Token <your authorization token>"
+    --header "Authorization: Token <your token secret>"

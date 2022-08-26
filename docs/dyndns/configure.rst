@@ -34,7 +34,7 @@ following details in your router configuration:
 - Update Server ``update.dedyn.io``, or Update URL ``https://update.dedyn.io/``
 - Username (the full name of the domain you want to update, e.g. yourname.dedyn.io)
 - Hostname (same as your username)
-- Token (long random string for authorization, displayed after sign-up)
+- Token secret (long random string for authentication, displayed after sign-up)
 
 **Advanced API users:** The dynDNS token technically is a regular API token.
 You can also use the token to make requests to our REST API. (Currently, all
@@ -75,7 +75,7 @@ DynDNS Provider                 User-defined
 Update URL :superscript:`1`     ``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>``
 Domain Name                     <your domain>
 Username :superscript:`2`       <your domain>
-Password :superscript:`3`       <your authorization token>
+Password :superscript:`3`       <your authentication token secret>
 =============================   =====
 
 *Note 1*
@@ -91,7 +91,7 @@ Password :superscript:`3`       <your authorization token>
   details.
 
 *Note 3*
-  A valid access token for the domain. **Not** your deSEC account password!
+  A valid token secret for the domain. **Not** your deSEC account password!
 
 
 Option 2: Use ddclient
@@ -111,7 +111,7 @@ start the configuration process.
 In the configuration process, select "other" dynamic DNS service provider, and
 enter ``update.dedyn.io`` as the dynamic DNS server. Next, tell ddclient to use
 the "dyndns2" protocol to perform updates. Afterwards, enter the username and
-the token that you received during registration. Last, tell ddclient how to
+the token secret that you received during registration. Last, tell ddclient how to
 detect your IP address, your domain name and the update interval.
 
 **Note:** As of the time of this writing, ddclient does not use an encrypted
@@ -123,7 +123,7 @@ Manual configuration (other systems)
 ************************************
 After installing ddclient, you can start with a ``ddclient.conf`` configuration
 file similar to this one, with the three placeholders replaced by your domain
-name and your token::
+name and your token secret::
 
   protocol=dyndns2
   # "use=cmd" and the curl command is one way of doing this; other ways exist
@@ -131,7 +131,7 @@ name and your token::
   ssl=yes
   server=update.dedyn.io
   login=[domain]
-  password='[token]'
+  password='[token secret]'
   [domain]
 
 For more information, check out `these

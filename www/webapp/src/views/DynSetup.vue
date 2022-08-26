@@ -27,13 +27,13 @@
             </p>
             <h2 class="title">Set Up Your Domain</h2>
             <p>
-              All operations on your domain require the following authorization token listed below:
+              All operations on your domain require the following authorization token secret shown below:
             </p>
             <p align="center">
               <code>{{token}}</code>
             </p>
             <p>
-              Please keep this token in a safe place.
+              Please keep this token secret in a safe place.
               If lost, it cannot be recovered and must be replaced with a new token.
             </p>
             <p>

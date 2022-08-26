@@ -18,8 +18,8 @@ export default {
         texts: {
           banner: () => ('<strong>New feature:</strong> You can now configure your tokens for finer access control. Check out the advanced settings switch above!'),
           create: () => ('<p>You can create a new API token here. The token is displayed after submitting this form.</p>'),
-          createBottom: () => ('<p><strong>Warning:</strong> Be sure to protect your tokens appropriately! Knowledge of an API token allows performing actions on your behalf.</p>'),
-          createSuccess: (item) => `Your new token is: <code>${item.token}</code><br />It is only displayed once.`,
+          createBottom: () => ('<p><strong>Warning:</strong> Be sure to protect your token secrets appropriately! Knowledge of an API token allows performing actions on your behalf.</p>'),
+          createSuccess: (item) => `Your new token's secret value is: <code>${item.token}</code><br />It is only displayed once.`,
           destroy: d => (d.name ? `Delete token with name "${d.name}" and ID ${d.id}?` : `Delete unnamed token with ID ${d.id}?`),
           destroyInfo: () => ('This operation is permanent. Any devices using this token will no longer be able to authenticate.'),
           destroyWarning: d => (d.id == store.state.token.id ? 'This is your current session token. Deleting it will invalidate the session.' : ''),
@@ -103,7 +103,7 @@ export default {
           },
           value: {
             name: 'item.value',
-            text: 'Token',
+            text: 'Secret',
             align: 'left',
             sortable: false,
             value: 'value',

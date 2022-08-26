@@ -60,7 +60,7 @@ Field details:
     :Type: UUID
 
     Token ID, used for identification only (e.g. when deleting a token). This
-    is *not* the token value.
+    is *not* the token's secret value.
 
 ``is_valid``
     :Access mode: read-only
@@ -127,8 +127,8 @@ Field details:
     :Access mode: read-once
     :Type: string
 
-    Token value that is used to authenticate API requests.  It is only
-    returned once, upon creation of the token.  The value of an existing token
+    The token's secret value that is used to authenticate API requests.  It is only
+    returned once, upon creation of the token.  The secret value of an existing token
     cannot be recovered (we store it in irreversibly hashed form).  For
     security details, see `Security Considerations`_.
 
@@ -248,7 +248,7 @@ The response will contain a token object as described under `Token Field
 Reference`_.  You can use it to check a token's properties, such as name,
 timestamps of creation and last use, or permissions.
 
-**Note:** The response does *not* contain the token value itself!
+**Note:** The response does *not* contain the token's secret value!
 
 
 .. _delete-tokens:
@@ -265,7 +265,7 @@ token ``id`` value::
 
 The server will reply with ``204 No Content``, even if the token was not found.
 
-If you do not have the token UUID, but you do have the token value itself, you
+If you do not have the token ID, but you do have the token secret, you
 can use the :ref:`log-out` endpoint to delete it.
 
 
@@ -396,14 +396,14 @@ Security Considerations
 This section is for purely informational. Token length and encoding may change
 in the future.
 
-Any token is generated from 168 bits of randomness at the server and stored in
-hashed format (PBKDF2-HMAC-SHA256). Guessing the token correctly or reversing
+Any token secret is generated from 168 bits of randomness at the server and stored in
+hashed format (PBKDF2-HMAC-SHA256). Guessing the secret correctly or reversing
 the hash is hence practically impossible.
 
-The token value is represented by 28 characters using a URL-safe variant of
+The token's secret value is represented by 28 characters using a URL-safe variant of
 base64 encoding. It comprises only the characters ``A-Z``, ``a-z``, ``0-9``, ``-``,
 and ``_``. (Base64 padding is not needed as the string length is a multiple of 4.)
 
-Old versions of the API encoded 20-byte tokens in 40 characters with hexadecimal
+Old versions of the API encoded 20-byte token secrets in 40 characters with hexadecimal
 representation. Such tokens are not issued anymore, but remain valid until
 invalidated by the user.

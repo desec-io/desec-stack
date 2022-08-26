@@ -145,7 +145,7 @@ To create a new domain, issue a ``POST`` request to the ``/api/v1/domains/``
 endpoint, like this::
 
     curl -X POST https://desec.io/api/v1/domains/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'
 
@@ -183,7 +183,7 @@ The ``/api/v1/domains/`` endpoint responds to ``GET`` requests with an array of
 `domain object`_\ s. For example, you may issue the following command::
 
     curl -X GET https://desec.io/api/v1/domains/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 to retrieve an overview of the domains you own.  Domains are returned in
 reverse chronological order of their creation, and DNSSEC keys are omitted.
@@ -203,7 +203,7 @@ To retrieve a domain with a specific name, issue a ``GET`` request with the
 ``name`` appended to the ``domains/`` endpoint, like this::
 
     curl -X GET https://desec.io/api/v1/domains/{name}/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 This will return only one domain (i.e., the response is not a JSON array).
 
@@ -224,7 +224,7 @@ The responsible domain for a given DNS query name (``qname``) can be retrieved
 by applying a filter on the endpoint used for `Listing Domains`_, like so::
 
     curl -X GET https://desec.io/api/v1/domains/?owns_qname={qname} \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 If your account has a domain that is responsible for the name ``qname``, the
 API returns a JSON array containing only that domain object in the response

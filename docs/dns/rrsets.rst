@@ -155,7 +155,7 @@ To create a new RRset, simply issue a ``POST`` request to the
 ``/api/v1/domains/{name}/rrsets/`` endpoint, like this::
 
     curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"subname": "www", "type": "A", "ttl": 3600, "records": ["127.0.0.1", "127.0.0.2"]}'
 
@@ -193,7 +193,7 @@ about the TLS certificate used by the server that the domain points to.  For
 example, to create a ``TLSA`` RRset for ``www.example.com``, you can run::
 
     curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "subname": "_443._tcp.www",
@@ -222,7 +222,7 @@ sending an array of RRset objects to the ``rrsets/`` endpoint (instead of just
 one), like this::
 
     curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         [
           {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
@@ -245,7 +245,7 @@ with an array of `RRset object`_\ s. For example, you may issue the following
 command::
 
     curl -X GET https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 to retrieve the contents of a zone that you own.  RRsets are returned in
 reverse chronological order of their creation.
@@ -287,7 +287,7 @@ To retrieve an array of all RRsets from your zone that have a specific type
 like::
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/?type={type} \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 Query parameters used for filtering are fully compatible with `pagination`_.
 
@@ -300,7 +300,7 @@ To filter the RRsets array by subname (e.g. to retrieve all records in the
 parameter, like this::
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/?subname={subname} \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 This approach also allows to retrieve all records associated with the zone
 apex (i.e. ``example.com`` where ``subname`` is empty), by querying
@@ -318,7 +318,7 @@ To retrieve an RRset with a specific name and type from your zone (e.g. the
 like this::
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/{subname}/{type}/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 This will return only one RRset (i.e., the response is not a JSON array).  The
 response status code is ``200 OK`` if the requested RRset exists, and ``404
@@ -338,13 +338,13 @@ As an example, you can retrieve the IPv4 address(es) of your domain root by
 running::
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/@/A/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 **Pro tip:** If you like to have the convenience of simple string expansion
 in the URL, you can add three dots after ``{subname}``, like so::
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/{subname}.../{type}/ \
-        --header "Authorization: Token {token}"
+        --header "Authorization: Token {secret}"
 
 With this syntax, the above-mentioned normalization problem does not occur,
 and no special treatment is needed for accessing the zone apex.  You can
@@ -362,7 +362,7 @@ be specified (that is, all fields, including ``subname`` and ``type``).
 Examples::
 
     curl -X PUT https://desec.io/api/v1/domains/{name}/rrsets/{subname}/{type}/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "subname": "{subname}",
@@ -373,7 +373,7 @@ Examples::
     EOF
 
     curl -X PATCH https://desec.io/api/v1/domains/{name}/rrsets/{subname}/{type}/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"ttl": 86400}'
 
@@ -401,7 +401,7 @@ by sending an array of RRset objects to the ``rrsets/`` endpoint (instead of
 just one), like this::
 
     curl -X PUT https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         [
           {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
@@ -436,7 +436,7 @@ another one.  This is achieved by sending a bulk request with an RRset that
 has an empty records list ``[]``, using the ``PATCH`` or ``PUT`` method::
 
     curl -X PATCH https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         [
           {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
@@ -456,7 +456,7 @@ and ``PUT`` request methods. You can simply send an array of RRset objects
 (instead of just one), like this::
 
     curl -X PATCH https://desec.io/api/v1/domains/{name}/rrsets/ \
-        --header "Authorization: Token {token}" \
+        --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         [
           {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
@@ -667,7 +667,7 @@ Record types with priority field
       to create a ``TXT`` RRset::
 
           curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
-              --header "Authorization: Token {token}" \
+              --header "Authorization: Token {secret}" \
               --header "Content-Type: application/json" --data @- <<< \
               '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
 
