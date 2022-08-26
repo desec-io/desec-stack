@@ -1,13 +1,13 @@
-name: CI
+name: test
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the main branch
 on:
   push:
+    # run on push to main branch
     branches: [ main ]
     paths-ignore:
       - 'docs/**'
   pull_request:
+    # run for pull requests against main
     branches: [ main ]
     paths-ignore:
       - 'docs/**'
@@ -40,45 +40,57 @@ env:
   DESECSTACK_MINIMUM_TTL_DEFAULT: 3600
   DESECSTACK_PROMETHEUS_PASSWORD: Je9NNkqbULsg
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
+  test-missing-migrations:
+    # test if Django migrations are missing
     runs-on: ubuntu-latest
-
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-
-    - name: Build Images
-      run: |
-        cd $GITHUB_WORKSPACE
-        docker-compose build
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
-
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Build images
+      uses: ./.github/workflows/build
     - name: Check for missing migrations
       run: |
+        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
         docker-compose -f docker-compose.yml down -v
 
+  test-e2e2:
+    # runs e2e2 tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Build images
+      uses: ./.github/workflows/build
     - name: Run e2e2 Tests
       run: |
+        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
-
     - name: e2e2 Tests Logs and Cleanup
       if: always()
       run: |
+        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
         docker-compose down -v
 
+  test-api:
+    # runs API tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - uses: ./.github/workflows/build
     - name: Run API Tests
       run: |
+        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
-
     - name: API Tests Logs and Cleanup
       if: always()
       run: |
+        cd $GITHUB_WORKSPACE
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml ps
         grep 'desec/' /var/log/syslog
         docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v

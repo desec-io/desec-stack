@@ -1,0 +1,14 @@
+name: build
+description: Builds all docker images
+
+runs:
+  using: composite
+  steps:
+  - name: Check out code
+    uses: actions/checkout@v2
+  - name: Build Images
+    shell: bash
+    run: |
+      cd $GITHUB_WORKSPACE
+      docker-compose build
+      docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
