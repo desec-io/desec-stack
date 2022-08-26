@@ -25,15 +25,6 @@ export default {
           destroyWarning: d => (d.id == store.state.token.id ? 'This is your current session token. Deleting it will invalidate the session.' : ''),
         },
         columns: {
-          id: {
-            name: 'item.id',
-            text: 'Identifier',
-            align: 'left',
-            value: 'id',
-            readonly: true,
-            datatype: 'GenericText',
-            searchable: true,
-          },
           name: {
             name: 'item.name',
             text: 'Name',
