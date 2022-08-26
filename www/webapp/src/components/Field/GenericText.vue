@@ -5,7 +5,7 @@
     :error-messages="errorMessages"
     :value="value"
     :type="type || ''"
-    :placeholder="required ? '' : '(optional)'"
+    :placeholder="placeholder || (required ? '' : '(optional)')"
     :hint="hint"
     persistent-hint
     :required="required"
@@ -53,6 +53,10 @@ export default {
       required: false,
     },
     type: {
+      type: String,
+      required: false,
+    },
+    placeholder: {
       type: String,
       required: false,
     },

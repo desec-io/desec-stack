@@ -110,6 +110,17 @@ export default {
             datatype: 'Checkbox',
             searchable: false,
           },
+          value: {
+            name: 'item.value',
+            text: 'Token',
+            align: 'left',
+            sortable: false,
+            value: 'value',
+            readonly: true,
+            datatype: 'GenericText',
+            searchable: false,
+            fieldProps: () => ({ placeholder: '(only displayed once)' }),
+          },
           created: {
             name: 'item.created',
             text: 'Created',
