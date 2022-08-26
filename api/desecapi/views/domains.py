@@ -1,5 +1,9 @@
+from datetime import timezone, datetime
+
+from django.conf import settings
 from django.core.cache import cache
 from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -9,6 +13,7 @@ from desecapi import permissions
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer
 
 from .base import IdempotentDestroyMixin
@@ -31,17 +36,23 @@ class DomainViewSet(
         ret = [IsAuthenticated, permissions.IsOwner]
         if self.action == "create":
             ret.append(permissions.WithinDomainLimit)
+        if self.action == "zonefile":
+            ret.append(permissions.TokenHasDomainRRsetsPermission)
         if self.request.method not in SAFE_METHODS:
             ret.append(permissions.TokenNoDomainPolicy)
         return ret
 
     @property
     def throttle_scope(self):
-        return (
-            "dns_api_cheap"
-            if self.request.method in SAFE_METHODS
-            else "dns_api_expensive"
-        )
+        if self.action == "zonefile":
+            self.throttle_scope_bucket = self.kwargs["name"]
+            return "dns_api_per_domain_expensive"
+        else:
+            return (
+                "dns_api_cheap"
+                if self.request.method in SAFE_METHODS
+                else "dns_api_expensive"
+            )
 
     @property
     def pagination_class(self):
@@ -51,6 +62,10 @@ class DomainViewSet(
             return None
         else:
             return api_settings.DEFAULT_PAGINATION_CLASS
+
+    @property
+    def domain(self):
+        return self.get_object()
 
     def get_queryset(self):
         qs = self.request.user.domains
@@ -85,6 +100,12 @@ class DomainViewSet(
             parent_domain = Domain.objects.get(name=instance.parent_domain_name)
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
+
+    @action(detail=True, renderer_classes=[PlainTextRenderer])
+    def zonefile(self, request, name=None):
+        instance = self.get_object()
+        prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
+        return Response(prefix + instance.zonefile, content_type="text/dns")
 
 
 class SerialListView(APIView):

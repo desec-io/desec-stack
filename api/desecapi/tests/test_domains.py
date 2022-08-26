@@ -301,6 +301,19 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertEqual(response.data["name"], self.my_domain.name)
             self.assertTrue(isinstance(response.data["keys"], list))
 
+    def test_zonefile_my_domain(self):
+        url = self.reverse("v1:domain-detail", name=self.my_domain.name) + "zonefile/"
+        with self.assertPdnsRequests(
+            self.request_pdns_zone_retrieve_zone_export(name=self.my_domain.name)
+        ):
+            response = self.client.get(url)
+            self.assertStatus(response, status.HTTP_200_OK)
+            prefix, data = response.data.split(b"\n", 1)
+            self.assertTrue(
+                prefix.startswith(b"; Zonefile for " + self.my_domain.name.encode())
+            )
+            self.assertEqual(data, b"Zone export dummy!")
+
     def test_retrieve_other_domains(self):
         for domain in self.other_domains:
             response = self.client.get(

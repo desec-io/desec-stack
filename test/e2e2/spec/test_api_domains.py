@@ -5,6 +5,8 @@ import time
 import pytest
 from conftest import DeSECAPIV1Client, NSLordClient, random_domainname, FaketimeShift
 
+DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
+
 example_zonefile = """
 @ 300 IN SOA get.desec.io. get.desec.io. 2021114126 86400 3600 2419200 3600
 @ 300 IN RRSIG SOA 13 3 300 20220324000000 20220303000000 8312 @ XcZOyVwrEMjp1RGi+5rjk82hYbpzRPIm 5Nx8H4p5wlsCSViAOE9WKIv4TC6xH44l AY4CFBbb2e3iui/bzwQnoQ==
@@ -27,6 +29,10 @@ p6gfsf6t5tvesh74gd38o43u26q8kqes 300 IN RRSIG NSEC3 13 4 300 20220324000000 2022
 """
 
 
+def ttl(value, min_ttl=int(os.environ['DESECSTACK_MINIMUM_TTL_DEFAULT'])):
+    return max(min_ttl, min(86400, value))
+
+
 def test_create(api_user: DeSECAPIV1Client):
     assert len(api_user.domain_list()) == 0
     assert api_user.domain_create(random_domainname()).status_code == 201
@@ -34,17 +40,18 @@ def test_create(api_user: DeSECAPIV1Client):
     assert NSLordClient.query(api_user.domain, 'SOA')[0].serial >= int(time.time())
 
 
-def test_create_and_import(api_user: DeSECAPIV1Client):
+def test_create_import_export(api_user: DeSECAPIV1Client):
     assert len(api_user.domain_list()) == 0
-    assert api_user.domain_create(random_domainname(), example_zonefile).status_code == 201
+    domainname = random_domainname()
+    assert api_user.domain_create(domainname, example_zonefile).status_code == 201
     assert len(api_user.domain_list()) == 1
     api_user.assert_rrsets({
         ('', 'NS'): (
-            int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"]),
+            DEFAULT_TTL,
             {f"{name}." for name in os.environ["DESECSTACK_NS"].split(" ")}
         ),
         ('', 'A'): (
-            max(60, int(os.environ["DESECSTACK_MINIMUM_TTL_DEFAULT"])),
+            ttl(60),
             {'83.219.1.24'}
         ),
     })
@@ -56,6 +63,13 @@ def test_create_and_import(api_user: DeSECAPIV1Client):
         ('', 'SOA'): (None, None),
     }, via_dns=False)
     assert NSLordClient.query(api_user.domain, 'NSEC3PARAM')[0].to_text() == '1 0 0 -'
+    _, zonefile = api_user.get(f"/domains/{api_user.domain}/zonefile").content.decode().split("\n", 1)
+    assert {l.strip() for l in zonefile.strip().split('\n') if 'SOA' not in l} == \
+           {f"{domainname}.	{ttl(60)}	IN	A	83.219.1.24"} | \
+           {
+                f"{domainname}.	{DEFAULT_TTL}	IN	NS	{name}."
+                for name in os.environ["DESECSTACK_NS"].split(" ")
+           }
 
 
 def test_get(api_user_domain: DeSECAPIV1Client):
@@ -89,3 +103,14 @@ def test_recreate(api_user_domain: DeSECAPIV1Client):
     assert api_user_domain.domain_destroy(name).status_code == 204
     assert api_user_domain.domain_create(name).status_code == 201
     assert NSLordClient.query(name, 'SOA')[0].serial > old_serial
+
+
+def test_export(api_user_domain: DeSECAPIV1Client):
+    """Check export of fresh domain (only contains NS and SOA RRs)"""
+    for content_type in ['text/dns', 'application/json']:
+        _, zonefile = api_user_domain.get(f"/domains/{api_user_domain.domain}/zonefile", headers={'Accept': content_type}).content.decode().split("\n", 1)
+        assert {l.strip() for l in zonefile.strip().split('\n') if 'SOA' not in l} == \
+               {
+                    f"{api_user_domain.domain}.	{DEFAULT_TTL}	IN	NS	{name}."
+                    for name in os.environ["DESECSTACK_NS"].split(" ")
+               }

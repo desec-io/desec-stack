@@ -5,7 +5,7 @@ Domain Management
 
 Domain management is done through the ``/api/v1/domains/`` endpoint.  The
 following sections describe how to create, list, modify, and delete domains
-using JSON objects.
+using JSON objects and how to export domain data in zonefile format.
 
 All operations are subject to rate limiting.  For details, see
 :ref:`rate-limits`.
@@ -255,6 +255,24 @@ responsible domain for the corresponding DNS record is the one with this name,
 and ``subname`` would just be ``_acme-challenge``.
 
 The above API request helps you answer this kind of question.
+
+
+Exporting a Domain as Zonefile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To export domain data in zonefile format, send a ``GET`` request to the
+``zonefile`` endpoint of this domain, i.e. to ``/domains/{name}/zonefile``::
+
+    curl -X GET https://desec.io/api/v1/domains/{name}/zonefile \
+        --header "Authorization: Token {secret}"
+
+Note that this will return a plain-text zonefile format without JSON formatting
+that includes all domain data except for DNSSEC-specific record types, e.g.::
+
+    ; Zonefile for example.com exported from desec.io at 2022-08-26 16:03:18.258961+00:00
+    example.com.	1234	IN	NS	ns1.example.com.
+    example.com.	1234	IN	NS	ns2.example.com.
+    example.com.	300	IN	SOA	get.desec.io. get.desec.io. 2022082602 86400 3600 2419200 3600
 
 
 .. _deleting-a-domain:

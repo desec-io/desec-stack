@@ -301,6 +301,7 @@ class MockPDNSTestCase(APITestCase):
     PDNS_ZONE_CRYPTO_KEYS = r"/zones/(?P<id>[^/]+)/cryptokeys"
     PDNS_ZONE = r"/zones/(?P<id>[^/]+)"
     PDNS_ZONE_AXFR = r"/zones/(?P<id>[^/]+)/axfr-retrieve"
+    PDNS_ZONE_EXPORT = r"/zones/(?P<id>[^/]+)/export"
 
     @classmethod
     def get_full_pdns_url(cls, path_regex, ns="LORD", **kwargs):
@@ -558,6 +559,17 @@ class MockPDNSTestCase(APITestCase):
                 "keytype": "zsk",
             },
         ]
+
+    @classmethod
+    def request_pdns_zone_retrieve_zone_export(cls, name=None):
+        return {
+            "method": "GET",
+            "uri": cls.get_full_pdns_url(
+                cls.PDNS_ZONE_EXPORT, id=cls._pdns_zone_id_heuristic(name)
+            ),
+            "status": 200,
+            "body": "Zone export dummy!",
+        }
 
     @classmethod
     def request_pdns_zone_retrieve_crypto_keys(cls, name=None):

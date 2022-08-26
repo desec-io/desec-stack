@@ -161,6 +161,17 @@ def get_zone(domain):
     return r.json()
 
 
+def get_zonefile(domain) -> bin:
+    """
+    Retrieves the zonefile (presentation format) of a given zone as binary string
+    """
+    r = _pdns_get(
+        NSLORD, "/zones/" + pdns_id(domain.name) + "/export", accept="text/dns"
+    )
+
+    return r.content
+
+
 def get_rrset_datas(domain):
     """
     Retrieves a dict representation of the RRsets in a given zone

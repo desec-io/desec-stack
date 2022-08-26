@@ -33,11 +33,11 @@ the API.  When several rates are given, all are enforced at the same time.
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``dyndns``                              | 1/min    | dynDNS updates (per domain).                                                              |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_cheap``                       | 10/s     | DNS read operations (e.g. fetching an RRset)                                              |
+| ``dns_api_cheap``                       | 10/s     | DNS read operations (e.g. fetching an RRset), except zonefile export                      |
 |                                         |          |                                                                                           |
 |                                         | 50/min   |                                                                                           |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dns_api_expensive``                   | 10/s     | DNS write operations: domain creation/deletion                                            |
+| ``dns_api_expensive``                   | 10/s     | Domain creation/deletion, zonefile export                                                 |
 |                                         |          |                                                                                           |
 |                                         | 300/min  |                                                                                           |
 |                                         |          |                                                                                           |

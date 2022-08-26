@@ -7,7 +7,7 @@ from desecapi import models, permissions
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.serializers import RRsetSerializer
 
-from . import IdempotentDestroyMixin
+from .base import IdempotentDestroyMixin
 
 
 class EmptyPayloadMixin:
@@ -24,14 +24,7 @@ class EmptyPayloadMixin:
         return request
 
 
-class RRsetView:
-    serializer_class = RRsetSerializer
-    permission_classes = (
-        IsAuthenticated,
-        permissions.IsDomainOwner,
-        permissions.TokenHasDomainRRsetsPermission,
-    )
-
+class DomainViewMixin:
     @property
     def domain(self):
         try:
@@ -39,6 +32,15 @@ class RRsetView:
             return self.request.user.domains.get(name=self.kwargs["name"])
         except models.Domain.DoesNotExist:
             raise Http404
+
+
+class RRsetView(DomainViewMixin):
+    serializer_class = RRsetSerializer
+    permission_classes = (
+        IsAuthenticated,
+        permissions.IsDomainOwner,
+        permissions.TokenHasDomainRRsetsPermission,
+    )
 
     @property
     def throttle_scope(self):

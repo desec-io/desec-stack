@@ -143,7 +143,7 @@ class DeSECAPIV1Client:
         tsprint(f'API <<< SSL could not be verified against any verification method')
         raise exc
 
-    def _request(self, method: str, *, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+    def _request(self, method: str, *, path: str, data: Optional[dict] = None, headers: Optional[dict] = None, **kwargs) -> requests.Response:
         if data is not None:
             data = json.dumps(data)
 
@@ -157,7 +157,7 @@ class DeSECAPIV1Client:
             method,
             url,
             data=data,
-            headers=self.headers,
+            headers=self.headers | (headers or {}),
             **kwargs,
         )
 
