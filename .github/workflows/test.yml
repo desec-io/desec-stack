@@ -41,6 +41,16 @@ env:
   DESECSTACK_PROMETHEUS_PASSWORD: Je9NNkqbULsg
 
 jobs:
+  test-black-format:
+    # tests if black formatting is used
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install black
+      run: python3 -m pip install black
+    - name: Test desecapi formatting
+      run: black --check api/desecapi
+
   test-missing-migrations:
     # test if Django migrations are missing
     runs-on: ubuntu-latest
