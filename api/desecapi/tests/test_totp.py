@@ -86,11 +86,14 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
                     response, status.HTTP_400_BAD_REQUEST, {"code": [message]}
                 )
 
-        # Correct code works
+        # Correct code allows activation
         credentials_changed = self.owner.credentials_changed
+        self.client.credentials()
         response = self.client.post(url, {"code": authenticator.at(now)})
         self.assertResponse(
-            response, status.HTTP_200_OK, {"detail": "The code was correct."}
+            response,
+            status.HTTP_200_OK,
+            {"detail": "Your TOTP token has been activated!"},
         )
         self.assertTrue(self.owner.mfa_enabled)
         self.owner.refresh_from_db()
@@ -98,6 +101,11 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         # Successful verification activates MFA and registers credential change
         self.assertTrue(self.owner.mfa_enabled)
         self.assertGreater(self.owner.credentials_changed, credentials_changed)
+
+        # Anonymous verification only allowed for activation
+        response = self.client.post(url, {"code": authenticator.at(now)})
+        self.assertResponse(response, status.HTTP_401_UNAUTHORIZED)
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
 
         # Graceful validation window
         factor = self.owner.basefactor_set.get().totpfactor
