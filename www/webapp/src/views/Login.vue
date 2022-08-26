@@ -130,7 +130,7 @@ export default {
           this.$router.replace({ name: 'domains' });
         }
       } catch (ex) {
-        let errors = digestError(ex);
+        let errors = digestError(ex, this);
         for (const c in errors) {
           if (c === 'email') {
             this.email_errors = errors.email;

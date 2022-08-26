@@ -608,7 +608,7 @@ export default {
      */
     error(ex) {
       this.errors.splice(0, this.errors.length);
-      let errors = digestError(ex);
+      let errors = digestError(ex, this);
       for (const c in errors) {
         if (this.columns[c] !== undefined) {
           this.columns[c].createErrors = errors[c]

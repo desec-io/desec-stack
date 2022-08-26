@@ -240,7 +240,7 @@
       errorHandler(ex) {
         if (ex.response && ex.response.status === 404)
           return;
-        let errors = digestError(ex);
+        let errors = digestError(ex, this);
         for (const c in errors) {
           this.errors.push(...errors[c])
         }

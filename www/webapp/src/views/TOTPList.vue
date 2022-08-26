@@ -70,7 +70,7 @@ export default {
         },
         async showDetail(res, req) {
           if (req === undefined) { // success
-            this.extraComponentBind = {'name': res.name, 'secret': res.secret};
+            this.extraComponentBind = {'name': res.name, 'data': res};
           } else {
             this.extraComponentBind = {'name': req.name, 'detail': res.data.detail};
           }

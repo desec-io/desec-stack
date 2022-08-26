@@ -71,6 +71,12 @@ const routes = [
     props: (route) => ({...route.params}),
   },
   {
+    path: '/mfa/',
+    name: 'mfa',
+    component: () => import(/* webpackChunkName: "account" */ '../views/MFA.vue'),
+    meta: {guest: false},
+  },
+  {
     path: '/change-email/:email?',
     name: 'change-email',
     component: () => import(/* webpackChunkName: "account" */ '../views/ChangeEmail.vue'),
