@@ -73,34 +73,30 @@ NSMASTER = object()
 _config = {
     NSLORD: {
         "base_url": settings.NSLORD_PDNS_API,
-        "headers": {
-            "Accept": "application/json",
-            "User-Agent": "desecapi",
-            "X-API-Key": settings.NSLORD_PDNS_API_TOKEN,
-        },
+        "apikey": settings.NSLORD_PDNS_API_TOKEN,
     },
     NSMASTER: {
         "base_url": settings.NSMASTER_PDNS_API,
-        "headers": {
-            "Accept": "application/json",
-            "User-Agent": "desecapi",
-            "X-API-Key": settings.NSMASTER_PDNS_API_TOKEN,
-        },
+        "apikey": settings.NSMASTER_PDNS_API_TOKEN,
     },
 }
 
 
-def _pdns_request(method, *, server, path, data=None):
+def _pdns_request(
+    method, *, server, path, data=None, accept="application/json", **kwargs
+):
     if data is not None:
         data = json.dumps(data)
     if data is not None and len(data) > settings.PDNS_MAX_BODY_SIZE:
         raise RequestEntityTooLarge
 
+    headers = {
+        "Accept": accept,
+        "User-Agent": "desecapi",
+        "X-API-Key": _config[server]["apikey"],
+    }
     r = requests.request(
-        method,
-        _config[server]["base_url"] + path,
-        data=data,
-        headers=_config[server]["headers"],
+        method, _config[server]["base_url"] + path, data=data, headers=headers
     )
     if r.status_code not in range(200, 300):
         raise PDNSException(response=r)
@@ -108,24 +104,24 @@ def _pdns_request(method, *, server, path, data=None):
     return r
 
 
-def _pdns_post(server, path, data):
-    return _pdns_request("post", server=server, path=path, data=data)
+def _pdns_post(server, path, data, **kwargs):
+    return _pdns_request("post", server=server, path=path, data=data, **kwargs)
 
 
-def _pdns_patch(server, path, data):
-    return _pdns_request("patch", server=server, path=path, data=data)
+def _pdns_patch(server, path, data, **kwargs):
+    return _pdns_request("patch", server=server, path=path, data=data, **kwargs)
 
 
-def _pdns_get(server, path):
-    return _pdns_request("get", server=server, path=path)
+def _pdns_get(server, path, **kwargs):
+    return _pdns_request("get", server=server, path=path, **kwargs)
 
 
-def _pdns_put(server, path):
-    return _pdns_request("put", server=server, path=path)
+def _pdns_put(server, path, **kwargs):
+    return _pdns_request("put", server=server, path=path, **kwargs)
 
 
-def _pdns_delete(server, path):
-    return _pdns_request("delete", server=server, path=path)
+def _pdns_delete(server, path, **kwargs):
+    return _pdns_request("delete", server=server, path=path, **kwargs)
 
 
 def pdns_id(name):
