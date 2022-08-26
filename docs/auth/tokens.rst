@@ -199,7 +199,7 @@ Modifying a Token
 To modify a token, send a ``PATCH`` or ``PUT`` request to the
 ``auth/tokens/{id}/`` endpoint of the token you would like to modify::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/ \
+    curl -X PATCH https://desec.io/api/v1/auth/tokens/{id}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "my new token"}'
