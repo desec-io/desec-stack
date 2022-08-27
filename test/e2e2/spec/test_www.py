@@ -101,3 +101,23 @@ def test_security_headers(api_anon):
     response = api_anon.get(https_url)
     for k, v in expected_headers.items():
         assert response.headers[k] == v
+
+
+def test_compression(api_anon):
+    # compression for supporting clients on static files
+    assert api_anon.get(
+        f'https://desec.{os.environ["DESECSTACK_DOMAIN"]}/',
+        headers={'Accept-Encoding': 'Accept-Encoding: gzip, deflate'},
+    ).headers['Content-Encoding'] == 'gzip'
+
+
+def test_no_compression(api_anon):
+    # no compression for non-supporting clients on static files
+    assert 'Content-Encoding' not in api_anon.get(
+        f'https://desec.{os.environ["DESECSTACK_DOMAIN"]}/',
+    )
+    # no compression for supporting clients on api
+    assert 'Content-Encoding' not in api_anon.get(
+        f'https://desec.{os.environ["DESECSTACK_DOMAIN"]}/api/v1/',
+        headers={'Accept-Encoding': 'Accept-Encoding: gzip, deflate'},
+    )
