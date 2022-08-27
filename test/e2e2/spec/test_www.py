@@ -3,8 +3,8 @@ import os
 import socket
 
 import pytest
+import requests
 from requests import exceptions
-
 
 https_url = "https://desec." + os.environ["DESECSTACK_DOMAIN"] + "/"
 ipv4 = os.environ['DESECSTACK_IPV4_REAR_PREFIX16'] + '.0.128'
@@ -30,15 +30,16 @@ class HostsOverride:
         return self._getaddrinfo(host, *args, **kwargs)
 
 
-@pytest.mark.parametrize("hostname", [
-    f'{subname}.{os.environ["DESECSTACK_DOMAIN"]}' for subname in (
-        'dedyn',
-        'www.dedyn',
-        'get.desec',
-    )
-])
+@pytest.mark.parametrize("subname", ['www.dedyn', 'dedyn'])
+def test_no_redirect(api_anon, subname):
+    with pytest.raises(requests.ConnectionError):
+        api_anon.get(f'http://{subname}.{os.environ["DESECSTACK_DOMAIN"]}/', allow_redirects=False)
+
+
+@pytest.mark.parametrize("subname", ['get.desec'])
 @pytest.mark.parametrize("protocol", ['http', 'https'])
-def test_redirects(api_anon, protocol, hostname):
+def test_redirects(api_anon, protocol, subname):
+    hostname = f'{subname}.{os.environ["DESECSTACK_DOMAIN"]}'
     api_anon.headers = {}
     expected_locations = [https_url]
     if protocol == 'http':
