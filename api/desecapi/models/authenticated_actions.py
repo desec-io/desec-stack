@@ -148,21 +148,6 @@ class AuthenticatedUserAction(AuthenticatedBasicUserAction):
     class Meta:
         managed = False
 
-    def validate_legacy_state(self, value):
-        # NEW: (1) classname, (2) user.id, (3) user.credentials_changed, (4) user.is_active, (7 ...) [subclasses]
-        # OLD: (1) classname, (2) user.id, (3) user.email, (4) user.password, (5) user.is_active, (6 ...) [subclasses]
-        legacy_state_fields = (
-            self._state_fields[:2]
-            + [self.user.email, self.user.password]
-            + self._state_fields[3:]
-        )
-        return value == self.state_of(legacy_state_fields)
-
-    def validate_state(self, value):
-        # Retry with structure before migration 0027 for transition period
-        # TODO Remove once old links expired (>= 2022-08-29 && DESECSTACK_API_AUTHACTION_VALIDITY hours after deploying)
-        return super().validate_state(value) or self.validate_legacy_state(value)
-
     @property
     def _state_fields(self):
         return super()._state_fields + [
