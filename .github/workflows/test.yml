@@ -49,7 +49,7 @@ jobs:
     - name: Install black
       run: python3 -m pip install black
     - name: Test desecapi formatting
-      run: black --check api/desecapi
+      run: black --check api/
 
   test-missing-migrations:
     # test if Django migrations are missing
