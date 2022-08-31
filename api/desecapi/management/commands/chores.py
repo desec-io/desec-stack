@@ -64,14 +64,19 @@ class Command(BaseCommand):
         timestamps = []
         qname = dns.name.from_text(name)
         query = dns.message.make_query(qname, dns.rdatatype.TXT)
+        query.use_edns(
+            payload=4096, options=[dns.edns.GenericOption(dns.edns.NSID, "")]
+        )
         server = gethostbyname("ns1.desec.io")
         response = None
+        response_opts = None
         try:
             response = dns.query.tcp(query, server, timeout=5)
             for content in response.find_rrset(
                 dns.message.ANSWER, qname, dns.rdataclass.IN, dns.rdatatype.TXT
             ):
                 timestamps.append(str(content)[1:-1])
+            response_opts = [opt.__dict__ for opt in response.options]
         except Exception:
             pass
 
@@ -85,6 +90,7 @@ class Command(BaseCommand):
         subject = "ALERT Alerting system down?"
         message = f"TXT query for {name} on {server} gave the following response:\n"
         message += f"{str(response)}\n\n"
+        message += f"{str(response_opts)}\n\n"
         message += f"Extracted timestamps in TXT RRset:\n{timestamps}"
         mail_admins(
             subject,
