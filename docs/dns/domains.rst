@@ -261,9 +261,9 @@ Exporting a Domain as Zonefile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To export domain data in zonefile format, send a ``GET`` request to the
-``zonefile`` endpoint of this domain, i.e. to ``/domains/{name}/zonefile``::
+``zonefile`` endpoint of this domain, i.e. to ``/domains/{name}/zonefile/``::
 
-    curl -X GET https://desec.io/api/v1/domains/{name}/zonefile \
+    curl -X GET https://desec.io/api/v1/domains/{name}/zonefile/ \
         --header "Authorization: Token {secret}"
 
 Note that this will return a plain-text zonefile format without JSON formatting
