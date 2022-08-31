@@ -55,9 +55,9 @@ from django.urls import include, path
 # if no other information is available, the last-specified version will be used as default for reversing URLs
 urlpatterns = [
     # other available versions in no particular order
-    path('api/v2/', include('desecapi.urls.version_2', namespace='v2')),
+    path("api/v2/", include("desecapi.urls.version_2", namespace="v2")),
     # the DEFAULT version
-    path('api/v1/', include('desecapi.urls.version_1', namespace='v1')),
+    path("api/v1/", include("desecapi.urls.version_1", namespace="v1")),
     # monitoring
-    path('', include('django_prometheus.urls')),
+    path("", include("django_prometheus.urls")),
 ]
