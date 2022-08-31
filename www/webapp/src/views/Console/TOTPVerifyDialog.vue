@@ -92,7 +92,7 @@
 <script>
 import {digestError, HTTP, withWorking} from '@/utils'
 import ErrorAlert from "../../components/ErrorAlert";
-import QrcodeVue from 'qrcode.vue'
+import QrcodeVue from '../../modules/qrcode.vue/dist/qrcode.vue.esm'
 
 export default {
   name: 'TOTPVerifyDialog',
