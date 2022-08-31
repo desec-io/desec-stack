@@ -112,6 +112,11 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         logger.warning(f"User {pk} deleted")
         return ret
 
+    def save(self, *args, **kwargs):
+        if kwargs.pop("credentials_changed", False):
+            self.credentials_changed = timezone.now()
+        super().save(*args, **kwargs)
+
     def send_email(
         self, reason, context=None, recipient=None, subject=None, template=None
     ):

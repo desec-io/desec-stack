@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime
 from functools import cached_property
 import secrets
 import uuid
@@ -27,9 +26,14 @@ class BaseFactor(models.Model):
     @transaction.atomic()
     def delete(self):
         if self.last_used is not None:
-            self.user.credentials_changed = timezone.now()
-            self.user.save()
+            self.user.save(credentials_changed=True)
         return super().delete()
+
+    @transaction.atomic()
+    def save(self, *args, **kwargs):
+        if not self.user.mfa_enabled:  # enabling MFA
+            self.user.save(credentials_changed=True)
+        return super().save(*args, **kwargs)
 
 
 class TOTPFactor(BaseFactor):
@@ -66,9 +70,6 @@ class TOTPFactor(BaseFactor):
             if not (self.last_verified_timestep < timestep):
                 continue
             if pyotp_utils.strings_equal(str(code), self._totp.generate_otp(timestep)):
-                if not self.user.mfa_enabled:  # enabling MFA
-                    self.user.credentials_changed = now
-                    self.user.save()
                 self.last_used = now
                 self.last_verified_timestep = timestep
                 self.save()

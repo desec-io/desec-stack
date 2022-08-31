@@ -76,6 +76,7 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         self.assertConfirmationLinkRedirect(confirmation_link)
 
         # Redeem confirmation link
+        credentials_changed = self.owner.credentials_changed
         response = self.client.post(confirmation_link)
         self.assertResponse(response, status.HTTP_200_OK)
         totp = response.data
@@ -83,6 +84,16 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         self.assertEqual(
             self.owner.basefactor_set.get().totpfactor.last_verified_timestep, 0
         )
+        self.owner.refresh_from_db()
+        self.assertGreater(self.owner.credentials_changed, credentials_changed)
+
+        # Can't redeem twice
+        credentials_changed = self.owner.credentials_changed
+        response = self.client.post(confirmation_link)
+        self.assertResponse(response, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data[0].code, "invalid")  # state changed
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.credentials_changed, credentials_changed)
 
         # Can't fetch the secret
         response = self.client.get(self.reverse("v1:totp-detail", pk=totp["id"]))
