@@ -151,11 +151,23 @@ If email address and password match our records, the server will reply with
 ``200 OK`` and return the token secret in the ``token`` field of the response body::
 
     {
-        "created": "2018-09-06T09:07:43.762697Z",
-        "id": "8f9cbae2-c862-48a4-b3f0-2cb1a80df168",
-        "token": "f07Q0TRmEb-CRWPe4h64_iV2jbet",
-        "name": "login"
+        "allowed_subnets": [
+            "0.0.0.0/0",
+            "::/0"
+        ],
+        "created": "2022-09-06T16:23:24.585329Z",
+        "id": "f7ab039b-07b8-493d-ac61-4ddcf903d4de",
+        "is_valid": true,
+        "last_used": null,
+        "max_age": "7 00:00:00",
+        "max_unused_period": "01:00:00",
+        "name": "",
+        "perm_manage_tokens": true,
+        "token": "i-T3b1h_OI-H9ab8tRS98stGtURe"
     }
+
+As indicated in the response, login tokens expire 7 days after creation or
+when not used for 1 hour, whichever comes first (see :ref:`token object`).
 
 In case of credential mismatch, the server replies with ``401 Unauthorized``.
 
