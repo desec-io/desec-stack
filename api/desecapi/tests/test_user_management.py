@@ -651,6 +651,21 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["password"][0], "This field may not be null.")
 
+    def test_no_login_with_wrong_password(self):
+        email, password = self._test_registration(password="right123")
+        response = self.client.login_user(email, "wrong123")
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "Invalid username/password.")
+
+    def test_no_login_when_inactive(self):
+        email, password = self._test_registration(password=self.random_password())
+        user = User.objects.get(email=email)
+        user.is_active = False
+        user.save()
+        response = self.client.login_user(email, password)
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data["detail"], "Invalid username/password.")
+
     def test_registration_spam_protection(self):
         email = self.random_username()
         self.assertRegistrationSuccessResponse(
