@@ -52,7 +52,7 @@
                       required
                       :disabled="working"
                       tabindex="2"
-                      @finish="focusSubmit"
+                      @finish="verify"
                   />
                 </v-col>
               </v-row>
@@ -111,11 +111,6 @@ export default {
     error(ex) {
       this.errors.splice(0, this.errors.length);
       this.errors.push(...digestError(ex, this));
-    },
-    focusSubmit() {
-      setTimeout(() => {
-        this.$refs.submit.$el.focus();
-      });
     },
     async verify() {
       if (!this.$refs.form.validate()) {
