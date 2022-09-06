@@ -48,9 +48,13 @@ function _digestError(error, app) {
         } else {
           return ['You are not logged in.'];
         }
-      } else if (error.response.status === 403) { // MFA
-        app.$router.push({ name: 'mfa', query: { redirect: app.$route.fullPath }});
-        return [];
+      } else if (error.response.status === 403) {
+          if (store.state.authenticated) { // MFA
+            app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
+            return [];
+          } else { // unauthenticated 403, i.e. login failure
+            return [error.response.data.detail]
+          }
       } else if (error.response.status === 413) {
         return ['Too much data. Try to reduce the length of your inputs.'];
       } else if ('data' in error.response) {
