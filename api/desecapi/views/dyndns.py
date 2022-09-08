@@ -36,25 +36,21 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def throttle_scope_bucket(self):
         return self.domain.name
 
-    def _find_ip(self, params, version):
-        if version == 4:
-            look_for = "."
-        elif version == 6:
-            look_for = ":"
-        else:
-            raise Exception
-
+    def _find_ip(self, params, separator):
         # Check URL parameters
         for p in params:
-            if p in self.request.query_params:
-                if not len(self.request.query_params[p]):
-                    return None
-                if look_for in self.request.query_params[p]:
-                    return self.request.query_params[p]
+            try:
+                param = self.request.query_params[p]
+            except KeyError:
+                continue
+            if not len(param):
+                return None
+            if separator in param:
+                return param
 
         # Check remote IP address
         client_ip = self.request.META.get("REMOTE_ADDR")
-        if look_for in client_ip:
+        if separator in client_ip:
             return client_ip
 
         # give up
@@ -140,8 +136,8 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         instances = self.get_queryset().all()
 
-        ipv4 = self._find_ip(["myip", "myipv4", "ip"], version=4)
-        ipv6 = self._find_ip(["myipv6", "ipv6", "myip", "ip"], version=6)
+        ipv4 = self._find_ip(["myip", "myipv4", "ip"], separator=".")
+        ipv6 = self._find_ip(["myipv6", "ipv6", "myip", "ip"], separator=":")
 
         data = [
             {
