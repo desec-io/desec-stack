@@ -43,9 +43,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 param = self.request.query_params[p]
             except KeyError:
                 continue
-            if not len(param):
-                return None
-            if separator in param:
+            if separator in param or param in ("", "preserve"):
                 return param
 
         # Check remote IP address
@@ -136,22 +134,20 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         instances = self.get_queryset().all()
 
-        ipv4 = self._find_ip(["myip", "myipv4", "ip"], separator=".")
-        ipv6 = self._find_ip(["myipv6", "ipv6", "myip", "ip"], separator=":")
+        record_params = {
+            "A": self._find_ip(["myip", "myipv4", "ip"], separator="."),
+            "AAAA": self._find_ip(["myipv6", "ipv6", "myip", "ip"], separator=":"),
+        }
 
         data = [
             {
-                "type": "A",
+                "type": type_,
                 "subname": self.subname,
                 "ttl": 60,
-                "records": [ipv4] if ipv4 else [],
-            },
-            {
-                "type": "AAAA",
-                "subname": self.subname,
-                "ttl": 60,
-                "records": [ipv6] if ipv6 else [],
-            },
+                "records": [ip_param] if ip_param else [],
+            }
+            for type_, ip_param in record_params.items()
+            if ip_param != "preserve"
         ]
 
         serializer = self.get_serializer(instances, data=data, many=True, partial=True)

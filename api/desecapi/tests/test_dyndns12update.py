@@ -204,6 +204,22 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             self.assertEqual(response.data, "good")
             self.assertIP(ipv4=v4, ipv6=v6)
 
+    def test_preserve_ip(self):
+        current_v4 = "127.0.0.1"
+        current_v6 = "::1"
+        self.assertDynDNS12Update(self.my_domain.name, ip=current_v4, ipv6=current_v6)
+        for (v4, v6) in [
+            ("preserve", "::3"),
+            ("1.2.3.4", "preserve"),
+            ("preserve", "preserve"),
+        ]:
+            self.assertDynDNS12Update(
+                self.my_domain.name, ip=v4, ipv6=v6, expect_update=v4 != v6
+            )
+            current_v4 = current_v4 if v4 == "preserve" else v4
+            current_v6 = current_v6 if v6 == "preserve" else v6
+            self.assertIP(ipv4=current_v4, ipv6=current_v6)
+
 
 class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 1

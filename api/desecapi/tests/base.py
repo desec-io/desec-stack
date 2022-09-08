@@ -1311,19 +1311,23 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
             else:
                 return self.client.get(self.reverse("v1:dyndns12update"), kwargs)
 
-    def assertDynDNS12Update(self, domain_name=None, mock_remote_addr="", **kwargs):
-        pdns_name = self._normalize_name(domain_name).lower() if domain_name else None
-        return self._assertDynDNS12Update(
-            [
+    def assertDynDNS12Update(
+        self, domain_name=None, mock_remote_addr="", expect_update=True, **kwargs
+    ):
+        if expect_update:
+            pdns_name = (
+                self._normalize_name(domain_name).lower() if domain_name else None
+            )
+            requests = [
                 self.request_pdns_zone_update(name=pdns_name),
                 self.request_pdns_zone_axfr(name=pdns_name),
-            ],
-            mock_remote_addr,
-            **kwargs,
-        )
+            ]
+        else:
+            requests = []
+        return self._assertDynDNS12Update(requests, mock_remote_addr, **kwargs)
 
-    def assertDynDNS12NoUpdate(self, mock_remote_addr="", **kwargs):
-        return self._assertDynDNS12Update([], mock_remote_addr, **kwargs)
+    def assertDynDNS12NoUpdate(self, *args, **kwargs):
+        return self.assertDynDNS12Update(expect_update=False, *args, **kwargs)
 
     def setUp(self):
         super().setUp()

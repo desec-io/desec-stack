@@ -105,23 +105,28 @@ To update more than one domain name, please see
 
 .. _determine-ip-addresses:
 
-Determine IP addresses
+Determine IP Addresses
 **********************
 The last ingredient we need for a successful update of your DNS records is your
 IPv4 and/or IPv6 addresses, for storage in the ``A`` and ``AAAA`` records,
 respectively.
 
-For IPv4, we will use the first IPv4 address it can find in the query string
-parameters ``myip``, ``myipv4``, ``ip`` (in this order). If none of them is
-set, it will use the IP that connected to the API, if a IPv4 connection was
-made. If no address is found or if an empty value was provided instead of an IP
-address, the ``A`` record will be deleted from the DNS.
+For IPv4, we check the query string parameters ``myip``, ``myipv4``, ``ip``
+(in this order) for an IPv4 address to record in the database.
+When the special string ``preserve`` is provided instead of an IP address, the
+address on record (if any) will be kept as is.
+If none of the parameters is set, the connection's client IP address will be
+used if it is an IPv4 connection; otherwise the IPv4 address will be deleted
+from the DNS.
+IP deletion can also be forced by providing an empty value (e.g. ``myipv4=``).
 
-For IPv6, the procedure is similar. We check ``myipv6``, ``ipv6``, ``myip``,
-``ip`` query string parameters (in this order) and the IP that was used to
-connect to the API for IPv6 addresses and use the first one found. If no
-address is found or an empty value provided instead, the ``AAAA`` record will
-be deleted.
+For IPv6, the procedure is similar.
+We check the ``myipv6``, ``ipv6``, ``myip``, ``ip`` query string parameters
+(in this order) and the IP that was used to connect to the API for IPv6
+addresses and use the first one found.
+The ``preserve`` rule applies as above.
+If nothing is found or an empty value provided, the ``AAAA`` record will be
+deleted.
 
 
 Update Response
