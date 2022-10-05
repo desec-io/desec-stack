@@ -70,6 +70,7 @@ export default {
           'info': {
             go: d => this.showDomainInfo(d),
             icon: 'mdi-information',
+            tooltip: 'Setup instructions',
           },
         },
         paths: {

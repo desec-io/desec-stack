@@ -208,16 +208,27 @@
                       class="my-1 py-3"
                       justify-end
               >
-                <v-btn
-                        v-for="[key, action] in getActions(actions)"
-                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
-                        :key="key"
-                        color="grey"
-                        icon
-                        @click.stop="action.go(itemFieldProps.item, $event)"
-                >
-                  <v-icon>{{ action.icon }}</v-icon>
-                </v-btn>
+                <div :key="key" v-for="[key, action] in getActions(actions)">
+                  <v-tooltip
+                      :disabled="!action.tooltip"
+                      top
+                      transition="fade-transition"
+                  >
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                              v-bind="attrs"
+                              v-on="on"
+                              :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
+                              color="grey"
+                              icon
+                              @click.stop="action.go(itemFieldProps.item, $event)"
+                      >
+                        <v-icon>{{ action.icon }}</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>{{ action.tooltip }}</span>
+                  </v-tooltip>
+                </div>
               </v-layout>
             </template>
             <template slot="no-data">
@@ -422,11 +433,13 @@ export default {
           go: d => this.save(d),
           if: this.updatable,
           icon: 'mdi-content-save-edit',
+          tooltip: 'Save',
         },
         'delete': {
           go: d => this.destroyAsk(d),
           if: this.destroyable,
           icon: 'mdi-delete',
+          tooltip: 'Delete',
         },
       }
     },
