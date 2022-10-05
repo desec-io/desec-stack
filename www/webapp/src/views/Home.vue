@@ -61,7 +61,7 @@
   </v-card>
   <v-container fluid>
     <v-container>
-      <v-row class="py-8">
+      <v-row justify="center" class="py-8">
         <v-col class="col-12 col-sm-4 text-center" v-for="f in features" :key="f.title">
           <v-icon x-large>{{f.icon}}</v-icon>
           <h1 class="grey--text text--darken-2"><span>{{f.title}}</span></h1>
@@ -318,8 +318,10 @@ export default {
         href: '#',
         icon: 'mdi-lock-outline',
         title: 'DNSSEC',
-        text: 'DNS information hosted with deSEC is <b>signed using DNSSEC, always</b>. We use state-of-the-art '
-                + 'elliptic-curve cryptography and follow operational best practice.',
+        text: 'DNS information hosted at deSEC is <b>signed with DNSSEC, always</b>. We use state-of-the-art '
+               + 'elliptic-curve cryptography. Besides following operational best practice, we adopt '
+               + '<a href="https://datatracker.ietf.org/doc/draft-ietf-dnsop-dnssec-bootstrapping/" target="_blank">cutting-edge '
+               + 'developments</a>.',
       },
       {
         href: '#',
@@ -340,6 +342,22 @@ export default {
       },
       {
         href: '#',
+        icon: 'mdi-monitor-cellphone-star',
+        title: 'Web Interface',
+        text: 'We think we have the <b>coolest GUI on the market</b>. Thanks to <b>real-time record validation</b> and '
+               + 'parsing, it is <b>very intuitive and fast</b> to use (even on mobile devices). Get started by '
+               + 'importing your domain.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-robot',
+        title: 'REST API',
+        text: 'Exert full control over your DNS via our <b>modern API</b> and benefit from advanced features such as '
+               + ' bulk operations. It is <a href="https://desec.readthedocs.io/en/latest/dns/domains.html" target="_blank">well-documented</a> '
+               + ' and easily integrates into your scripts, tools, or CI/CD pipeline.',
+      },
+      {
+        href: '#',
         icon: 'mdi-database-arrow-up',
         title: 'Scalability',
         text: 'Are you a web hoster? Start using deSEC, <b>even with thousands of domains</b>. Our global network '
@@ -348,17 +366,17 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-robot',
-        title: 'REST API',
-        text: 'Configure your DNS information via a <b>modern API</b>. You can easily integrate our API into your '
-              + 'scripts, tools, or even CI/CD pipeline.',
-      },
-      {
-        href: '#',
         icon: 'mdi-ip-network-outline',
         title: 'IPv6',
         text: 'deSEC is <b>fully IPv6-aware</b>: administration can be done using v6, AAAA-records '
                 + 'containing IPv6 addresses can be set up, our name servers are reachable via IPv6.',
+      },
+      {
+        href: '#',
+        icon: 'mdi-run-fast',
+        title: 'Fast Updates',
+        text: 'Updates to your DNS information will be <b>published world-wide within a few seconds</b>. '
+                + 'Minimum required TTLs are low.',
       },
       {
         href: '#',
@@ -375,13 +393,6 @@ export default {
         text: 'We provide <b>easy integration</b> with Let\'s Encrypt and their certbot tool. '
                + '<a href="https://talk.desec.io/t/tools-implementing-desec/11">Further integration with ACME '
                + 'clients</a> like acme.sh, lego, and Terraform is available.',
-      },
-      {
-        href: '#',
-        icon: 'mdi-run-fast',
-        title: 'Fast Updates',
-        text: 'Updates to your DNS information will be <b>published world-wide within a few seconds</b>. '
-                + 'Minimum required TTLs are low.',
       },
       {
         href: '#',
