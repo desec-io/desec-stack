@@ -66,22 +66,33 @@ export default {
             advanced: true,
           }
         },
-        actions: {
-          'info': {
-            go: d => this.showDomainInfo(d),
-            icon: 'mdi-information',
-            tooltip: 'Setup instructions',
-          },
-        },
         paths: {
           list: 'domains/',
           create: 'domains/',
           delete: 'domains/:{name}/',
+          export: 'domains/:{name}/zonefile/',
         },
         itemDefaults: () => ({ name: '' }),
         postcreate: d => {
           this.close();
           this.showDomainInfo(d, true);
+        },
+        async exportDomain(domain) {
+          const url = this.resourcePath(this.paths.export, domain, ':');
+          await withWorking(this.error, () => HTTP
+              .get(url, {responseType: 'blob'})
+              .then(r => new Blob([r.data], {type: r.headers['content-type']}))
+              .then(zoneblob => {
+                const elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(zoneblob);
+                elem.download = `${domain.name}.zone`;
+                elem.style.display = 'none';
+                document.body.appendChild(elem);
+                elem.click();
+                window.URL.revokeObjectURL(elem.href);
+                document.body.removeChild(elem);
+            })
+          );
         },
         async showDomainInfo(d, isNew = false) {
           const url = this.resourcePath(this.paths.delete, d, ':');
@@ -105,6 +116,21 @@ export default {
     }
   },
   computed: {
+    actions() {
+      return {
+        'info': {
+          go: d => this.showDomainInfo(d),
+          icon: 'mdi-information',
+          tooltip: 'Setup instructions',
+        },
+        'export': {
+          go: d => this.exportDomain(d),
+          icon: 'mdi-download',
+          if: this.showAdvanced,
+          tooltip: 'Export (zonefile format)',
+        },
+      };
+    },
     availableCount: function () {
       return this.limit_domains - this.rows.length;
     },

@@ -59,6 +59,12 @@ async function _digestError(error, app) {
         return ['Too much data. Try to reduce the length of your inputs.'];
       } else if ('data' in error.response) {
         let data = error.response.data;
+        if (data instanceof Blob) {
+          data = await data.text();
+          if (error.response.headers['content-type'] == 'application/json') {
+            data = JSON.parse(data);
+          }
+        }
         if (typeof data === 'object') {
           if ('detail' in data) {
             return [data.detail];

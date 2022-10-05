@@ -400,7 +400,6 @@ export default {
       destroyWarning: () => (false),
     },
     columns: {},
-    actions: {},
     // resource
     paths: {
       list: 'needs/to/be/overwritten/',
@@ -426,6 +425,7 @@ export default {
     handleRowClick: () => {},
   }},
   computed: {
+    actions: () => {},
     createInhibited: () => false,
     defaultActions() {
       return {
