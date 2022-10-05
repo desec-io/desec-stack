@@ -451,9 +451,12 @@ For details about input validation and return status codes, please refer to
 Bulk Operations
 ~~~~~~~~~~~~~~~
 
-The ``rrsets/`` endpoint supports bulk operations via the ``POST``, ``PATCH``,
-and ``PUT`` request methods. You can simply send an array of RRset objects
-(instead of just one), like this::
+To download your domain's DNS records in zonefile format, please see
+:ref:`exporting-a-domain`.
+
+The ``rrsets/`` endpoint supports bulk write operations via the ``POST``,
+``PATCH``, and ``PUT`` request methods.  You can simply send an array of RRset
+objects (instead of just one), like this::
 
     curl -X PATCH https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}" \

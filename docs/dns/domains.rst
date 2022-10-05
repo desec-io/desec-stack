@@ -257,6 +257,8 @@ and ``subname`` would just be ``_acme-challenge``.
 The above API request helps you answer this kind of question.
 
 
+.. _exporting-a-domain:
+
 Exporting a Domain as Zonefile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
