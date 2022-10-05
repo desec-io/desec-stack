@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
-import {HTTP, logout} from "../utils";
+import {HTTP} from "../utils";
 import Login from "../views/Login";
 import store from '../store';
 
@@ -160,7 +160,7 @@ router.beforeEach((to, from, next) => {
   // see if there are credentials in the session store that we don't know of
   let recovered = false;
   if (sessionStorage.getItem('token') && !store.state.authenticated) {
-    const token = JSON.parse(sessionStorage.getItem('token'))
+    const token = JSON.parse(sessionStorage.getItem('token'));
     HTTP.defaults.headers.common['Authorization'] = 'Token ' + token.token;
     store.commit('login', token);
     recovered = true
@@ -180,13 +180,9 @@ router.beforeEach((to, from, next) => {
   } else {
     if (store.state.authenticated) {
       // Log in state was present, but not needed for the current page
-      // User restored a previous session. If navigation to home, divert to home page for authorized users
       if (recovered && to.name == 'home') {
+        // User restored a previous session. If navigation to home, divert to home page for authorized users
         next({name: 'domains'})
-      } else {
-        // user navigated to a page that doesn't require auth
-        // to bias on the safe side we log out
-        logout()
       }
     }
     next() // make sure to always call next()!
