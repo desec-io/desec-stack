@@ -50,7 +50,7 @@ export default {
           fieldProps: () => ({ rules: [
               v => !(v.startsWith('.') || v.endsWith('.') || v.includes('..'))
                   || 'Dots must be surrounded by other characters.',
-              v => (v.match(/^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))?$/))
+              v => !!v.match(/^([*]|(([*][.])?([a-z0-9_-]{1,63}[.])*[a-z0-9_-]{1,63}))?$/)
                   || 'Allowed characters: a-z, 0-9, and -_. May start with "*." or just be "*".',
             ] }),
           searchable: true,
