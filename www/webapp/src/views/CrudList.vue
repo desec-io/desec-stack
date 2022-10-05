@@ -209,33 +209,14 @@
                       justify-end
               >
                 <v-btn
-                        v-for="action in actions"
+                        v-for="[key, action] in getActions(actions)"
                         :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
-                        :key="action.key"
+                        :key="key"
                         color="grey"
                         icon
-                        @click.stop="action.go(itemFieldProps.item)"
+                        @click.stop="action.go(itemFieldProps.item, $event)"
                 >
                   <v-icon>{{ action.icon }}</v-icon>
-                </v-btn>
-                <v-btn
-                        v-if="updatable"
-                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
-                        color="grey"
-                        icon
-                        @click.stop="save(itemFieldProps.item, $event)"
-                >
-                  <v-icon>mdi-content-save-edit</v-icon>
-                </v-btn>
-                <v-btn
-                        v-if="destroyable"
-                        :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
-                        color="grey"
-                        class="hover-red"
-                        icon
-                        @click.stop="destroyAsk(itemFieldProps.item)"
-                >
-                  <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-layout>
             </template>
@@ -408,7 +389,7 @@ export default {
       destroyWarning: () => (false),
     },
     columns: {},
-    actions: [],
+    actions: {},
     // resource
     paths: {
       list: 'needs/to/be/overwritten/',
@@ -435,6 +416,20 @@ export default {
   }},
   computed: {
     createInhibited: () => false,
+    defaultActions() {
+      return {
+        'save': {
+          go: d => this.save(d),
+          if: this.updatable,
+          icon: 'mdi-content-save-edit',
+        },
+        'delete': {
+          go: d => this.destroyAsk(d),
+          if: this.destroyable,
+          icon: 'mdi-delete',
+        },
+      }
+    },
     headers() {
       let cols = Object.values(Object.assign({}, this.columns)); // (shallowly) copy cols and convert to array
       if (!this.showAdvanced) {
@@ -488,6 +483,9 @@ export default {
     },
     rowClick(value) {
       this.handleRowClick(value);
+    },
+    getActions(actions) {
+      return Object.entries({...actions, ...this.defaultActions}).filter(([, action]) => action.if ?? true);
     },
     /** *
      * Ask the user to delete the given item.

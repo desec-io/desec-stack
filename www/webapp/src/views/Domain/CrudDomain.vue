@@ -94,8 +94,6 @@ export default {
           width: '130px',
         },
       },
-      actions: [
-      ],
       paths: {
         list: 'domains/::{domain}/rrsets/', // TODO dangerous?
         create: 'domains/::{domain}/rrsets/',

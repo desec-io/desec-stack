@@ -66,13 +66,12 @@ export default {
             advanced: true,
           }
         },
-        actions: [
-          {
-            key: 'info',
+        actions: {
+          'info': {
             go: d => this.showDomainInfo(d),
             icon: 'mdi-information',
           },
-        ],
+        },
         paths: {
           list: 'domains/',
           create: 'domains/',
