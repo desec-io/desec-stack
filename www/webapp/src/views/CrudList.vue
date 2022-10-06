@@ -232,12 +232,33 @@
               </v-layout>
             </template>
             <template v-slot:no-data>
-              <div class="py-4 text-xs-center">
-                <h2 class="title">
-                  Feels so empty here!
-                </h2>
-                <p>No entries yet.</p>
+              <div v-if="!pagination_required">
+                <div class="py-4 text-xs-center">
+                  <h2 class="title">Feels so empty here!</h2>
+                  <p>No entries yet.</p>
+                </div>
               </div>
+              <v-alert
+                  v-else
+                  border="top"
+                  colored-border
+                  text
+                  prominent
+                  type="warning"
+              >
+                <div class="py-4">
+                  <h2 class="title">Too much data!</h2>
+                  <p>
+                    Wow! There are more than 500 entries here.<br>
+                    Unfortunately, the web interface can't handle this.
+                  </p>
+                  <p>
+                    Please use the <a href="https://desec.readthedocs.io" target="_blank">API</a>
+                    or <a href="https://talk.desec.io/t/tools-implementing-desec/11" target="_blank">another tool</a>
+                    that provides an interface to deSEC.
+                  </p>
+                </div>
+              </v-alert>
             </template>
           </v-data-table>
 
@@ -411,6 +432,7 @@ export default {
     itemDefaults: () => ({}),
     // callbacks
     itemIsReadOnly: () => false,
+    pagination_required: false,
     postcreate: this.close,
     precreate: () => undefined,
     preupdate: () => undefined,

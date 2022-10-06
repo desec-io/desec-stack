@@ -58,6 +58,14 @@ async function _digestError(error, app) {
       } else if (error.response.status === 413) {
         return ['Too much data. Try to reduce the length of your inputs.'];
       } else if ('data' in error.response) {
+        if ('link' in error.response.headers) {
+          if (app === undefined) {
+            return ['Pagination required.'];
+          } else {
+            app.pagination_required = true;
+            return [];
+          }
+        }
         let data = error.response.data;
         if (data instanceof Blob) {
           data = await data.text();
@@ -100,7 +108,7 @@ async function _digestError(error, app) {
  */
 export async function digestError(error, component) {
   let e = await _digestError(error, component);
-  if (e.constructor === Array) {
+  if (e.constructor === Array && e.length) {
     return {undefined: e};
   } else {
     return e;
