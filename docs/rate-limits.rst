@@ -3,6 +3,9 @@
 Rate Limits
 -----------
 
+API Request Throttling
+~~~~~~~~~~~~~~~~~~~~~~
+
 The API implements rate limits to prevent brute force attacks on passwords, to
 ensure that the system load remains manageable, to avoid update rejections due
 to concurrent DNS updates on the same domain etc.
@@ -53,3 +56,12 @@ the API.  When several rates are given, all are enforced at the same time.
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``user``                                | 2000/day | Any activity of a) authenticated users, b) unauthenticated users (by IP)                  |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
+
+Throttling of Other Requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are also rate limits in place for requests that do not get processed by
+the API, but are answered directly by the webserver.
+
+Most notably, there is a rate limit of 3 requests per minute for the check IP
+services running at ``https://checkip{,v4,v6}.dedyn.io/``.
