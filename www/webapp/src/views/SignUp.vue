@@ -129,7 +129,7 @@
                       :disabled="working"
                       tabindex="5"
                 >
-                  <template slot="label">
+                  <template v-slot:label>
                     <v-flex>
                       Tell me about deSEC developments. No ads. <small>(recommended)</small>
                     </v-flex>
@@ -146,7 +146,7 @@
                       :rules="terms_rules"
                       tabindex="6"
                 >
-                  <template slot="label">
+                  <template v-slot:label>
                     <v-flex>
                       Yes, I agree to the <a @click.stop="open_route('terms')">Terms of Use</a> and
                       <a @click.stop="open_route('privacy-policy')">Privacy Policy</a>.

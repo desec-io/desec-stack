@@ -90,13 +90,14 @@
 
     <v-main>
       <v-banner v-for="alert in $store.state.alerts" :key="alert.id">
-        <v-icon
-          slot="icon"
-          color="warning"
-          size="36"
-        >
-          {{ alert.icon }}
-        </v-icon>
+        <template v-slot:icon>
+          <v-icon
+            color="warning"
+            size="36"
+          >
+            {{ alert.icon }}
+          </v-icon>
+        </template>
         {{ alert.teaser }}
         <template v-slot:actions>
           <v-btn

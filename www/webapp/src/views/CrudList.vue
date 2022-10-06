@@ -28,7 +28,7 @@
                   class="elevation-1"
                   @click:row="rowClick"
           >
-            <template slot="top">
+            <template v-slot:top>
               <!-- Headline & Toolbar, Including New Form -->
               <v-toolbar flat>
                 <v-toolbar-title>{{ headlines.table }}</v-toolbar-title>
@@ -231,7 +231,7 @@
                 </div>
               </v-layout>
             </template>
-            <template slot="no-data">
+            <template v-slot:no-data>
               <div class="py-4 text-xs-center">
                 <h2 class="title">
                   Feels so empty here!
@@ -622,9 +622,9 @@ export default {
       let errors = digestError(ex, this);
       for (const c in errors) {
         if (this.columns[c] !== undefined) {
-          this.columns[c].createErrors = errors[c]
+          this.columns[c].createErrors = errors[c];
         } else {
-          this.errors.push(...errors[c])
+          this.errors.push(...errors[c]);
           this.createDialogError = this.createDialog;
           this.destroyDialogError = this.destroyDialog;
           this.snackbar = !this.createDialog && !this.destroyDialog;

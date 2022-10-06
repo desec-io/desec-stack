@@ -89,7 +89,6 @@ export default {
   },
   data: () => ({
     code: "",
-    successDetail: "",
     errors: [],
     factors: [],
     id: null,
@@ -108,10 +107,6 @@ export default {
     }
   },
   methods: {
-    error(ex) {
-      this.errors.splice(0, this.errors.length);
-      this.errors.push(...digestError(ex, this));
-    },
     async verify() {
       if (!this.$refs.form.validate()) {
         return;
@@ -119,10 +114,9 @@ export default {
       this.working = true;
       this.errors.splice(0, this.errors.length);
       try {
-        let res = await withWorking(undefined,
+        await withWorking(undefined,
             () => HTTP.post('auth/totp/' + this.id + '/verify/', {code: this.code})
         );
-        this.successDetail = res.data.detail;
         if ('redirect' in this.$route.query && this.$route.query.redirect) {
           this.$router.replace(this.$route.query.redirect);
         } else {

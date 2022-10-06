@@ -234,7 +234,7 @@
           );
           return response.data.records;
         } catch (error) {
-          return this.errorHandler(error);
+          this.errorHandler(error);
         }
       },
       errorHandler(ex) {
