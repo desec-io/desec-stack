@@ -118,7 +118,7 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-    >>> td {
+    >>> tr:not(.v-data-table__empty-wrapper) td {
         vertical-align: top;
     }
     >>> .v-data-table .v-data-table__mobile-row {
