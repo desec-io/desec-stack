@@ -2,7 +2,6 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import {HTTP} from "../utils";
-import Login from "../views/Login";
 import store from '../store';
 
 Vue.use(VueRouter)
@@ -51,7 +50,7 @@ const routes = [
   {
     path: '/confirm/:action/:code',
     name: 'confirmation',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/Confirmation.vue')
+    component: () => import(/* webpackChunkName: "account" */ '../views/Confirmation.vue')
   },
   {
     path: '/reset-password/:email?',
@@ -67,7 +66,7 @@ const routes = [
   {
     path: '/totp-verify/',
     name: 'TOTPVerify',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/Console/TOTPVerifyDialog.vue'),
+    component: () => import(/* webpackChunkName: "login" */ '../views/Console/TOTPVerifyDialog.vue'),
     props: (route) => ({...route.params}),
   },
   {
@@ -91,7 +90,7 @@ const routes = [
   {
     path: '/donate/',
     name: 'donate',
-    component: () => import('../views/Donate.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '../views/Donate.vue')
   },
   {
     path: '//github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc',
@@ -101,27 +100,27 @@ const routes = [
   {
     path: '/impressum/',
     name: 'impressum',
-    component: () => import('../views/Impressum.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '../views/Impressum.vue')
   },
   {
     path: '/privacy-policy/',
     name: 'privacy-policy',
-    component: () => import('../views/PrivacyPolicy.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '../views/PrivacyPolicy.vue')
   },
   {
     path: '/terms/',
     name: 'terms',
-    component: () => import('../views/Terms.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '../views/Terms.vue')
   },
   {
     path: '/about/',
     name: 'about',
-    component: () => import('../views/About.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '../views/About.vue')
   },
   {
     path: '/login',
     name: 'login',
-    component: Login,
+    component: () => import(/* webpackChunkName: "login" */ '../views/Login.vue')
   },
   {
     path: '/tokens',
