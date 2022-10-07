@@ -311,9 +311,9 @@ class DeSECAPIV1Client:
                 return ttl, records
             return ttl, {' '.join(map(lambda x: x.replace(' ', ''), record.split(' ', 3))) for record in records}
 
-        def rrsets_dns():
+        def rrsets_dns(query):
             rrsets_unfiltered = {
-                (subname, qtype): normalize_rrset(NSLordClient.query(f'{subname}.{self.domain}'.lstrip('.'), qtype), qtype)
+                (subname, qtype): normalize_rrset(query(f'{subname}.{self.domain}'.lstrip('.'), qtype), qtype)
                 for (subname, qtype) in rrsets_to_check.keys()
             }
             return {k: v for k, v in rrsets_unfiltered.items() if v != (None, None)}
@@ -332,9 +332,14 @@ class DeSECAPIV1Client:
 
         if via_dns:
             # Assert DNS responses fulfil expectations
-            assert_eventually(lambda: rrsets_dns().keys() & rrsets_unexpected.keys() == set())
-            assert_eventually(lambda: rrsets_expected == rrsets_dns())
-
+            assert_all_ns(
+                assertion=lambda query: rrsets_dns(query).keys() & rrsets_unexpected.keys() == set(),
+                retry_on=(AssertionError, TypeError),
+            )
+            assert_all_ns(
+                assertion=lambda query: rrsets_expected == rrsets_dns(query),
+                retry_on=(AssertionError, TypeError),
+            )
 
 
 class DeSECAPIV2Client(DeSECAPIV1Client):
@@ -448,6 +453,10 @@ class NSLordClient(NSClient):
     where = os.environ["DESECSTACK_IPV4_REAR_PREFIX16"] + '.0.129'
 
 
+class SecondaryNSClient(NSClient):
+    where = os.environ["DESECSTACK_E2E2_SECONDARY_NS"]
+
+
 def return_eventually(expression: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
                       retry_on: Tuple[type] = (Exception,)):
     if not callable(expression):
@@ -470,10 +479,18 @@ def return_eventually(expression: callable, min_pause: float = .1, max_pause: fl
 
 
 def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
-                      retry_on: Tuple[type] = (AssertionError,)) -> None:
+                      retry_on: Tuple[type] = (AssertionError,), assertion_kwargs=None) -> None:
     def _assert():
-        assert assertion()
+        assert assertion(**(assertion_kwargs or dict()))
     return_eventually(_assert, min_pause, max_pause, timeout, retry_on=retry_on)
+
+
+def assert_all_ns(assertion: callable, retry_on=(AssertionError,)):
+    assert assertion(NSLordClient.query)
+    assert_eventually(
+        assertion=assertion, timeout=60, retry_on=retry_on,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
 
 
 def faketime(t: str):

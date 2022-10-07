@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import pytest
 
-from conftest import DeSECAPIV1Client, NSLordClient, assert_eventually
+from conftest import DeSECAPIV1Client, assert_all_ns
 
 
 def generate_params(dict_value_lists_by_type: dict) -> List[Tuple[str, str]]:
@@ -379,8 +379,10 @@ def test_create_valid_canonical(api_user_domain: DeSECAPIV1Client, rr_type: str,
     if value is not None:
         assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
         expected.add(value)
-    rrset = {rr.to_text() for rr in NSLordClient.query(f'{subname}.{domain_name}'.strip('.'), rr_type)}
-    assert rrset == expected
+    assert_all_ns(
+        assertion=lambda query: {rr.to_text() for rr in query(f'{subname}.{domain_name}'.strip('.'), rr_type)} == expected,
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 @pytest.mark.parametrize("rr_type,value", generate_params(VALID_RECORDS_NON_CANONICAL))
@@ -394,8 +396,10 @@ def test_create_valid_non_canonical(api_user_domain: DeSECAPIV1Client, rr_type: 
     if value is not None:
         assert api_user_domain.rr_set_create(domain_name, rr_type, [value], subname=subname).status_code == 201
         expected.add(value)
-    rrset = NSLordClient.query(f'{subname}.{domain_name}'.strip('.'), rr_type)
-    assert len(rrset) == len(expected)
+    assert_all_ns(
+        assertion=lambda query: len(query(f'{subname}.{domain_name}'.strip('.'), rr_type)) == len(expected),
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 @pytest.mark.parametrize("rr_type,value", INVALID_RECORDS_PARAMS)
@@ -406,7 +410,10 @@ def test_create_invalid(api_user_domain: DeSECAPIV1Client, rr_type: str, value: 
 def test_create_long_subname(api_user_domain: DeSECAPIV1Client):
     subname = 'a' * 63
     assert api_user_domain.rr_set_create(api_user_domain.domain, "AAAA", ["::1"], subname=subname).status_code == 201
-    assert NSLordClient.query(f"{subname}.{api_user_domain.domain}", "AAAA")[0].to_text() == "::1"
+    assert_all_ns(
+        assertion=lambda query: query(f"{subname}.{api_user_domain.domain}", "AAAA")[0].to_text() == "::1",
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 def test_add_remove_DNSKEY(api_user_domain: DeSECAPIV1Client):
@@ -416,8 +423,14 @@ def test_add_remove_DNSKEY(api_user_domain: DeSECAPIV1Client):
     # After adding another DNSKEY, we expect it to be part of the nameserver's response (along with the automatic ones)
     value = '257 3 13 aCoEWYBBVsP9Fek2oC8yqU8ocKmnS1iD SFZNORnQuHKtJ9Wpyz+kNryquB78Pyk/ NTEoai5bxoipVQQXzHlzyg=='
     assert api_user_domain.rr_set_create(domain_name, 'DNSKEY', [value], subname='').status_code == 201
-    assert {rr.to_text() for rr in NSLordClient.query(domain_name, 'DNSKEY')} == auto_dnskeys | {value}
+    assert_all_ns(
+        assertion=lambda query: {rr.to_text() for rr in query(domain_name, 'DNSKEY')} == auto_dnskeys | {value},
+        retry_on=(AssertionError, TypeError),
+    )
 
     # After deleting it, we expect that the automatically managed ones are still there
     assert api_user_domain.rr_set_delete(domain_name, "DNSKEY", subname='').status_code == 204
-    assert {rr.to_text() for rr in NSLordClient.query(domain_name, 'DNSKEY')} == auto_dnskeys
+    assert_all_ns(
+        assertion=lambda query: {rr.to_text() for rr in query(domain_name, 'DNSKEY')} == auto_dnskeys,
+        retry_on=(AssertionError, TypeError),
+    )

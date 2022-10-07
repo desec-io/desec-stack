@@ -1,9 +1,9 @@
 import os
-
 import time
 
 import pytest
-from conftest import DeSECAPIV1Client, NSLordClient, random_domainname, FaketimeShift
+
+from conftest import DeSECAPIV1Client, NSLordClient, random_domainname, FaketimeShift, assert_all_ns
 
 DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
 
@@ -37,7 +37,10 @@ def test_create(api_user: DeSECAPIV1Client):
     assert len(api_user.domain_list()) == 0
     assert api_user.domain_create(random_domainname()).status_code == 201
     assert len(api_user.domain_list()) == 1
-    assert NSLordClient.query(api_user.domain, 'SOA')[0].serial >= int(time.time())
+    assert_all_ns(
+        assertion=lambda query: query(api_user.domain, 'SOA')[0].serial >= int(time.time()),
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 def test_create_import_export(api_user: DeSECAPIV1Client):
@@ -62,7 +65,10 @@ def test_create_import_export(api_user: DeSECAPIV1Client):
         ('', 'DNSKEY'): (None, None),
         ('', 'SOA'): (None, None),
     }, via_dns=False)
-    assert NSLordClient.query(api_user.domain, 'NSEC3PARAM')[0].to_text() == '1 0 0 -'
+    assert_all_ns(
+        assertion=lambda query: query(api_user.domain, 'NSEC3PARAM')[0].to_text() == '1 0 0 -',
+        retry_on=(AssertionError, TypeError),
+    )
     _, zonefile = api_user.get(f"/domains/{api_user.domain}/zonefile").content.decode().split("\n", 1)
     assert {l.strip() for l in zonefile.strip().split('\n') if 'SOA' not in l} == \
            {f"{domainname}.	{ttl(60)}	IN	A	83.219.1.24"} | \
@@ -74,19 +80,26 @@ def test_create_import_export(api_user: DeSECAPIV1Client):
 
 def test_get(api_user_domain: DeSECAPIV1Client):
     domain = api_user_domain.get(f"/domains/{api_user_domain.domain}/").json()
-    assert {rr.to_text() for rr in NSLordClient.query(api_user_domain.domain, 'CDS')} == set(domain['keys'][0]['ds'])
+    assert_all_ns(
+        assertion=lambda query: {rr.to_text() for rr in query(api_user_domain.domain, 'CDS')} == set(domain['keys'][0]['ds']),
+        retry_on=(AssertionError, TypeError),
+    )
     assert domain['name'] == api_user_domain.domain
 
 
 def test_modify(api_user_domain: DeSECAPIV1Client):
     old_serial = NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial
     api_user_domain.rr_set_create(api_user_domain.domain, 'A', ['127.0.0.1'])
-    assert NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial > old_serial
+    assert_all_ns(
+        assertion=lambda query: query(api_user_domain.domain, 'SOA')[0].serial > old_serial,
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 def test_rrsig_rollover(api_user_domain: DeSECAPIV1Client):
     old_serial = NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial
     with FaketimeShift(days=7):
+        # TODO deploy faketime in desec-ns and nsmaster then use assert_all_ns
         assert NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial > old_serial
 
 
@@ -102,7 +115,10 @@ def test_recreate(api_user_domain: DeSECAPIV1Client):
     old_serial = NSLordClient.query(name, 'SOA')[0].serial
     assert api_user_domain.domain_destroy(name).status_code == 204
     assert api_user_domain.domain_create(name).status_code == 201
-    assert NSLordClient.query(name, 'SOA')[0].serial > old_serial
+    assert_all_ns(
+        assertion=lambda query: query(name, 'SOA')[0].serial > old_serial,
+        retry_on=(AssertionError, TypeError),
+    )
 
 
 def test_export(api_user_domain: DeSECAPIV1Client):

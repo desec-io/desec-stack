@@ -1,7 +1,7 @@
 import ipaddress
 import os
 
-from conftest import DeSECAPIV1Client, NSLordClient, assert_eventually
+from conftest import DeSECAPIV1Client, NSLordClient, assert_eventually, assert_all_ns
 
 import base64
 import pytest
@@ -41,16 +41,16 @@ def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
             }
             for qtype in ['A', 'AAAA']
         }
-        rrs_dns = {
-            qtype: {rr.to_text() for rr in NSLordClient.query(params.get('hostname', domain), qtype) or []}
-            for qtype in ['A', 'AAAA']
-        }
 
         for expected_net, qtype in [(expected_ipv4, 'A'), (expected_ipv6, 'AAAA')]:
             assert len(rrs_api[qtype]) == (1 if expected_net else 0)
-            assert len(rrs_dns[qtype]) == (1 if expected_net else 0)
             assert _ips_in_network(rrs_api[qtype], expected_net)
-            assert _ips_in_network(rrs_dns[qtype], expected_net)
+
+            def assertion(query):
+                rrs_dns = {rr.to_text() for rr in query(params.get('hostname', domain), qtype) or []}
+                return len(rrs_dns) == (1 if expected_net else 0) and _ips_in_network(rrs_dns, expected_net)
+
+            assert_all_ns(assertion, retry_on=(AssertionError, TypeError))
 
     headers = {}
     params = {}
