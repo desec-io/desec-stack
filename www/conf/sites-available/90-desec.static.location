@@ -2,13 +2,6 @@
 # Static content for the web app
 #####
 location / {
-    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';" always;
-    add_header X-Frame-Options "deny" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-
     root   /usr/share/nginx/html/;
     index  index.html;
     try_files $uri $uri/ /index.html =404;
@@ -16,4 +9,18 @@ location / {
 
     gzip on;
     gzip_types *;
+
+    location /index.html {  # Also includes / via internal redirect, see https://nginx.org/en/docs/http/ngx_http_index_module.html#index
+        expires epoch;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+        add_header Content-Security-Policy "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';" always;
+        add_header X-Frame-Options "deny" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+
+    location / {  # all other files
+        expires 1M;
+    }
 }
