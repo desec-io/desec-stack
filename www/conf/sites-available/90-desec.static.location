@@ -9,5 +9,10 @@ location / {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header X-XSS-Protection "1; mode=block" always;
 
-    include sites-available/90-desec.static.content;
+    root   /usr/share/nginx/html/;
+    index  index.html;
+    try_files $uri $uri/ /index.html =404;
+    error_page 403 =503 /503.html;
+
+    gzip on;
 }
