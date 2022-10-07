@@ -36,23 +36,34 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def throttle_scope_bucket(self):
         return self.domain.name
 
-    def _find_ip(self, params, separator):
+    def _find_ip(self, param_keys, separator):
         # Check URL parameters
-        for p in params:
+        for param_key in param_keys:
             try:
-                param = self.request.query_params[p]
+                params = {
+                    param.strip()
+                    for param in self.request.query_params[param_key].split(",")
+                    if separator in param or param.strip() in ("", "preserve")
+                }
             except KeyError:
                 continue
-            if separator in param or param in ("", "preserve"):
-                return param
+            if len(params) > 1 and params & {"", "preserve"}:
+                raise ValidationError(
+                    detail={
+                        "detail": f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
+                        "code": "inconsistent-parameter",
+                    }
+                )
+            if params:
+                return [] if "" in params else list(params)
 
         # Check remote IP address
         client_ip = self.request.META.get("REMOTE_ADDR")
         if separator in client_ip:
-            return client_ip
+            return [client_ip]
 
         # give up
-        return None
+        return []
 
     @cached_property
     def qname(self):
@@ -144,10 +155,10 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 "type": type_,
                 "subname": self.subname,
                 "ttl": 60,
-                "records": [ip_param] if ip_param else [],
+                "records": ip_params,
             }
-            for type_, ip_param in record_params.items()
-            if ip_param != "preserve"
+            for type_, ip_params in record_params.items()
+            if "preserve" not in ip_params
         ]
 
         serializer = self.get_serializer(instances, data=data, many=True, partial=True)

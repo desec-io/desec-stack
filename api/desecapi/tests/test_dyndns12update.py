@@ -12,8 +12,10 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             url = self.reverse("v1:rrset", name=name, subname=subname, type=type_)
             response = self.client_token_authorized.get(url)
             if value:
+                if not isinstance(value, set):
+                    value = {value}
                 self.assertStatus(response, status.HTTP_200_OK)
-                self.assertEqual(response.data["records"][0], value)
+                self.assertEqual(set(response.data["records"]), value)
                 self.assertEqual(response.data["ttl"], 60)
             else:
                 self.assertStatus(response, status.HTTP_404_NOT_FOUND)
@@ -184,6 +186,28 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, "good")
         self.assertIP(ipv4="127.0.0.1", ipv6="::666")
+
+    def test_ddclient_dyndns2_mixed_success(self):
+        response = self.assertDynDNS12Update(
+            domain_name=self.my_domain.name,
+            system="dyndns",
+            hostname=self.my_domain.name,
+            myip="10.2.3.4, ::2 , 10.6.5.4 ,::4",
+        )
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv4={"10.2.3.4", "10.6.5.4"}, ipv6={"::2", "::4"})
+
+    def test_ddclient_dyndns2_mixed_invalid(self):
+        for myip in ["10.2.3.4, ", "preserve,::2"]:
+            response = self.assertDynDNS12NoUpdate(
+                domain_name=self.my_domain.name,
+                system="dyndns",
+                hostname=self.my_domain.name,
+                myip=myip,
+            )
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data["code"], "inconsistent-parameter")
 
     def test_fritz_box(self):
         # /

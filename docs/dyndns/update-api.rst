@@ -105,16 +105,17 @@ To update more than one domain name, please see
 
 .. _determine-ip-addresses:
 
-Determine IP Addresses
-**********************
+Determine IP Address(es)
+************************
 The last ingredient we need for a successful update of your DNS records is your
 IPv4 and/or IPv6 addresses, for storage in the ``A`` and ``AAAA`` records,
 respectively.
 
 For IPv4, we check the query string parameters ``myip``, ``myipv4``, ``ip``
-(in this order) for an IPv4 address to record in the database.
-When the special string ``preserve`` is provided instead of an IP address, the
-address on record (if any) will be kept as is.
+(in this order) for IPv4 addresses to record in the database.
+Multiple IP addresses may be given as a comma-separated list.
+When the special string ``preserve`` is provided instead, the configuration
+on record (if any) will be kept as is.
 If none of the parameters is set, the connection's client IP address will be
 used if it is an IPv4 connection; otherwise the IPv4 address will be deleted
 from the DNS.
@@ -124,9 +125,12 @@ For IPv6, the procedure is similar.
 We check the ``myipv6``, ``ipv6``, ``myip``, ``ip`` query string parameters
 (in this order) and the IP that was used to connect to the API for IPv6
 addresses and use the first one found.
-The ``preserve`` rule applies as above.
+Both the multi-IP syntax and the ``preserve`` rule apply as above.
 If nothing is found or an empty value provided, the ``AAAA`` record will be
 deleted.
+
+When using the ``myip`` parameter, a mixed-type list of both IPv4 and IPv6
+addresses may be given.
 
 
 Update Response
