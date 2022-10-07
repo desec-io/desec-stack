@@ -15,4 +15,5 @@ location / {
     error_page 403 =503 /503.html;
 
     gzip on;
+    gzip_types *;
 }
