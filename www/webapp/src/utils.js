@@ -50,7 +50,9 @@ async function _digestError(error, app) {
         }
       } else if (error.response.status === 403) {
           if (store.state.authenticated) { // MFA
-            app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
+            if (app.$route.name != 'mfa') {
+              app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
+            }
             return [];
           } else { // unauthenticated 403, i.e. login failure
             return [error.response.data.detail]
