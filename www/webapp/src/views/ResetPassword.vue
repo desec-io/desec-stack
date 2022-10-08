@@ -191,7 +191,7 @@
           this.done = true;
         } catch (ex) {
           this.getCaptcha(true);
-          let errors = digestError(ex);
+          let errors = await digestError(ex);
           for (const c in errors) {
             if (c === 'captcha') {
               this.captcha_errors.push(...(errors[c]['non_field_errors'] ?? []));

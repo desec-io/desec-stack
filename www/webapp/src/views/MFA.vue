@@ -123,7 +123,7 @@ export default {
           this.$router.replace({ name: 'domains' });
         }
       } catch (ex) {
-        let errors = digestError(ex);
+        let errors = await digestError(ex);
         for (const c in errors) {
           this.errors.push(...errors[c]);
         }

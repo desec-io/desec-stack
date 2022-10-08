@@ -180,7 +180,7 @@
           this.mref = response.data.mref;
           this.done = true;
         } catch (ex) {
-          let errors = digestError(ex);
+          let errors = await digestError(ex);
           for (const c in errors) {
             if (c === 'email') {
               this.email_errors = errors[c];

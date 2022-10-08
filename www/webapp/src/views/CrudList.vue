@@ -617,9 +617,9 @@ export default {
      * Handle the error e by displaying it to the user.
      * @param e
      */
-    error(ex) {
+    async error(ex) {
       this.errors.splice(0, this.errors.length);
-      let errors = digestError(ex, this);
+      let errors = await digestError(ex, this);
       for (const c in errors) {
         if (this.columns[c] !== undefined) {
           this.columns[c].createErrors = errors[c];

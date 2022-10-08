@@ -121,7 +121,7 @@
           });
           this.done = true;
         } catch (ex) {
-          let errors = digestError(ex, this);
+          let errors = await digestError(ex, this);
           for (const c in errors) {
             this.errors.push(...errors[c])
           }

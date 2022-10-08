@@ -102,7 +102,7 @@
           this.post_response = await HTTP.post(`v/${action}/${this.$route.params.code}/`, this.post_payload);
           this.success = true
         } catch (ex) {
-          let errors = digestError(ex);
+          let errors = await digestError(ex);
           this.post_response = ex.response
           for (const c in errors) {
             this.errors.push(...errors[c])

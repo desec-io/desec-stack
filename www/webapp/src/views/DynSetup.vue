@@ -237,10 +237,10 @@
           this.errorHandler(error);
         }
       },
-      errorHandler(ex) {
+      async errorHandler(ex) {
         if (ex.response && ex.response.status === 404)
           return;
-        let errors = digestError(ex, this);
+        let errors = await digestError(ex, this);
         for (const c in errors) {
           this.errors.push(...errors[c])
         }

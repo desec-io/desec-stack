@@ -282,7 +282,7 @@
           this.$router.push({name: 'welcome', params: domain !== '' ? {domain: domain} : {}});
         } catch (ex) {
           this.getCaptcha(true);
-          let errors = digestError(ex);
+          let errors = await digestError(ex);
           for (const c in errors) {
             if (c === undefined) {
               this.errors.push(...errors[c]);

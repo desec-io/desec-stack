@@ -35,7 +35,7 @@ export async function withWorking(errorHandler, action, ...params) {
   }
 }
 
-function _digestError(error, app) {
+async function _digestError(error, app) {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
@@ -92,8 +92,8 @@ function _digestError(error, app) {
  * @param {Exception} error - Exception that has a response attribute.
  * @param {object} [component] - Vue component, required to allow the error to cause a redirect.
  */
-export function digestError(error, component) {
-  let e = _digestError(error, component);
+export async function digestError(error, component) {
+  let e = await _digestError(error, component);
   if (e.constructor === Array) {
     return {undefined: e};
   } else {
