@@ -426,6 +426,16 @@ export default {
         button: 'deSEC Status Details',
         href: '//desec-status.net/',
       },
+      {
+        id: 'news-20221010001',
+        start: new Date(Date.UTC(2022, 10 - 1, 10)),  // first day of showing
+        end: new Date(Date.UTC(2022, 10 - 1, 12)),  // first day of not showing
+        icon: 'mdi-heart-broken',
+        teaser: "From 10 Oct 2022 11:32 am UTC until 10 Oct 2022 16:33 UTC, the deSEC web interface was unavailable " +
+            "when accessed via direct links, e.g. though emails sent by deSEC. The issue has been fixed; links that " +
+            "have not expired in the meantime are now working when opened. Direct login to the web interface and " +
+            "deSEC DNS operations were not affected.",
+      },
     ],
   })
 }
