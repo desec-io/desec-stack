@@ -121,3 +121,8 @@ def test_no_compression(api_anon):
         f'https://desec.{os.environ["DESECSTACK_DOMAIN"]}/api/v1/',
         headers={'Accept-Encoding': 'Accept-Encoding: gzip, deflate'},
     )
+
+
+@pytest.mark.parametrize("path", ["", "index.html", "index.htm", "confirm/"])
+def test_webapp_available(api_anon, path):
+    assert api_anon.get(f'https://desec.{os.environ["DESECSTACK_DOMAIN"]}/{path}').status_code == 200
