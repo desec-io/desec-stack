@@ -384,27 +384,29 @@ class PDNSChangeTracker:
         deletions = self._rr_set_deletions[rr_set.domain.name]
 
         item = (rr_set.type, rr_set.subname)
-        if created:
-            additions.add(item)
-            assert item not in modifications
-            deletions.discard(item)
-        elif deleted:
-            if item in additions:
-                additions.remove(item)
-                modifications.discard(item)
-                # no change to deletions
-            else:
-                # item not in additions
-                modifications.discard(item)
-                deletions.add(item)
-        elif not created and not deleted:
-            # we don't care if item was created or not
-            modifications.add(item)
-            assert item not in deletions
-        else:
-            raise ValueError(
-                "An RR set cannot be created and deleted at the same time."
-            )
+        match (created, deleted):
+            case (True, False):  # created
+                additions.add(item)
+                # can fail with concurrent deletion request
+                assert item not in modifications
+                deletions.discard(item)
+            case (False, True):  # deleted
+                if item in additions:
+                    additions.remove(item)
+                    modifications.discard(item)
+                    # no change to deletions
+                else:
+                    # item not in additions
+                    modifications.discard(item)
+                    deletions.add(item)
+            case (False, False):  # modified
+                # we don't care if item was created or not
+                modifications.add(item)
+                assert item not in deletions
+            case _:
+                raise ValueError(
+                    "An RR set cannot be created and deleted at the same time."
+                )
 
     def _domain_updated(self, domain: Domain, created=False, deleted=False):
         if not created and not deleted:
