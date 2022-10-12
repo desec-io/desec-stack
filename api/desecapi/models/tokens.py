@@ -18,6 +18,11 @@ from django_prometheus.models import ExportModelOperationsMixin
 from netfields import CidrAddressField, NetManager
 
 
+# No 0OIl characters, non-alphanumeric only (select by double-click no line-break)
+# https://github.com/bitcoin/bitcoin/blob/master/src/base58.h
+ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
 class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models.Token):
     @staticmethod
     def _allowed_subnets_default():
@@ -73,7 +78,8 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         return True
 
     def generate_key(self):
-        self.plain = secrets.token_urlsafe(21)
+        # Entropy: len(ALPHABET) == 58, log_2(58) * 28 = 164.02
+        self.plain = "".join(secrets.choice(ALPHABET) for _ in range(28))
         self.key = Token.make_hash(self.plain)
         return self.key
 

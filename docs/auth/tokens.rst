@@ -396,14 +396,28 @@ Security Considerations
 This section is for purely informational. Token length and encoding may change
 in the future.
 
-Any token secret is generated from 168 bits of randomness at the server and stored in
-hashed format (PBKDF2-HMAC-SHA256). Guessing the secret correctly or reversing
-the hash is hence practically impossible.
+Any token secret is generated from 164 bits of randomness at the server and
+stored in hashed format (PBKDF2-HMAC-SHA256).
+Guessing the secret correctly or reversing the hash is considered practically
+impossible.
 
-The token's secret value is represented by 28 characters using a URL-safe variant of
-base64 encoding. It comprises only the characters ``A-Z``, ``a-z``, ``0-9``, ``-``,
-and ``_``. (Base64 padding is not needed as the string length is a multiple of 4.)
+The token's secret value is represented by 28 characters using a URL-safe
+base58 encoding.
+It is based on a case-sensitive alphanumeric alphabet excluding the characters
+``lIO0`` (hence comprising only the symbols ``a-k``, ``m-z``, ``A-H``,
+``J-N``, ``P-Z``, and ``1-9``).
+This encoding is optimized for maximum clarity and usability:
+Exclusion of certain letters minimizes visual ambiguity, while the restriction
+to alphanumeric symbols allows easy selection (double-click) and input, and
+helps avoid line breaks during display.
 
-Old versions of the API encoded 20-byte token secrets in 40 characters with hexadecimal
-representation. Such tokens are not issued anymore, but remain valid until
-invalidated by the user.
+Before December 2022, tokens encoded at 21-byte secret using 28 characters in
+a URL-safe variant of base64 encoding, comprising only of the characters
+``A-Z``, ``a-z``, ``0-9``, ``-``, and ``_``.
+(Base64 padding was not needed as the string length is a multiple of 4.)
+
+Before September 2018, tokens encoded a 20-byte secret using 40 hexadecimal
+characters.
+
+Legacy tokens are not issued anymore, but remain valid until invalidated by
+the user.
