@@ -39,13 +39,11 @@
               />
               <v-text-field
                 v-model="password"
-                label="Password"
+                label="Password (leave empty to login via email)"
                 :append-icon="hide_password ? 'mdi-eye' : 'mdi-eye-off'"
                 :type="hide_password ? 'password' : 'text'"
                 outline
-                required
                 :disabled="working"
-                :rules="password_rules"
                 tabindex="2"
                 @click:append="() => (hide_password = !hide_password)"
               />
@@ -104,9 +102,6 @@ export default {
     useSessionStorage: false,
     email_rules: [v => !!v || 'Please enter the email address associated with your account'],
     email_errors: [],
-    password_rules: [
-      v => !!v || 'Enter your password to log in',
-    ],
     hide_password: true,
     errors: [],
   }),
@@ -115,10 +110,13 @@ export default {
       this.working = true;
       this.errors.splice(0, this.errors.length);
       try {
-        const response = await HTTP.post('auth/login/', {
-          email: this.email,
-          password: this.password,
-        });
+        let payload = {
+          email: this.email
+        };
+        if (this.password) {
+          payload['password'] = this.password;
+        }
+        const response = await HTTP.post('auth/login/', payload);
         HTTP.defaults.headers.common.Authorization = `Token ${response.data.token}`;
         this.$store.commit('login', response.data);
         if (this.useSessionStorage) {
