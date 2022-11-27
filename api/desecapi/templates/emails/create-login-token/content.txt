@@ -1,0 +1,12 @@
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi,
+
+someone request a login link for your account. To log in, please use the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
+
+{% action_link action_serializer %}
+
+If you did not request this, please contact support@desec.io.
+
+Stay secure,
+The deSEC Team
+{% endblock %}

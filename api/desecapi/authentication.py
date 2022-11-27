@@ -158,6 +158,8 @@ class EmailPasswordPayloadAuthentication(BaseAuthentication):
     def authenticate(self, request):
         serializer = EmailPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        if "password" not in serializer.data:
+            return None
         return self.authenticate_credentials(
             serializer.data["email"], serializer.data["password"], request
         )

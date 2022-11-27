@@ -122,6 +122,11 @@ api_urls = [
         views.AuthenticatedRenewDomainBasicUserActionView.as_view(),
         name="confirm-renew-domain",
     ),
+    path(
+        "v/create-login-token/<code>/",
+        views.AuthenticatedCreateLoginTokenActionView.as_view(),
+        name="confirm-create-login-token",
+    ),
     # CAPTCHA
     path("captcha/", views.CaptchaView.as_view(), name="captcha"),
 ]

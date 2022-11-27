@@ -265,6 +265,17 @@ class AuthenticatedDeleteUserActionSerializer(AuthenticatedBasicUserActionSerial
         model = models.AuthenticatedDeleteUserAction
 
 
+class AuthenticatedCreateLoginTokenActionSerializer(
+    AuthenticatedBasicUserActionSerializer
+):
+    reason = "create-login-token"
+    validity_period = timedelta(minutes=10)
+
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
+        model = models.AuthenticatedCreateLoginTokenAction
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields
+
+
 class AuthenticatedDomainBasicUserActionSerializer(
     AuthenticatedBasicUserActionSerializer
 ):

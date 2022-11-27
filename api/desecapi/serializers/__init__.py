@@ -4,6 +4,7 @@ from .authenticated_actions import (
     AuthenticatedChangeEmailUserActionSerializer,
     AuthenticatedChangeOutreachPreferenceUserActionSerializer,
     AuthenticatedConfirmAccountUserActionSerializer,
+    AuthenticatedCreateLoginTokenActionSerializer,
     AuthenticatedCreateTOTPFactorUserActionSerializer,
     AuthenticatedDeleteUserActionSerializer,
     AuthenticatedRenewDomainBasicUserActionSerializer,
