@@ -17,6 +17,8 @@ from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from netfields import CidrAddressField, NetManager
 
+from .users import User
+
 
 class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models.Token):
     @staticmethod
@@ -99,6 +101,17 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         self.tokendomainpolicy_set.filter(domain__isnull=False).delete()
         self.tokendomainpolicy_set.filter(domain__isnull=True).delete()
         return super().delete()
+
+    @classmethod
+    def create_login_token(cls, user: User):
+        token = cls.objects.create(
+            user=user,
+            perm_manage_tokens=True,
+            max_age=timedelta(days=7),
+            max_unused_period=timedelta(hours=1),
+            mfa=False,
+        )
+        return token
 
 
 @pgtrigger.register(

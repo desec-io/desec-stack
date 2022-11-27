@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth import user_logged_in
 from rest_framework import generics, mixins, status
@@ -99,16 +97,10 @@ class AccountLoginView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-        token = Token.objects.create(
-            user=user,
-            perm_manage_tokens=True,
-            max_age=timedelta(days=7),
-            max_unused_period=timedelta(hours=1),
-            mfa=False,
-        )
-        user_logged_in.send(sender=user.__class__, request=self.request, user=user)
-
-        data = self.get_serializer(token, include_plain=True).data
+        data = self.get_serializer(
+            Token.create_login_token(user), include_plain=True
+        ).data
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
         return Response(data)
 
 
