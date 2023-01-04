@@ -1,10 +1,7 @@
-import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '@/views/Home.vue'
 import {HTTP} from '@/utils';
-import store from '@/store';
-
-Vue.use(VueRouter)
+import {useUserStore} from "@/store/user";
 
 const routes = [
   {
@@ -158,17 +155,18 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   // see if there are credentials in the session store that we don't know of
   let recovered = false;
-  if (sessionStorage.getItem('token') && !store.state.authenticated) {
+  const user = useUserStore();
+  if (sessionStorage.getItem('token') && !user.authenticated) {
     const token = JSON.parse(sessionStorage.getItem('token'));
     HTTP.defaults.headers.common['Authorization'] = 'Token ' + token.token;
-    store.commit('login', token);
+    user.login(token);
     recovered = true
   }
 
   if (to.matched.some(record => 'guest' in record.meta && record.meta.guest === false)) {
     // this route requires auth, check if logged in
     // if not, redirect to login page.
-    if (!store.state.authenticated) {
+    if (!user.authenticated) {
       next({
         name: 'login',
         query: { redirect: to.fullPath }
@@ -177,7 +175,7 @@ router.beforeEach((to, from, next) => {
       next()
     }
   } else {
-    if (store.state.authenticated) {
+    if (user.authenticated) {
       // Log in state was present, but not needed for the current page
       if (recovered && to.name === 'home') {
         // User restored a previous session. If navigation to home, divert to home page for authorized users

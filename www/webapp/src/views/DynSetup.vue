@@ -137,7 +137,7 @@
               </p>
             </v-alert>
 
-            <div v-if="!$store.state.authenticated">
+            <div v-if="!user.authenticated">
               <h2 class="title">Optional: Assign deSEC Account Password</h2>
               <p>
                 To use more features of deSEC, assign a password to your account. This is not required for using deSEC
@@ -171,6 +171,7 @@
   import axios from 'axios';
   import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert";
+  import {useUserStore} from "@/store/user";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -184,6 +185,7 @@
       ErrorAlert,
     },
     data: () => ({
+      user: useUserStore(),
       working: false,
       domain: undefined,
       errors: [],

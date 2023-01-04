@@ -1,5 +1,5 @@
 import axios from 'axios';
-import store from './store';
+import {useUserStore} from "@/store/user";
 
 export const HTTP = axios.create({
   baseURL: '/api/v1/',
@@ -8,7 +8,7 @@ export const HTTP = axios.create({
 });
 
 function clearToken() {
-  store.commit('logout');
+  useUserStore().logout();
   HTTP.defaults.headers.common.Authorization = '';
   sessionStorage.removeItem('token');
 }
@@ -21,7 +21,7 @@ export async function logout() {
 }
 
 export async function withWorking(errorHandler, action, ...params) {
-  store.commit('working');
+  useUserStore().changeWork();
   try {
     return await action(...params);
   } catch (e) {
@@ -31,7 +31,7 @@ export async function withWorking(errorHandler, action, ...params) {
       errorHandler(e);
     }
   } finally {
-    store.commit('working', false);
+    useUserStore().changeWork(false);
   }
 }
 
@@ -49,7 +49,7 @@ async function _digestError(error, app) {
           return ['You are not logged in.'];
         }
       } else if (error.response.status === 403) {
-          if (store.state.authenticated) { // MFA
+          if (useUserStore().authenticated) { // MFA
             if (app.$route.name !== 'mfa') {
               app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
             }

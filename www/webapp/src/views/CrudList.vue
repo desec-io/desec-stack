@@ -24,7 +24,7 @@
                   :items="rows"
                   :search="search"
                   :custom-filter="filterSearchableCols"
-                  :loading="$store.getters.working || createDialogWorking || destroyDialogWorking"
+                  :loading="user.working || createDialogWorking || destroyDialogWorking"
                   :footer-props="{
                     'items-per-page-options': [10, 20, 30, 50, 100, -1]
                   }"
@@ -60,7 +60,7 @@
                         small
                         fab
                         depressed
-                        :disabled="$store.getters.working"
+                        :disabled="user.working"
                 >
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
@@ -200,7 +200,7 @@
                 :is="column.datatype"
                 :key="id"
                 :readonly="column.readonly"
-                :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
+                :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
                 v-model="itemFieldProps.item[column.value]"
                 v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
                 @keyup="keyupHandler"
@@ -222,7 +222,7 @@
                       <v-btn
                               v-bind="attrs"
                               v-on="on"
-                              :disabled="$store.getters.working || itemIsReadOnly(itemFieldProps.item)"
+                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
                               color="grey"
                               icon
                               @click.stop="action.go(itemFieldProps.item, $event)"
@@ -351,6 +351,7 @@ import RecordList from '@/components/Field/RecordList';
 import Switchbox from '@/components/Field/Switchbox';
 import TTL from '@/components/Field/TTL';
 import ErrorAlert from '@/components/ErrorAlert'
+import {useUserStore} from "@/store/user";
 
 const filter = function (obj, predicate) {
   const result = {};
@@ -379,6 +380,7 @@ export default {
     ErrorAlert,
   },
   data() { return {
+    user: useUserStore(),
     createDialog: false,
     createDialogWorking: false,
     createDialogIndex: null,

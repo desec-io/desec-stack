@@ -187,6 +187,7 @@
 
 <script>
 import {email_pattern} from '@/validation';
+import {useUserStore} from "@/store/user";
 
 export default {
   name: 'home',
@@ -203,7 +204,7 @@ export default {
     this.domainType = this.$route.query.domainType || 'none';
     for (let news of this.breaking_news) {
       if (new Date() >= news.start && new Date() < news.end) {
-        this.$store.commit('alert', news);
+        useUserStore().alert(news);
       }
     }
   },

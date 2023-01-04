@@ -5,7 +5,7 @@
       <span class="fixed-width">{{ domain }}</span> with deSEC.
     </p>
 
-    <div v-if="!$store.state.authenticated">
+    <div v-if="!user.authenticated">
       <div class="subtitle-1">
         <v-icon>mdi-numeric-0-circle</v-icon>
         DNS Configuration
@@ -137,6 +137,8 @@
 </template>
 
 <script>
+import {useUserStore} from "@/store/user";
+
 export default {
   name: 'DomainSetup',
   props: {
@@ -158,6 +160,7 @@ export default {
     },
   },
   data: () => ({
+    user: useUserStore(),
     snackbar: false,
     snackbar_text: '',
     tab1: 'ns',

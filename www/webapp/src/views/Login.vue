@@ -89,6 +89,7 @@
 <script>
 import { HTTP, digestError } from '@/utils';
 import ErrorAlert from "@/components/ErrorAlert";
+import {useUserStore} from "@/store/user";
 
 export default {
   name: 'Login',
@@ -96,6 +97,7 @@ export default {
     ErrorAlert,
   },
   data: () => ({
+    user: useUserStore(),
     valid: false,
     working: false,
     email: '',
@@ -120,7 +122,7 @@ export default {
           password: this.password,
         });
         HTTP.defaults.headers.common.Authorization = `Token ${response.data.token}`;
-        this.$store.commit('login', response.data);
+        this.user.login(response.data);
         if (this.useSessionStorage) {
           sessionStorage.setItem('token', JSON.stringify(response.data));
         }

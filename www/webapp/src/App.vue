@@ -45,11 +45,11 @@
           <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
         </span>
       </div>
-      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!$store.state.authenticated">Create Account</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!$store.state.authenticated">Log In</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="$store.state.authenticated">Log Out</v-btn>
+      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated">Create Account</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!user.authenticated">Log In</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="user.authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
-      <template #extension v-if="$store.state.authenticated">
+      <template #extension v-if="user.authenticated">
         <v-tabs background-color="primary darken-1" fixed-tabs>
           <v-tab
             v-for="(item, key) in tabmenu"
@@ -89,7 +89,7 @@
     </v-app-bar>
 
     <v-main>
-      <v-banner v-for="alert in $store.state.alerts" :key="alert.id">
+      <v-banner v-for="alert in user.alerts" :key="alert.id">
         <template #icon>
           <v-icon
             color="warning"
@@ -111,15 +111,15 @@
           <v-btn
             color="primary"
             text
-            @click="$store.commit('unalert', alert.id)"
+            @click="user.unalert(alert.id)"
           >
             Hide
           </v-btn>
         </template>
       </v-banner>
       <v-progress-linear
-              :active="$store.getters.working"
-              :indeterminate="$store.getters.working"
+              :active="user.working"
+              :indeterminate="user.working"
               fixed
               color="secondary"
               style="z-index: 3"
@@ -181,10 +181,12 @@
 <script>
 import router from '@/router';
 import {logout} from '@/utils';
+import {useUserStore} from "@/store/user";
 
 export default {
   name: 'App',
   data: () => ({
+    user: useUserStore(),
     drawer: false,
     email: process.env.VUE_APP_EMAIL,
     menu: {
