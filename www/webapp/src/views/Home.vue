@@ -174,7 +174,7 @@
 </style>
 
 <script>
-import {email_pattern} from "../validation";
+import {email_pattern} from '@/validation';
 
 export default {
   name: 'home',

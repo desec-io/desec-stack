@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { HTTP, digestError } from '../utils';
+import { HTTP, digestError } from '@/utils';
 import ErrorAlert from "@/components/ErrorAlert";
 
 export default {

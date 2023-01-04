@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
-import {HTTP} from "../utils";
-import store from '../store';
+import Home from '@/views/Home.vue'
+import {HTTP} from '@/utils';
+import store from '@/store';
 
 Vue.use(VueRouter)
 
@@ -18,24 +18,24 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "signup" */ '../views/SignUp.vue')
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/SignUp.vue')
   },
   {
     path: '/custom-setup/:domain',
     name: 'customSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/DomainSetupPage'),
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/DomainSetupPage'),
     props: true,
   },
   {
     path: '/dyn-setup/:domain',
     alias: '/dynsetup/:domain',
     name: 'dynSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/DynSetup.vue')
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/DynSetup.vue')
   },
   {
     path: '/welcome/:domain?',
     name: 'welcome',
-    component: () => import(/* webpackChunkName: "signup" */ '../views/Welcome.vue')
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/Welcome.vue')
   },
   {
     path: '//desec.readthedocs.io/',
@@ -50,47 +50,47 @@ const routes = [
   {
     path: '/confirm/:action/:code',
     name: 'confirmation',
-    component: () => import(/* webpackChunkName: "account" */ '../views/Confirmation.vue')
+    component: () => import(/* webpackChunkName: "account" */ '@/views/Confirmation.vue')
   },
   {
     path: '/reset-password/:email?',
     name: 'reset-password',
-    component: () => import(/* webpackChunkName: "account" */ '../views/ResetPassword.vue')
+    component: () => import(/* webpackChunkName: "account" */ '@/views/ResetPassword.vue')
   },
   {
     path: '/totp/',
     name: 'totp',
-    component: () => import(/* webpackChunkName: "account" */ '../views/TOTPList.vue'),
+    component: () => import(/* webpackChunkName: "account" */ '@/views/TOTPList.vue'),
     meta: {guest: false},
   },
   {
     path: '/totp-verify/',
     name: 'TOTPVerify',
-    component: () => import(/* webpackChunkName: "login" */ '../views/Console/TOTPVerifyDialog.vue'),
+    component: () => import(/* webpackChunkName: "login" */ '@/views/Console/TOTPVerifyDialog.vue'),
     props: (route) => ({...route.params}),
   },
   {
     path: '/mfa/',
     name: 'mfa',
-    component: () => import(/* webpackChunkName: "account" */ '../views/MFA.vue'),
+    component: () => import(/* webpackChunkName: "account" */ '@/views/MFA.vue'),
     meta: {guest: false},
   },
   {
     path: '/change-email/:email?',
     name: 'change-email',
-    component: () => import(/* webpackChunkName: "account" */ '../views/ChangeEmail.vue'),
+    component: () => import(/* webpackChunkName: "account" */ '@/views/ChangeEmail.vue'),
     meta: {guest: false},
   },
   {
     path: '/delete-account/',
     name: 'delete-account',
-    component: () => import(/* webpackChunkName: "account" */ '../views/DeleteAccount.vue'),
+    component: () => import(/* webpackChunkName: "account" */ '@/views/DeleteAccount.vue'),
     meta: {guest: false},
   },
   {
     path: '/donate/',
     name: 'donate',
-    component: () => import(/* webpackChunkName: "extra" */ '../views/Donate.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/Donate.vue')
   },
   {
     path: '//github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
@@ -100,44 +100,44 @@ const routes = [
   {
     path: '/impressum/',
     name: 'impressum',
-    component: () => import(/* webpackChunkName: "extra" */ '../views/Impressum.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/Impressum.vue')
   },
   {
     path: '/privacy-policy/',
     name: 'privacy-policy',
-    component: () => import(/* webpackChunkName: "extra" */ '../views/PrivacyPolicy.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/PrivacyPolicy.vue')
   },
   {
     path: '/terms/',
     name: 'terms',
-    component: () => import(/* webpackChunkName: "extra" */ '../views/Terms.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/Terms.vue')
   },
   {
     path: '/about/',
     name: 'about',
-    component: () => import(/* webpackChunkName: "extra" */ '../views/About.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/About.vue')
   },
   {
     path: '/login',
     name: 'login',
-    component: () => import(/* webpackChunkName: "login" */ '../views/Login.vue')
+    component: () => import(/* webpackChunkName: "login" */ '@/views/Login.vue')
   },
   {
     path: '/tokens',
     name: 'tokens',
-    component: () => import(/* webpackChunkName: "gui" */ '../views/TokenList.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/TokenList.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains',
     name: 'domains',
-    component: () => import(/* webpackChunkName: "gui" */ '../views/DomainList.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/DomainList.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains/:domain',
     name: 'domain',
-    component: () => import(/* webpackChunkName: "gui" */ '../views/Domain/CrudDomain.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/Domain/CrudDomain.vue'),
     meta: {guest: false},
   },
 ]

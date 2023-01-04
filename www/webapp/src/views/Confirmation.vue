@@ -58,7 +58,7 @@
   import ActivateAccountActionHandler from '@/components/ActivateAccountActionHandler.vue';
   import CreateTOTPActionHandler from '@/components/CreateTOTPActionHandler.vue';
   import ResetPasswordActionHandler from '@/components/ResetPasswordActionHandler.vue';
-  import {digestError} from "../utils";
+  import {digestError} from '@/utils';
   import ErrorAlert from '@/components/ErrorAlert';
 
   const HTTP = axios.create({

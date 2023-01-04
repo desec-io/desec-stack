@@ -169,7 +169,7 @@
 
 <script>
   import axios from 'axios';
-  import {digestError} from "../utils";
+  import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert";
 
   const HTTP = axios.create({

@@ -118,8 +118,8 @@
 
 <script>
   import axios from 'axios';
-  import {email_pattern} from '../validation';
-  import {digestError} from "../utils";
+  import {email_pattern} from '@/validation';
+  import {digestError} from '@/utils';
   import ErrorAlert from '@/components/ErrorAlert';
 
   const HTTP = axios.create({

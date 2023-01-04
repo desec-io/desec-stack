@@ -1,6 +1,6 @@
 <script>
 import CrudList from './CrudList';
-import store from '../store';
+import store from '@/store';
 
 export default {
   name: 'CrudTokenList',

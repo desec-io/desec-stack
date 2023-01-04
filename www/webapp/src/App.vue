@@ -180,8 +180,8 @@
 </template>
 
 <script>
-import router from './router';
-import {logout} from './utils';
+import router from '@/router';
+import {logout} from '@/utils';
 
 export default {
   name: 'App',
