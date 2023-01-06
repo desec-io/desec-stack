@@ -179,7 +179,7 @@ router.beforeEach((to, from, next) => {
   } else {
     if (store.state.authenticated) {
       // Log in state was present, but not needed for the current page
-      if (recovered && to.name == 'home') {
+      if (recovered && to.name === 'home') {
         // User restored a previous session. If navigation to home, divert to home page for authorized users
         next({name: 'domains'})
       }

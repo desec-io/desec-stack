@@ -54,19 +54,19 @@
 
               <v-text-field
                       v-model="domain"
-                      :label="domainType == 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
+                      :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
                       prepend-icon="mdi-blank"
                       outline
                       required
-                      :disabled="working || domainType == 'none' || domainType === undefined"
-                      :rules="domainType == 'dynDNS' ? dyn_domain_rules : (domainType == 'custom' ? domain_rules : [])"
+                      :disabled="working || domainType === 'none' || domainType === undefined"
+                      :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
                       :error-messages="domain_errors"
-                      :suffix="domainType == 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
+                      :suffix="domainType === 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
                       @change="domain_errors=[]"
                       class="lowercase"
                       ref="domainField"
                       tabindex="3"
-                      :hint="domainType == 'dynDNS'
+                      :hint="domainType === 'dynDNS'
                         ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as you router).'
                         : 'Your first domain (you can add more later). – To use with dynDNS, please see the docs.'
                       "
@@ -265,7 +265,7 @@
         this.working = true;
         this.errors.splice(0, this.errors.length);
         let domain = this.domain === '' ? undefined : this.domain.toLowerCase();
-        if (domain && this.domainType == 'dynDNS') {
+        if (domain && this.domainType === 'dynDNS') {
            domain += '.' + this.LOCAL_PUBLIC_SUFFIXES[0];
         }
         try {
@@ -304,7 +304,7 @@
     watch: {
       domainType: function() {
         this.$nextTick(() => {
-          if (this.domainType == 'none') {
+          if (this.domainType === 'none') {
             this.domain = '';
           }
           this.$refs.domainField.validate();
