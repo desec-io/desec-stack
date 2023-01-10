@@ -93,6 +93,11 @@ const routes = [
     component: () => import(/* webpackChunkName: "extra" */ '../views/Donate.vue')
   },
   {
+    path: '/report-abuse/',
+    name: 'report-abuse',
+    component: () => import(/* webpackChunkName: "extra" */ '../views/ReportAbuse.vue')
+  },
+  {
     path: '//github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
     name: 'roadmap',
     beforeEnter(to) { location.href = to.path },
