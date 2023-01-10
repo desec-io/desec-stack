@@ -50,7 +50,7 @@ async function _digestError(error, app) {
         }
       } else if (error.response.status === 403) {
           if (store.state.authenticated) { // MFA
-            if (app.$route.name != 'mfa') {
+            if (app.$route.name !== 'mfa') {
               app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
             }
             return [];
@@ -71,7 +71,7 @@ async function _digestError(error, app) {
         let data = error.response.data;
         if (data instanceof Blob) {
           data = await data.text();
-          if (error.response.headers['content-type'] == 'application/json') {
+          if (error.response.headers['content-type'] === 'application/json') {
             data = JSON.parse(data);
           }
         }
