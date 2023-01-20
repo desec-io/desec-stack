@@ -20,9 +20,10 @@ whenever possible**.
 Update Request
 ``````````````
 An IP update is performed by sending a ``GET`` request to ``update.dedyn.io``
-via IPv4 or IPv6.  To enforce IPv6, use ``update6.dedyn.io``.  The path
-component can be chosen freely as long as it does not end in ``.ico`` or
-``.png``.  HTTPS is recommended over HTTP.
+via IPv4 or IPv6.
+To enforce a specific IP version, you can either configure your client with
+suitable flags (see examples below).
+Alternatively, for IPv6, you can also use ``update6.dedyn.io``.
 
 When the request is authenticated successfully, we use the connection IP
 address and query parameters to update your domain's DNS ``A`` (IPv4) and
@@ -30,6 +31,8 @@ address and query parameters to update your domain's DNS ``A`` (IPv4) and
 (that is, outdated values should disappear from DNS resolvers within that
 time).
 
+The request path can be chosen freely as long as it does not end in ``.ico``
+or ``.png``.  HTTPS is recommended over HTTP.
 
 .. _update-api-authentication:
 
@@ -147,7 +150,7 @@ Examples
 ````````
 The examples below use ``<your domain>`` as the domain which is to be updated
 (which could be a custom domain or a dedyn.io domain like
-``yourdomain.dedyn.io``) and ``<your authorization token>`` as an API token
+``yourdomain.dedyn.io``) and ``<your token secret>`` as an API token
 affiliated with the respective account (see :ref:`manage-tokens` for details.)
 ``1.2.3.4`` is used as an example for an IPv4 address, ``fd08::1234`` as a
 stand-in for an IPv6 address. Replace those (including the ``<`` and ``>``)
@@ -161,12 +164,17 @@ Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
   curl https://update.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your token secret>"
 
+Basic authentication with forced use of IPv4 (will remove IPv6 address from the DNS)::
+
+  curl --ipv4 https://update.dedyn.io/?hostname=<your domain> \
+    --header "Authorization: Token <your token secret>"
+
 Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
 
-  curl --user <your domain>:<your token secret> https://update6.dedyn.io/
-
-  curl https://update6.dedyn.io/?hostname=<your domain> \
+  curl --ipv6 https://update.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your token secret>"
+
+  curl --user <your domain>:<your token secret> https://update6.dedyn.io/
 
 Basic authentication with simultaneous update of IPv4 and IPv6::
 
