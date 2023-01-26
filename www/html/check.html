@@ -44,15 +44,14 @@ h1, h2 {
 <h1>dynDNS Check</h1>
 <h2 id="domain">Domain: </h2>
 <div id="results">
-    <div class="waiting" id="ipv4_records"><b>IPv4:</b> <span>checking ...<span></div>
-    <div class="waiting" id="ipv6_records"><b>IPv6:</b> <span>checking ...<span></div>
+    <div class="waiting" id="ipv4_records"><b>IPv4:</b> <span>checking ...</span></div>
+    <div class="waiting" id="ipv6_records"><b>IPv6:</b> <span>checking ...</span></div>
 </div>
-<p id="footer">dedyn.io is a dynDNS service provided by <a href="https://desec.io/">deSEC</a>.</pre>
-</body>
+<p id="footer">dedyn.io is a dynDNS service provided by <a href="https://desec.io/">deSEC</a>.</p>
 
 <script>
 function getRecords(token, domain, type, callback) {
-    var req = new XMLHttpRequest();
+    const req = new XMLHttpRequest();
     req.addEventListener("load", callback);
     req.open("GET", "https://desec.io/api/v1/domains/" + domain + "/rrsets/?subname=&type=" + type);
     req.setRequestHeader("Authorization", "Token " + token);
@@ -60,7 +59,8 @@ function getRecords(token, domain, type, callback) {
 }
 
 function setRecordsElement(elementId, status, data) {
-    className = "error";
+    let className = "error";
+    let textContent = "(check failed)";
     if (status == 401) {
         textContent = "(unauthorized)";
     } else if (status == 404) {
@@ -73,16 +73,14 @@ function setRecordsElement(elementId, status, data) {
             className = "warning";
             textContent = "(none)";
         }
-    } else {
-        textContent = "(check failed)";
     }
-    element = document.getElementById(elementId)
+    const element = document.getElementById(elementId);
     element.className = className;
     element.lastElementChild.textContent = textContent;
 }
 
-domain = location.search.substr(1)
-token = location.hash.substr(1);
+domain = location.search.substring(1)
+token = location.hash.substring(1);
 
 if (domain.length) {
     document.getElementById("domain").textContent = "Domain: " + domain;
@@ -103,4 +101,5 @@ if (!token.length || !domain.length) {
 }
 </script>
 
+</body>
 </html>
