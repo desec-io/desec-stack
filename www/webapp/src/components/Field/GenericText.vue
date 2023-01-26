@@ -83,4 +83,12 @@ export default {
 .theme--light.v-input--is-disabled input {
   color: rgba(0, 0, 0, 0.87);
 }
+/* Work around Firefox not propagating click events to parent element, see
+   https://bugzilla.mozilla.org/show_bug.cgi?id=1107929 (old),
+   https://bugzilla.mozilla.org/show_bug.cgi?id=1653882 (new).
+   It looks like Chrome 110 will follow: https://github.com/whatwg/html/issues/5886
+*/
+.v-input--is-disabled {
+  pointer-events: none;  /* thanks to https://stackoverflow.com/a/66029445/6867099 */
+}
 </style>
