@@ -344,7 +344,7 @@ import { HTTP, withWorking, digestError } from '@/utils';
 import RRSetType from '@/components/Field/RRSetType';
 import TimeAgo from '@/components/Field/TimeAgo';
 import Checkbox from '@/components/Field/Checkbox';
-import Code from '@/components/Field/Code';
+import GenericCode from '@/components/Field/GenericCode';
 import GenericText from '@/components/Field/GenericText';
 import GenericTextarea from '@/components/Field/GenericTextarea';
 import Record from '@/components/Field/Record';
@@ -372,7 +372,7 @@ export default {
     TimeAgo,
     Switchbox,
     Checkbox,
-    Code,
+    GenericCode,
     GenericText,
     GenericTextarea,
     Record,

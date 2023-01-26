@@ -3,8 +3,9 @@
 </template>
 
 <script>
+// TODO still required? seems not used.
 export default {
-  name: 'Code',
+  name: 'GenericCode',
   props: {
     value: {
       type: String,
