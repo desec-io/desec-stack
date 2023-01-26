@@ -419,10 +419,10 @@ export default {
       create: () => ('Create a new object.'),
       createBottom: () => undefined,
       createSuccess: () => undefined,
-      createWarning: () => (false),
+      createWarning: () => false,
       destroy: () => ('Delete an object permanently. This operation can likely not be undone.'),
-      destroyInfo: () => (false),
-      destroyWarning: () => (false),
+      destroyInfo: () => false,
+      destroyWarning: () => false,
     },
     columns: {},
     // resource
