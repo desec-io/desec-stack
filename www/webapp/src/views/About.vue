@@ -214,7 +214,7 @@ export default {
       },
       {
         title: 'Security Research',
-        text: 'deSEC supports research in the area of secure communications. All research will be made publicy ' +
+        text: 'deSEC supports research in the area of secure communications. All research will be made publicly ' +
                 'available in open access fashion, using responsible disclose procedures when indicated.',
       },
       {
