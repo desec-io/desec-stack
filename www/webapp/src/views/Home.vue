@@ -77,16 +77,28 @@
           <h2>Supporters</h2>
         </v-col>
       </v-row>
-      <v-row justify="center">
-        <v-col class="col-12 col-lg-2 py-4">
+      <v-row align="center" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
             <v-img :src="require('../assets/non-free/sse.logo.png')" alt="SSE Logo" class="mr-6" contain style="max-width: 160px; width: 100%"></v-img>
           </v-layout>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-8 py-4 text-center">
-          <a class="primary--text text--darken-2" href="https://securesystems.de/">SSE</a> supports us with development staff
-          and provides financial resources for our global Anycast network infrastructure. We trust them because creating
-          and auditing security solutions is their daily business.
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          <a class="primary--text text--darken-2" href="https://securesystems.de/">SSE</a> supports us with staff for
+          software development and our standardization activities within the IETF and ICANN.
+          We trust them because creating and auditing security solutions is their daily business.
+        </v-col>
+      </v-row>
+      <v-row align="center" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
+          <v-layout class="justify-center">
+            <v-img :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="SSE Logo" class="mr-6" contain style="max-width: 300px; width: 100%"></v-img>
+          </v-layout>
+        </v-col>
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          Through their Community Projects Fund, <a class="primary--text text--darken-2" href="https://ripe.net/">RIPE NCC</a>
+          supports the ongoing operation of our DNS platform and covers global Anycast network expenses in
+          particular. We greatly appreciate their support.
         </v-col>
       </v-row>
     </v-container>
