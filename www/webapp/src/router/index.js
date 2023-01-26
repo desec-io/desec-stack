@@ -38,12 +38,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "signup" */ '@/views/Welcome.vue')
   },
   {
-    path: '//desec.readthedocs.io/',
+    path: 'https://desec.readthedocs.io/',
     name: 'docs',
     beforeEnter(to) { location.href = to.path },
   },
   {
-    path: '//talk.desec.io/',
+    path: 'https://talk.desec.io/',
     name: 'talk',
     beforeEnter(to) { location.href = to.path },
   },
@@ -93,7 +93,7 @@ const routes = [
     component: () => import(/* webpackChunkName: "extra" */ '@/views/Donate.vue')
   },
   {
-    path: '//github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
+    path: 'https://github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
     name: 'roadmap',
     beforeEnter(to) { location.href = to.path },
   },

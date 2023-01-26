@@ -11,7 +11,7 @@
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
             </p>
             <p>
-              Running on <strong>open-source software</strong> and <strong>supported by <a href="//securesystems.de/">SSE</a></strong>,
+              Running on <strong>open-source software</strong> and <strong>supported by <a href="https://securesystems.de/">SSE</a></strong>,
               deSEC is free for everyone to use.
             </p>
           </h3>
@@ -84,7 +84,7 @@
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-8 py-4 text-center">
-          <a class="primary--text text--darken-2" href="//securesystems.de/">SSE</a> supports us with development staff
+          <a class="primary--text text--darken-2" href="https://securesystems.de/">SSE</a> supports us with development staff
           and provides financial resources for our global Anycast network infrastructure. We trust them because creating
           and auditing security solutions is their daily business.
         </v-col>
