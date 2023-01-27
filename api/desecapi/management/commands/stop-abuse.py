@@ -1,8 +1,9 @@
+import dns.resolver
 from django.core.management import BaseCommand
 from django.db.models import Q
 
 from api import settings
-from desecapi.models import RRset, Domain, User
+from desecapi.models import BlockedSubnet, Domain, RR, RRset, User
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
 
@@ -39,11 +40,32 @@ class Command(BaseCommand):
                 | Q(domain__owner__email__in=options["names"])
             )
 
+            blocked_subnets = []
+            for rr in RR.objects.filter(rrset__in=rrsets.filter(type="A")):
+                if not BlockedSubnet.objects.filter(
+                    subnet__net_contains=rr.content
+                ).exists():
+                    try:
+                        blocked_subnet = BlockedSubnet.from_ip(rr.content)
+                    except dns.resolver.NXDOMAIN:  # for unallocated IP addresses
+                        continue
+                    blocked_subnet.save()
+                    blocked_subnets.append(blocked_subnet)
+
             # Print summary
             print(
                 f"Deleting {rrsets.distinct().count()} RRset(s) from {domains.distinct().count()} domain(s); "
-                f"disabling {users.distinct().count()} associated user account(s)."
+                f"disabling {users.distinct().count()} associated user account(s). {len(blocked_subnets)} subnets:"
             )
+            if blocked_subnets:
+                row_format = "{:>11} {:>18} {:>8} {}"
+                print(row_format.format("ASN", "Subnet", "Country", "Registry"))
+                for bs in blocked_subnets:
+                    print(
+                        row_format.format(
+                            bs.asn, str(bs.subnet), bs.country, bs.registry
+                        )
+                    )
 
             # Print details
             for d in domain_names:

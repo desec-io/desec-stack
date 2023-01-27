@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from rest_framework import status
 
-from desecapi.models import Domain, RR, RRset
+from desecapi.models import BlockedSubnet, Domain, RR, RRset
 from desecapi.models.records import RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
 from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
@@ -1087,6 +1087,21 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     response, "Duplicate", status_code=status.HTTP_400_BAD_REQUEST
                 )
 
+    def test_create_my_rr_sets_no_ip_block_unless_lps(self):
+        # IP block should not be effective unless domain is under Local Public Suffix
+        BlockedSubnet.from_ip("3.2.2.3").save()
+        with self.assertPdnsRequests(
+            self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
+        ):
+            response = self.client.post_rr_set(
+                self.my_empty_domain.name,
+                records=["3.2.2.5"],
+                ttl=3660,
+                subname="blocktest",
+                type="A",
+            )
+            self.assertStatus(response, status.HTTP_201_CREATED)
+
     def test_create_my_rr_sets_txt_splitting(self):
         for t in ["TXT", "SPF"]:
             for l in [200, 255, 256, 300, 400]:
@@ -1521,3 +1536,19 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     },
                 ],
             )
+
+
+class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
+    DYN = True
+
+    def test_create_my_rr_sets_ip_block(self):
+        BlockedSubnet.from_ip("3.2.2.3").save()
+        response = self.client.post_rr_set(
+            self.my_domain.name,
+            records=["3.2.2.5"],
+            ttl=3660,
+            subname="blocktest",
+            type="A",
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("IP address 3.2.2.5 not allowed.", str(response.data))

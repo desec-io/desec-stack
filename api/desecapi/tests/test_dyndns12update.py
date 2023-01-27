@@ -2,6 +2,7 @@ import random
 
 from rest_framework import status
 
+from desecapi.models import BlockedSubnet
 from desecapi.tests.base import DynDomainOwnerTestCase
 
 
@@ -174,6 +175,19 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             )
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
             self.assertEqual(response.content, b"nohost")
+
+    def test_ddclient_dyndns2_v4_blocked(self):
+        # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=3.2.2.3
+        BlockedSubnet.from_ip("3.2.2.3").save()
+        params = {
+            "domain_name": self.my_domain.name,
+            "system": "dyndns",
+            "hostname": self.my_domain.name,
+            "myip": "3.2.2.5",
+        }
+        response = self.client.get(self.reverse("v1:dyndns12update"), params)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("IP address 3.2.2.5 not allowed.", str(response.data))
 
     def test_ddclient_dyndns2_v6_success(self):
         # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myipv6=::1338

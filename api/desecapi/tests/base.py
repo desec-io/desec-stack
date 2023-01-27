@@ -1278,8 +1278,8 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
         cls.my_domain = cls.my_domains[0]
         cls.other_domain = cls.other_domains[0]
 
-        cls.create_rr_set(cls.my_domain, ["127.0.0.1", "127.0.1.1"], type="A", ttl=123)
-        cls.create_rr_set(cls.other_domain, ["40.1.1.1", "40.2.2.2"], type="A", ttl=456)
+        cls.create_rr_set(cls.my_domain, ["127.0.0.1", "3.2.2.3"], type="A", ttl=123)
+        cls.create_rr_set(cls.other_domain, ["40.1.1.1"], type="A", ttl=456)
 
         cls.token = cls.create_token(user=cls.owner)
 

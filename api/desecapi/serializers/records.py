@@ -489,6 +489,18 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             )
         return attrs
 
+    def _validate_blocked_content(self, attrs, type_):
+        # Reject IP addresses from blocked IP ranges
+        if type_ == "A" and self.domain.is_locally_registrable:
+            for record in attrs["records"]:
+                if models.BlockedSubnet.objects.filter(
+                    subnet__net_contains=record["content"]
+                ).exists():
+                    raise serializers.ValidationError(
+                        f"IP address {record['content']} not allowed."
+                    )
+        return attrs
+
     def validate(self, attrs):
         if "records" in attrs:
             # on the RRsetDetail endpoint, the type is not in attrs
@@ -496,6 +508,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
             attrs = self._validate_canonical_presentation(attrs, type_)
             attrs = self._validate_length(attrs)
+            attrs = self._validate_blocked_content(attrs, type_)
 
         return attrs
 

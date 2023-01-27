@@ -5,15 +5,19 @@ from desecapi import models
 from desecapi.tests.base import DomainOwnerTestCase
 
 
+def block_exists(ip):
+    return models.BlockedSubnet.objects.filter(subnet__net_contains=ip).exists()
+
+
 class StopAbuseCommandTest(DomainOwnerTestCase):
     @classmethod
     def setUpTestDataWithPdns(cls):
         super().setUpTestDataWithPdns()
         cls.create_rr_set(
-            cls.my_domains[1], ["127.0.0.1", "127.0.1.1"], type="A", ttl=123
+            cls.my_domains[1], ["127.0.0.1", "4.2.2.4"], type="A", ttl=123
         )
         cls.create_rr_set(
-            cls.other_domains[1], ["40.1.1.1", "40.2.2.2"], type="A", ttl=456
+            cls.other_domains[1], ["40.1.1.1", "127.0.0.2"], type="A", ttl=456
         )
         for d in cls.my_domains + cls.other_domains:
             cls.create_rr_set(d, ["ns1.example.", "ns2.example."], type="NS", ttl=456)
@@ -46,6 +50,9 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
             ),
             set(settings.DEFAULT_NS),
         )
+        self.assertTrue(block_exists("3.2.2.3"))
+        self.assertFalse(block_exists("40.1.1.1"))
+        self.assertFalse(block_exists("127.0.0.1"))
 
     def test_remove_rrsets_by_email(self):
         with self.assertPdnsRequests(
@@ -64,6 +71,10 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
             ),
             set(settings.DEFAULT_NS),
         )
+        self.assertTrue(block_exists("3.2.2.3"))
+        self.assertTrue(block_exists("4.2.2.4"))
+        self.assertFalse(block_exists("40.1.1.1"))
+        self.assertFalse(block_exists("127.0.0.1"))
 
     def test_disable_user_by_domain_name(self):
         with self.assertPdnsRequests(
