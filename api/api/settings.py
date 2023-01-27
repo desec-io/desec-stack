@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     "desecapi.apps.AppConfig",
     "corsheaders",
     "django_prometheus",
+    "netfields",
     "pgtrigger",
 )
 
