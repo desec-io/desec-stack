@@ -12,8 +12,6 @@ module.exports = {
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'vue/no-reserved-component-names': 'warn',
-    'vue/no-v-text-v-html-on-component': 'warn',
     'vue/multi-word-component-names': 'off'
   },
   ignorePatterns: ['**/src/modules/**/*'],
