@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from desecapi import metrics
 from desecapi.authentication import (
@@ -168,7 +169,9 @@ class DynDNS12UpdateView(generics.GenericAPIView):
             if any(
                 any(
                     getattr(non_field_error, "code", "") == "unique"
-                    for non_field_error in err.get("non_field_errors", [])
+                    for non_field_error in err.get(
+                        api_settings.NON_FIELD_ERRORS_KEY, []
+                    )
                 )
                 for err in e.detail
             ):

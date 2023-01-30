@@ -170,7 +170,9 @@ class RRsetListSerializer(serializers.ListSerializer):
             # Validate data types before using anything from it
             if not isinstance(item, dict):
                 errors[idx].update(
-                    non_field_errors=f"Expected a dictionary, but got {type(item).__name__}."
+                    {
+                        api_settings.NON_FIELD_ERRORS_KEY: f"Expected a dictionary, but got {type(item).__name__}."
+                    }
                 )
                 continue
             s, t = self._key(item)  # subname, type
@@ -216,7 +218,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                 if len(data_indices) > 1:
                     raise serializers.ValidationError(
                         {
-                            "non_field_errors": [
+                            api_settings.NON_FIELD_ERRORS_KEY: [
                                 "Same subname and type as in position(s) %s, but must be unique."
                                 % ", ".join(map(str, data_indices - {idx}))
                             ]
@@ -236,7 +238,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                         )
                         raise serializers.ValidationError(
                             {
-                                "non_field_errors": [
+                                api_settings.NON_FIELD_ERRORS_KEY: [
                                     f"RRset with conflicting type present: {types_by_position}."
                                     " (No other RRsets are allowed alongside CNAME.)"
                                 ]
