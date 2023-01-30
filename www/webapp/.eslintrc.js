@@ -12,7 +12,10 @@ module.exports = {
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'vue/multi-word-component-names': 'off'
+    'vue/multi-word-component-names': 'off',
+    'vue/v-bind-style': 'warn',
+    'vue/v-on-style': 'warn',
+    'vue/v-slot-style': 'warn',
   },
   ignorePatterns: ['**/src/modules/**/*'],
   parserOptions: {
