@@ -122,7 +122,7 @@
     <v-snackbar v-model="snackbar">
       {{ snackbar_text }}
 
-      <template v-slot:action="{ attrs }">
+      <template #action="{ attrs }">
         <v-btn
             color="pink"
             text

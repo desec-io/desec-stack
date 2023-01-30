@@ -49,7 +49,7 @@
       <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!$store.state.authenticated">Log In</v-btn>
       <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="$store.state.authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
-      <template v-slot:extension v-if="$store.state.authenticated">
+      <template #extension v-if="$store.state.authenticated">
         <v-tabs background-color="primary darken-1" fixed-tabs>
           <v-tab
             v-for="(item, key) in tabmenu"
@@ -63,7 +63,7 @@
                   bottom
                   left
           >
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <v-btn
                       text
                       class="align-self-center mr-4"
@@ -90,7 +90,7 @@
 
     <v-main>
       <v-banner v-for="alert in $store.state.alerts" :key="alert.id">
-        <template v-slot:icon>
+        <template #icon>
           <v-icon
             color="warning"
             size="36"
@@ -99,7 +99,7 @@
           </v-icon>
         </template>
         {{ alert.teaser }}
-        <template v-slot:actions>
+        <template #actions>
           <v-btn
             color="primary"
             depressed

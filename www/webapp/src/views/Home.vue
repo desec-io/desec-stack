@@ -147,7 +147,7 @@
             style="display: block;"
           >
             <v-tooltip bottom v-for="f in frontends" :key="f.host">
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-img
                   v-on="on"
                   :src="require('../assets/mapmarker.svg')" alt="Anycast POP" height="2em" width="2em"

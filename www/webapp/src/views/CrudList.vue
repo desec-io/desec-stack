@@ -32,7 +32,7 @@
                   class="elevation-1"
                   @click:row="rowClick"
           >
-            <template v-slot:top>
+            <template #top>
               <!-- Headline & Toolbar, Including New Form -->
               <v-toolbar flat>
                 <v-toolbar-title>{{ headlines.table }}</v-toolbar-title>
@@ -64,7 +64,7 @@
                 >
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
-                <template v-slot:extension v-if="$vuetify.breakpoint.xsOnly">
+                <template #extension v-if="$vuetify.breakpoint.xsOnly">
                   <v-text-field
                           v-model="search"
                           append-icon="mdi-magnify"
@@ -194,7 +194,7 @@
 
             <template
               v-for="(column, id) in columns"
-              v-slot:[column.name]="itemFieldProps"
+              #[column.name]="itemFieldProps"
             >
               <component
                 :is="column.datatype"
@@ -207,7 +207,7 @@
                 @dirty="dirty.add(itemFieldProps.item); dirtyError.delete(itemFieldProps.item);"
               />
             </template>
-            <template v-slot:[`item.actions`]="itemFieldProps">
+            <template #[`item.actions`]="itemFieldProps">
               <v-layout
                       class="my-1 py-3"
                       justify-end
@@ -218,7 +218,7 @@
                       top
                       transition="fade-transition"
                   >
-                    <template v-slot:activator="{ on, attrs }">
+                    <template #activator="{ on, attrs }">
                       <v-btn
                               v-bind="attrs"
                               v-on="on"
@@ -235,7 +235,7 @@
                 </div>
               </v-layout>
             </template>
-            <template v-slot:no-data>
+            <template #no-data>
               <div v-if="!pagination_required">
                 <div class="py-4 text-xs-center">
                   <h2 class="title">Feels so empty here!</h2>
