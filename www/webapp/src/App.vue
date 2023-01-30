@@ -169,7 +169,7 @@
           <p>Vorstand</p>
           <p class="white--text text--darken-2">
             Nils Wisiol<br/>
-            Dr. Peter Thomassen<br/>
+            Peter Thomassen<br/>
             Wolfgang Studier<br/>
           </p>
         </div>

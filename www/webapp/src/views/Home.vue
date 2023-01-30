@@ -402,9 +402,10 @@ export default {
         href: '#',
         icon: 'mdi-file-certificate',
         title: "Let's Encrypt Integration",
-        text: 'We provide <b>easy integration</b> with Let\'s Encrypt and their certbot tool. '
-               + '<a href="https://talk.desec.io/t/tools-implementing-desec/11">Further integration with ACME '
-               + 'clients</a> like acme.sh, lego, and Terraform is available.',
+        text: 'We provide <b><a href="https://pypi.org/project/certbot-dns-desec/">easy integration</a> with Let\'s '
+               + 'Encrypt</b> and their certbot tool. '
+               + '<a href="https://talk.desec.io/t/tools-implementing-desec/11">Further integration with other '
+               + 'tools</a> like acme.sh, lego, and Terraform is available.',
       },
       {
         href: '#',

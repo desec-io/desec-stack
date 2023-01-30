@@ -9,9 +9,11 @@
     <h3>E-Mail</h3>
     <p>{{email}}</p>
     <h3>Vertreten durch / Represented by</h3>
-    <p>Nils Wisiol
-      <br>Wolfgang Studier
-      <br>Dr. Peter Thomassen</p>
+    <p>
+      Dr. Nils Wisiol<br>
+      Dr. Peter Thomassen<br>
+      Wolfgang Studier
+    </p>
     <h3>Registergericht / Registration court</h3>
     <p>AG Berlin (Charlottenburg)<br>VR 37525<br></p>
   </v-container>
