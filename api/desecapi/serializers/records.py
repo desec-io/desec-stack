@@ -456,48 +456,46 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             )
         return value
 
+    def _validate_canonical_presentation(self, attrs, type_):
+        try:
+            attrs["records"] = [
+                {
+                    "content": models.RR.canonical_presentation_format(
+                        rr["content"], type_
+                    )
+                }
+                for rr in attrs["records"]
+            ]
+        except ValueError as ex:
+            raise serializers.ValidationError(str(ex))
+        return attrs
+
+    def _validate_length(self, attrs):
+        # There is a 12 byte baseline requirement per record, c.f.
+        # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
+        # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
+        # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
+        # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
+        qname = models.RRset.construct_name(attrs.get("subname", ""), self.domain.name)
+        conservative_total_length = (
+            32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"])
+        ) + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+
+        excess_length = conservative_total_length - 65535  # max response size
+        if excess_length > 0:
+            raise serializers.ValidationError(
+                f"Total length of RRset exceeds limit by {excess_length} bytes.",
+                code="max_length",
+            )
+        return attrs
+
     def validate(self, attrs):
         if "records" in attrs:
-            try:
-                type_ = attrs["type"]
-            except KeyError:  # on the RRsetDetail endpoint, the type is not in attrs
-                type_ = self.instance.type
+            # on the RRsetDetail endpoint, the type is not in attrs
+            type_ = attrs.get("type") or self.instance.type
 
-            try:
-                attrs["records"] = [
-                    {
-                        "content": models.RR.canonical_presentation_format(
-                            rr["content"], type_
-                        )
-                    }
-                    for rr in attrs["records"]
-                ]
-            except ValueError as ex:
-                raise serializers.ValidationError(str(ex))
-
-            # There is a 12 byte baseline requirement per record, c.f.
-            # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
-            # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
-            # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
-            # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
-            qname = models.RRset.construct_name(
-                attrs.get("subname", ""), self.domain.name
-            )
-            conservative_total_length = (
-                32
-                + len(qname)
-                + sum(12 + len(rr["content"]) for rr in attrs["records"])
-            )
-
-            # Add some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
-            conservative_total_length += 256
-
-            excess_length = conservative_total_length - 65535  # max response size
-            if excess_length > 0:
-                raise serializers.ValidationError(
-                    f"Total length of RRset exceeds limit by {excess_length} bytes.",
-                    code="max_length",
-                )
+            attrs = self._validate_canonical_presentation(attrs, type_)
+            attrs = self._validate_length(attrs)
 
         return attrs
 
