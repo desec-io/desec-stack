@@ -97,7 +97,7 @@
                               :indeterminate="true"
                       />
 
-                      <error-alert v-if="createDialogError" v-bind:errors="errors"></error-alert>
+                      <error-alert v-if="createDialogError" :errors="errors"></error-alert>
 
                       <v-alert
                               :value="createDialogSuccess"
@@ -297,7 +297,7 @@
                 >
                   {{ texts.destroyWarning(destroyDialogItem) }}
                 </v-alert>
-                <error-alert v-if="destroyDialogError" v-bind:errors="errors"></error-alert>
+                <error-alert v-if="destroyDialogError" :errors="errors"></error-alert>
 
                 <v-card-text>
                   {{ texts.destroy(destroyDialogItem) }}

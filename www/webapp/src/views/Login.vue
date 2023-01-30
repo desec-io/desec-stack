@@ -25,7 +25,7 @@
               <v-toolbar-title>Log In</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
-              <error-alert v-bind:errors="errors"></error-alert>
+              <error-alert :errors="errors"></error-alert>
               <v-text-field
                 v-model="email"
                 label="Email"

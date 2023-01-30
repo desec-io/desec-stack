@@ -25,7 +25,7 @@
         <v-alert class="mb-0" :value="!!successDetail" type="success">
           {{ successDetail }}
         </v-alert>
-        <error-alert v-bind:errors="errors"></error-alert>
+        <error-alert :errors="errors"></error-alert>
 
         <v-card-text v-if="!!successDetail" class="text-center">
           <p class="mt-2">

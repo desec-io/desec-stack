@@ -21,7 +21,7 @@
             <v-toolbar-title>Domain Registration Completed</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <error-alert v-bind:errors="errors"></error-alert>
+            <error-alert :errors="errors"></error-alert>
             <p>
               Congratulations, you are now the owner of <span class="fixed-width">{{ $route.params.domain }}</span>!
             </p>

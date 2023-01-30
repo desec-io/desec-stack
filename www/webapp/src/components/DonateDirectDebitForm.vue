@@ -20,7 +20,7 @@
       <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
     <v-form v-if="!done" @submit.prevent="donate" ref="form">
-      <error-alert v-bind:errors="errors"></error-alert>
+      <error-alert :errors="errors"></error-alert>
 
       <v-radio-group
           v-model="interval"

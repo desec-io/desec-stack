@@ -22,7 +22,7 @@
                             <v-toolbar-title>Reset Account Password</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
-                            <error-alert v-bind:errors="errors"></error-alert>
+                            <error-alert :errors="errors"></error-alert>
                             <v-alert v-if="done" type="success">
                                 <p>
                                     We received the password reset request. If an account with this email address exists

@@ -22,7 +22,7 @@
                             <v-toolbar-title>Change Account Email Address</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
-                            <error-alert v-bind:errors="errors"></error-alert>
+                            <error-alert :errors="errors"></error-alert>
                             <v-alert v-if="done" type="success">
                                 <p>
                                     Please check your new email address for messages. If the new email address is not

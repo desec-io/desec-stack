@@ -21,7 +21,7 @@
             <v-toolbar-title class="capitalize">{{ this.$route.params.action | replace(/-/g, ' ') }} Confirmation</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <error-alert v-bind:errors="errors"></error-alert>
+            <error-alert :errors="errors"></error-alert>
             <v-form @submit.prevent="confirm" class="mb-4" v-model="valid" ref="form">
               <div
                       :is="this.actionHandler"

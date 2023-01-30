@@ -15,7 +15,7 @@
         </v-card-title>
         <v-divider/>
 
-        <error-alert v-bind:errors="errors"></error-alert>
+        <error-alert :errors="errors"></error-alert>
 
         <v-card-text class="text-center">
           <div>

@@ -22,7 +22,7 @@
                             <v-toolbar-title>Delete Account</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
-                            <error-alert v-bind:errors="errors"></error-alert>
+                            <error-alert :errors="errors"></error-alert>
                             <v-alert v-if="done" type="success">
                                 <p>
                                     Please check your mail box for further instructions to delete your account.

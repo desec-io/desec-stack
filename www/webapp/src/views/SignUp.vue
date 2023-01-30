@@ -23,7 +23,7 @@
               <v-toolbar-title>Create new Account</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
-              <error-alert v-bind:errors="errors"></error-alert>
+              <error-alert :errors="errors"></error-alert>
 
               <v-text-field
                       v-model="email"
