@@ -15,7 +15,7 @@ def set_histogram(name, *args, **kwargs):
     metrics[name] = Histogram(name, *args, **kwargs)
 
 
-# models.py metrics
+# models metrics
 set_counter(
     "desecapi_captcha_content_created",
     "number of times captcha content created",
@@ -30,7 +30,7 @@ set_histogram(
     buckets=[0, 1, float("inf")],
 )
 
-# views.py metrics
+# views metrics
 set_counter(
     "desecapi_dynDNS12_domain_not_found", "number of times dynDNS12 domain is not found"
 )
@@ -45,6 +45,17 @@ set_counter(
     "desecapi_key_decryption_success",
     "number of times key decryption was successful",
     ["context"],
+)
+
+# serializers metrics
+set_counter(
+    "desecapi_records_serializer_validate_length",
+    "number of attempts to provision an overly long RRset",
+)
+set_counter(
+    "desecapi_records_serializer_validate_blocked_subnet",
+    "number of attempts to provision addresses from a blocked subnet",
+    ["blocked_subnet"],
 )
 
 # exception_handlers.py metrics

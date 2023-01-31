@@ -4,14 +4,15 @@ import django.core.exceptions
 import dns.name
 import dns.zone
 from django.core.validators import MinValueValidator
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
+from netfields.functions import Masklen
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator
 
 from api import settings
-from desecapi import models
+from desecapi import metrics, models
 from desecapi.validators import ExclusionConstraintValidator, ReadOnlyOnUpdateValidator
 
 
@@ -483,6 +484,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
         excess_length = conservative_total_length - 65535  # max response size
         if excess_length > 0:
+            metrics.get("desecapi_records_serializer_validate_length").inc()
             raise serializers.ValidationError(
                 f"Total length of RRset exceeds limit by {excess_length} bytes.",
                 code="max_length",
@@ -492,10 +494,15 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
     def _validate_blocked_content(self, attrs, type_):
         # Reject IP addresses from blocked IP ranges
         if type_ == "A" and self.domain.is_locally_registrable:
+            qs = models.BlockedSubnet.objects.values_list("subnet", flat=True).order_by(
+                Masklen(F("subnet")).desc()
+            )
             for record in attrs["records"]:
-                if models.BlockedSubnet.objects.filter(
-                    subnet__net_contains=record["content"]
-                ).exists():
+                subnet = qs.filter(subnet__net_contains=record["content"]).first()
+                if subnet:
+                    metrics.get(
+                        "desecapi_records_serializer_validate_blocked_subnet"
+                    ).labels(str(subnet)).inc()
                     raise serializers.ValidationError(
                         f"IP address {record['content']} not allowed."
                     )
