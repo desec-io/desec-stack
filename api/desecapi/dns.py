@@ -4,6 +4,7 @@ import struct
 from ipaddress import IPv6Address
 
 import dns
+import dns.dnssec
 import dns.name
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
 import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
