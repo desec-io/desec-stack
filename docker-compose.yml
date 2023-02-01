@@ -344,7 +344,7 @@ services:
       "--web.console.libraries=/usr/share/prometheus/console_libraries",
       "--web.console.templates=/usr/share/prometheus/consoles",
       # Local parameters follow
-      "--storage.tsdb.retention.time=30d",
+      "--storage.tsdb.retention.time=1y",
       "--web.listen-address=${DESECSTACK_IPV4_REAR_PREFIX16}.8.2:9090",
       "--web.external-url=https://desec.${DESECSTACK_DOMAIN}/prometheus",
       "--web.route-prefix=/",
