@@ -7,7 +7,6 @@ import django.db.models.expressions
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0005_subname_validation"),
     ]

@@ -60,7 +60,6 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
 
 
 class Validator:
-
     message = "This field did not pass validation."
 
     def __init__(self, message=None):
@@ -76,7 +75,6 @@ class Validator:
 
 
 class ReadOnlyOnUpdateValidator(Validator):
-
     message = "Can only be written on create."
     requires_context = True
 

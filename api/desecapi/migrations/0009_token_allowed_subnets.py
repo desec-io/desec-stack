@@ -7,7 +7,6 @@ import netfields.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0008_token_perm_manage_tokens"),
     ]

@@ -6,7 +6,6 @@ from desecapi.tests.base import DesecTestCase
 
 
 class PdnsChangeTrackerTestCase(DesecTestCase):
-
     empty_domain = None
     simple_domain = None
     full_domain = None
@@ -193,7 +192,7 @@ class RRTestCase(PdnsChangeTrackerTestCase):
 
     def test_create_update_empty_rr_set_2(self):
         with self.assertPdnsEmptyRRSetUpdate(), PDNSChangeTracker():
-            for (content, alt_content) in zip(
+            for content, alt_content in zip(
                 self.CONTENT_VALUES, self.ALT_CONTENT_VALUES
             ):
                 rr = RR.objects.create(rrset=self.empty_rr_set, content=content)

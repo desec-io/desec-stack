@@ -106,7 +106,6 @@ class UserManagementClient(APIClient):
 
 
 class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
-
     client_class = UserManagementClient
     password = None
     token = None

@@ -16,7 +16,6 @@ def forwards_func(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0019_alter_user_is_active"),
     ]

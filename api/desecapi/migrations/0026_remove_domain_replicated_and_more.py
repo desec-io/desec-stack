@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0025_alter_token_max_age_alter_token_max_unused_period"),
     ]

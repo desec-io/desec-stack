@@ -231,7 +231,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertIP(ipv4="127.0.0.1")
 
     def test_unset_ip(self):
-        for (v4, v6) in [
+        for v4, v6 in [
             ("127.0.0.1", "::1"),
             ("127.0.0.1", ""),
             ("", "::1"),
@@ -246,7 +246,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         current_v4 = "127.0.0.1"
         current_v6 = "::1"
         self.assertDynDNS12Update(self.my_domain.name, ip=current_v4, ipv6=current_v6)
-        for (v4, v6) in [
+        for v4, v6 in [
             ("preserve", "::3"),
             ("1.2.3.4", "preserve"),
             ("preserve", "preserve"),

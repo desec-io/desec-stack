@@ -24,7 +24,6 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
         test_case = self
 
         class _MockSuffixLists:
-
             settings_mocker = None
             psl_mocker = None
 

@@ -8,7 +8,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0027_user_credentials_changed"),
     ]

@@ -1408,7 +1408,7 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
         cls.my_rr_set_domain = cls.create_domain(suffix="", owner=cls.owner)
         cls.other_rr_set_domain = cls.create_domain(suffix="")
         for domain in [cls.my_rr_set_domain, cls.other_rr_set_domain]:
-            for (subname, type_, records, ttl) in cls._test_rr_sets():
+            for subname, type_, records, ttl in cls._test_rr_sets():
                 cls.create_rr_set(
                     domain, subname=subname, type=type_, records=records, ttl=ttl
                 )
