@@ -67,6 +67,11 @@ set_counter(
     "number of times pdns request was successful",
     ["method", "status"],
 )
+set_counter(
+    "desecapi_pdns_request_failure",
+    "number of times pdns request failed",
+    ["method", "path", "status"],
+)
 set_counter("desecapi_pdns_keys_fetched", "number of times pdns keys were fetched")
 
 # pdns_change_tracker.py metrics

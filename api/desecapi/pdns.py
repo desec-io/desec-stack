@@ -99,6 +99,9 @@ def _pdns_request(
         method, _config[server]["base_url"] + path, data=data, headers=headers
     )
     if r.status_code not in range(200, 300):
+        metrics.get("desecapi_pdns_request_failure").labels(
+            method, path, r.status_code
+        ).inc()
         raise PDNSException(response=r)
     metrics.get("desecapi_pdns_request_success").labels(method, r.status_code).inc()
     return r
