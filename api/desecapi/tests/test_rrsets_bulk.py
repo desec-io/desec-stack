@@ -52,7 +52,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             cls.create_rr_set(cls.bulk_domain, **data)
 
     def test_bulk_post_my_rr_sets(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.bulk_post_rr_sets(
@@ -264,7 +264,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, [{}, {"records": ["This field is required."]}])
 
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -330,7 +330,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             ttl=3600,
         )
 
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -351,7 +351,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertEqual(response.data[0]["records"], ["example.com."])
             self.assertEqual(response.data[0]["ttl"], 3605)
 
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -374,7 +374,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_bulk_patch_full_on_empty_domain(self):
         # Full patch always works
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -390,7 +390,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
     def test_bulk_patch_change_records(self):
         data_no_ttl = copy.deepcopy(self.data_no_ttl)
         data_no_ttl[0]["records"] = ["example.org."]
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.bulk_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -405,7 +405,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
     def test_bulk_patch_change_ttl(self):
         data_no_records = copy.deepcopy(self.data_no_records)
         data_no_records[1]["ttl"] = 3911
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.bulk_domain.name)
         ):
             response = self.client.bulk_patch_rr_sets(
@@ -439,7 +439,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         )
 
     def test_bulk_patch_missing_invalid_fields_1(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             self.client.bulk_post_rr_sets(
@@ -491,7 +491,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         )
 
     def test_bulk_patch_missing_invalid_fields_2(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             self.client.bulk_post_rr_sets(
@@ -659,7 +659,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_bulk_put_full(self):
         # Full PUT always works
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.bulk_put_rr_sets(
@@ -696,7 +696,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertTrue("records" in response.data[0])
 
     def test_bulk_put_empty_records(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.bulk_domain.name)
         ):
             self.assertStatus(

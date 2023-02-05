@@ -485,7 +485,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             cm = self.requests_desec_domain_creation_auto_delegation(domain)
         else:
             cm = self.requests_desec_domain_creation(domain)
-        with self.assertPdnsRequests(cm):
+        with self.assertRequests(cm):
             response = self.client.verify(confirmation_link)
         self.assertRegistrationWithDomainVerificationSuccessResponse(
             response, domain, email
@@ -1323,7 +1323,7 @@ class RenewTestCase(UserManagementTestCase, DomainOwnerTestCase):
             domain.save()
             domain.rrset_set.update(touched=domain.published)
 
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_domain_deletion(domain=domain)
             ):
                 call_command("scavenge-unused")

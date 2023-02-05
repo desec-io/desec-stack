@@ -13,7 +13,7 @@ class DynUpdateAuthenticationTestCase(DynDomainOwnerTestCase):
     NUM_OWNED_DOMAINS = 1
 
     def _get_dyndns12(self):
-        with self.assertPdnsNoRequestsBut(self.requests_desec_rr_sets_update()):
+        with self.assertNoRequestsBut(self.requests_desec_rr_sets_update()):
             return self.client.get(self.reverse("v1:dyndns12update"))
 
     def assertDynDNS12Status(self, code=HTTP_200_OK, authorization=None):

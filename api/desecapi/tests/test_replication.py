@@ -27,7 +27,7 @@ class ReplicationTest(DesecTestCase):
             response = self.client.get(path=url, REMOTE_ADDR="123.8.0.2")
             self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
 
-            with self.assertPdnsRequests(pdns_requests):
+            with self.assertRequests(pdns_requests):
                 response = self.client.get(path=url, REMOTE_ADDR="10.8.0.2")
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data, serials)

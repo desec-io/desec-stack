@@ -609,7 +609,7 @@ class MockPDNSTestCase(APITestCase):
             "priority": 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
         }
 
-    def assertPdnsRequests(self, *expected_requests, expect_order=True, exit_hook=None):
+    def assertRequests(self, *expected_requests, expect_order=True, exit_hook=None):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
         Unmet expectations will fail the test.
@@ -625,7 +625,7 @@ class MockPDNSTestCase(APITestCase):
             exit_hook=exit_hook,
         )
 
-    def assertPdnsNoRequestsBut(self, *expected_requests):
+    def assertNoRequestsBut(self, *expected_requests):
         """
         Assert no requests other than the given ones are made. Each request can be matched more than once, unmatched
         expectations WILL NOT fail the test.
@@ -639,7 +639,7 @@ class MockPDNSTestCase(APITestCase):
             expect_order=False,
         )
 
-    def assertPdnsZoneCreation(self):
+    def assertZoneCreation(self):
         """
         Asserts that nslord is contact and a zone is created.
         """
@@ -651,7 +651,7 @@ class MockPDNSTestCase(APITestCase):
             ],
         )
 
-    def assertPdnsZoneDeletion(self, name=None):
+    def assertZoneDeletion(self, name=None):
         """
         Asserts that nslord and nsmaster are contacted to delete a zone.
         Args:
@@ -1301,7 +1301,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
         return super().request_pdns_zone_update(name.lower() if name else None)
 
     def _assertDynDNS12Update(self, requests, mock_remote_addr="", **kwargs):
-        with self.assertPdnsRequests(requests):
+        with self.assertRequests(requests):
             if mock_remote_addr:
                 return self.client.get(
                     self.reverse("v1:dyndns12update"),

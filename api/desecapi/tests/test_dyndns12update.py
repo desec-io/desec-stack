@@ -62,7 +62,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         a record with a different TTL beforehand and then make sure that
         updates still work properly.
         """
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_update(self.my_domain.name),
             self.request_pdns_zone_axfr(self.my_domain.name),
         ):
@@ -78,7 +78,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
 
     def test_ddclient_dyndns1_v4_success(self):
         # /nic/dyndns?action=edit&started=1&hostname=YES&host_id=foobar.dedyn.io&myip=10.1.2.3
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_update(self.my_domain.name),
             self.request_pdns_zone_axfr(self.my_domain.name),
         ):

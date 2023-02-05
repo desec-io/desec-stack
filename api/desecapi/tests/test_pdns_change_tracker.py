@@ -24,7 +24,7 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         )
 
     def assertPdnsZoneUpdate(self, name, rr_sets):
-        return self.assertPdnsRequests(
+        return self.assertRequests(
             [
                 self.request_pdns_zone_update_assert_body(name, rr_sets),
                 self.request_pdns_zone_axfr(name),
@@ -579,7 +579,7 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
 
     def test_create(self):
         name = self.random_domain_name()
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             [
                 self.request_pdns_zone_create("LORD"),
                 self.request_pdns_zone_create("MASTER"),
@@ -604,13 +604,13 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
 
     def test_delete_single(self):
         for domain in self.domains:
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_domain_deletion(domain)
             ), PDNSChangeTracker():
                 domain.delete()
 
     def test_delete_multiple(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             [
                 self.requests_desec_domain_deletion(domain)
                 for domain in reversed(self.domains)

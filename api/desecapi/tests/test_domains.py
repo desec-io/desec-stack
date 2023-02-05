@@ -218,7 +218,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             "hyphen-.example.com",
             "max.length.x01234567890123456789012345678901234567890123456789012345678901.com",
         ]:
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_domain_creation(
                     name=name, keys=False
                 )  # no serializer, no cryptokeys API call
@@ -270,9 +270,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
     def test_delete_my_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
 
-        with self.assertPdnsRequests(
-            self.requests_desec_domain_deletion(self.my_domain)
-        ):
+        with self.assertRequests(self.requests_desec_domain_deletion(self.my_domain)):
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
             self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
@@ -288,7 +286,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_retrieve_my_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)
         ):
             response = self.client.get(url)
@@ -302,7 +300,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_zonefile_my_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name) + "zonefile/"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_retrieve_zone_export(name=self.my_domain.name)
         ):
             response = self.client.get(url)
@@ -322,7 +320,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
 
     def test_update_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_retrieve_crypto_keys(name=self.my_domain.name)
         ):
             response = self.client.get(url)
@@ -341,7 +339,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.random_domain_name(),
             "xn--90aeeb7afyklt.xn--p1ai",
         ]:
-            with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+            with self.assertRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(
                     self.reverse("v1:domain-list"), {"name": name}
                 )
@@ -362,9 +360,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 self.assertEqual(len(mail.outbox), 0)
                 self.assertTrue(isinstance(response.data["keys"], list))
 
-            with self.assertPdnsRequests(
-                self.request_pdns_zone_retrieve_crypto_keys(name)
-            ):
+            with self.assertRequests(self.request_pdns_zone_retrieve_crypto_keys(name)):
                 self.assertStatus(
                     self.client.get(
                         self.reverse("v1:domain-detail", name=name), {"name": name}
@@ -411,7 +407,7 @@ localhost.import-me.example A 127.0.0.1
 # show zone import-me.example
 """
         name = "import-me.example"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -528,7 +524,7 @@ import-me.example A 127.0.0.1
 inject.{self.other_domain.name}. CNAME a.example.
 """
         name = "import-me.example"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -549,7 +545,7 @@ import-me.example A 127.0.0.2
 import-me.example MX 10 example.com.
 """
         name = "import-me.example"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -572,7 +568,7 @@ example.net. 3600 MX 10 mail.example.org.
 example.net. 3600 PTR mail.example.net.
 example.net. 3600 PTR mail.example.org."""
         name = "example.net"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -600,7 +596,7 @@ $TTL 43200 ; 12 hours
 import-me.example AAAA 0000::1
 """
         name = "import-me.example"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -664,7 +660,7 @@ import-me.example A 127.0.0.1
 import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6ZrLLLm6ZpvCh/vyqWCEkf2Krwkt8 Fi1/VJgfLMoXZSj6koOzJBMYYCiMm0JP WgQwG54fcw6YJQaOfWX1BA==
 """
         name = "import-me.example"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, axfr=False, keys=False)
             + self.requests_desec_rr_sets_update(name)
             + [self.request_pdns_zone_retrieve_crypto_keys(name)]
@@ -681,7 +677,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
 
     def test_create_domain_zonefile_empty(self):
         name = "import-me.example"
-        with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+        with self.assertRequests(self.requests_desec_domain_creation(name)):
             response = self.client.post(
                 self.reverse("v1:domain-list"), {"name": name, "zonefile": ""}
             )
@@ -694,7 +690,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
             self.random_domain_name(),
             "www." + self.my_domain.name,
         ]:
-            with self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+            with self.assertRequests(self.requests_desec_domain_creation(name)):
                 response = self.client.post(url, {"name": name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
             response = self.client.post(url, {"name": name})
@@ -720,7 +716,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
 
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = "amazonaws.com"
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation(name, keys=False)
         ), PDNSChangeTracker():
             Domain(owner=self.create_user(), name=name).save()
@@ -736,7 +732,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         # registered even if the parent zone amazonaws.com is owned by another user
         name = "test.s3.amazonaws.com"
         psl_cm = self.get_psl_context_manager("s3.amazonaws.com")
-        with psl_cm, self.assertPdnsRequests(self.requests_desec_domain_creation(name)):
+        with psl_cm, self.assertRequests(self.requests_desec_domain_creation(name)):
             response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
             self.assertStatus(response, status.HTTP_201_CREATED)
 
@@ -762,7 +758,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
 
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
-        with self.assertPdnsRequests(self.request_pdns_zone_create_422()):
+        with self.assertRequests(self.request_pdns_zone_create_422()):
             with self.assertRaises(ValueError):
                 self.client.post(self.reverse("v1:domain-list"), {"name": name})
             self.assertFalse(Domain.objects.filter(name=name).exists())
@@ -776,9 +772,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
             )
 
         for name in [n.encode("idna").decode("ascii") for n in names]:
-            with self.assertPdnsRequests(
-                self.requests_desec_domain_creation(name=name)
-            ):
+            with self.assertRequests(self.requests_desec_domain_creation(name=name)):
                 self.assertStatus(
                     self.client.post(self.reverse("v1:domain-list"), {"name": name}),
                     status.HTTP_201_CREATED,
@@ -807,7 +801,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
     def test_domain_minimum_ttl(self):
         url = self.reverse("v1:domain-list")
         name = self.random_domain_name()
-        with self.assertPdnsRequests(self.requests_desec_domain_creation(name=name)):
+        with self.assertRequests(self.requests_desec_domain_creation(name=name)):
             response = self.client.post(url, {"name": name})
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(response.data["minimum_ttl"], settings.MINIMUM_TTL_DEFAULT)
@@ -818,7 +812,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
     def test_delete_my_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_deletion(domain=self.my_domain)
         ):
             response = self.client.delete(url)
@@ -829,7 +823,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
     def test_delete_other_domains(self):
         url = self.reverse("v1:domain-detail", name=self.other_domain.name)
-        with self.assertPdnsRequests():
+        with self.assertRequests():
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
             self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
@@ -837,7 +831,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
     def test_create_auto_delegated_domains(self):
         for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
             name = self.random_domain_name(suffix)
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name=name)
             ):
                 response = self.client.post(
@@ -856,7 +850,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
         for i in range(user_quota):
             name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name)
             ):
                 response = self.client.post(url, {"name": name})
@@ -873,7 +867,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
     def test_domain_minimum_ttl(self):
         url = self.reverse("v1:domain-list")
         name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_domain_creation_auto_delegation(name)
         ):
             response = self.client.post(url, {"name": name})

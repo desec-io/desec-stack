@@ -35,7 +35,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         management.call_command("stop-abuse")
 
     def test_remove_rrsets_by_domain_name(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_domain.name)
         ):
             management.call_command("stop-abuse", self.my_domain)
@@ -55,7 +55,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertFalse(block_exists("127.0.0.1"))
 
     def test_remove_rrsets_by_email(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             *[self.requests_desec_rr_sets_update(name=d.name) for d in self.my_domains],
             expect_order=False,
         ):
@@ -77,7 +77,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertFalse(block_exists("127.0.0.1"))
 
     def test_disable_user_by_domain_name(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_domain.name)
         ):
             management.call_command("stop-abuse", self.my_domain)
@@ -85,7 +85,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertEqual(self.owner.is_active, False)
 
     def test_disable_user_by_email(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             *[self.requests_desec_rr_sets_update(name=d.name) for d in self.my_domains],
             expect_order=False,
         ):
@@ -94,7 +94,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertEqual(self.owner.is_active, False)
 
     def test_keep_other_owned_domains_name(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_domain.name)
         ):
             management.call_command("stop-abuse", self.my_domain)
@@ -103,7 +103,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         )
 
     def test_dont_keep_other_owned_domains_email(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             *[self.requests_desec_rr_sets_update(name=d.name) for d in self.my_domains],
             expect_order=False,
         ):
@@ -113,7 +113,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         )
 
     def test_only_disable_owner(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_domains[0].name),
             self.requests_desec_rr_sets_update(name=self.my_domains[1].name),
             expect_order=False,
@@ -125,7 +125,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertEqual(self.other_domain.owner.is_active, True)
 
     def test_disable_owners_by_domain_name(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_domain.name),
             self.requests_desec_rr_sets_update(name=self.other_domain.name),
             expect_order=False,
@@ -137,7 +137,7 @@ class StopAbuseCommandTest(DomainOwnerTestCase):
         self.assertEqual(self.other_domain.owner.is_active, False)
 
     def test_disable_owners_by_email(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             *[
                 self.requests_desec_rr_sets_update(name=d.name)
                 for d in self.my_domains + self.other_domains

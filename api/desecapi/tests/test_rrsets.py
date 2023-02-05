@@ -199,7 +199,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 if data["subname"] is None:
                     data.pop("subname")
 
-                with self.assertPdnsRequests(
+                with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
                 ):
                     response = self.client.post_rr_set(
@@ -399,7 +399,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_create_my_rr_sets_chunk_too_long(self):
         for l, t in product([1, 255, 256, 498], ["TXT", "SPF"]):
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(self.my_empty_domain.name)
             ):
                 response = self.client.post_rr_set(
@@ -407,7 +407,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     **self._create_test_txt_record(f'"{"A" * l}"', t),
                 )
                 self.assertStatus(response, status.HTTP_201_CREATED)
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(self.my_empty_domain.name)
             ):
                 self.client.delete_rr_set(
@@ -447,7 +447,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 str(response.data),
             )
 
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             response = self.client.post_rr_set(
@@ -475,7 +475,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_create_my_rr_sets_twice(self):
         data = {"records": ["1.2.3.4"], "ttl": 3660, "type": "A"}
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(self.my_empty_domain.name)
         ):
             response = self.client.post_rr_set(self.my_empty_domain.name, **data)
@@ -782,7 +782,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 continue
             subname = "" if t == "DNSKEY" else "test"
             data = {"records": [record], "ttl": 3660, "type": t, "subname": subname}
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
             ):
                 response = self.client.post_rr_set(self.my_empty_domain.name, **data)
@@ -793,7 +793,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     f"For RR set type {t}, expected '{canonical_record}' to be the canonical form of "
                     f'\'{record}\', but saw \'{response.data["records"][0]}\'.',
                 )
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
             ):
                 response = self.client.delete_rr_set(
@@ -925,14 +925,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             subname = "" if t == "DNSKEY" else "test"
             for r in records:
                 data = {"records": [r], "ttl": 3660, "type": t, "subname": subname}
-                with self.assertPdnsRequests(
+                with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
                 ):
                     response = self.client.post_rr_set(
                         self.my_empty_domain.name, **data
                     )
                     self.assertStatus(response, status.HTTP_201_CREATED)
-                with self.assertPdnsRequests(
+                with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
                 ):
                     response = self.client.delete_rr_set(
@@ -1090,7 +1090,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_create_my_rr_sets_no_ip_block_unless_lps(self):
         # IP block should not be effective unless domain is under Local Public Suffix
         BlockedSubnet.from_ip("3.2.2.3").save()
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.post_rr_set(
@@ -1111,7 +1111,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     "type": t,
                     "subname": f"x{l}",
                 }
-                with self.assertPdnsRequests(
+                with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
                 ):
                     response = self.client.post_rr_set(
@@ -1156,7 +1156,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertEqual(response.data["ttl"][0], detail)
 
         ttl += 1
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.post_rr_set(
@@ -1173,7 +1173,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         detail = f"Ensure this value is less than or equal to {max_ttl}."
         self.assertEqual(response.data["ttl"][0], detail)
 
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
         ):
             response = self.client.post_rr_set(
@@ -1200,7 +1200,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_update_my_rr_sets(self):
         for subname in self.SUBNAMES:
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)
             ):
                 data = {
@@ -1264,7 +1264,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 {"records": ["3.2.3.4", "9.8.8.7"]},
                 {"ttl": 3637},
             ]:
-                with self.assertPdnsRequests(
+                with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)
                 ):
                     response = self.client.patch_rr_set(
@@ -1367,7 +1367,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
         # This is expected to work, but the fields are ignored
         data = {"records": ["3.2.3.4"], "name": "example.com.", "domain": "example.com"}
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)
         ):
             response = self.client.patch(url, data)
@@ -1399,7 +1399,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
     def test_delete_my_rr_sets_with_patch(self):
         data = {"records": []}
         for subname in self.SUBNAMES:
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)
             ):
                 response = self.client.patch_rr_set(
@@ -1419,7 +1419,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_delete_my_rr_sets_with_delete(self):
         for subname in self.SUBNAMES:
-            with self.assertPdnsRequests(
+            with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_rr_set_domain.name)
             ):
                 response = self.client.delete_rr_set(
@@ -1463,7 +1463,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
 
     def test_import_rr_sets(self):
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_retrieve(name=self.my_domain.name)
         ):
             call_command("sync-from-pdns", self.my_domain.name)
@@ -1502,7 +1502,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         )
 
         url = self.reverse("v1:domain-detail", name=domain.name)
-        with self.assertPdnsRequests(
+        with self.assertRequests(
             self.request_pdns_zone_retrieve_crypto_keys(name=domain.name)
         ):
             response = self.client.get(url)
