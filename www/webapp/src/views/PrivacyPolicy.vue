@@ -94,7 +94,7 @@
 
 <script>
   export default {
-    name: 'Impressum',
+    name: 'PrivacyPolicy',
     data: () => ({
       email: process.env.VUE_APP_EMAIL,
       privacy_policy: [
