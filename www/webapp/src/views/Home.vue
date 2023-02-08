@@ -80,7 +80,7 @@
       <v-row align="center" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <v-img :src="require('../assets/non-free/sse.logo.png')" alt="SSE Logo" class="mr-6" contain style="max-width: 160px; width: 100%"></v-img>
+            <img :src="require('../assets/non-free/sse.logo.png')" alt="SSE Logo" class="mr-6" contain style="max-width: 160px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
@@ -92,7 +92,7 @@
       <v-row align="center" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <v-img :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="SSE Logo" class="mr-6" contain style="max-width: 300px; width: 100%"></v-img>
+            <img :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="SSE Logo" class="mr-6" contain style="max-width: 300px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
@@ -112,8 +112,8 @@
       </v-row>
       <v-row justify="center">
         <v-col class="py-4 text-center">
-          <a href="https://nextcloud.com/"><v-img :src="require('../assets/non-free/nextcloud-logo-inverted.svg')" alt="Nextcloud Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"></v-img></a>
-          <a href="https://www.hanssonit.se/"><v-img :src="require('../assets/non-free/hanssonit.logo.png')" alt="Hansson IT Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"></v-img></a>
+          <a href="https://nextcloud.com/"><img :src="require('../assets/non-free/nextcloud-logo-inverted.svg')" alt="Nextcloud Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"/></a>
+          <a href="https://www.hanssonit.se/"><img :src="require('../assets/non-free/hanssonit.logo.png')" alt="Hansson IT Logo" class="mx-6 my-2" contain style="display: inline-block; max-height: 113px; max-width: 160px; width: 100%"/></a>
         </v-col>
       </v-row>
     </v-container>
@@ -144,7 +144,7 @@
           <v-img
             :src="require('../assets/anycast.worldmap.svg')" alt="World Map of Anycast POPs" contain
             class="justify-center"
-            style="display: block;"
+            style="display: block; width: 100%; aspect-ratio: 2/1"
           >
             <v-tooltip bottom v-for="f in frontends" :key="f.host">
               <template #activator="{ on }">
