@@ -7,17 +7,7 @@ from django.utils import timezone
 
 from desecapi import metrics, pch
 from desecapi.models import RRset, RR, Domain
-from desecapi.pdns import (
-    _pdns_post,
-    NSLORD,
-    NSMASTER,
-    _pdns_delete,
-    _pdns_patch,
-    _pdns_put,
-    pdns_id,
-    construct_catalog_rrset,
-)
-
+from desecapi import pdns
 
 class PDNSChangeTracker:
     """
@@ -67,7 +57,7 @@ class PDNSChangeTracker:
 
         @property
         def domain_pdns_id(self):
-            return pdns_id(self._domain_name)
+            return pdns.pdns_id(self._domain_name)
 
         @property
         def axfr_required(self):
@@ -83,12 +73,12 @@ class PDNSChangeTracker:
             raise NotImplementedError()
 
         def update_catalog(self, delete=False):
-            content = _pdns_patch(
-                NSMASTER,
-                "/zones/" + pdns_id(settings.CATALOG_ZONE),
+            content = pdns._pdns_patch(
+                pdns.NSMASTER,
+                "/zones/" + pdns.pdns_id(settings.CATALOG_ZONE),
                 {
                     "rrsets": [
-                        construct_catalog_rrset(zone=self.domain_name, delete=delete)
+                        pdns.construct_catalog_rrset(zone=self.domain_name, delete=delete)
                     ]
                 },
             )
@@ -101,8 +91,8 @@ class PDNSChangeTracker:
             return True
 
         def pdns_do(self):
-            _pdns_post(
-                NSLORD,
+            pdns._pdns_post(
+                pdns.NSLORD,
                 "/zones?rrsets=false",
                 {
                     "name": self.domain_name_normalized,
@@ -131,8 +121,8 @@ class PDNSChangeTracker:
                 },
             )
 
-            _pdns_post(
-                NSMASTER,
+            pdns._pdns_post(
+                pdns.NSMASTER,
                 "/zones?rrsets=false",
                 {
                     "name": self.domain_name_normalized,
@@ -168,8 +158,8 @@ class PDNSChangeTracker:
             return False
 
         def pdns_do(self):
-            _pdns_delete(NSLORD, "/zones/" + self.domain_pdns_id)
-            _pdns_delete(NSMASTER, "/zones/" + self.domain_pdns_id)
+            pdns._pdns_delete(pdns.NSLORD, "/zones/" + self.domain_pdns_id)
+            pdns._pdns_delete(pdns.NSMASTER, "/zones/" + self.domain_pdns_id)
             self.update_catalog(delete=True)
 
         def api_do(self):
@@ -227,7 +217,7 @@ class PDNSChangeTracker:
             }
 
             if data["rrsets"]:
-                _pdns_patch(NSLORD, "/zones/" + self.domain_pdns_id, data)
+                pdns._pdns_patch(pdns.NSLORD, "/zones/" + self.domain_pdns_id, data)
 
         def api_do(self):
             pass
@@ -330,7 +320,7 @@ class PDNSChangeTracker:
         self.transaction.__exit__(None, None, None)
 
         for name in axfr_required:
-            _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(name))
+            pdns._pdns_put(pdns.NSMASTER, "/zones/%s/axfr-retrieve" % pdns.pdns_id(name))
         Domain.objects.filter(name__in=axfr_required).update(published=timezone.now())
 
     def _compute_changes(self):
