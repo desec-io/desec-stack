@@ -1,5 +1,6 @@
 import json
 import re
+import socket
 from hashlib import sha1
 
 import requests
@@ -189,6 +190,86 @@ def get_rrset_datas(domain):
         }
         for rrset in get_zone(domain)["rrsets"]
     ]
+
+
+def update_catalog(zone, delete=False):
+    """
+    Updates the catalog zone information (`settings.CATALOG_ZONE`) for the given zone.
+    """
+    content = _pdns_patch(
+        NSMASTER,
+        "/zones/" + pdns_id(settings.CATALOG_ZONE),
+        {"rrsets": [construct_catalog_rrset(zone=zone, delete=delete)]},
+    )
+    metrics.get("desecapi_pdns_catalog_updated").inc()
+    return content
+
+
+def create_zone_lord(name):
+    name = name.rstrip(".") + "."
+    _pdns_post(
+        NSLORD,
+        "/zones?rrsets=false",
+        {
+            "name": name,
+            "kind": "MASTER",
+            "dnssec": True,
+            "nsec3param": "1 0 0 -",
+            "nameservers": settings.DEFAULT_NS,
+            "rrsets": [
+                {
+                    "name": name,
+                    "type": "SOA",
+                    # SOA RRset TTL: 300 (used as TTL for negative replies including NSEC3 records)
+                    "ttl": 300,
+                    "records": [
+                        {
+                            # SOA refresh: 1 day (only needed for nslord --> nsmaster replication after RRSIG rotation)
+                            # SOA retry = 1h
+                            # SOA expire: 4 weeks (all signatures will have expired anyways)
+                            # SOA minimum: 3600 (for CDS, CDNSKEY, DNSKEY, NSEC3PARAM)
+                            "content": "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600",
+                            "disabled": False,
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+
+
+def create_zone_master(name):
+    name = name.rstrip(".") + "."
+    _pdns_post(
+        NSMASTER,
+        "/zones?rrsets=false",
+        {
+            "name": name,
+            "kind": "SLAVE",
+            "masters": [socket.gethostbyname("nslord")],
+            "master_tsig_key_ids": ["default"],
+        },
+    )
+
+
+def delete_zone(name, server):
+    _pdns_delete(server, "/zones/" + pdns_id(name))
+
+
+def delete_zone_lord(name):
+    _pdns_delete(NSLORD, "/zones/" + pdns_id(name))
+
+
+def delete_zone_master(name):
+    _pdns_delete(NSMASTER, "/zones/" + pdns_id(name))
+
+
+def update_zone(name, data):
+    _pdns_patch(NSLORD, "/zones/" + pdns_id(name), data)
+
+
+def axfr_to_master(zone):
+    _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
 
 
 def construct_catalog_rrset(
