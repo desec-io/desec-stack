@@ -82,6 +82,8 @@ _config = {
     },
 }
 
+_nslord_ip = socket.gethostbyname("nslord")
+
 
 def _pdns_request(
     method, *, server, path, data=None, accept="application/json", **kwargs
@@ -246,7 +248,7 @@ def create_zone_master(name):
         {
             "name": name,
             "kind": "SLAVE",
-            "masters": [socket.gethostbyname("nslord")],
+            "masters": [_nslord_ip],
             "master_tsig_key_ids": ["default"],
         },
     )
