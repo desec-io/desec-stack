@@ -114,9 +114,6 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                     "code": "domain-unspecified",
                 }
             )
-        except Domain.DoesNotExist:
-            metrics.get("desecapi_dynDNS12_domain_not_found").inc()
-            raise NotFound("nohost")
 
     @cached_property
     def domain(self):
@@ -124,7 +121,8 @@ class DynDNS12UpdateView(generics.GenericAPIView):
             return Domain.objects.filter_qname(
                 self.qname, owner=self.request.user
             ).order_by("-name_length")[0]
-        except (IndexError, ValueError):
+        except (IndexError, ValueError, Domain.DoesNotExist):
+            metrics.get("desecapi_dynDNS12_domain_not_found").inc()
             raise NotFound("nohost")
 
     @property
