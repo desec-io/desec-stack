@@ -68,18 +68,18 @@ class DynDNS12UpdateView(generics.GenericAPIView):
 
     @cached_property
     def qname(self):
-        # hostname parameter
-        try:
-            if self.request.query_params["hostname"] != "YES":
-                return self.request.query_params["hostname"].lower()
-        except KeyError:
-            pass
-
-        # host_id parameter
-        try:
-            return self.request.query_params["host_id"].lower()
-        except KeyError:
-            pass
+        # hostname / host_id
+        for param, reserved in {
+            "hostname": ["", "YES"],
+            "host_id": [],
+        }.items():
+            try:
+                domain_name = self.request.query_params[param]
+            except KeyError:
+                pass
+            else:
+                if domain_name not in reserved:
+                    return domain_name.lower()
 
         # http basic auth username
         try:

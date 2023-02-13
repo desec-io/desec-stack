@@ -298,6 +298,16 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(domain.rrset_set.get(subname="", type="A").ttl, 60)
 
+    def test_empty_hostname(self):
+        # Test that dynDNS updates work when &hostname= is given with username in basic auth
+        self.client.set_credentials_basic_auth(
+            self.my_domain.name.lower(), self.token.plain
+        )
+        response = self.assertDynDNS12Update(self.my_domain.name, hostname="")
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv4="127.0.0.1")
+
     def test_identification_by_token(self):
         """
         Test if the conflict of having multiple domains, but not specifying which to update is correctly recognized.
