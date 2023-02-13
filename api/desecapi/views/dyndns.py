@@ -93,10 +93,11 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 .decode()
                 .split(":")[0]
             )
-            if domain_name and "@" not in domain_name:
-                return domain_name.lower()
         except (binascii.Error, IndexError, UnicodeDecodeError):
             pass
+        else:
+            if domain_name and "@" not in domain_name:
+                return domain_name.lower()
 
         # username parameter
         try:
