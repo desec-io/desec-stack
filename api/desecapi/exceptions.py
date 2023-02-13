@@ -8,7 +8,7 @@ class RequestEntityTooLarge(APIException):
     default_code = "too_large"
 
 
-class PDNSException(APIException):
+class ExternalAPIException(APIException):
     def __init__(self, response=None):
         self.response = response
         detail = (
@@ -17,6 +17,14 @@ class PDNSException(APIException):
             else None
         )
         return super().__init__(detail)
+
+
+class PDNSException(ExternalAPIException):
+    pass
+
+
+class PCHException(ExternalAPIException):
+    pass
 
 
 class ConcurrencyException(APIException):

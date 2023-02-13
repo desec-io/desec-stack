@@ -580,12 +580,7 @@ class DomainTestCase(PdnsChangeTrackerTestCase):
     def test_create(self):
         name = self.random_domain_name()
         with self.assertRequests(
-            [
-                self.request_pdns_zone_create("LORD"),
-                self.request_pdns_zone_create("MASTER"),
-                self.request_pdns_update_catalog(),
-                self.request_pdns_zone_axfr(name),
-            ]
+            self.requests_desec_domain_creation(keys=False)
         ), PDNSChangeTracker():
             Domain.objects.create(name=name, owner=self.user)
 

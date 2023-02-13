@@ -5,7 +5,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
 
-from desecapi import metrics
+from desecapi import metrics, pch
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns import (
     _pdns_post,
@@ -77,6 +77,9 @@ class PDNSChangeTracker:
             raise NotImplementedError()
 
         def api_do(self):
+            raise NotImplementedError()
+
+        def pch_do(self):
             raise NotImplementedError()
 
         def update_catalog(self, delete=False):
@@ -153,6 +156,9 @@ class PDNSChangeTracker:
             rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
+        def pch_do(self):
+            pch.create_domains([self.domain_name])
+
         def __str__(self):
             return "Create Domain %s" % self.domain_name
 
@@ -168,6 +174,9 @@ class PDNSChangeTracker:
 
         def api_do(self):
             pass
+
+        def pch_do(self):
+            pch.delete_domains([self.domain_name])
 
         def __str__(self):
             return "Delete Domain %s" % self.domain_name
@@ -221,6 +230,9 @@ class PDNSChangeTracker:
                 _pdns_patch(NSLORD, "/zones/" + self.domain_pdns_id, data)
 
         def api_do(self):
+            pass
+
+        def pch_do(self):
             pass
 
         def __str__(self):
@@ -304,6 +316,8 @@ class PDNSChangeTracker:
             try:
                 change.pdns_do()
                 change.api_do()
+                if settings.PCH_API and not settings.DEBUG:
+                    change.pch_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
             except Exception as e:
