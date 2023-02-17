@@ -272,7 +272,7 @@ can use the :ref:`log-out` endpoint to delete it.
 Token Scoping: Domain Policies
 ``````````````````````````````
 Tokens by default can be used to authorize arbitrary actions within the user's
-account, including some administrative tasks and DNS operations on any domain.
+account, including DNS operations on any domain and some administrative tasks.
 As such, tokens are considered *privileged* when no further configuration is
 done.
 (This applies to v1 of the API and may change in a later version.)
@@ -290,15 +290,15 @@ Policies can be configured on a per-domain basis.
 Domains for which no explicit policy is configured are subject to the token's
 default policy.
 It is required to create such a default policy before any domain-specific
-policies can be created.
+policies can be created on a given token.
 
 Tokens with at least one policy are considered *restricted*, with their scope
 explicitly limited to DNS record management.
-They can perform neither :ref:`retrieve-account-information` nor
+They can neither :ref:`retrieve-account-information` nor perform
 :ref:`domain-management` (such as domain creation or deletion).
 
-**Please note:**  Token policies are *independent* of high-level token
-permissions that can be assigned when `Creating a Token`_.
+**Note:**  Token policies are *independent* of high-level token permissions
+that can be assigned when `Creating a Token`_.
 In particular, a restricted token that at the same time has the
 ``perm_manage_tokens`` permission is able to free itself from its
 restrictions (see `Token Field Reference`_).
@@ -411,9 +411,9 @@ Exclusion of certain letters minimizes visual ambiguity, while the restriction
 to alphanumeric symbols allows easy selection (double-click) and input, and
 helps avoid line breaks during display.
 
-Before December 2022, tokens encoded at 21-byte secret using 28 characters in
-a URL-safe variant of base64 encoding, comprising only of the characters
-``A-Z``, ``a-z``, ``0-9``, ``-``, and ``_``.
+Before December 2022, tokens encoded a 21-byte secret using a URL-safe variant
+of base64 encoding, comprising of the 28 characters ``A-Z``, ``a-z``, ``0-9``,
+``-``, and ``_``.
 (Base64 padding was not needed as the string length is a multiple of 4.)
 
 Before September 2018, tokens encoded a 20-byte secret using 40 hexadecimal
