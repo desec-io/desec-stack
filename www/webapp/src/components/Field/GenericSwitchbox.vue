@@ -1,5 +1,5 @@
 <template>
-  <v-checkbox
+  <v-switch
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
@@ -12,7 +12,7 @@
 
 <script>
 export default {
-  name: 'Checkbox',
+  name: 'GenericSwitchbox',
   props: {
     disabled: {
       type: Boolean,

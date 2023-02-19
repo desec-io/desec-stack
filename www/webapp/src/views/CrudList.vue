@@ -343,12 +343,12 @@
 import { HTTP, withWorking, digestError } from '@/utils';
 import RRSetType from '@/components/Field/RRSetType';
 import TimeAgo from '@/components/Field/TimeAgo';
-import Checkbox from '@/components/Field/Checkbox';
+import GenericCheckbox from '@/components/Field/GenericCheckbox.vue';
 import GenericText from '@/components/Field/GenericText';
 import GenericTextarea from '@/components/Field/GenericTextarea';
-import Record from '@/components/Field/Record';
+import RecordItem from '@/components/Field/RecordItem.vue';
 import RecordList from '@/components/Field/RecordList';
-import Switchbox from '@/components/Field/Switchbox';
+import GenericSwitchbox from '@/components/Field/GenericSwitchbox.vue';
 import TTL from '@/components/Field/TTL';
 import ErrorAlert from '@/components/ErrorAlert'
 import {useUserStore} from "@/store/user";
@@ -370,11 +370,11 @@ export default {
   components: {
     RRSetType,
     TimeAgo,
-    Switchbox,
-    Checkbox,
+    GenericSwitchbox,
+    GenericCheckbox,
     GenericText,
     GenericTextarea,
-    Record,
+    RecordItem,
     RecordList,
     TTL,
     ErrorAlert,

@@ -1,6 +1,6 @@
 <script>
 import { integer, between } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 const MAX8 = 255;
 const int8 = between(0, MAX8);
@@ -11,7 +11,7 @@ const tag = (value) => !value || tags.some(v => value == v);
 
 export default {
   name: 'RecordCAA',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     fields: [
       { label: 'Flags', validations: { integer, int8 } },

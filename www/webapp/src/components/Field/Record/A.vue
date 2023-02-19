@@ -1,10 +1,10 @@
 <script>
 import { ipAddress } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 export default {
   name: 'RecordA',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     errors: {
       ipAddress: 'This field must contain an IPv4 address.',

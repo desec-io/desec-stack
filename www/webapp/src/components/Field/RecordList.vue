@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import Record from './Record.vue';
+import RecordItem from './RecordItem.vue';
 import RecordA from './Record/A.vue';
 import RecordAAAA from './Record/AAAA.vue';
 import RecordCAA from './Record/CAA.vue';
@@ -54,7 +54,7 @@ import RecordSubnet from './Record/Subnet.vue';
 export default {
   name: 'RecordList',
   components: {
-    Record,
+    RecordItem,
     RecordA,
     RecordAAAA,
     RecordCAA,
@@ -143,7 +143,7 @@ export default {
   },
   methods: {
     getRecordComponentName(type) {
-      const genericComponentName = 'Record';
+      const genericComponentName = 'RecordItem';
       const specificComponentName = genericComponentName + type;
       if (this.types.includes(type) && specificComponentName in this.$options.components) {
         return specificComponentName;

@@ -1,6 +1,6 @@
 <script>
 import { helpers, integer, between } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 const base64 = helpers.regex('base64', /^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
 
@@ -14,7 +14,7 @@ const equals3 = (value) => !value || value == 3;
 
 export default {
   name: 'RecordDNSKEY',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     fields: [
       { label: 'Flags', validations: { integer, int16 } },

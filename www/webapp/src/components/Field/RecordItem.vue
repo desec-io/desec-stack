@@ -44,7 +44,7 @@
 import { requiredUnless } from 'vuelidate/lib/validators';
 
 export default {
-  name: 'Record',
+  name: 'RecordItem',
   components: {
   },
   props: {

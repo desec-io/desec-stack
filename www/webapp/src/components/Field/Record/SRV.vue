@@ -1,6 +1,6 @@
 <script>
 import { helpers, integer, between } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 // Allow for root label only, see RFC 2052
 const hostname = helpers.regex('hostname', /^((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))?[.]?$/);
@@ -11,7 +11,7 @@ const int16 = between(0, MAX16);
 
 export default {
   name: 'RecordSRV',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     fields: [
       { label: 'Priority', validations: { integer, int16 } },

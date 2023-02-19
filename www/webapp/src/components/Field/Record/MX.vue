@@ -1,6 +1,6 @@
 <script>
 import { helpers, integer, between } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 const hostname = helpers.regex('hostname', /^((([a-zA-Z0-9-]+\.?)+)|\.)$/);
 const trailingDot = helpers.regex('trailingDot', /[.]$/);
@@ -10,7 +10,7 @@ const int16 = between(0, MAX16);
 
 export default {
   name: 'RecordMX',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     fields: [
       {

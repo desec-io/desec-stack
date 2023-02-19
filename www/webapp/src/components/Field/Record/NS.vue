@@ -1,13 +1,13 @@
 <script>
 import { helpers } from 'vuelidate/lib/validators';
-import Record from '../Record.vue';
+import RecordItem from '../RecordItem.vue';
 
 const hostname = helpers.regex('hostname', /^((([a-zA-Z0-9-]+\.?)+)|\.)$/);
 const trailingDot = helpers.regex('trailingDot', /[.]$/);
 
 export default {
   name: 'RecordNS',
-  extends: Record,
+  extends: RecordItem,
   data: () => ({
     fields: [
       {
