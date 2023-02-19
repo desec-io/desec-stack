@@ -57,7 +57,7 @@ const routes = [
   {
     path: '/totp/',
     name: 'totp',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/TOTPList.vue'),
+    component: () => import(/* webpackChunkName: "account" */ '@/views/CrudListTOTP.vue'),
     meta: {guest: false},
   },
   {
@@ -122,19 +122,19 @@ const routes = [
   {
     path: '/tokens',
     name: 'tokens',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/TokenList.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListToken.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains',
     name: 'domains',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/DomainList.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListDomain.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains/:domain',
     name: 'domain',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/Domain/CrudDomain.vue'),
+    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListRecord.vue'),
     meta: {guest: false},
   },
 ]

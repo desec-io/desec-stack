@@ -4,7 +4,7 @@ import CrudList from './CrudList';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog';
 
 export default {
-  name: 'DomainList',
+  name: 'CrudListDomain',
   extends: CrudList,
   components: {
     DomainSetupDialog,

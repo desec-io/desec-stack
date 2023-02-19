@@ -3,7 +3,7 @@ import CrudList from '@/views/CrudList';
 import {HTTP, withWorking} from "@/utils"
 
 export default {
-  name: 'CrudDomain',
+  name: 'CrudListRecord',
   extends: CrudList,
   data: function () {
     const self = this;

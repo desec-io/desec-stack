@@ -3,7 +3,7 @@ import CrudList from './CrudList';
 import {useUserStore} from "@/store/user";
 
 export default {
-  name: 'CrudTokenList',
+  name: 'CrudListToken',
   extends: CrudList,
   data() {
     return {

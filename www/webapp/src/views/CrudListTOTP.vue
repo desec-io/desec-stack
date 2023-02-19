@@ -3,7 +3,7 @@ import CrudList from './CrudList';
 import TOTPVerifyDialog from '@/views/Console/TOTPVerifyDialog';
 
 export default {
-  name: 'TOTPList',
+  name: 'CrudListTOTP',
   extends: CrudList,
   components: {
     TOTPVerifyDialog,
