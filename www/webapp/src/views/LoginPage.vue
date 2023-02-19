@@ -92,7 +92,7 @@ import ErrorAlert from "@/components/ErrorAlert";
 import {useUserStore} from "@/store/user";
 
 export default {
-  name: 'Login',
+  name: 'LoginPage',
   components: {
     ErrorAlert,
   },

@@ -67,7 +67,7 @@
   });
 
   export default {
-    name: 'Confirmation',
+    name: 'ConfirmationPage',
     components: {
       GenericActionHandler,
       ActivateAccountActionHandler,

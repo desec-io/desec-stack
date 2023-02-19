@@ -190,7 +190,7 @@ import {email_pattern} from '@/validation';
 import {useUserStore} from "@/store/user";
 
 export default {
-  name: 'Home',
+  name: 'HomePage',
   components: {
   },
   methods: {

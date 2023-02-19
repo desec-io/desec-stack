@@ -198,7 +198,7 @@
 
 <script>
 export default {
-  name: 'About',
+  name: 'AboutPage',
   data: () => ({
     purposes: [
       {

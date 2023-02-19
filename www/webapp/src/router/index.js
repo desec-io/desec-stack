@@ -1,5 +1,5 @@
 import VueRouter from 'vue-router'
-import Home from '@/views/Home.vue'
+import HomePage from '@/views/HomePage.vue'
 import {HTTP} from '@/utils';
 import {useUserStore} from "@/store/user";
 
@@ -7,7 +7,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: Home
+    component: HomePage
   },
   {
     path: '/signup/:email?',
@@ -20,7 +20,7 @@ const routes = [
   {
     path: '/custom-setup/:domain',
     name: 'customSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/DomainSetupPage'),
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/DomainSetupPage.vue'),
     props: true,
   },
   {
@@ -32,7 +32,7 @@ const routes = [
   {
     path: '/welcome/:domain?',
     name: 'welcome',
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/Welcome.vue')
+    component: () => import(/* webpackChunkName: "signup" */ '@/views/WelcomePage.vue'),
   },
   {
     path: 'https://desec.readthedocs.io/',
@@ -47,7 +47,7 @@ const routes = [
   {
     path: '/confirm/:action/:code',
     name: 'confirmation',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/Confirmation.vue')
+    component: () => import(/* webpackChunkName: "account" */ '@/views/ConfirmationPage.vue'),
   },
   {
     path: '/reset-password/:email?',
@@ -87,7 +87,7 @@ const routes = [
   {
     path: '/donate/',
     name: 'donate',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/Donate.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/DonatePage.vue'),
   },
   {
     path: 'https://github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
@@ -97,7 +97,7 @@ const routes = [
   {
     path: '/impressum/',
     name: 'impressum',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/Impressum.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/ImpressumPage.vue'),
   },
   {
     path: '/privacy-policy/',
@@ -107,17 +107,17 @@ const routes = [
   {
     path: '/terms/',
     name: 'terms',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/Terms.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/TermsPage.vue'),
   },
   {
     path: '/about/',
     name: 'about',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/About.vue')
+    component: () => import(/* webpackChunkName: "extra" */ '@/views/AboutPage.vue'),
   },
   {
     path: '/login',
     name: 'login',
-    component: () => import(/* webpackChunkName: "login" */ '@/views/Login.vue')
+    component: () => import(/* webpackChunkName: "login" */ '@/views/LoginPage.vue'),
   },
   {
     path: '/tokens',

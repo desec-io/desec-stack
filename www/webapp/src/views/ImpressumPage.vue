@@ -21,7 +21,7 @@
 
 <script>
   export default {
-    name: 'Impressum',
+    name: 'ImpressumPage',
     data: () => ({
       email: process.env.VUE_APP_EMAIL,
     }),

@@ -182,7 +182,7 @@
   import QrcodeVue from "../modules/qrcode.vue";
 
   export default {
-    name: 'Donate',
+    name: 'DonatePage',
     components: {
       QrcodeVue,
       DonateDirectDebitForm,

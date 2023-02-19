@@ -61,7 +61,7 @@
 
 <script>
 export default {
-  name: 'Terms',
+  name: 'TermsPage',
   data: () => ({
     terms_of_use: [
       {
