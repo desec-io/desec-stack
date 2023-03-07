@@ -56,6 +56,7 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         return {
             **super().to_internal_value(data),
+            # TODO may raise Token.DoesNotExist
             "token": self.context["request"].user.token_set.get(
                 id=self.context["view"].kwargs["token_id"]
             ),

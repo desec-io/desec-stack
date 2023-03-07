@@ -31,7 +31,7 @@ SUPPORTED_RRSET_TYPES = {
     "HINFO",
     "HTTPS",
     "KEY",
-    "LOC",
+    "LOC",  # TODO track https://github.com/PowerDNS/pdns/issues/10558
     "MX",
     "NAPTR",
     "NS",
