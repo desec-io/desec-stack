@@ -42,10 +42,13 @@ class CERT(dns.rdtypes.ANY.CERT.CERT):
         certificate_type = str(
             self.certificate_type
         )  # upstream implementation calls _ctype_to_text
+        algorithm = str(
+            self.algorithm
+        )  # upstream implementation calls dns.dnssec.algorithm_to_text
         return "%s %d %s %s" % (
             certificate_type,
             self.key_tag,
-            dns.dnssec.algorithm_to_text(self.algorithm),
+            algorithm,
             dns.rdata._base64ify(self.certificate, **kw),
         )
 

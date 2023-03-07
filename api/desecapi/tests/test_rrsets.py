@@ -597,7 +597,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 ),
             ),
             ("CDS", ("0 0 0 00", "0 0 0 00")),
-            ("CERT", ("06 00 00 sadfdd==", "6 0 0 sadfdQ==")),
+            ("CERT", ("04 257 RSASHA256 sadfdd==", "4 257 8 sadfdQ==")),
             ("CNAME", ("EXAMPLE.COM.", "example.com.")),
             ("CSYNC", ("066 03  NS  AAAA A", "66 3 A NS AAAA")),
             ("DHCID", ("xxxx", "xxxx")),
@@ -823,7 +823,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '128 iodef "mailto:desec@example.com"',
                 '1 issue "letsencrypt.org"',
             ],
-            "CERT": ["06 0 0 sadfdd==", "IPGP 0 0 sadfdd=="],
+            "CERT": [
+                "06 0 0 sadfdd==",
+                "IPGP 0 0 sadfdd==",
+                "4 257 RSASHA256 sadfdd==",
+            ],
             "CDNSKEY": [
                 "256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+ 1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mx t6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLK l3D0L/cD",
                 "257 3 8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/ qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGr CHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll 96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPri ec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAst bxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6as lO7jXv16Gws=",
