@@ -1085,7 +1085,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertAllSupportedRRSetTypes(set(datas.keys()))
         for t, records in datas.items():
             for r in records:
-                data = {"records": [r], "ttl": 3660, "type": t, "subname": ""}
+                data = {"records": [r], "ttl": 3660, "type": t, "subname": "subname"}
                 response = self.client.post_rr_set(self.my_empty_domain.name, **data)
                 self.assertNotContains(
                     response, "Duplicate", status_code=status.HTTP_400_BAD_REQUEST
