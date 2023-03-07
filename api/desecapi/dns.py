@@ -7,7 +7,7 @@ import dns
 import dns.dnssec
 import dns.name
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
+import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
 import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
 
 
@@ -113,6 +113,11 @@ def _HostnameMixin(name_field, *, allow_root):
             return super().to_text(origin, relativize, **kw)
 
     return Mixin
+
+
+@dns.immutable.immutable
+class CNAME(_HostnameMixin("target", allow_root=True), dns.rdtypes.ANY.CNAME.CNAME):
+    pass
 
 
 @dns.immutable.immutable
