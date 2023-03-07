@@ -148,8 +148,8 @@
                 >
                   <template #label>
                     <v-flex>
-                      Yes, I agree to the <a @click.stop="open_route('terms')">Terms of Use</a> and
-                      <a @click.stop="open_route('privacy-policy')">Privacy Policy</a>.
+                      Yes, I agree to the <span @click.stop><router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link></span> and
+                      <span @click.stop><router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link></span>.
                     </v-flex>
                   </template>
                 </v-checkbox>
@@ -236,10 +236,6 @@
       this.domainType = this.$route.query.domainType || 'custom';
     },
     methods: {
-      async open_route(route) {
-        window.open(this.$router.resolve({name: route}).href);
-        this.terms = !this.terms; // silly but easy fix for "accidentally" checking the box by clicking the link
-      },
       async getCaptcha(focus = false) {
         this.captchaWorking = true;
         this.captchaSolution = "";
