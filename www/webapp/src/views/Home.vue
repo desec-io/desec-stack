@@ -356,6 +356,13 @@ export default {
       },
       {
         href: '#',
+        icon: 'mdi-two-factor-authentication',
+        title: 'Multi-Factor Auth (2FA)',
+        text: 'Accidentally shared your password with someone? Enable MFA to <b>keep your account safe</b>. We '
+              + 'currently support <b>TOTP tokens</b> (Authenticator app), with WebAuthn in the making.',
+      },
+      {
+        href: '#',
         icon: 'mdi-database-arrow-up',
         title: 'Scalability',
         text: 'Are you a web hoster? Start using deSEC, <b>even with thousands of domains</b>. Our global network '
