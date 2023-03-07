@@ -1,6 +1,7 @@
 import json
 import re
 import socket
+from functools import cache
 from hashlib import sha1
 
 import requests
@@ -82,7 +83,10 @@ _config = {
     },
 }
 
-_nslord_ip = socket.gethostbyname("nslord")
+
+@cache
+def gethostbyname_cached(host):
+    return socket.gethostbyname(host)
 
 
 def _pdns_request(
@@ -248,7 +252,7 @@ def create_zone_master(name):
         {
             "name": name,
             "kind": "SLAVE",
-            "masters": [_nslord_ip],
+            "masters": [gethostbyname_cached("nslord")],
             "master_tsig_key_ids": ["default"],
         },
     )
