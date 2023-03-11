@@ -16,7 +16,7 @@
           <v-card-text>
             <v-expansion-panels class="mb-4" focusable>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-bank-transfer-in</v-icon> Direct Debit – Let us Take your Money (Europe)
                   </v-layout>
@@ -30,7 +30,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-bank-transfer-out</v-icon> Bank Transfer – Send us Money (Europe)
                   </v-layout>
@@ -58,7 +58,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-credit-card-outline</v-icon> Credit Card
                   </v-layout>
@@ -76,7 +76,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-github</v-icon> GitHub Sponsors
                   </v-layout>
@@ -89,7 +89,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-gift-outline</v-icon> PayPal
                   </v-layout>
@@ -107,7 +107,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">
+                <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
                     <v-icon class="mr-2">mdi-heart-multiple-outline</v-icon> Double-up with Your Employer
                   </v-layout>
@@ -129,7 +129,7 @@
               <strong>Based in Europe?</strong> You almost certainly can donate via direct debit or bank transfer (you
               only need your IBAN). <strong>No fees</strong> will be subtracted, so you can do more good!
             </p>
-            <div class="title">Donation Receipts</div>
+            <div class="text-h6">Donation Receipts</div>
             <p>
               deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
               tax-deductible, and we're happy to provide you with a donation receipt for that purpose. Note that for

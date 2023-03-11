@@ -31,7 +31,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer/>
-            <v-btn outlined text depressed :to="{name: 'home'}">Home</v-btn>
+            <v-btn variant="outlined" variant="text" variant="flat" :to="{name: 'home'}">Home</v-btn>
           </v-card-actions>
         </v-card>
         </v-form>

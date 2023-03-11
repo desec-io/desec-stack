@@ -35,10 +35,10 @@
                                     v-model="email"
                                     label="Current Email"
                                     prepend-icon="mdi-blank"
-                                    outline
+                                    variant="outlined"
                                     required
                                     :disabled="true"
-                                    validate-on-blur
+                                    validate-on="blur"
                             />
                             <v-text-field
                                     v-model="password"
@@ -59,19 +59,19 @@
                                     v-model="new_email"
                                     label="New Email"
                                     prepend-icon="mdi-email"
-                                    outline
+                                    variant="outlined"
                                     required
                                     :disabled="working"
                                     :rules="[rules.required, rules.email]"
                                     :error-messages="email_errors"
                                     @change="email_errors=[]"
-                                    validate-on-blur
+                                    validate-on="blur"
                                     tabindex="2"
                             />
                         </v-card-text>
                         <v-card-actions class="justify-center">
                             <v-btn
-                                    depressed
+                                    variant="flat"
                                     color="primary"
                                     type="submit"
                                     :disabled="working"

@@ -3,15 +3,15 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :value="value"
+    :model-value="value"
     type="number"
     max="86400"
     :min="min"
     :placeholder="required ? '' : '(optional)'"
     :required="required"
     :rules="rules"
-    @input="changed('input', $event)"
-    @input.native="$emit('dirty', $event)"
+    @update:model-value="changed('input', $event)"
+    @update:model-value.native="$emit('dirty', $event)"
     @keyup="changed('keyup', $event)"
   />
 </template>

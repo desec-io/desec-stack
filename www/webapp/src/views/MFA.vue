@@ -8,7 +8,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title>
-          <div class="title">
+          <div class="text-h6">
             2FA Required
           </div>
           <v-spacer/>
@@ -28,7 +28,7 @@
                 <v-col cols="12" sm="6">
                   <v-select
                     :items="factors"
-                    item-text="name"
+                    item-title="name"
                     item-value="id"
                     v-model="id"
                     label="Token"
@@ -59,7 +59,7 @@
               <v-row dense align="center" class="justify-center">
                 <v-col cols="auto">
                   <v-btn
-                          depressed
+                          variant="flat"
                           color="primary"
                           type="submit"
                           :disabled="working || code.length != 6"

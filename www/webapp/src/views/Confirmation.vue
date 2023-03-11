@@ -34,13 +34,13 @@
                       @clearerrors="clearErrors"
               ></div>
             </v-form>
-            <h2 class="title">Keep deSEC Going</h2>
+            <h2 class="text-h6">Keep deSEC Going</h2>
             <p>
               To offer free DNS hosting for everyone, deSEC relies on donations only.
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn block variant="outlined" :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>

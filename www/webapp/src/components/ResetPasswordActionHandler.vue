@@ -15,7 +15,7 @@
                 tabindex="1"
         ></v-text-field>
         <v-btn
-                depressed
+                variant="flat"
                 color="primary"
                 type="submit"
                 :disabled="working || !valid"

@@ -3,10 +3,10 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :input-value="value"
+    :model-value="value"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @change="change"
+    @update:model-value="change"
   />
 </template>
 

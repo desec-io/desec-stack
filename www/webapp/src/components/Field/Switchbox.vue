@@ -6,7 +6,7 @@
     :input-value="value"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @change="change"
+    @update:model-value="change"
   />
 </template>
 

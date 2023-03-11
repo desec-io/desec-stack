@@ -57,9 +57,9 @@
                         id="create"
                         color="primary"
                         dark
-                        small
+                        size="small"
                         fab
-                        depressed
+                        variant="flat"
                         :disabled="user.working"
                 >
                   <v-icon>mdi-plus</v-icon>
@@ -84,7 +84,7 @@
                   <v-card>
                     <v-form v-model="valid" @submit.prevent="save()">
                       <v-card-title>
-                        <span class="headline">{{ headlines.create }}</span>
+                        <span class="text-h5">{{ headlines.create }}</span>
                         <v-spacer />
                         <v-icon @click.stop="close">
                           mdi-close
@@ -137,7 +137,7 @@
                               v-if="Object.keys(writeableAdvancedColumns).length > 0"
                           >
                             <v-expansion-panel>
-                              <v-expansion-panel-header class="primary lighten-5">
+                              <v-expansion-panel-header class="bg-primary-lighten-5">
                                 <span>Advanced settings</span>
                               </v-expansion-panel-header>
                               <v-expansion-panel-content>
@@ -166,7 +166,7 @@
                         <v-btn
                                 color="primary"
                                 class="grow"
-                                :outlined="!createDialogSuccess"
+                                :variant="!createDialogSuccess && 'outlined'"
                                 :disabled="createDialogWorking"
                                 @click.native="close"
                         >
@@ -176,7 +176,7 @@
                                 type="submit"
                                 color="primary"
                                 class="grow"
-                                depressed
+                                variant="flat"
                                 :disabled="createInhibited || !valid || createDialogWorking || createDialogSuccess"
                                 :loading="createDialogWorking"
                                 v-if="!createDialogSuccess"
@@ -215,7 +215,7 @@
                 <div :key="key" v-for="[key, action] in getActions(actions)">
                   <v-tooltip
                       :disabled="!action.tooltip"
-                      top
+                      location="top"
                       transition="fade-transition"
                   >
                     <template #activator="{ on, attrs }">
@@ -237,8 +237,8 @@
             </template>
             <template #no-data>
               <div v-if="!pagination_required">
-                <div class="py-4 text-xs-center">
-                  <h2 class="title">Feels so empty here!</h2>
+                <div class="py-4 text-center">
+                  <h2 class="text-h6">Feels so empty here!</h2>
                   <p>No entries yet.</p>
                 </div>
               </div>
@@ -251,7 +251,7 @@
                   type="warning"
               >
                 <div class="py-4">
-                  <h2 class="title">Too much data!</h2>
+                  <h2 class="text-h6">Too much data!</h2>
                   <p>
                     Wow! There are more than 500 entries here.<br>
                     Unfortunately, the web interface can't handle this.
@@ -275,7 +275,7 @@
             <v-card>
               <v-form @submit.prevent="destroy(destroyDialogItem)">
                 <v-card-title>
-                  <span class="headline">{{ headlines.destroy }}</span>
+                  <span class="text-h5">{{ headlines.destroy }}</span>
                 </v-card-title>
 
                 <v-divider />
@@ -308,7 +308,7 @@
                   <v-btn
                     color="primary"
                     class="grow"
-                    outlined
+                    variant="outlined"
                     :disabled="destroyDialogWorking"
                     @click.native="destroyClose"
                   >
@@ -317,7 +317,7 @@
                   <v-btn
                     color="primary"
                     class="grow"
-                    depressed
+                    variant="flat"
                     type="submit"
                     :loading="destroyDialogWorking"
                   >
