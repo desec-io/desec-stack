@@ -14,6 +14,7 @@ import "@fontsource/roboto/500.css" /* medium */
 import "@fontsource/roboto/700.css" /* bold */
 import '@mdi/font/css/materialdesignicons.css'
 
+import timeago from 'vue-timeago3'
 import { createPinia } from "pinia"
 
 import router from '@/router'
@@ -27,6 +28,7 @@ const pinia = createPinia()
 
 createApp(App)
 .use(vuetify)
+.use(timeago)
 .use(pinia)
 .use(router)
 .mount('#app')

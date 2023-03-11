@@ -17,7 +17,7 @@
     "pinia": "^2.0.30",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6",
-    "vue-timeago": "^5.1.3",
+    "vue-timeago3": "^2.3.0",
     "vuelidate": "^0.7.7",
     "vuetify": "^3.1.8",
     "webpack-plugin-vuetify": "^2.0.1"
