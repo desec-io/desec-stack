@@ -148,8 +148,8 @@
                 >
                   <template #label>
                     <v-flex>
-                      Yes, I agree to the <span @click.stop><router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link></span> and
-                      <span @click.stop><router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link></span>.
+                      Yes, I agree to the <router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link> and
+                      <router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link>.
                     </v-flex>
                   </template>
                 </v-checkbox>
