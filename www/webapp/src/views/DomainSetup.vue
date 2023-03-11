@@ -38,13 +38,7 @@
           <v-card flat v-if="ns.join('\n')">
             <pre class="pa-3">{{ ns.join('\n') }}</pre>
             <v-card-actions>
-              <v-btn
-                  v-clipboard:copy="ns.join('\n')"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
-                  variant="outlined"
-                  variant="text"
-              >
+              <v-btn @click="copy(ns.join('\n'))" variant="outlined" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>
@@ -87,13 +81,7 @@
             <v-card-text>{{ t.banner }}</v-card-text>
             <pre class="pa-3">{{ t.data }}</pre>
             <v-card-actions>
-              <v-btn
-                  v-clipboard:copy="t.data"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
-                  variant="outlined"
-                  variant="text"
-              >
+              <v-btn @click="copy(t.data)" variant="outlined" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>
@@ -187,11 +175,13 @@ export default {
     },
   },
   methods: {
-    copySuccess: function () {
-      this.showSnackbar("Copied to clipboard.");
-    },
-    copyError: function () {
-      this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+    copy: async function (text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.showSnackbar("Copied to clipboard.");
+      } catch (e) {
+        this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+      }
     },
     showSnackbar: function (text) {
       this.snackbar_text = text;
