@@ -59,10 +59,7 @@
             {{ item.text }}
           </v-tab>
           <v-spacer></v-spacer>
-          <v-menu
-                  location="bottom"
-                  location="left"
-          >
+          <v-menu location="bottom left">
             <template #activator="{ on }">
               <v-btn
                       variant="text"
