@@ -38,7 +38,7 @@
           <v-card flat v-if="ns.join('\n')">
             <pre class="pa-3">{{ ns.join('\n') }}</pre>
             <v-card-actions>
-              <v-btn @click="copy(ns.join('\n'))" variant="outlined" variant="text">
+              <v-btn @click="copy(ns.join('\n'))" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>
@@ -81,7 +81,7 @@
             <v-card-text>{{ t.banner }}</v-card-text>
             <pre class="pa-3">{{ t.data }}</pre>
             <v-card-actions>
-              <v-btn @click="copy(t.data)" variant="outlined" variant="text">
+              <v-btn @click="copy(t.data)" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>

@@ -47,7 +47,7 @@
       </div>
       <v-btn class="mx-4" color="primary" variant="flat" :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated">Create Account</v-btn>
       <v-btn class="mx-4 mr-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!user.authenticated">Log In</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" variant="flat" variant="outlined" @click="logout" v-if="user.authenticated">Log Out</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" variant="outlined" @click="logout" v-if="user.authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
       <template #extension v-if="user.authenticated">
         <v-tabs bg-color="primary darken-1" fixed-tabs>

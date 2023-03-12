@@ -87,12 +87,12 @@
                                     </audio>
                                     <br/>
                                     <v-btn-toggle>
-                                      <v-btn variant="text" variant="outlined" @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+                                      <v-btn variant="outlined" @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
                                     </v-btn-toggle>
                                     &nbsp;
                                     <v-btn-toggle v-model="captcha_kind">
-                                      <v-btn variant="text" variant="outlined" value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
-                                      <v-btn variant="text" variant="outlined" value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
+                                      <v-btn variant="outlined" value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
+                                      <v-btn variant="outlined" value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
                                     </v-btn-toggle>
                                   </v-col>
                                 </v-row>

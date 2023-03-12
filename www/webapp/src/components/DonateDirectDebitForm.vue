@@ -17,7 +17,7 @@
         may be the name appearing on your bank statement.
       </p>
       <p>Again, thank you so much.</p>
-      <v-btn variant="flat" variant="outlined" block :to="{name: 'home'}">Done</v-btn>
+      <v-btn variant="outlined" block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
     <v-form v-if="!done" @submit.prevent="donate" ref="form">
       <error-alert :errors="errors"></error-alert>

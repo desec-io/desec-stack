@@ -32,7 +32,6 @@
                     </v-radio-group>
                   </div>
                   <v-text-field
-                    variant="outlined"
                     variant="solo"
                     flat
                     v-model="email"
