@@ -181,5 +181,5 @@ Basic authentication with simultaneous update of IPv4 and IPv6::
   curl --user <your domain>:<your token secret> \
     "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
 
-  curl "https://update6.dedyn.io/?hostname=<your domain>?myipv4=1.2.3.4&myipv6=fd08::1234" \
+  curl "https://update6.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv6=fd08::1234" \
     --header "Authorization: Token <your token secret>"
