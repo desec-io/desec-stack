@@ -840,7 +840,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 "61655 13 4 C838A5C66FCBF83B8B6B50C3CEEC3524777FE4AF8A9FE0172ECAD242 48B0CA1A216DD0D538F20C130DD3059538204B04",
                 "6454 8 5 24396E17E36D031F71C354B06A979A67A01F503E",
             ],
-            "CNAME": ["example.com."],
+            "CNAME": ["example.com.", "*._under-score.-foo_bar.example.net.", "."],
             "CSYNC": ["0 0", "66 1 A", "66 2 AAAA", "66 3 A NS AAAA", "66 15 NSEC"],
             "DHCID": ["aaaaaaaaaaaa", "aa aaa  aaaa a a a"],
             "DLV": [

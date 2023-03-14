@@ -169,7 +169,7 @@ VALID_RECORDS_NON_CANONICAL = {
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
     'CERT': ['6 0 0 sadfdQ==', '06 00 00 sadfee==', 'IPGP 00 00 sadfee=='],
-    'CNAME': ['EXAMPLE.TEST.'],
+    'CNAME': ['EXAMPLE.TEST.', '*._under-score.-foo_bar.example.net.'],
     'CSYNC': ['066 03  NS  AAAA A'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
     'DLV': [

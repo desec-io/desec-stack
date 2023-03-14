@@ -98,16 +98,23 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
                 file.write(s)
 
 
-def _HostnameMixin(name_field, *, allow_root):
-    # Taken from https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L419
-    hostname_re = re.compile(r"^(([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)\.)+$")
+def _NameMixin(name_field, *, allow_root, hostname=True):
+    pattern = (
+        # https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L419
+        re.compile(r"^(([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)\.)+$")
+        if hostname
+        else
+        # https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L473
+        # with the exception of [/@ :\\]
+        re.compile(r"^(([A-Za-z0-9_*-]+)\.)+$")
+    )
 
     class Mixin:
         def to_text(self, origin=None, relativize=True, **kw):
             name = getattr(self, name_field)
             if (
                 not (allow_root and name == dns.name.root)
-                and hostname_re.match(str(name)) is None
+                and pattern.match(str(name)) is None
             ):
                 raise ValueError(f"invalid {name_field}: {name}")
             return super().to_text(origin, relativize, **kw)
@@ -116,20 +123,22 @@ def _HostnameMixin(name_field, *, allow_root):
 
 
 @dns.immutable.immutable
-class CNAME(_HostnameMixin("target", allow_root=True), dns.rdtypes.ANY.CNAME.CNAME):
+class CNAME(
+    _NameMixin("target", allow_root=True, hostname=False), dns.rdtypes.ANY.CNAME.CNAME
+):
     pass
 
 
 @dns.immutable.immutable
-class MX(_HostnameMixin("exchange", allow_root=True), dns.rdtypes.ANY.MX.MX):
+class MX(_NameMixin("exchange", allow_root=True), dns.rdtypes.ANY.MX.MX):
     pass
 
 
 @dns.immutable.immutable
-class NS(_HostnameMixin("target", allow_root=False), dns.rdtypes.ANY.NS.NS):
+class NS(_NameMixin("target", allow_root=False), dns.rdtypes.ANY.NS.NS):
     pass
 
 
 @dns.immutable.immutable
-class SRV(_HostnameMixin("target", allow_root=True), dns.rdtypes.IN.SRV.SRV):
+class SRV(_NameMixin("target", allow_root=True), dns.rdtypes.IN.SRV.SRV):
     pass
