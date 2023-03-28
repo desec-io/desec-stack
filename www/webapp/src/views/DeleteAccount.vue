@@ -33,7 +33,7 @@
                                     v-model="email"
                                     label="Current Email"
                                     prepend-icon="mdi-blank"
-                                    outline
+                                    outlined
                                     required
                                     :disabled="true"
                                     validate-on-blur

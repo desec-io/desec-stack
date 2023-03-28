@@ -39,7 +39,7 @@
                                     v-model="email"
                                     label="Email"
                                     prepend-icon="mdi-email"
-                                    outline
+                                    outlined
                                     required
                                     :disabled="working"
                                     :rules="email_rules"
@@ -57,7 +57,7 @@
                                             v-model="captchaSolution"
                                             label="Type CAPTCHA text here"
                                             prepend-icon="mdi-account-check"
-                                            outline
+                                            outlined
                                             required
                                             :disabled="working"
                                             :rules="captcha_rules"

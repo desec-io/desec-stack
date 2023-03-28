@@ -36,7 +36,7 @@
               v-model="name"
               label="Full Name of the Account Holder"
               :prepend-icon="mdiAccount"
-              outline
+              outlined
               required
               :disabled="working"
               :rules="name_rules"
@@ -47,7 +47,7 @@
               v-model="iban"
               label="IBAN"
               :prepend-icon="mdiBank"
-              outline
+              outlined
               required
               :disabled="working"
               :rules="iban_rules"
@@ -59,7 +59,7 @@
               v-model="amount"
               label="Amount in Euros"
               :prepend-icon="mdiCash100"
-              outline
+              outlined
               required
               :disabled="working"
               :rules="amount_rules"
@@ -70,7 +70,7 @@
               v-model="message"
               label="Message (optional)"
               :prepend-icon="mdiMessageTextOutline"
-              outline
+              outlined
               :disabled="working"
               validate-on-blur
       />
@@ -79,7 +79,7 @@
               v-model="email"
               label="Email Address (optional)"
               :prepend-icon="mdiEmail"
-              outline
+              outlined
               :disabled="working"
               :rules="email_rules"
               :error-messages="email_errors"

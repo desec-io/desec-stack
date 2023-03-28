@@ -8,7 +8,7 @@
                     v-model="payload.captcha.solution"
                     label="Type CAPTCHA text here"
                     prepend-icon="mdi-account-check"
-                    outline
+                    outlined
                     required
                     :disabled="working"
                     :rules="captcha_rules"

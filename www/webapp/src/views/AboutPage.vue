@@ -12,7 +12,7 @@
       <v-container class="pa-0">
         <v-row align="center">
           <v-col class="col-md-6 col-12 py-8 triangle-fg">
-            <h1 class="display-1 font-weight-bold">About Us</h1>
+            <h1 class="text-h4 font-weight-bold">About Us</h1>
             <h3 class="subheading mt-2 py-8 font-weight-regular">
               <p>
                 Our services are operated by deSEC e.V., a registered non-profit organization in Berlin, Germany.

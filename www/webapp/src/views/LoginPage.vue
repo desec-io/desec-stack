@@ -29,7 +29,7 @@
               <v-text-field
                 v-model="email"
                 label="Email"
-                outline
+                outlined
                 required
                 :disabled="working"
                 :rules="email_rules"
@@ -42,7 +42,7 @@
                 label="Password"
                 :append-icon="hide_password ? 'mdi-eye' : 'mdi-eye-off'"
                 :type="hide_password ? 'password' : 'text'"
-                outline
+                outlined
                 required
                 :disabled="working"
                 :rules="password_rules"

@@ -84,7 +84,7 @@
                   <v-card>
                     <v-form v-model="valid" @submit.prevent="save()">
                       <v-card-title>
-                        <span class="headline">{{ headlines.create }}</span>
+                        <span class="text-h5">{{ headlines.create }}</span>
                         <v-spacer />
                         <v-icon @click.stop="close">
                           {{ mdiClose }}
@@ -237,8 +237,8 @@
             </template>
             <template #no-data>
               <div v-if="!pagination_required">
-                <div class="py-4 text-xs-center">
-                  <h2 class="title">Feels so empty here!</h2>
+                <div class="py-4 text-center">
+                  <h2 class="text-h6">Feels so empty here!</h2>
                   <p>No entries yet.</p>
                 </div>
               </div>
@@ -251,7 +251,7 @@
                   type="warning"
               >
                 <div class="py-4">
-                  <h2 class="title">Too much data!</h2>
+                  <h2 class="text-h6">Too much data!</h2>
                   <p>
                     Wow! There are more than 500 entries here.<br>
                     Unfortunately, the web interface can't handle this.
@@ -275,7 +275,7 @@
             <v-card>
               <v-form @submit.prevent="destroy(destroyDialogItem)">
                 <v-card-title>
-                  <span class="headline">{{ headlines.destroy }}</span>
+                  <span class="text-h5">{{ headlines.destroy }}</span>
                 </v-card-title>
 
                 <v-divider />

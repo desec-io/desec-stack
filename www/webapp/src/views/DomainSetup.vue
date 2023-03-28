@@ -6,7 +6,7 @@
     </p>
 
     <div v-if="!user.authenticated">
-      <div class="subtitle-1">
+      <div class="text-subtitle-1">
         <v-icon>mdi-numeric-0-circle</v-icon>
         DNS Configuration
       </div>
@@ -19,7 +19,7 @@
       </v-btn>
     </div>
 
-    <div class="mt-2 subtitle-1">
+    <div class="mt-2 text-subtitle-1">
       <v-icon>mdi-numeric-1-circle</v-icon>
       Delegate your domain
     </div>
@@ -62,7 +62,7 @@
       Once your provider processes this information, the Internet will start directing DNS queries to deSEC.
     </p>
 
-    <div class="subtitle-1">
+    <div class="text-subtitle-1">
       <v-icon>mdi-numeric-2-circle</v-icon>
       Enable DNSSEC
     </div>
@@ -110,7 +110,7 @@
       </v-tabs-items>
     </v-card>
 
-    <div class="subtitle-1">
+    <div class="text-subtitle-1">
       <v-icon>mdi-numeric-3-circle</v-icon>
       Check Setup
     </div>

@@ -29,7 +29,7 @@
                       v-model="email"
                       label="Email"
                       prepend-icon="mdi-email"
-                      outline
+                      outlined
                       required
                       :disabled="working"
                       :rules="email_rules"
@@ -56,7 +56,7 @@
                       v-model="domain"
                       :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
                       prepend-icon="mdi-blank"
-                      outline
+                      outlined
                       required
                       :disabled="working || domainType === 'none' || domainType === undefined"
                       :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
@@ -80,7 +80,7 @@
                         v-model="captchaSolution"
                         label="Type CAPTCHA text here"
                         prepend-icon="mdi-account-check"
-                        outline
+                        outlined
                         required
                         :disabled="working"
                         :rules="captcha_rules"

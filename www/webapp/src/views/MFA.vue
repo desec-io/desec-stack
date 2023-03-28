@@ -8,7 +8,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title>
-          <div class="title">
+          <div class="text-h6">
             2FA Required
           </div>
           <v-spacer/>

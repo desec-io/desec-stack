@@ -35,7 +35,7 @@
                                     v-model="email"
                                     label="Current Email"
                                     prepend-icon="mdi-blank"
-                                    outline
+                                    outlined
                                     required
                                     :disabled="true"
                                     validate-on-blur
@@ -59,7 +59,7 @@
                                     v-model="new_email"
                                     label="New Email"
                                     prepend-icon="mdi-email"
-                                    outline
+                                    outlined
                                     required
                                     :disabled="working"
                                     :rules="[rules.required, rules.email]"

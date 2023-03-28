@@ -9,7 +9,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title>
-          <div class="title">
+          <div class="text-h6">
             Verify TOTP: <b>{{ name }}</b>
           </div>
           <v-spacer/>

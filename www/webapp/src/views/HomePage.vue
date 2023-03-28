@@ -5,7 +5,7 @@
     <v-container class="pa-0">
       <v-row align="center">
         <v-col class="col-md-6 col-12 py-8 triangle-fg">
-          <h1 class="display-1 font-weight-bold">Modern DNS Hosting for Everyone</h1>
+          <h1 class="text-h4 font-weight-bold">Modern DNS Hosting for Everyone</h1>
           <h3 class="subheading mt-2 pt-8 font-weight-regular">
             <p>
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
@@ -129,10 +129,10 @@
                   class="pt-6"
                   style="position: relative;"
           >
-            <h3 class="display-1 mb-2 text--darken-2 grey--text text-center">
+            <h3 class="text-h4 mb-2 text--darken-2 grey--text text-center">
               deSEC Global Anycast Networks
             </h3>
-            <div class="font-weight-light title mb-2">
+            <div class="font-weight-light text-h6 mb-2">
               Global distribution of our frontend servers ensures quick answers to queries, regardless of the user's
               location on the globe. You can
               <a :href="'mailto:' + contact_email + '?subject=' + encodeURIComponent(contact_subject) +
