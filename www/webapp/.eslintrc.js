@@ -8,6 +8,7 @@ module.exports = {
     'plugin:vue/essential',
     // 'plugin:vue/strongly-recommended',
     // 'plugin:vue/recommended',
+    'plugin:vuetify/base',
     'eslint:recommended'
   ],
   rules: {
