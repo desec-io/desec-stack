@@ -9,7 +9,7 @@ export const HTTP = axios.create({
 
 function clearToken() {
   useUserStore().logout();
-  HTTP.defaults.headers.common.Authorization = '';
+  HTTP.defaults.headers.Authorization = '';
   sessionStorage.removeItem('token');
 }
 

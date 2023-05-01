@@ -121,7 +121,7 @@ export default {
           email: this.email,
           password: this.password,
         });
-        HTTP.defaults.headers.common.Authorization = `Token ${response.data.token}`;
+        HTTP.defaults.headers.Authorization = `Token ${response.data.token}`;
         this.user.login(response.data);
         if (this.useSessionStorage) {
           sessionStorage.setItem('token', JSON.stringify(response.data));

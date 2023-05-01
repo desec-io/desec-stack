@@ -158,7 +158,7 @@ router.beforeEach((to, from, next) => {
   const user = useUserStore();
   if (sessionStorage.getItem('token') && !user.authenticated) {
     const token = JSON.parse(sessionStorage.getItem('token'));
-    HTTP.defaults.headers.common['Authorization'] = 'Token ' + token.token;
+    HTTP.defaults.headers.Authorization = 'Token ' + token.token;
     user.login(token);
     recovered = true
   }
