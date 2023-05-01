@@ -11,7 +11,7 @@
   "dependencies": {
     "@fontsource/roboto": "^4.5.8",
     "@mdi/font": "^6.9.96",
-    "axios": "^0.27.2",
+    "axios": "^1.4.0",
     "core-js": "^3.27.1",
     "javascript-time-ago": "^2.5.9",
     "pinia": "^2.0.30",
