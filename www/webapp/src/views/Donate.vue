@@ -55,6 +55,9 @@
                     </tr>
                     </tbody>
                   </v-simple-table>
+                  <div class="text-center">
+                    <qrcode-vue :value="bank_transfer_epc" size="300"/>
+                  </div>
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
@@ -176,12 +179,26 @@
 
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
+  import QrcodeVue from "../modules/qrcode.vue";
 
   export default {
     name: 'Donate',
     components: {
+      QrcodeVue,
       DonateDirectDebitForm,
-    }
+    },
+    data() {
+      return {
+        bank_transfer_epc: (
+            "BCD\n001\n1\nSCT\n" +
+            "GENODEF1SLR\n" +
+            "deSEC e.V.\n" +
+            "DE91830654080004158059\n" +
+            "\n\n\n" +
+            "Donation Spende deSEC e.V.\n"
+        )
+      }
+    },
   }
 </script>
 
