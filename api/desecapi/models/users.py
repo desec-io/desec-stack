@@ -135,6 +135,7 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
             "delete-account": fast_lane,
             "domain-dyndns": fast_lane,
             "renew-domain": immediate_lane,
+            "create-login-token": immediate_lane,
         }
         if reason not in lanes:
             raise ValueError(

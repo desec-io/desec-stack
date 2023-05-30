@@ -216,6 +216,17 @@ class AuthenticatedCreateTOTPFactorUserActionView(AuthenticatedActionView):
         return Response(serializer.data)
 
 
+class AuthenticatedCreateLoginTokenActionView(AuthenticatedActionView):
+    html_url = "/confirm/create-login-token/{code}/"
+    serializer_class = serializers.AuthenticatedCreateLoginTokenActionSerializer
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        token = self.authenticated_action.act()
+        serializer = serializers.TokenSerializer(token, include_plain=True)
+        return Response(serializer.data)
+
+
 class AuthenticatedResetPasswordUserActionView(AuthenticatedActionView):
     html_url = "/confirm/reset-password/{code}/"
     serializer_class = serializers.AuthenticatedResetPasswordUserActionSerializer

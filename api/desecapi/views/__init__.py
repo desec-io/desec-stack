@@ -4,6 +4,7 @@ from .authenticated_actions import (
     AuthenticatedChangeEmailUserActionView,
     AuthenticatedChangeOutreachPreferenceUserActionView,
     AuthenticatedConfirmAccountUserActionView,
+    AuthenticatedCreateLoginTokenActionView,
     AuthenticatedCreateTOTPFactorUserActionView,
     AuthenticatedDeleteUserActionView,
     AuthenticatedRenewDomainBasicUserActionView,

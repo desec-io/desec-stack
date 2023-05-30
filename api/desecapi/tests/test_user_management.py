@@ -51,14 +51,11 @@ class UserManagementClient(APIClient):
             reverse("v1:register"), {"email": email, "password": password, **kwargs}
         )
 
-    def login_user(self, email, password):
-        return self.post(
-            reverse("v1:login"),
-            {
-                "email": email,
-                "password": password,
-            },
-        )
+    def login_user(self, email, password=None):
+        payload = {"email": email}
+        if password is not None:
+            payload["password"] = password
+        return self.post(reverse("v1:login"), payload)
 
     def logout(self, token):
         return self.post(reverse("v1:logout"), HTTP_AUTHORIZATION=f"Token {token}")
@@ -126,7 +123,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.client.register(email, password, captcha, **kwargs),
         )
 
-    def login_user(self, email, password):
+    def login_user(self, email, password=None):
         return self.client.login_user(email, password)
 
     def logout(self, token):
@@ -547,6 +544,52 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             self.client.verify(confirmation_link)
         )
         self.assertUserDoesNotExist(email)
+
+
+class PasswordlessUserTestCase(UserManagementTestCase):
+
+    def assertLoginSuccessResponse(self, response):
+        return self.assertContains(
+            response=response, text="instructions", status_code=status.HTTP_202_ACCEPTED
+        )
+
+    def assertCreateLoginTokenVerificationEmail(self, reset=True):
+        return self.assertEmailSent(
+            subject_contains="Login information",
+            body_contains="login link for your account",
+            recipient=[self.email],
+            reset=reset,
+            pattern=r"following link[^:]*:\s+([^\s]*)",
+        )
+
+    def assertCreateLoginTokenVerificationSuccessResponse(self, response):
+        return self.assertContains(
+            response=response,
+            text=f"token",
+            status_code=status.HTTP_200_OK,
+        )
+
+    def setUp(self):
+        self.email, _, _ = self.register_user(self.random_username())
+        confirmation_link = self.assertRegistrationEmail(self.email)
+        self.assertConfirmationLinkRedirect(confirmation_link)
+        response = self.client.verify(confirmation_link)
+        self.assertRegistrationVerificationSuccessResponse(response)
+        self.assertTrue(User.objects.get(email=self.email).is_active)
+        self.assertEmailSent(reset=True)
+
+    def test_login_successful(self):
+        response = self.login_user(self.email, None)
+        self.assertLoginSuccessResponse(response)
+        link = self.assertCreateLoginTokenVerificationEmail()
+        self.assertCreateLoginTokenVerificationSuccessResponse(
+            self.client.verify(link)
+        )
+
+    def test_login_unsuccessful(self):
+        response = self.login_user("doesnotexist@example.com", None)
+        self.assertLoginSuccessResponse(response)  # no disclosure that this account does not exist!
+        self.assertNoEmailSent()
 
 
 class UserLifeCycleTestCase(UserManagementTestCase):

@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .domains import Domain
 from .mfa import TOTPFactor
+from .tokens import Token
 
 
 class AuthenticatedAction(models.Model):
@@ -110,6 +111,15 @@ class AuthenticatedBasicUserAction(AuthenticatedAction):
     @property
     def _state_fields(self):
         return super()._state_fields + [str(self.user.id)]
+
+
+class AuthenticatedCreateLoginTokenAction(AuthenticatedBasicUserAction):
+    """
+    Action to create a login token.
+    """
+
+    def _act(self):
+        return Token.create_login_token(self.user)
 
 
 class AuthenticatedEmailUserAction(AuthenticatedBasicUserAction):

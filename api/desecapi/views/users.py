@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth import user_logged_in
 from rest_framework import generics, mixins, status
@@ -93,23 +91,32 @@ class AccountDeleteView(APIView):
 
 class AccountLoginView(generics.GenericAPIView):
     authentication_classes = (authentication.EmailPasswordPayloadAuthentication,)
-    permission_classes = (IsAuthenticated,)
     serializer_class = serializers.TokenSerializer
     throttle_scope = "account_management_passive"
 
     def post(self, request, *args, **kwargs):
-        user = self.request.user
-        token = Token.objects.create(
-            user=user,
-            perm_manage_tokens=True,
-            max_age=timedelta(days=7),
-            max_unused_period=timedelta(hours=1),
-            mfa=False,
-        )
-        user_logged_in.send(sender=user.__class__, request=self.request, user=user)
+        if request.user and request.user.is_authenticated:
+            # password was provided
+            user = self.request.user
+            data = self.get_serializer(
+                Token.create_login_token(user), include_plain=True
+            ).data
+            user_logged_in.send(sender=user.__class__, request=request, user=user)
+            return Response(data)
+        else:
+            # password was not provided
+            message = "Login instructions have been sent to the email address associated with your user account."
+            response = Response(data={"detail": message}, status=status.HTTP_202_ACCEPTED)
 
-        data = self.get_serializer(token, include_plain=True).data
-        return Response(data)
+            # TODO how to determine user ID properly? Use a serializer?
+            try:
+                user = User.objects.get(email=request.data.get('email'))
+            except User.DoesNotExist:
+                pass
+            else:
+                serializers.AuthenticatedCreateLoginTokenActionSerializer.build_and_save(user=user)
+
+            return response
 
 
 class AccountLogoutView(APIView, mixins.DestroyModelMixin):

@@ -12,7 +12,7 @@ class EmailSerializer(serializers.Serializer):
 
 
 class EmailPasswordSerializer(EmailSerializer):
-    password = serializers.CharField()
+    password = serializers.CharField(required=False)
 
 
 class ChangeEmailSerializer(serializers.Serializer):
