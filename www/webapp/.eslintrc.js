@@ -5,9 +5,8 @@ module.exports = {
     node: true
   },
   extends: [
-    'plugin:vue/essential',
-    // 'plugin:vue/strongly-recommended',
-    // 'plugin:vue/recommended',
+    'plugin:vue/base',
+    'plugin:vuetify/base',
     'eslint:recommended'
   ],
   rules: {

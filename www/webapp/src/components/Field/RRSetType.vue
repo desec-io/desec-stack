@@ -5,11 +5,11 @@
     :error-messages="errorMessages"
     hint="You can also enter other types. For a full list, check the documentation."
     :persistent-hint="!readonly"
-    :value="value"
+    :model-value="value"
     :items="types"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @input="input($event)"
+    @update:model-value="input($event)"
   />
 </template>
 

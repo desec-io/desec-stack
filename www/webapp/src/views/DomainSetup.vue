@@ -6,7 +6,7 @@
     </p>
 
     <div v-if="!user.authenticated">
-      <div class="subtitle-1">
+      <div class="text-subtitle-1">
         <v-icon>mdi-numeric-0-circle</v-icon>
         DNS Configuration
       </div>
@@ -14,12 +14,12 @@
         To ensure a smooth transition when moving your domain to deSEC, setup a password for your deSEC account,
         log in and configure the DNS for <span class="fixed-width">{{ domain }}</span>, before you proceed below.
       </p>
-      <v-btn outlined block :to="{name: 'reset-password'}" target="_blank">
+      <v-btn variant="outlined" block :to="{name: 'reset-password'}" target="_blank">
         Assign Account Password
       </v-btn>
     </div>
 
-    <div class="mt-2 subtitle-1">
+    <div class="mt-2 text-subtitle-1">
       <v-icon>mdi-numeric-1-circle</v-icon>
       Delegate your domain
     </div>
@@ -29,7 +29,7 @@
       <strong>{{ domain }}</strong> (usually your provider or technical administrator):
     </p>
     <v-card>
-      <v-tabs v-model="tab1" background-color="transparent" grow>
+      <v-tabs v-model="tab1" bg-color="transparent" grow>
         <v-tab href="#ns">Nameservers</v-tab>
       </v-tabs>
 
@@ -38,13 +38,7 @@
           <v-card flat v-if="ns.join('\n')">
             <pre class="pa-3">{{ ns.join('\n') }}</pre>
             <v-card-actions>
-              <v-btn
-                  v-clipboard:copy="ns.join('\n')"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
-                  outlined
-                  text
-              >
+              <v-btn @click="copy(ns.join('\n'))" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>
@@ -62,7 +56,7 @@
       Once your provider processes this information, the Internet will start directing DNS queries to deSEC.
     </p>
 
-    <div class="subtitle-1">
+    <div class="text-subtitle-1">
       <v-icon>mdi-numeric-2-circle</v-icon>
       Enable DNSSEC
     </div>
@@ -75,7 +69,7 @@
     <v-card>
       <v-tabs
           v-model="tab2"
-          background-color="transparent"
+          bg-color="transparent"
           grow
       >
         <v-tab v-for="t in tabs" :key="t.key" :href="'#' + t.key">{{ t.title }}</v-tab>
@@ -87,13 +81,7 @@
             <v-card-text>{{ t.banner }}</v-card-text>
             <pre class="pa-3">{{ t.data }}</pre>
             <v-card-actions>
-              <v-btn
-                  v-clipboard:copy="t.data"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
-                  outlined
-                  text
-              >
+              <v-btn @click="copy(t.data)" variant="text">
                 <v-icon>mdi-content-copy</v-icon>
                 copy to clipboard
               </v-btn>
@@ -110,7 +98,7 @@
       </v-tabs-items>
     </v-card>
 
-    <div class="subtitle-1">
+    <div class="text-subtitle-1">
       <v-icon>mdi-numeric-3-circle</v-icon>
       Check Setup
     </div>
@@ -125,7 +113,7 @@
       <template #action="{ attrs }">
         <v-btn
             color="pink"
-            text
+            variant="text"
             v-bind="attrs"
             @click="snackbar = false"
         >
@@ -187,11 +175,13 @@ export default {
     },
   },
   methods: {
-    copySuccess: function () {
-      this.showSnackbar("Copied to clipboard.");
-    },
-    copyError: function () {
-      this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+    copy: async function (text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.showSnackbar("Copied to clipboard.");
+      } catch (e) {
+        this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+      }
     },
     showSnackbar: function (text) {
       this.snackbar_text = text;

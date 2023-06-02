@@ -1,11 +1,11 @@
 <template>
   <div>
-  <v-card outline tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+  <v-card outline rounded="0" class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
     <div class="d-none d-md-block triangle-bg">§§</div>
     <v-container class="pa-0">
       <v-row align="center">
         <v-col class="col-md-6 col-12 py-8 triangle-fg">
-          <h1 class="display-1 font-weight-bold">Terms of Use</h1>
+          <h1 class="text-h4 font-weight-bold">Terms of Use</h1>
           <h3 class="subheading mt-2 py-8 font-weight-regular">
             <p>
               We collect as little data as possible and restrict the usage of our DNS service only where necessary to
@@ -21,7 +21,7 @@
       </v-row>
     </v-container>
   </v-card>
-  <v-container fluid class="grey lighten-4">
+  <v-container fluid class="bg-grey-lighten-4">
     <v-container>
       <v-row class="pt-8">
         <v-col class="text-center">

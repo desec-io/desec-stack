@@ -21,8 +21,8 @@
             @click="addHandler"
             class="px-0 text-none"
             color="grey"
-            small
-            text
+            size="small"
+            variant="text"
             v-if="!readonly && !disabled"
     ><v-icon>mdi-plus</v-icon> add another value</v-btn>
     <!--div><code style="white-space: normal">{{ value }}</code></div-->

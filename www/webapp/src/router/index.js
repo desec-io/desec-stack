@@ -1,4 +1,4 @@
-import VueRouter from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import {HTTP} from '@/utils';
 import {useUserStore} from "@/store/user";
@@ -35,12 +35,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "signup" */ '@/views/Welcome.vue')
   },
   {
-    path: 'https://desec.readthedocs.io/',
+    path: '/desec.readthedocs.io/', // TODO
     name: 'docs',
     beforeEnter(to) { location.href = to.path },
   },
   {
-    path: 'https://talk.desec.io/',
+    path: '/talk.desec.io/', // TODO
     name: 'talk',
     beforeEnter(to) { location.href = to.path },
   },
@@ -90,7 +90,7 @@ const routes = [
     component: () => import(/* webpackChunkName: "extra" */ '@/views/Donate.vue')
   },
   {
-    path: 'https://github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
+    path: '/github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
     name: 'roadmap',
     beforeEnter(to) { location.href = to.path },
   },
@@ -139,8 +139,9 @@ const routes = [
   },
 ]
 
-const router = new VueRouter({
+const router = createRouter({
   mode: 'history',
+  history: createWebHistory(),
   base: process.env.BASE_URL,
   scrollBehavior (to, from) {
     // Skip if destination full path has query parameters and differs in no other way from previous

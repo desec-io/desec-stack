@@ -25,7 +25,7 @@
             <p>
               Congratulations, you are now the owner of <span class="fixed-width">{{ $route.params.domain }}</span>!
             </p>
-            <h2 class="title">Set Up Your Domain</h2>
+            <h2 class="text-h6">Set Up Your Domain</h2>
             <p>
               All operations on your domain require the following authorization token secret shown below:
             </p>
@@ -42,7 +42,7 @@
             </p>
             <v-expansion-panels class="mb-4" focusable>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">Configure Your Router</v-expansion-panel-header>
+                <v-expansion-panel-header class="text-subtitle-1">Configure Your Router</v-expansion-panel-header>
                 <v-expansion-panel-content>
                   <p>
                     To continuously update your domain to point to your home router, configure your
@@ -75,7 +75,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">One-Off Manual Update</v-expansion-panel-header>
+                <v-expansion-panel-header class="text-subtitle-1">One-Off Manual Update</v-expansion-panel-header>
                 <v-expansion-panel-content>
                   <p>
                     Your domain can be configured to your current public IP address as seen by our servers.
@@ -87,7 +87,7 @@
                 </v-expansion-panel-content>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="subtitle-1">Alternative IP Update Approaches</v-expansion-panel-header>
+                <v-expansion-panel-header class="text-subtitle-1">Alternative IP Update Approaches</v-expansion-panel-header>
                 <v-expansion-panel-content>
                   <p>
                     For alternative approaches to updating your IP address and for a
@@ -102,7 +102,7 @@
               that someone had the same question before.
             </p>
 
-            <h2 class="title">Check Domain Status</h2>
+            <h2 class="text-h6">Check Domain Status</h2>
             <v-alert type="info" v-if="ips !== undefined && ips.length === 0">
               <p>
                 Currently, no IPv4 or IPv6 address is associated with
@@ -110,7 +110,7 @@
                 Please verify that your client is using the credentials provided by deSEC and then come back to check
                 again.
               </p>
-              <v-btn depressed outlined block @click="check" :loading="working">Check Again</v-btn>
+              <v-btn variant="outlined" block @click="check" :loading="working">Check Again</v-btn>
             </v-alert>
             <v-alert type="success" v-if="ips !== undefined && ips.length > 0">
               <p>
@@ -129,7 +129,7 @@
                 Enjoy!
               </p>
               <p>
-                <v-btn depressed outlined block @click="check" :loading="working">Update</v-btn>
+                <v-btn variant="outlined" block @click="check" :loading="working">Update</v-btn>
               </p>
               <p>
                 Please note that deSEC only assigns your IP address to your domain name.
@@ -138,24 +138,24 @@
             </v-alert>
 
             <div v-if="!user.authenticated">
-              <h2 class="title">Optional: Assign deSEC Account Password</h2>
+              <h2 class="text-h6">Optional: Assign deSEC Account Password</h2>
               <p>
                 To use more features of deSEC, assign a password to your account. This is not required for using deSEC
                 for dynamic DNS only, but enables to you add more domains and other DNS information.
                 You can also assign a password later at any time.
               </p>
-              <v-btn outlined block :to="{name: 'reset-password'}">
+              <v-btn variant="outlined" block :to="{name: 'reset-password'}">
                 Assign Account Password
               </v-btn>
             </div>
 
-            <h2 class="title mt-4">Keep deSEC Going</h2>
+            <h2 class="text-h6 mt-4">Keep deSEC Going</h2>
             <p>
               To offer free DNS hosting for everyone, deSEC relies on donations only.
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn block variant="outlined" :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>

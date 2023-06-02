@@ -17,7 +17,7 @@
         may be the name appearing on your bank statement.
       </p>
       <p>Again, thank you so much.</p>
-      <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
+      <v-btn variant="outlined" block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
     <v-form v-if="!done" @submit.prevent="donate" ref="form">
       <error-alert :errors="errors"></error-alert>
@@ -36,7 +36,7 @@
               v-model="name"
               label="Full Name of the Account Holder"
               prepend-icon="mdi-account"
-              outline
+              variant="outlined"
               required
               :disabled="working"
               :rules="name_rules"
@@ -47,19 +47,19 @@
               v-model="iban"
               label="IBAN"
               prepend-icon="mdi-bank"
-              outline
+              variant="outlined"
               required
               :disabled="working"
               :rules="iban_rules"
               :error-messages="iban_errors"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-text-field
               v-model="amount"
               label="Amount in Euros"
               prepend-icon="mdi-cash-100"
-              outline
+              variant="outlined"
               required
               :disabled="working"
               :rules="amount_rules"
@@ -70,24 +70,24 @@
               v-model="message"
               label="Message (optional)"
               prepend-icon="mdi-message-text-outline"
-              outline
+              variant="outlined"
               :disabled="working"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-text-field
               v-model="email"
               label="Email Address (optional)"
               prepend-icon="mdi-email"
-              outline
+              variant="outlined"
               :disabled="working"
               :rules="email_rules"
               :error-messages="email_errors"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-btn
-              depressed
+              variant="flat"
               block
               color="primary"
               type="submit"

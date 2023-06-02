@@ -8,7 +8,7 @@
                     v-model="payload.captcha.solution"
                     label="Type CAPTCHA text here"
                     prepend-icon="mdi-account-check"
-                    outline
+                    variant="outlined"
                     required
                     :disabled="working"
                     :rules="captcha_rules"
@@ -38,18 +38,18 @@
             </audio>
             <br/>
             <v-btn-toggle>
-              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+              <v-btn variant="outlined" @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
             </v-btn-toggle>
             &nbsp;
             <v-btn-toggle v-model="captcha_kind">
-              <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
-              <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
+              <v-btn variant="outlined" value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
+              <v-btn variant="outlined" value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
             </v-btn-toggle>
           </v-col>
         </v-row>
       </v-container>
         <v-btn
-                depressed
+                variant="flat"
                 color="primary"
                 type="submit"
                 :disabled="working || !valid"

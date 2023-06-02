@@ -9,7 +9,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title>
-          <div class="title">
+          <div class="text-h6">
             Verify TOTP: <b>{{ name }}</b>
           </div>
           <v-spacer/>
@@ -65,7 +65,7 @@
             <v-row dense align="center" class="justify-center">
               <v-col cols="auto">
                 <v-btn
-                        depressed
+                        variant="flat"
                         color="primary"
                         type="submit"
                         :disabled="working || code.length != 6"
