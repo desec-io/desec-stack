@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 RUN apt-get update && apt-get install -y \
 		dnsutils \
@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
 		dirmngr gnupg \
 	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu bionic-auth-46 main' \
+RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu jammy-auth-46 main' \
       >> /etc/apt/sources.list \
  && echo 'Package: pdns-*' \
       > /etc/apt/preferences.d/pdns \
@@ -19,7 +19,7 @@ RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu bionic-auth-46 main' 
 RUN set -ex \
 	&& apt-key adv --keyserver keyserver.ubuntu.com --recv 0x1B0C6205FD380FBB \
 	&& apt-get update \
-	&& apt-get install -y pdns-server pdns-backend-pgsql postgresql-client-10 \
+	&& apt-get install -y pdns-server pdns-backend-pgsql postgresql-client-14 \
 	# credentials management via envsubst
 	&& apt-get -y install gettext-base \
 	# VPN route

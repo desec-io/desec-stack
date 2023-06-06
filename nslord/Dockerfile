@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 RUN apt-get update && apt-get install -y \
 		dnsutils \
@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
 		faketime \
 	--no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu bionic-auth-46 main' \
+RUN echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu jammy-auth-46 main' \
       >> /etc/apt/sources.list \
  && echo 'Package: pdns-*' \
       > /etc/apt/preferences.d/pdns \
