@@ -4,7 +4,6 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.contrib.postgres.fields import CIEmailField
 from django.core.mail import EmailMessage, get_connection
 from django.db import models
 from django.template.loader import get_template
@@ -35,8 +34,9 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         return settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = CIEmailField(
+    email = models.EmailField(
         verbose_name="email address",
+        db_collation="case_insensitive",  # LIKE queries: LOWER(email COLLATE "und-x-icu") LIKE '%...%'
         unique=True,
     )
     email_verified = models.DateTimeField(null=True, blank=True)
@@ -115,6 +115,11 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     def save(self, *args, **kwargs):
         if kwargs.pop("credentials_changed", False):
             self.credentials_changed = timezone.now()
+            # https://docs.djangoproject.com/en/4.2/releases/4.2/#setting-update-fields-in-model-save-may-now-be-required
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {"credentials_changed"}.union(
+                    kwargs["update_fields"]
+                )
         super().save(*args, **kwargs)
 
     def send_email(
