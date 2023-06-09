@@ -70,7 +70,7 @@
                       v-on="on"
               >
                 more
-                <v-icon right>mdi-menu-down</v-icon>
+                <v-icon right>{{mdiMenuDown}}</v-icon>
               </v-btn>
             </template>
 
@@ -153,7 +153,7 @@
         <div>
           <p>
             Please <router-link :to="{name: 'donate'}">donate</router-link>!
-            <v-icon color="red" class="text--darken-2" dense>mdi-heart</v-icon>
+            <v-icon color="red" class="text--darken-2" dense>{{mdiHeart}}</v-icon>
           </p>
           <p>
             European Bank Account:<br>
@@ -182,6 +182,17 @@
 import router from '@/router';
 import {logout} from '@/utils';
 import {useUserStore} from "@/store/user";
+import {
+    mdiBookOpenPageVariant,
+    mdiForumOutline,
+    mdiGiftOutline,
+    mdiHeart,
+    mdiHome,
+    mdiLockReset,
+    mdiMenuDown,
+    mdiRoadVariant,
+    mdiUmbrella
+} from "@mdi/js";
 
 export default {
   name: 'App',
@@ -189,42 +200,44 @@ export default {
     user: useUserStore(),
     drawer: false,
     email: process.env.VUE_APP_EMAIL,
+    mdiHeart,
+    mdiMenuDown,
     menu: {
       'home': {
         'name': 'home',
-        'icon': 'mdi-home',
+        'icon': mdiHome,
         'text': 'Home',
       },
       'docs': {
         'name': 'docs',
-        'icon': 'mdi-book-open-page-variant',
+        'icon': mdiBookOpenPageVariant,
         'text': 'Docs',
       },
       'roadmap': {
         'name': 'roadmap',
-        'icon': 'mdi-road-variant',
+        'icon': mdiRoadVariant,
         'text': 'Roadmap',
       },
       'talk': {
         'name': 'talk',
-        'icon': 'mdi-forum-outline',
+        'icon': mdiForumOutline,
         'text': 'Talk',
       },
       'donate': {
         'name': 'donate',
-        'icon': 'mdi-gift-outline',
+        'icon': mdiGiftOutline,
         'text': 'Donate',
-        'post_icon': 'mdi-heart',
+        'post_icon': mdiHeart,
         'post_icon_color': 'red',
       },
       'about': {
         'name': 'about',
-        'icon': 'mdi-umbrella',
+        'icon': mdiUmbrella,
         'text': 'About',
       },
       'reset-password': {
         'name': 'reset-password',
-        'icon': 'mdi-lock-reset',
+        'icon': mdiLockReset,
         'text': 'Reset Account Password',
       },
     },

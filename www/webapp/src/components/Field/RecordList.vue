@@ -7,7 +7,7 @@
             :content="item"
             :error-messages="errorMessages[index] ? errorMessages[index].content : []"
             :hide-label="index > 0"
-            :append-icon="value.length > 1 ? 'mdi-close' : ''"
+            :append-icon="value.length > 1 ? mdiClose : ''"
             :disabled="disabled"
             :readonly="readonly"
             :required="required"
@@ -24,7 +24,7 @@
             small
             text
             v-if="!readonly && !disabled"
-    ><v-icon>mdi-plus</v-icon> add another value</v-btn>
+    ><v-icon>{{mdiPlus}}</v-icon> add another value</v-btn>
     <!--div><code style="white-space: normal">{{ value }}</code></div-->
   </div>
 </template>
@@ -50,6 +50,7 @@ import RecordSVCB from './Record/SVCB.vue';
 import RecordTLSA from './Record/TLSA.vue';
 import RecordTXT from './Record/TXT.vue';
 import RecordSubnet from './Record/Subnet.vue';
+import {mdiClose, mdiPlus} from "@mdi/js";
 
 export default {
   name: 'RecordList',
@@ -104,6 +105,8 @@ export default {
   data: function () {
     const self = this;
     return {
+      mdiClose,
+      mdiPlus,
       types: [
         'A',
         'AAAA',

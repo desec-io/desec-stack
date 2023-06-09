@@ -18,7 +18,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-bank-transfer-in</v-icon> Direct Debit – Let us Take your Money (Europe)
+                    <v-icon class="mr-2">{{mdiBankTransferIn}}</v-icon> Direct Debit – Let us Take your Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -32,7 +32,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-bank-transfer-out</v-icon> Bank Transfer – Send us Money (Europe)
+                    <v-icon class="mr-2">{{mdiBankTransferOut}}</v-icon> Bank Transfer – Send us Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -63,7 +63,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-credit-card-outline</v-icon> Credit Card
+                    <v-icon class="mr-2">{{mdiCreditCardOutline}}</v-icon> Credit Card
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -81,7 +81,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-github</v-icon> GitHub Sponsors
+                    <v-icon class="mr-2">{{mdiGithub}}</v-icon> GitHub Sponsors
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -94,7 +94,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-gift-outline</v-icon> PayPal
+                    <v-icon class="mr-2">{{mdiGiftOutline}}</v-icon> PayPal
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -112,7 +112,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">mdi-heart-multiple-outline</v-icon> Double-up with Your Employer
+                    <v-icon class="mr-2">{{mdiHeartMultipleOutline}}</v-icon> Double-up with Your Employer
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -180,6 +180,7 @@
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
   import QrcodeVue from "../modules/qrcode.vue";
+  import {mdiBankTransferIn, mdiBankTransferOut, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
 
   export default {
     name: 'DonatePage',
@@ -196,7 +197,13 @@
             "DE91830654080004158059\n" +
             "\n\n\n" +
             "Donation Spende deSEC e.V.\n"
-        )
+        ),
+        mdiBankTransferIn,
+        mdiBankTransferOut,
+        mdiCreditCardOutline,
+        mdiGithub,
+        mdiGiftOutline,
+        mdiHeartMultipleOutline
       }
     },
   }

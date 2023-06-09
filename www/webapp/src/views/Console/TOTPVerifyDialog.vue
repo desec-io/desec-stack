@@ -14,7 +14,7 @@
           </div>
           <v-spacer/>
           <v-icon @click.stop="close">
-            mdi-close
+            {{mdiClose}}
           </v-icon>
         </v-card-title>
         <v-divider/>
@@ -29,14 +29,14 @@
 
         <v-card-text v-if="!!successDetail" class="text-center">
           <p class="mt-2">
-            <v-icon>mdi-check</v-icon>
+            <v-icon>{{mdiCheck}}</v-icon>
             Great! Continue to <router-link :to="{name: 'login'}">log in</router-link>.
           </p>
         </v-card-text>
 
         <v-card-text v-if="!!data && !successDetail" class="text-center">
           <p class="mt-2">
-            <v-icon>mdi-numeric-1-circle</v-icon>
+            <v-icon>{{mdiNumeric1Circle}}</v-icon>
             Please scan the following QR code with an authenticator app (e.g. Google Authenticator).<br />
             <strong>This code is only displayed once.</strong>
           </p>
@@ -44,7 +44,7 @@
             <qrcode-vue :value="data.uri" size="300" level="H"/>
           </div>
           <p class="mt-6">
-            <v-icon>mdi-numeric-2-circle</v-icon>
+            <v-icon>{{mdiNumeric2Circle}}</v-icon>
             Enter the code displayed in the authenticator app to confirm and activate the token:
           </p>
 
@@ -93,6 +93,7 @@
 import {digestError, HTTP, withWorking} from '@/utils'
 import ErrorAlert from "../../components/ErrorAlert";
 import QrcodeVue from '../../modules/qrcode.vue/dist/qrcode.vue.esm'
+import {mdiCheck, mdiClose, mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 
 export default {
   name: 'TOTPVerifyDialog',
@@ -120,6 +121,10 @@ export default {
     errors: [],
     working: false,
     show: true,
+    mdiCheck,
+    mdiClose,
+    mdiNumeric1Circle,
+    mdiNumeric2Circle,
   }),
   methods: {
     close() {

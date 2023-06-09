@@ -40,7 +40,7 @@
                 <v-text-field
                         v-model="search"
                         v-if="$vuetify.breakpoint.smAndUp"
-                        append-icon="mdi-magnify"
+                        :append-icon="mdiMagnify"
                         label="Search"
                         single-line
                         hide-details
@@ -62,12 +62,12 @@
                         depressed
                         :disabled="user.working"
                 >
-                  <v-icon>mdi-plus</v-icon>
+                  <v-icon>{{mdiPlus}}</v-icon>
                 </v-btn>
                 <template #extension v-if="$vuetify.breakpoint.xsOnly">
                   <v-text-field
                           v-model="search"
-                          append-icon="mdi-magnify"
+                          :append-icon="mdiMagnify"
                           label="Search"
                           single-line
                           hide-details
@@ -87,7 +87,7 @@
                         <span class="headline">{{ headlines.create }}</span>
                         <v-spacer />
                         <v-icon @click.stop="close">
-                          mdi-close
+                          {{ mdiClose }}
                         </v-icon>
                       </v-card-title>
                       <v-divider />
@@ -352,6 +352,7 @@ import GenericSwitchbox from '@/components/Field/GenericSwitchbox.vue';
 import TTL from '@/components/Field/TTL';
 import ErrorAlert from '@/components/ErrorAlert'
 import {useUserStore} from "@/store/user";
+import {mdiClose, mdiContentSaveEdit, mdiDelete, mdiMagnify, mdiPlus} from "@mdi/js";
 
 const filter = function (obj, predicate) {
   const result = {};
@@ -449,6 +450,11 @@ export default {
       }
     },
     handleRowClick: () => {},
+    mdiClose,
+    mdiDelete,
+    mdiContentSaveEdit,
+    mdiMagnify,
+    mdiPlus,
   }},
   computed: {
     actions: () => {},
@@ -458,13 +464,13 @@ export default {
         'save': {
           go: d => this.save(d),
           if: this.updatable,
-          icon: 'mdi-content-save-edit',
+          icon: mdiContentSaveEdit,
           tooltip: 'Save',
         },
         'delete': {
           go: d => this.destroyAsk(d),
           if: this.destroyable,
-          icon: 'mdi-delete',
+          icon: mdiDelete,
           tooltip: 'Delete',
         },
       }

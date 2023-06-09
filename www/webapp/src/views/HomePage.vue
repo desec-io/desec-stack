@@ -36,7 +36,7 @@
                     solo
                     flat
                     v-model="email"
-                    prepend-inner-icon="mdi-email"
+                    :prepend-inner-icon="mdiEmail"
                     type="email"
                     placeholder="Account Email Address"
                     :rules="email_rules"
@@ -188,6 +188,17 @@
 <script>
 import {email_pattern} from '@/validation';
 import {useUserStore} from "@/store/user";
+import {
+    mdiCertificate,
+    mdiCloudCheck,
+    mdiDatabaseArrowUp,
+    mdiDns, mdiEmail, mdiFileCertificate, mdiFlower, mdiGift, mdiHeartBroken,
+    mdiIpNetworkOutline, mdiLan,
+    mdiLockOutline,
+    mdiMonitorCellphoneStar,
+    mdiRobot, mdiRunFast,
+    mdiTwoFactorAuthentication
+} from "@mdi/js";
 
 export default {
   name: 'HomePage',
@@ -209,6 +220,7 @@ export default {
     }
   },
   data: () => ({
+    mdiEmail,
     contact_email: process.env.VUE_APP_EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
     contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
@@ -314,7 +326,7 @@ export default {
     features: [
       {
         href: '#',
-        icon: 'mdi-lock-outline',
+        icon: mdiLockOutline,
         title: 'DNSSEC',
         text: 'DNS information hosted at deSEC is <b>signed with DNSSEC, always</b>. We use state-of-the-art '
                + 'elliptic-curve cryptography. Besides following operational best practice, we adopt '
@@ -323,7 +335,7 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-cloud-check',
+        icon: mdiCloudCheck,
         title: 'Cloud Integration',
         text: 'Thanks to <a href="https://talk.desec.io/t/tools-implementing-desec/11" target="_blank">cloud '
                 + 'integrations and language bindings</a>, deSEC works out of the box in automated environments. '
@@ -331,7 +343,7 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-dns',
+        icon: mdiDns,
         title: 'Modern Record Types',
         text: 'We support a <a href="https://desec.readthedocs.io/en/latest/dns/rrsets.html#supported-types" target="_blank">broad '
                 + 'array of record types</a>, including novel types such as <code>HTTPS</code>/<code>SVCB</code> (for '
@@ -340,7 +352,7 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-monitor-cellphone-star',
+        icon: mdiMonitorCellphoneStar,
         title: 'Web Interface',
         text: 'We think we have the <b>coolest GUI on the market</b>. Thanks to <b>real-time record validation</b> and '
                + 'parsing, it is <b>very intuitive and fast</b> to use (even on mobile devices). Get started by '
@@ -348,7 +360,7 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-robot',
+        icon: mdiRobot,
         title: 'REST API',
         text: 'Exert full control over your DNS via our <b>modern API</b> and benefit from advanced features such as '
                + ' bulk operations. It is <a href="https://desec.readthedocs.io/en/latest/dns/domains.html" target="_blank">well-documented</a> '
@@ -356,14 +368,14 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-two-factor-authentication',
+        icon: mdiTwoFactorAuthentication,
         title: 'Multi-Factor Auth (2FA)',
         text: 'Accidentally shared your password with someone? Enable MFA to <b>keep your account safe</b>. We '
               + 'currently support <b>TOTP tokens</b> (Authenticator app), with WebAuthn in the making.',
       },
       {
         href: '#',
-        icon: 'mdi-database-arrow-up',
+        icon: mdiDatabaseArrowUp,
         title: 'Scalability',
         text: 'Are you a web hoster? Start using deSEC, <b>even with thousands of domains</b>. Our global network '
                 + 'ensures <b>high availability and performance everywhere</b>. <a href="mailto:support@desec.io">Talk '
@@ -371,21 +383,21 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-ip-network-outline',
+        icon: mdiIpNetworkOutline,
         title: 'IPv6',
         text: 'deSEC is <b>fully IPv6-aware</b>: administration can be done using v6, AAAA-records '
                 + 'containing IPv6 addresses can be set up, our name servers are reachable via IPv6.',
       },
       {
         href: '#',
-        icon: 'mdi-run-fast',
+        icon: mdiRunFast,
         title: 'Fast Updates',
         text: 'Updates to your DNS information will be <b>published world-wide within a few seconds</b>. '
                 + 'Minimum required TTLs are low.',
       },
       {
         href: '#',
-        icon: 'mdi-certificate',
+        icon: mdiCertificate,
         title: 'DANE / TLSA',
         text: 'Secure your web service with <code>TLSA</code> records, <b>hardening it against fraudulently issued SSL '
                 + 'certificates</b>. You can also use other DANE techniques, such as <code>OPENPGPKEY</code> key '
@@ -393,7 +405,7 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-file-certificate',
+        icon: mdiFileCertificate,
         title: "Let's Encrypt Integration",
         text: 'We provide <b><a href="https://pypi.org/project/certbot-dns-desec/">easy integration</a> with Let\'s '
                + 'Encrypt</b> and their certbot tool. '
@@ -402,20 +414,20 @@ export default {
       },
       {
         href: '#',
-        icon: 'mdi-lan',
+        icon: mdiLan,
         title: 'Low-latency Anycast',
         text: 'We run <b>global networks of high-performance frontend DNS servers</b>. Your query is routed to the '
               + '<b>closest server</b> via Anycast, so clients receive answers as fast as possible.',
       },
       {
         href: '#',
-        icon: 'mdi-flower',
+        icon: mdiFlower,
         title: 'Open Source',
         text: 'deSEC runs <b>100% on free and open-source</b> software. Start hacking away!',
       },
       {
         href: '#',
-        icon: 'mdi-gift',
+        icon: mdiGift,
         title: 'Non-profit',
         text: 'deSEC is organized as a <b>non-profit organization based in Berlin</b>. We make sure that privacy '
               + 'is not compromised by business interest.',
@@ -426,7 +438,7 @@ export default {
         id: 'news-20201017001',
         start: new Date(Date.UTC(2020, 10 - 1, 17)),  // first day of showing
         end: new Date(Date.UTC(2020, 10 - 1, 20)),  // first day of not showing
-        icon: 'mdi-heart-broken',
+        icon: mdiHeartBroken,
         teaser: 'deSEC API and web services have been unavailable on 17 Oct 2020 starting at 4:26 am UTC and resumed ' +
             'normal operations at 10:13 am UTC. DNS operations continued throughout.',
         button: 'deSEC Status Details',
@@ -436,7 +448,7 @@ export default {
         id: 'news-20221010001',
         start: new Date(Date.UTC(2022, 10 - 1, 10)),  // first day of showing
         end: new Date(Date.UTC(2022, 10 - 1, 12)),  // first day of not showing
-        icon: 'mdi-heart-broken',
+        icon: mdiHeartBroken,
         teaser: "From 10 Oct 2022 11:32 am UTC until 10 Oct 2022 16:33 UTC, the deSEC web interface was unavailable " +
             "when accessed via direct links, e.g. though emails sent by deSEC. The issue has been fixed; links that " +
             "have not expired in the meantime are now working when opened. Direct login to the web interface and " +

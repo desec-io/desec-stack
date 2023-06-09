@@ -2,6 +2,7 @@
 import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog';
+import {mdiDownload, mdiInformation} from "@mdi/js";
 
 export default {
   name: 'CrudListDomain',
@@ -120,12 +121,12 @@ export default {
       return {
         'info': {
           go: d => this.showDomainInfo(d),
-          icon: 'mdi-information',
+          icon: mdiInformation,
           tooltip: 'Setup instructions',
         },
         'export': {
           go: d => this.exportDomain(d),
-          icon: 'mdi-download',
+          icon: mdiDownload,
           if: this.showAdvanced,
           tooltip: 'Export (zonefile format)',
         },

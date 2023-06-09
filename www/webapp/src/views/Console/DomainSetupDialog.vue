@@ -13,7 +13,7 @@
         </div>
         <v-spacer/>
         <v-icon @click.stop="close">
-          mdi-close
+          {{ mdiClose }}
         </v-icon>
       </v-card-title>
       <v-divider/>
@@ -35,6 +35,7 @@
 
 <script>
 import DomainSetup from "@/views/DomainSetup";
+import {mdiClose} from "@mdi/js";
 
 export default {
   name: 'DomainSetupDialog',
@@ -50,6 +51,7 @@ export default {
     },
   },
   data: () => ({
+    mdiClose,
     value: {
       type: Boolean,
       default: true,

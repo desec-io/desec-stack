@@ -35,7 +35,7 @@
       <v-text-field
               v-model="name"
               label="Full Name of the Account Holder"
-              prepend-icon="mdi-account"
+              :prepend-icon="mdiAccount"
               outline
               required
               :disabled="working"
@@ -46,7 +46,7 @@
       <v-text-field
               v-model="iban"
               label="IBAN"
-              prepend-icon="mdi-bank"
+              :prepend-icon="mdiBank"
               outline
               required
               :disabled="working"
@@ -58,7 +58,7 @@
       <v-text-field
               v-model="amount"
               label="Amount in Euros"
-              prepend-icon="mdi-cash-100"
+              :prepend-icon="mdiCash100"
               outline
               required
               :disabled="working"
@@ -69,7 +69,7 @@
       <v-text-field
               v-model="message"
               label="Message (optional)"
-              prepend-icon="mdi-message-text-outline"
+              :prepend-icon="mdiMessageTextOutline"
               outline
               :disabled="working"
               validate-on-blur
@@ -78,7 +78,7 @@
       <v-text-field
               v-model="email"
               label="Email Address (optional)"
-              prepend-icon="mdi-email"
+              :prepend-icon="mdiEmail"
               outline
               :disabled="working"
               :rules="email_rules"
@@ -103,6 +103,7 @@
   import {email_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from '@/components/ErrorAlert';
+  import {mdiAccount, mdiBank, mdiCash100, mdiEmail, mdiMessageTextOutline} from "@mdi/js";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -120,6 +121,13 @@
       working: false,
       done: false,
       errors: [],
+
+      /* icons */
+      mdiAccount,
+      mdiBank,
+      mdiCash100,
+      mdiMessageTextOutline,
+      mdiEmail,
 
       /* from env */
       creditorid: process.env.VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID,

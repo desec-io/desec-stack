@@ -20,7 +20,7 @@
         <v-card-text class="text-center">
           <div>
             <p class="mt-2">
-              <v-icon>mdi-numeric-1-circle</v-icon>
+              <v-icon>{{ mdiNumeric1Circle }}</v-icon>
               Please select a TOTP token:
             </p>
             <v-container class="pa-0">
@@ -39,7 +39,7 @@
             </v-container>
 
             <p class="mt-6">
-              <v-icon>mdi-numeric-2-circle</v-icon>
+              <v-icon>{{ mdiNumeric2Circle }}</v-icon>
               Enter the code displayed in the authenticator app to continue:
             </p>
             <v-container class="pa-0">
@@ -81,6 +81,7 @@
 <script>
 import {digestError, HTTP, withWorking} from '@/utils'
 import ErrorAlert from "../components/ErrorAlert";
+import {mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 
 export default {
   name: 'MFA',
@@ -94,6 +95,8 @@ export default {
     id: null,
     working: false,
     show: true,
+    mdiNumeric1Circle,
+    mdiNumeric2Circle,
   }),
   async created() {
     const self = this;
