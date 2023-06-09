@@ -89,6 +89,11 @@ services:
     - "www.desec.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
     - "get.desec.${DESECSTACK_DOMAIN}:${DESECSTACK_IPV4_REAR_PREFIX16}.0.128"
 
+  libfaketime:
+    # trajano/alpine-libfaketime is incompatible is stale; its libfaketime
+    # version is incompatible with Python 3.11's time.sleep(). Rebuilding helps.
+    build: https://github.com/trajano/alpine-libfaketime.git
+
 volumes:
   autocert:
   faketime:

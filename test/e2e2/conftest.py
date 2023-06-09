@@ -495,9 +495,10 @@ def assert_all_ns(assertion: callable, retry_on=(AssertionError,)):
 
 def faketime(t: str):
     print('FAKETIME', t)
-    with open('/etc/faketime/faketime.rc', 'w') as f:
+    with open(os.environ['FAKETIME_TIMESTAMP_FILE'] + '.tmp', 'w') as f:
         f.write(t + '\n')
-
+    # https://github.com/wolfcw/libfaketime/issues/392#issuecomment-1122344129
+    os.rename(os.environ['FAKETIME_TIMESTAMP_FILE'] + '.tmp', os.environ['FAKETIME_TIMESTAMP_FILE'])
 
 def faketime_get():
     try:

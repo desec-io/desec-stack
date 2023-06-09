@@ -6,6 +6,7 @@ A collection of tests against the stack written in python and pytest.
 
 The tests can be run from the **CLI** using
 
+    docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build libfaketime
     docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
     docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml up test-e2e2
 
