@@ -42,6 +42,7 @@
                                     v-model="password"
                                     :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
                                     prepend-icon="mdi-blank"
+                                    outlined
                                     label="Password"
                                     required
                                     :disabled="working"
