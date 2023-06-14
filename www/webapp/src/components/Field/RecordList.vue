@@ -143,8 +143,9 @@ export default {
   },
   methods: {
     getRecordComponentName(type) {
-      const genericComponentName = 'RecordItem';
-      const specificComponentName = genericComponentName + type;
+      const prefixComponentName = 'Record';
+      const genericComponentName = prefixComponentName + 'Item';
+      const specificComponentName = prefixComponentName + type;
       if (this.types.includes(type) && specificComponentName in this.$options.components) {
         return specificComponentName;
       }
