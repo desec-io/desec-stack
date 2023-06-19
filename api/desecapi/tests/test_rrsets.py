@@ -1242,7 +1242,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 self.my_rr_set_domain.name, subname, "A", data
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertEquals(
+            self.assertEqual(
                 response.data["non_field_errors"][0],
                 "Invalid data. Expected a dictionary, but got list.",
             )
@@ -1252,7 +1252,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 self.my_rr_set_domain.name, subname, "A", data
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertEquals(
+            self.assertEqual(
                 response.data["non_field_errors"][0],
                 "Invalid data. Expected a dictionary, but got str.",
             )
@@ -1333,19 +1333,19 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         data = {"records": ["3.2.3.4"], "ttl": 3620, "subname": "test2", "type": "A"}
         response = self.client.patch(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEquals(response.data["subname"][0].code, "read-only-on-update")
+        self.assertEqual(response.data["subname"][0].code, "read-only-on-update")
         response = self.client.put(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEquals(response.data["subname"][0].code, "read-only-on-update")
+        self.assertEqual(response.data["subname"][0].code, "read-only-on-update")
 
         # Changing the type is expected to cause an error
         data = {"records": ["3.2.3.4"], "ttl": 3620, "subname": "test", "type": "TXT"}
         response = self.client.patch(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEquals(response.data["type"][0].code, "read-only-on-update")
+        self.assertEqual(response.data["type"][0].code, "read-only-on-update")
         response = self.client.put(url, data)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEquals(response.data["type"][0].code, "read-only-on-update")
+        self.assertEqual(response.data["type"][0].code, "read-only-on-update")
 
         # Changing "created" is no-op
         response = self.client.get(url)
