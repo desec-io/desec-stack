@@ -1,5 +1,5 @@
 captcha~=0.4.0
-celery~=5.2.7
+celery~=5.3.1
 coverage~=7.2.7
 cryptography~=41.0.1
 Django~=4.1.0  # upgrade once django-pgtrigger is compatible
