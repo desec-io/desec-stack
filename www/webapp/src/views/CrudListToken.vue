@@ -46,7 +46,7 @@ export default {
             value: 'perm_manage_tokens',
             readonly: false,
             writeOnCreate: true,
-            datatype: 'Switchbox',
+            datatype: 'GenericSwitchbox',
             searchable: false,
             advanced: true,
           },
@@ -98,7 +98,7 @@ export default {
             sortable: true,
             value: 'is_valid',
             readonly: true,
-            datatype: 'Checkbox',
+            datatype: 'GenericCheckbox',
             searchable: false,
           },
           value: {
