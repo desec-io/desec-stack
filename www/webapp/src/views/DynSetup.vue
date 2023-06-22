@@ -198,7 +198,7 @@
       if ('domain' in this.$route.params && this.$route.params.domain !== undefined) {
         this.domain = this.$route.params.domain;
       }
-      this.token = this.$route.hash.substr(1);
+      this.token = this.$route.hash.slice(1);
       this.check();
     },
     computed: {

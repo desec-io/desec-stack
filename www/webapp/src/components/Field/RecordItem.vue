@@ -228,7 +228,7 @@ export default {
 
       event.preventDefault();
       const pos = this.getPosition();
-      this.update(this.value.substr(0, pos - 1) + this.value.substr(pos), pos - 1);
+      this.update(this.value.slice(0, pos - 1) + this.value.slice(pos), pos - 1);
     },
     deleteHandler(index, event) {
       if (!this.positionBeforeDelimiter(index)) {
@@ -237,7 +237,7 @@ export default {
 
       event.preventDefault();
       const pos = this.getPosition();
-      this.update(this.value.substr(0, pos) + this.value.substr(pos + 1), pos);
+      this.update(this.value.slice(0, pos) + this.value.slice(pos + 1), pos);
     },
     leftHandler(index, event) {
       if (!this.positionAfterDelimiter(index)) {
