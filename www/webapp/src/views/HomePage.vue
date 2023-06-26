@@ -92,7 +92,21 @@
       <v-row align="center" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <img loading="lazy" :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="RIPE NCC Logo" class="mr-6" style="max-width: 300px; width: 100%"/>
+            <img loading="lazy" :src="require('../assets/non-free/nlnet.logo.svg')" alt="NLnet Foundation Logo" class="mr-6" style="margin: 10% auto; max-width: 300px; width: 100%"/>
+          </v-layout>
+        </v-col>
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          deSEC receives funding through <a class="primary--text text--darken-2" href="https://nlnet.nl/">NLnet
+          Foundation</a> for its work on the automation and future viability of DNSSEC. The <strong>NGI Assure</strong>
+          fund, established with financial support from the European Commission's <strong>Next Generation
+          Internet</strong> programme, is dedicated to technologies providing strong assurances about the Internet's
+          security and trustworthiness.
+        </v-col>
+      </v-row>
+      <v-row align="center" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
+          <v-layout class="justify-center">
+            <img loading="lazy" :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="RIPE NCC Logo" class="mr-6" style="margin: -15% auto; max-width: 300px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
