@@ -11,7 +11,6 @@ import "@fontsource/roboto/400-italic.css" /* regular-italic */
 import "@fontsource/roboto/500.css" /* medium */
 import "@fontsource/roboto/700.css" /* bold */
 import '@mdi/font/css/materialdesignicons.css'
-import VueTimeago from 'vue-timeago'
 import {createPinia, PiniaVuePlugin} from "pinia";
 
 
@@ -19,7 +18,6 @@ Vue.config.productionTip = false
 VueClipboard.config.autoSetContainer = true
 Vue.use(VueClipboard)
 Vue.use(Vuelidate)
-Vue.use(VueTimeago, {})
 // `Pinia` replaces `vuex` as store.
 Vue.use(PiniaVuePlugin)
 const pinia = createPinia()
