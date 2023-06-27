@@ -79,9 +79,9 @@
       actionHandler: null,
       errors: [],
       handler_map: {
-        'activate-account': 'ActivateAccountActionHandler',
-        'create-totp': 'CreateTOTPActionHandler',
-        'reset-password': 'ResetPasswordActionHandler',
+        'activate-account': ActivateAccountActionHandler.name,
+        'create-totp': CreateTOTPActionHandler.name,
+        'reset-password': ResetPasswordActionHandler.name,
       },
       post_payload: {},
       post_response: {},
@@ -90,7 +90,7 @@
       working: false,
     }),
     async mounted() {
-      this.actionHandler = this.handler_map[this.$route.params.action] || 'GenericActionHandler'
+      this.actionHandler = this.handler_map[this.$route.params.action] || GenericActionHandler.name
     },
     methods: {
       async confirm() {

@@ -1,6 +1,11 @@
 <script>
 import CrudList from './CrudList';
 import {useUserStore} from "@/store/user";
+import GenericText from "@/components/Field/GenericText.vue";
+import GenericCheckbox from "@/components/Field/GenericCheckbox.vue";
+import RecordList from "@/components/Field/RecordList.vue";
+import GenericSwitchbox from "@/components/Field/GenericSwitchbox.vue";
+import TimeAgo from "@/components/Field/TimeAgo.vue";
 
 export default {
   name: 'CrudListToken',
@@ -34,7 +39,7 @@ export default {
             value: 'name',
             readonly: false,
             writeOnCreate: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: true,
           },
           perm_manage_tokens: {
@@ -46,7 +51,7 @@ export default {
             value: 'perm_manage_tokens',
             readonly: false,
             writeOnCreate: true,
-            datatype: 'GenericSwitchbox',
+            datatype: GenericSwitchbox.name,
             searchable: false,
             advanced: true,
           },
@@ -60,7 +65,7 @@ export default {
             readonly: false,
             required: false,
             writeOnCreate: true,
-            datatype: 'RecordList',
+            datatype: RecordList.name,
             fieldProps: () => ({ type: 'Subnet' }),
             searchable: true,
             advanced: true,
@@ -73,7 +78,7 @@ export default {
             value: 'max_age',
             readonly: false,
             writeOnCreate: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: false,
             fieldProps: () => ({ hint: 'Format: [DD] [HH:[MM:]]ss' }),
             advanced: true,
@@ -86,7 +91,7 @@ export default {
             value: 'max_unused_period',
             readonly: false,
             writeOnCreate: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: false,
             fieldProps: () => ({ hint: 'Format: [DD] [HH:[MM:]]ss' }),
             advanced: true,
@@ -98,7 +103,7 @@ export default {
             sortable: true,
             value: 'is_valid',
             readonly: true,
-            datatype: 'GenericCheckbox',
+            datatype: GenericCheckbox.name,
             searchable: false,
           },
           value: {
@@ -108,7 +113,7 @@ export default {
             sortable: false,
             value: 'value',
             readonly: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: false,
             fieldProps: () => ({ placeholder: '(only displayed once)' }),
           },
@@ -119,7 +124,7 @@ export default {
             sortable: true,
             value: 'created',
             readonly: true,
-            datatype: 'TimeAgo',
+            datatype: TimeAgo.name,
             searchable: false,
           },
           last_used: {
@@ -129,7 +134,7 @@ export default {
             sortable: true,
             value: 'last_used',
             readonly: true,
-            datatype: 'TimeAgo',
+            datatype: TimeAgo.name,
             searchable: false,
           },
         },

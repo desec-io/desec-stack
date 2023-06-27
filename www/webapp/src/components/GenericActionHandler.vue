@@ -20,7 +20,7 @@
       auto_submit: false,
     }),
     async created() {
-      this.auto_submit = this.auto_submit || this.$options.name === 'GenericActionHandler'
+      this.auto_submit = this.auto_submit || this.$options.name === 'GenericActionHandler' /* Generic case. Name of this (root) component. */
       if(this.auto_submit) {
         this.$emit('autosubmit')
       }

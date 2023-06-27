@@ -3,6 +3,9 @@ import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog';
 import {mdiDownload, mdiInformation} from "@mdi/js";
+import GenericText from "@/components/Field/GenericText.vue";
+import GenericTextarea from "@/components/Field/GenericTextarea.vue";
+import TimeAgo from "@/components/Field/TimeAgo.vue";
 
 export default {
   name: 'CrudListDomain',
@@ -40,7 +43,7 @@ export default {
             readonly: true,
             required: true,
             writeOnCreate: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: true,
           },
           published: {
@@ -50,7 +53,7 @@ export default {
             sortable: true,
             value: 'published',
             readonly: true,
-            datatype: 'TimeAgo',
+            datatype: TimeAgo.name,
             searchable: false,
           },
           zonefile: {
@@ -60,7 +63,7 @@ export default {
             align: 'left',
             value: 'zonefile',
             writeOnCreate: true,
-            datatype: 'GenericTextarea',
+            datatype: GenericTextarea.name,
             searchable: false,
             fieldProps: () => ({ hint: 'Note: automatically managed records will be ignored!' }),
             hideFromTable: true,

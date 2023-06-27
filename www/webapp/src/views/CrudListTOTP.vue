@@ -1,6 +1,8 @@
 <script>
 import CrudList from './CrudList';
 import TOTPVerifyDialog from '@/views/Console/TOTPVerifyDialog';
+import GenericText from "@/components/Field/GenericText.vue";
+import TimeAgo from "@/components/Field/TimeAgo.vue";
 
 export default {
   name: 'CrudListTOTP',
@@ -34,7 +36,7 @@ export default {
             readonly: true,
             required: true,
             writeOnCreate: true,
-            datatype: 'GenericText',
+            datatype: GenericText.name,
             searchable: true,
           },
           created: {
@@ -44,7 +46,7 @@ export default {
             sortable: true,
             value: 'created',
             readonly: true,
-            datatype: 'TimeAgo',
+            datatype: TimeAgo.name,
             searchable: false,
           },
           last_used: {
@@ -54,7 +56,7 @@ export default {
             sortable: true,
             value: 'last_used',
             readonly: true,
-            datatype: 'TimeAgo',
+            datatype: TimeAgo.name,
             searchable: false,
           },
         },

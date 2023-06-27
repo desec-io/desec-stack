@@ -1,6 +1,11 @@
 <script>
 import CrudList from '@/views/CrudList';
 import {HTTP, withWorking} from "@/utils"
+import GenericText from "@/components/Field/GenericText.vue";
+import RecordList from "@/components/Field/RecordList.vue";
+import TTL from "@/components/Field/TTL.vue";
+import TimeAgo from "@/components/Field/TimeAgo.vue";
+import RRSetType from "@/components/Field/RRSetType.vue";
 
 export default {
   name: 'CrudListRecord',
@@ -34,7 +39,7 @@ export default {
           value: 'type',
           readonly: true,
           required: true,
-          datatype: 'RRSetType',
+          datatype: RRSetType.name,
           searchable: true,
           writeOnCreate: true,
           width: '120px',
@@ -46,7 +51,7 @@ export default {
           sortable: true,
           value: 'subname',
           readonly: true,
-          datatype: 'GenericText',
+          datatype: GenericText.name,
           fieldProps: () => ({ rules: [
               v => !(v.startsWith('.') || v.endsWith('.') || v.includes('..'))
                   || 'Dots must be surrounded by other characters.',
@@ -65,7 +70,7 @@ export default {
           value: 'records',
           readonly: false,
           required: true,
-          datatype: 'RecordList',
+          datatype: RecordList.name,
           fieldProps: rrSet => ({ type: rrSet.type || 'A' }),
           searchable: true,
         },
@@ -77,7 +82,7 @@ export default {
           value: 'ttl',
           readonly: false,
           required: true,
-          datatype: 'TTL',
+          datatype: TTL.name,
           fieldProps: () => ({ min: self.minimumTTL }),
           searchable: true,
           width: '130px',
@@ -89,7 +94,7 @@ export default {
           sortable: true,
           value: 'touched',
           readonly: true,
-          datatype: 'TimeAgo',
+          datatype: TimeAgo.name,
           searchable: false,
           width: '130px',
         },
