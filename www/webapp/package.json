@@ -14,7 +14,6 @@
     "@mdi/js": "~7.2.96",
     "axios": "^1.4.0",
     "core-js": "^3.27.1",
-    "javascript-time-ago": "^2.5.9",
     "pinia": "^2.0.30",
     "vue": "~2.7.14",
     "vue-clipboard2": "^0.3.3",
