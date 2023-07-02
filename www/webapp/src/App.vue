@@ -202,45 +202,6 @@ export default {
     email: process.env.VUE_APP_EMAIL,
     mdiHeart,
     mdiMenuDown,
-    menu: {
-      'home': {
-        'name': 'home',
-        'icon': mdiHome,
-        'text': 'Home',
-      },
-      'docs': {
-        'name': 'docs',
-        'icon': mdiBookOpenPageVariant,
-        'text': 'Docs',
-      },
-      'roadmap': {
-        'name': 'roadmap',
-        'icon': mdiRoadVariant,
-        'text': 'Roadmap',
-      },
-      'talk': {
-        'name': 'talk',
-        'icon': mdiForumOutline,
-        'text': 'Talk',
-      },
-      'donate': {
-        'name': 'donate',
-        'icon': mdiGiftOutline,
-        'text': 'Donate',
-        'post_icon': mdiHeart,
-        'post_icon_color': 'red',
-      },
-      'about': {
-        'name': 'about',
-        'icon': mdiUmbrella,
-        'text': 'About',
-      },
-      'reset-password': {
-        'name': 'reset-password',
-        'icon': mdiLockReset,
-        'text': 'Reset Account Password',
-      },
-    },
     tabmenu: {
       'domains': {
         'name': 'domains',
@@ -266,6 +227,56 @@ export default {
       },
     },
   }),
+  computed: {
+    menu: () => {
+      const user = useUserStore();
+      const menu_perma = {
+        'home': {
+          'name': 'home',
+          'icon': mdiHome,
+          'text': 'Home',
+        },
+        'docs': {
+          'name': 'docs',
+          'icon': mdiBookOpenPageVariant,
+          'text': 'Docs',
+        },
+        'roadmap': {
+          'name': 'roadmap',
+          'icon': mdiRoadVariant,
+          'text': 'Roadmap',
+        },
+        'talk': {
+          'name': 'talk',
+          'icon': mdiForumOutline,
+          'text': 'Talk',
+        },
+        'donate': {
+          'name': 'donate',
+          'icon': mdiGiftOutline,
+          'text': 'Donate',
+          'post_icon': mdiHeart,
+          'post_icon_color': 'red',
+        },
+        'about': {
+          'name': 'about',
+          'icon': mdiUmbrella,
+          'text': 'About',
+        },
+      };
+      let menu_opt = {};
+      if(!user.authenticated) {
+        menu_opt = {
+          'reset-password': {
+            'name': 'reset-password',
+            'icon': mdiLockReset,
+            'text': 'Reset Account Password',
+          },
+        };
+      }
+      return {...menu_perma, ...menu_opt};
+    },
+  },
   methods: {
     async logout() {
       await logout();
