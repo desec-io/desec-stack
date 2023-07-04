@@ -13,7 +13,11 @@
               md="8"
               lg="6"
       >
-        <v-form @submit.prevent="signup" ref="form">
+        <v-form
+            @submit.prevent="signup"
+            :disabled="working"
+            ref="form"
+        >
           <v-card class="elevation-12 pb-4">
             <v-toolbar
                     color="primary"
@@ -31,7 +35,6 @@
                       prepend-icon="mdi-email"
                       outlined
                       required
-                      :disabled="working"
                       :rules="email_rules"
                       :error-messages="email_errors"
                       @change="email_errors=[]"
@@ -58,7 +61,7 @@
                       prepend-icon="mdi-blank"
                       outlined
                       required
-                      :disabled="working || domainType === 'none' || domainType === undefined"
+                      :disabled="domainType === 'none' || domainType === undefined"
                       :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
                       :error-messages="domain_errors"
                       :suffix="domainType === 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
@@ -82,7 +85,6 @@
                         prepend-icon="mdi-account-check"
                         outlined
                         required
-                        :disabled="working"
                         :rules="captcha_rules"
                         :error-messages="captcha_errors"
                         @change="captcha_errors=[]"
@@ -126,7 +128,6 @@
                       v-model="outreach_preference"
                       hide-details
                       type="checkbox"
-                      :disabled="working"
                       tabindex="5"
                 >
                   <template #label>
@@ -142,7 +143,6 @@
                       v-model="terms"
                       hide-details="auto"
                       type="checkbox"
-                      :disabled="working"
                       :rules="terms_rules"
                       tabindex="6"
                 >
@@ -161,7 +161,6 @@
                       class="px-4"
                       color="primary"
                       type="submit"
-                      :disabled="working"
                       :loading="working"
                       tabindex="7"
               >Sign up</v-btn>

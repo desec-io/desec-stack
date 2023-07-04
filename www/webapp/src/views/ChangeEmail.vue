@@ -12,7 +12,11 @@
                     sm="8"
                     md="6"
             >
-                <v-form @submit.prevent="changeEmail" ref="form">
+                <v-form
+                    @submit.prevent="changeEmail"
+                    :disabled="working"
+                    ref="form"
+                >
                     <v-card class="elevation-12 pb-4">
                         <v-toolbar
                                 color="primary"
@@ -47,7 +51,6 @@
                                     outlined
                                     label="Password"
                                     required
-                                    :disabled="working"
                                     :rules="[rules.required]"
                                     :type="show ? 'text' : 'password'"
                                     :error-messages="password_errors"
@@ -62,7 +65,6 @@
                                     prepend-icon="mdi-email"
                                     outlined
                                     required
-                                    :disabled="working"
                                     :rules="[rules.required, rules.email]"
                                     :error-messages="email_errors"
                                     @change="email_errors=[]"
@@ -75,7 +77,6 @@
                                     depressed
                                     color="primary"
                                     type="submit"
-                                    :disabled="working"
                                     :loading="working"
                                     tabindex="3"
                             >Change Email Address

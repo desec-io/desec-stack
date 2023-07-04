@@ -12,7 +12,11 @@
                     sm="8"
                     md="6"
             >
-                <v-form @submit.prevent="resetPassword" ref="form">
+                <v-form
+                    @submit.prevent="resetPassword"
+                    :disabled="working"
+                    ref="form"
+                >
                     <v-card class="elevation-12 pb-4">
                         <v-toolbar
                                 color="primary"
@@ -41,7 +45,6 @@
                                     prepend-icon="mdi-email"
                                     outlined
                                     required
-                                    :disabled="working"
                                     :rules="email_rules"
                                     :error-messages="email_errors"
                                     @change="email_errors=[]"
@@ -59,7 +62,6 @@
                                             prepend-icon="mdi-account-check"
                                             outlined
                                             required
-                                            :disabled="working"
                                             :rules="captcha_rules"
                                             :error-messages="captcha_errors"
                                             @change="captcha_errors=[]"
@@ -103,7 +105,6 @@
                                     depressed
                                     color="primary"
                                     type="submit"
-                                    :disabled="working"
                                     :loading="working"
                                     tabindex="3"
                             >Reset Password

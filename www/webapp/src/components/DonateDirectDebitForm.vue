@@ -19,7 +19,11 @@
       <p>Again, thank you so much.</p>
       <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
-    <v-form v-if="!done" @submit.prevent="donate" ref="form">
+    <v-form
+        v-if="!done"
+        @submit.prevent="donate"
+        :disabled="working"
+        ref="form">
       <error-alert :errors="errors"></error-alert>
 
       <v-radio-group
@@ -38,7 +42,6 @@
               :prepend-icon="mdiAccount"
               outlined
               required
-              :disabled="working"
               :rules="name_rules"
               :error-messages="name_errors"
       />
@@ -49,7 +52,6 @@
               :prepend-icon="mdiBank"
               outlined
               required
-              :disabled="working"
               :rules="iban_rules"
               :error-messages="iban_errors"
               validate-on-blur
@@ -61,7 +63,6 @@
               :prepend-icon="mdiCash100"
               outlined
               required
-              :disabled="working"
               :rules="amount_rules"
               :error-messages="amount_errors"
       />
@@ -71,7 +72,6 @@
               label="Message (optional)"
               :prepend-icon="mdiMessageTextOutline"
               outlined
-              :disabled="working"
               validate-on-blur
       />
 
@@ -80,7 +80,6 @@
               label="Email Address (optional)"
               :prepend-icon="mdiEmail"
               outlined
-              :disabled="working"
               :rules="email_rules"
               :error-messages="email_errors"
               validate-on-blur
@@ -91,7 +90,6 @@
               block
               color="primary"
               type="submit"
-              :disabled="working"
               :loading="working"
       >Donate Now</v-btn>
     </v-form>

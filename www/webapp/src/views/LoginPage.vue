@@ -15,6 +15,7 @@
         <v-form
           v-model="valid"
           @submit.prevent="login"
+          :disabled="working"
         >
           <v-card class="elevation-12 pb-4">
             <v-toolbar
@@ -31,7 +32,6 @@
                 label="Email"
                 outlined
                 required
-                :disabled="working"
                 :rules="email_rules"
                 :error-messages="email_errors"
                 tabindex="1"
@@ -44,7 +44,6 @@
                 :type="hide_password ? 'password' : 'text'"
                 outlined
                 required
-                :disabled="working"
                 :rules="password_rules"
                 tabindex="2"
                 @click:append="() => (hide_password = !hide_password)"
@@ -63,7 +62,7 @@
                 type="submit"
                 color="primary"
                 depressed
-                :disabled="!valid || working"
+                :disabled="!valid"
                 :loading="working"
                 tabindex="4"
               >
