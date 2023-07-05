@@ -143,7 +143,7 @@ export default {
     @keyframes successFade {
         from { background-color: forestgreen; }
     }
-    >>> tr:focus-within .mdi-content-save-edit {
+    >>> tr:focus-within .button-save .v-icon {
         color: forestgreen;
     }
     >>> tr:focus-within :focus {

@@ -223,6 +223,7 @@
                               v-bind="attrs"
                               v-on="on"
                               :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
+                              :class="'button-' + key"
                               color="grey"
                               icon
                               @click.stop="action.go(itemFieldProps.item, $event)"
@@ -446,7 +447,7 @@ export default {
       if (e.keyCode === 13) {
         // Submit
         document.activeElement.blur();
-        e.target.closest('tr').querySelector('.mdi-content-save-edit').closest('button').click();
+        e.target.closest('tr').querySelector('.button-save').click();
       }
     },
     handleRowClick: () => {},
@@ -710,7 +711,7 @@ export default {
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
-  >>> tr.orange .mdi-content-save-edit, >>> tr.red .mdi-content-save-edit {
+  >>> tr.orange .button-save .v-icon, >>> tr.red .button-save .v-icon {
     color: forestgreen;
   }
   >>> tr:focus-within :focus {
