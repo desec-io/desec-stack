@@ -7,7 +7,7 @@
 
     <div v-if="!user.authenticated">
       <div class="text-subtitle-1">
-        <v-icon>mdi-numeric-0-circle</v-icon>
+        <v-icon>{{ mdiNumeric0Circle }}</v-icon>
         DNS Configuration
       </div>
       <p>
@@ -20,7 +20,7 @@
     </div>
 
     <div class="mt-2 text-subtitle-1">
-      <v-icon>mdi-numeric-1-circle</v-icon>
+      <v-icon>{{ mdiNumeric1Circle }}</v-icon>
       Delegate your domain
     </div>
 
@@ -45,7 +45,7 @@
                   outlined
                   text
               >
-                <v-icon>mdi-content-copy</v-icon>
+                <v-icon>{{ mdiContentCopy }}</v-icon>
                 copy to clipboard
               </v-btn>
               <v-spacer></v-spacer>
@@ -63,7 +63,7 @@
     </p>
 
     <div class="text-subtitle-1">
-      <v-icon>mdi-numeric-2-circle</v-icon>
+      <v-icon>{{ mdiNumeric2Circle }}</v-icon>
       Enable DNSSEC
     </div>
     <p>
@@ -94,7 +94,7 @@
                   outlined
                   text
               >
-                <v-icon>mdi-content-copy</v-icon>
+                <v-icon>{{ mdiContentCopy }}</v-icon>
                 copy to clipboard
               </v-btn>
               <v-spacer></v-spacer>
@@ -111,7 +111,7 @@
     </v-card>
 
     <div class="text-subtitle-1">
-      <v-icon>mdi-numeric-3-circle</v-icon>
+      <v-icon>{{ mdiNumeric3Circle }}</v-icon>
       Check Setup
     </div>
     All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take
@@ -138,6 +138,7 @@
 
 <script>
 import {useUserStore} from "@/store/user";
+import {mdiContentCopy, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle} from "@mdi/js";
 
 export default {
   name: 'DomainSetup',
@@ -160,6 +161,11 @@ export default {
     },
   },
   data: () => ({
+    mdiContentCopy,
+    mdiNumeric0Circle,
+    mdiNumeric1Circle,
+    mdiNumeric2Circle,
+    mdiNumeric3Circle,
     user: useUserStore(),
     snackbar: false,
     snackbar_text: '',
