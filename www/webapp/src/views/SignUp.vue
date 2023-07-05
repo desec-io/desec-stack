@@ -70,7 +70,7 @@
                       ref="domainField"
                       tabindex="3"
                       :hint="domainType === 'dynDNS'
-                        ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as you router).'
+                        ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as your router).'
                         : 'Your first domain (you can add more later). – To use with dynDNS, please see the docs.'
                       "
                       persistent-hint
