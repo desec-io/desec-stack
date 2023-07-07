@@ -49,7 +49,7 @@ async function _digestError(error, app) {
           return ['You are not logged in.'];
         }
       } else if (error.response.status === 403) {
-          if (useUserStore().authenticated) { // MFA
+          if (useUserStore().authenticated && !['change-email', 'delete-account'].includes(app.$route.name)) { // MFA
             if (app.$route.name !== 'mfa') {
               app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
             }
