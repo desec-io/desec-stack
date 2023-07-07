@@ -90,7 +90,7 @@
 </template>
 
 <script>
-import {digestError, HTTP, withWorking} from '@/utils'
+import {digestError, HTTP, logout, withWorking} from '@/utils'
 import ErrorAlert from "../../components/ErrorAlert";
 import QrcodeVue from '../../modules/qrcode.vue/dist/qrcode.vue.esm'
 import {mdiCheck, mdiClose, mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
@@ -141,6 +141,7 @@ export default {
             () => HTTP.post('auth/totp/' + this.data.id + '/verify/', {code: this.code})
         );
         this.successDetail = res.data.detail;
+        await logout();
       } catch (ex) {
         let errors = await digestError(ex);
         for (const c in errors) {
