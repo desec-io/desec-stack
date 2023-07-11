@@ -30,7 +30,7 @@
               All operations on your domain require the following authorization token secret shown below:
             </p>
             <p align="center">
-              <code>{{token}}</code>
+              <code>{{ token }}</code>
             </p>
             <p>
               Please keep this token secret in a safe place.
@@ -53,15 +53,15 @@
                     <tbody>
                     <tr>
                       <td>URL</td>
-                      <td class="fixed-width">https://update.{{LOCAL_PUBLIC_SUFFIXES[0]}}/</td>
+                      <td class="fixed-width">https://update.{{ LOCAL_PUBLIC_SUFFIXES[0] }}/</td>
                     </tr>
                     <tr>
                       <td>Username</td>
-                      <td class="fixed-width">{{domain}}</td>
+                      <td class="fixed-width">{{ domain }}</td>
                     </tr>
                     <tr>
                       <td>Password</td>
-                      <td class="fixed-width">{{token}}</td>
+                      <td class="fixed-width">{{ token }}</td>
                     </tr>
                     </tbody>
                   </v-simple-table>
@@ -119,10 +119,10 @@
                 <span v-if="ips.length > 1">are:</span><span v-if="ips.length === 1">is:</span>
               </p>
               <ul class="mb-4">
-                <li v-for="ip in ips" :key="ip"><span class="fixed-width">{{ip}}</span></li>
+                <li v-for="ip in ips" :key="ip"><span class="fixed-width">{{ ip }}</span></li>
               </ul>
               <p>
-                The last time your DNS information changed was at {{lastChanged}}.
+                The last time your DNS information changed was at {{ lastChanged }}.
               </p>
               <p>
                 Your deSEC account setup looks good and is ready to use.

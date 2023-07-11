@@ -7,7 +7,7 @@
     <h3>Postanschrift / Address</h3>
     <p>Kyffhäuserstr. 5<br>10781 Berlin</p>
     <h3>E-Mail</h3>
-    <p>{{email}}</p>
+    <p>{{ email }}</p>
     <h3>Vertreten durch / Represented by</h3>
     <p>
       Dr. Nils Wisiol<br>

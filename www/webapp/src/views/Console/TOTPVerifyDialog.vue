@@ -14,7 +14,7 @@
           </div>
           <v-spacer/>
           <v-icon @click.stop="close">
-            {{mdiClose}}
+            {{ mdiClose }}
           </v-icon>
         </v-card-title>
         <v-divider/>
@@ -29,14 +29,14 @@
 
         <v-card-text v-if="!!successDetail" class="text-center">
           <p class="mt-2">
-            <v-icon>{{mdiCheck}}</v-icon>
+            <v-icon>{{ mdiCheck }}</v-icon>
             Great! Continue to <router-link :to="{name: 'login'}">log in</router-link>.
           </p>
         </v-card-text>
 
         <v-card-text v-if="!!data && !successDetail" class="text-center">
           <p class="mt-2">
-            <v-icon>{{mdiNumeric1Circle}}</v-icon>
+            <v-icon>{{ mdiNumeric1Circle }}</v-icon>
             Please scan the following QR code with an authenticator app (e.g. Google Authenticator).<br />
             <strong>This code is only displayed once.</strong>
           </p>
@@ -44,7 +44,7 @@
             <qrcode-vue :value="data.uri" size="300" level="H"/>
           </div>
           <p class="mt-6">
-            <v-icon>{{mdiNumeric2Circle}}</v-icon>
+            <v-icon>{{ mdiNumeric2Circle }}</v-icon>
             Enter the code displayed in the authenticator app to confirm and activate the token:
           </p>
 

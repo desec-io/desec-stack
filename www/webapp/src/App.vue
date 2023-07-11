@@ -14,12 +14,12 @@
                 :to="{name: item.name}"
                 :exact="true">
           <v-list-item-action>
-            <v-icon>{{item.icon}}</v-icon>
+            <v-icon>{{ item.icon }}</v-icon>
           </v-list-item-action>
           <v-list-item-content>
             <v-list-item-title>
-              {{item.text}}
-              <v-icon :color="item.post_icon_color" class="text--darken-2" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
+              {{ item.text }}
+              <v-icon :color="item.post_icon_color" class="text--darken-2" small v-if="item.post_icon">{{ item.post_icon }}</v-icon>
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -41,8 +41,8 @@
           <router-link
                   class="primary--text text--darken-2"
                   :to="{name: item.name}"
-          >{{item.text}}</router-link>
-          <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{item.post_icon}}</v-icon>
+          >{{ item.text }}</router-link>
+          <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{ item.post_icon }}</v-icon>
         </span>
       </div>
       <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated">Create Account</v-btn>
@@ -70,7 +70,7 @@
                       v-on="on"
               >
                 more
-                <v-icon right>{{mdiMenuDown}}</v-icon>
+                <v-icon right>{{ mdiMenuDown }}</v-icon>
               </v-btn>
             </template>
 
@@ -143,7 +143,7 @@
       </div>
       <div class="grey darken-4 d-md-flex flex-row justify-space-between pa-6">
         <div>
-          <p>{{email}}</p>
+          <p>{{ email }}</p>
           <p>
             Kyffhäuserstraße 5<br/>
             10781 Berlin<br/>
@@ -153,7 +153,7 @@
         <div>
           <p>
             Please <router-link :to="{name: 'donate'}">donate</router-link>!
-            <v-icon color="red" class="text--darken-2" dense>{{mdiHeart}}</v-icon>
+            <v-icon color="red" class="text--darken-2" dense>{{ mdiHeart }}</v-icon>
           </p>
           <p>
             European Bank Account:<br>

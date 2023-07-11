@@ -63,8 +63,8 @@
     <v-container>
       <v-row justify="center" class="py-8">
         <v-col class="col-12 col-sm-4 text-center" v-for="f in features" :key="f.title">
-          <v-icon x-large>{{f.icon}}</v-icon>
-          <h1 class="grey--text text--darken-2"><span>{{f.title}}</span></h1>
+          <v-icon x-large>{{ f.icon }}</v-icon>
+          <h1 class="grey--text text--darken-2"><span>{{ f.title }}</span></h1>
           <p v-html="f.text"></p>
         </v-col>
       </v-row>
@@ -171,8 +171,8 @@
                 </v-img>
               </template>
               <span>
-                {{f.name}}
-                <span v-if="f.adopted_by">sponsored by {{f.adopted_by}}</span>
+                {{ f.name }}
+                <span v-if="f.adopted_by">sponsored by {{ f.adopted_by }}</span>
                 <span v-else>has no sponsor, support it now!</span>
               </span>
             </v-tooltip>

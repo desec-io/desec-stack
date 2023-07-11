@@ -10,8 +10,8 @@
         <v-row class="pb-8">
           <v-col class="col-12 col-sm-6 d-flex" v-for="p in privacy_policy" :key="p.title">
             <v-card>
-              <v-card-title>{{p.title}}</v-card-title>
-              <v-card-text>{{p.text}}</v-card-text>
+              <v-card-title>{{ p.title }}</v-card-title>
+              <v-card-text>{{ p.text }}</v-card-text>
             </v-card>
           </v-col>
         </v-row>
@@ -86,7 +86,7 @@
       <p></p><h3>Änderung unserer Datenschutzbestimmungen</h3>
       <p>Wir behalten uns vor, diese Datenschutzerklärung anzupassen, damit sie stets den aktuellen rechtlichen Anforderungen entspricht oder um Änderungen unserer Leistungen in der Datenschutzerklärung umzusetzen, z.B. bei der Einführung neuer Services. Für Ihren erneuten Besuch gilt dann die neue Datenschutzerklärung.</p>
       <h3>Fragen an den Datenschutzbeauftragten</h3>
-      <p>Wenn Sie Fragen zum Datenschutz haben, schreiben Sie uns bitte eine E-Mail oder wenden Sie sich direkt an die für den Datenschutz verantwortliche Person in unserer Organisation: {{email}}</p>
+      <p>Wenn Sie Fragen zum Datenschutz haben, schreiben Sie uns bitte eine E-Mail oder wenden Sie sich direkt an die für den Datenschutz verantwortliche Person in unserer Organisation: {{ email }}</p>
       <p><em>Die Datenschutzerklärung wurde <a href="https://www.activemind.de/datenschutz/datenschutzhinweis-generator/">mithilfe der activeMind AG</a> erstellt.</em></p>
     </v-container>
   </div>

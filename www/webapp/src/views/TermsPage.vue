@@ -31,7 +31,7 @@
       <v-row class="pb-8">
         <v-col class="col-12 col-sm-6 d-flex" v-for="(t, idx) in terms_of_use" :key="t.title">
           <v-card>
-            <v-card-title>§{{idx+1}} {{t.title}}</v-card-title>
+            <v-card-title>§{{ idx+1 }} {{ t.title }}</v-card-title>
             <v-card-text><span v-html="t.text"></span></v-card-text>
           </v-card>
         </v-col>

@@ -36,8 +36,8 @@
         <v-row class="pb-8">
           <v-col class="col-12 col-sm-6 d-flex" v-for="p in purposes" :key="p.title">
             <v-card>
-              <v-card-title>{{p.title}}</v-card-title>
-              <v-card-text>{{p.text}}</v-card-text>
+              <v-card-title>{{ p.title }}</v-card-title>
+              <v-card-text>{{ p.text }}</v-card-text>
             </v-card>
           </v-col>
         </v-row>

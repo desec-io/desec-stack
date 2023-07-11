@@ -18,7 +18,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiBankTransferIn}}</v-icon> Direct Debit – Let us Take your Money (Europe)
+                    <v-icon class="mr-2">{{ mdiBankTransferIn }}</v-icon> Direct Debit – Let us Take your Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -32,7 +32,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiBankTransferOut}}</v-icon> Bank Transfer – Send us Money (Europe)
+                    <v-icon class="mr-2">{{ mdiBankTransferOut }}</v-icon> Bank Transfer – Send us Money (Europe)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -63,7 +63,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiCreditCardOutline}}</v-icon> Credit Card
+                    <v-icon class="mr-2">{{ mdiCreditCardOutline }}</v-icon> Credit Card
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -81,7 +81,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiGithub}}</v-icon> GitHub Sponsors
+                    <v-icon class="mr-2">{{ mdiGithub }}</v-icon> GitHub Sponsors
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -94,7 +94,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiGiftOutline}}</v-icon> PayPal
+                    <v-icon class="mr-2">{{ mdiGiftOutline }}</v-icon> PayPal
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -112,7 +112,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{mdiHeartMultipleOutline}}</v-icon> Double-up with Your Employer
+                    <v-icon class="mr-2">{{ mdiHeartMultipleOutline }}</v-icon> Double-up with Your Employer
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">

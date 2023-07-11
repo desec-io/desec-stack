@@ -62,7 +62,7 @@
                         depressed
                         :disabled="user.working"
                 >
-                  <v-icon>{{mdiPlus}}</v-icon>
+                  <v-icon>{{ mdiPlus }}</v-icon>
                 </v-btn>
                 <template #extension v-if="$vuetify.breakpoint.xsOnly">
                   <v-text-field

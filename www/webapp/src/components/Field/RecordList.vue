@@ -24,7 +24,7 @@
             small
             text
             v-if="!readonly && !disabled"
-    ><v-icon>{{mdiPlus}}</v-icon> add another value</v-btn>
+    ><v-icon>{{ mdiPlus }}</v-icon> add another value</v-btn>
     <!--div><code style="white-space: normal">{{ value }}</code></div-->
   </div>
 </template>
