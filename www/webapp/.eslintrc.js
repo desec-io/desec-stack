@@ -17,6 +17,8 @@ module.exports = {
     'vue/v-bind-style': 'warn',
     'vue/v-on-style': 'warn',
     'vue/v-slot-style': 'warn',
+    'vue/mustache-interpolation-spacing': ['warn', 'always'],
+    'vue/no-multi-spaces': 'warn',
   },
   ignorePatterns: ['**/src/modules/**/*'],
   parserOptions: {
