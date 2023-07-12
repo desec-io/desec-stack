@@ -2,7 +2,6 @@ import Vue from 'vue'
 import App from '@/App.vue'
 import router from '@/router'
 import vuetify from '@/plugins/vuetify'
-import VueClipboard from 'vue-clipboard2'
 import VueRouter from 'vue-router'
 import Vuelidate from 'vuelidate'
 import "@fontsource/roboto/300.css" /* light */
@@ -15,8 +14,6 @@ import {createPinia, PiniaVuePlugin} from "pinia";
 
 
 Vue.config.productionTip = false
-VueClipboard.config.autoSetContainer = true
-Vue.use(VueClipboard)
 Vue.use(Vuelidate)
 // `Pinia` replaces `vuex` as store.
 Vue.use(PiniaVuePlugin)

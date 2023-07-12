@@ -39,9 +39,7 @@
             <pre class="pa-3">{{ ns.join('\n') }}</pre>
             <v-card-actions>
               <v-btn
-                  v-clipboard:copy="ns.join('\n')"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
+                  @click="copyToClipboard(ns.join('\n'))"
                   outlined
                   text
               >
@@ -88,9 +86,7 @@
             <pre class="pa-3">{{ t.data }}</pre>
             <v-card-actions>
               <v-btn
-                  v-clipboard:copy="t.data"
-                  v-clipboard:success="copySuccess"
-                  v-clipboard:error="copyError"
+                  @click="copyToClipboard(t.data)"
                   outlined
                   text
               >
@@ -193,11 +189,19 @@ export default {
     },
   },
   methods: {
-    copySuccess: function () {
-      this.showSnackbar("Copied to clipboard.");
-    },
-    copyError: function () {
-      this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+    copyToClipboard: async function (text) {
+      try {
+        await navigator.clipboard.writeText(text).then(
+            () => {
+              this.showSnackbar("Copied to clipboard.");
+            },
+            () => {
+              this.showSnackbar("Copy to clipboard not allowed. Please try again manually.");
+            },
+        );
+      } catch (e) {
+        this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+      }
     },
     showSnackbar: function (text) {
       this.snackbar_text = text;
