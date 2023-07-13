@@ -19,6 +19,7 @@ module.exports = {
     'vue/v-slot-style': 'warn',
     'vue/mustache-interpolation-spacing': ['warn', 'always'],
     'vue/no-multi-spaces': 'warn',
+    'vue/no-deprecated-filter': 'warn', // Preparation for vue3
   },
   ignorePatterns: ['**/src/modules/**/*'],
   parserOptions: {

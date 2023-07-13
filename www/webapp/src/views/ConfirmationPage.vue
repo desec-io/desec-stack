@@ -18,7 +18,7 @@
                   dark
                   flat
           >
-            <v-toolbar-title class="capitalize">{{ this.$route.params.action | replace(/-/g, ' ') }} Confirmation</v-toolbar-title>
+            <v-toolbar-title class="capitalize">{{ actionName }} Confirmation</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <error-alert :errors="errors"></error-alert>
@@ -89,6 +89,12 @@
       valid: true,
       working: false,
     }),
+    computed: {
+      actionName() {
+        const text = this.$route.params.action ?? '';
+        return text.replace(/-/g, ' ');
+      },
+    },
     async mounted() {
       this.actionHandler = this.handler_map[this.$route.params.action] || GenericActionHandler.name
     },
