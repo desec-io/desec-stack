@@ -23,7 +23,7 @@
           <v-card-text>
             <error-alert :errors="errors"></error-alert>
             <v-form @submit.prevent="confirm" class="mb-4" v-model="valid" ref="form">
-              <div
+              <component
                       :is="this.actionHandler"
                       :payload="this.post_payload"
                       :response="this.post_response"
@@ -32,7 +32,7 @@
                       ref="actionHandler"
                       @autosubmit="confirm"
                       @clearerrors="clearErrors"
-              ></div>
+              ></component>
             </v-form>
             <h2 class="text-h6">Keep deSEC Going</h2>
             <p>
