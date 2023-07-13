@@ -21,13 +21,7 @@
         @click:append="$emit('remove', $event)"
         @input="inputHandler()"
         @paste.prevent="pasteHandler($event)"
-        @keydown.8="backspaceHandler(index, $event)"
-        @keydown.32="spaceHandler(index, $event)"
-        @keydown.35="endHandler($event)"
-        @keydown.36="homeHandler($event)"
-        @keydown.37="leftHandler(index, $event)"
-        @keydown.39="rightHandler(index, $event)"
-        @keydown.46="deleteHandler(index, $event)"
+        @keydown="keydownHandler(index, $event)"
         @keyup="(e) => $emit('keyup', e)"
       />
       <span
@@ -207,6 +201,31 @@ export default {
     positionBeforeDelimiter(index) {
       return index < this.fields.length - 1
         && this.$refs.input[index].$refs.input.selectionStart === this.fields[index].value.length;
+    },
+    keydownHandler(index, event) {
+      switch (event.keyCode) {
+        case 8:
+          this.backspaceHandler(index, event);
+          break;
+        case 32:
+          this.spaceHandler(index, event);
+          break;
+        case 35:
+          this.endHandler(event);
+          break;
+        case 36:
+          this.homeHandler(event);
+          break;
+        case 37:
+          this.leftHandler(index, event);
+          break;
+        case 39:
+          this.rightHandler(index, event);
+          break;
+        case 46:
+          this.deleteHandler(index, event);
+          break;
+      }
     },
     spaceHandler(index, event) {
       if (!this.positionBeforeDelimiter(index)) {

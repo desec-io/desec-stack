@@ -20,6 +20,7 @@ module.exports = {
     'vue/mustache-interpolation-spacing': ['warn', 'always'],
     'vue/no-multi-spaces': 'warn',
     'vue/no-deprecated-filter': 'warn', // Preparation for vue3
+    'vue/no-deprecated-v-on-number-modifiers': 'warn', // Preparation for vue3
   },
   ignorePatterns: ['**/src/modules/**/*'],
   parserOptions: {
