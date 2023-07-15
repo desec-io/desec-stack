@@ -1,5 +1,5 @@
 <script>
-import RecordCNAME from './CNAME.vue';
+import RecordCNAME from './RecordCNAME.vue';
 
 export default {
   name: 'RecordPTR',

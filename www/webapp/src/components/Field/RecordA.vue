@@ -1,6 +1,6 @@
 <script>
 import { ipAddress } from 'vuelidate/lib/validators';
-import RecordItem from '../RecordItem.vue';
+import RecordItem from './RecordItem.vue';
 
 export default {
   name: 'RecordA',

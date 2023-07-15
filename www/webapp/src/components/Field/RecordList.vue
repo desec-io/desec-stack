@@ -31,25 +31,25 @@
 
 <script>
 import RecordItem from './RecordItem.vue';
-import RecordA from './Record/A.vue';
-import RecordAAAA from './Record/AAAA.vue';
-import RecordCAA from './Record/CAA.vue';
-import RecordCDNSKEY from './Record/CDNSKEY.vue';
-import RecordCDS from './Record/CDS.vue';
-import RecordCNAME from './Record/CNAME.vue';
-import RecordDNSKEY from './Record/DNSKEY.vue';
-import RecordDS from './Record/DS.vue';
-import RecordHTTPS from './Record/HTTPS.vue';
-import RecordMX from './Record/MX.vue';
-import RecordNS from './Record/NS.vue';
-import RecordOPENPGPKEY from './Record/OPENPGPKEY.vue';
-import RecordPTR from './Record/PTR.vue';
-import RecordSMIMEA from './Record/SMIMEA.vue';
-import RecordSRV from './Record/SRV.vue';
-import RecordSVCB from './Record/SVCB.vue';
-import RecordTLSA from './Record/TLSA.vue';
-import RecordTXT from './Record/TXT.vue';
-import RecordSubnet from './Record/Subnet.vue';
+import RecordA from './RecordA.vue';
+import RecordAAAA from './RecordAAAA.vue';
+import RecordCAA from './RecordCAA.vue';
+import RecordCDNSKEY from './RecordCDNSKEY.vue';
+import RecordCDS from './RecordCDS.vue';
+import RecordCNAME from './RecordCNAME.vue';
+import RecordDNSKEY from './RecordDNSKEY.vue';
+import RecordDS from './RecordDS.vue';
+import RecordHTTPS from './RecordHTTPS.vue';
+import RecordMX from './RecordMX.vue';
+import RecordNS from './RecordNS.vue';
+import RecordOPENPGPKEY from './RecordOPENPGPKEY.vue';
+import RecordPTR from './RecordPTR.vue';
+import RecordSMIMEA from './RecordSMIMEA.vue';
+import RecordSRV from './RecordSRV.vue';
+import RecordSVCB from './RecordSVCB.vue';
+import RecordTLSA from './RecordTLSA.vue';
+import RecordTXT from './RecordTXT.vue';
+import RecordSubnet from './RecordSubnet.vue';
 import {mdiClose, mdiPlus} from "@mdi/js";
 
 export default {

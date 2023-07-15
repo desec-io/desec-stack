@@ -1,6 +1,6 @@
 <script>
 import { helpers, or } from 'vuelidate/lib/validators';
-import RecordItem from '../RecordItem.vue';
+import RecordItem from './RecordItem.vue';
 
 // from https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch08s16.html, adding subnet
 const ip4AddressOrSubnet = helpers.regex('ip4Address', /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\/(3[0-2]|[12]?[0-9]))?$/);

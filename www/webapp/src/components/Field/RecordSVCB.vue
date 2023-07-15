@@ -1,26 +1,22 @@
 <script>
 import { helpers, integer, between } from 'vuelidate/lib/validators';
-import RecordItem from '../RecordItem.vue';
+import RecordItem from './RecordItem.vue';
 
-const hostname = helpers.regex('hostname', /^((([a-zA-Z0-9-]+\.?)+)|\.)$/);
+// Allow for root label only
+const hostname = helpers.regex('hostname', /^((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))?[.]?$/);
 const trailingDot = helpers.regex('trailingDot', /[.]$/);
 
 const MAX16 = 65535;
 const int16 = between(0, MAX16);
 
 export default {
-  name: 'RecordMX',
+  name: 'RecordSVCB',
   extends: RecordItem,
   data: () => ({
     fields: [
-      {
-        label: 'Preference',
-        validations: { integer, int16 },
-      },
-      {
-        label: 'Hostname',
-        validations: { hostname, trailingDot },
-      },
+      { label: 'Priority', validations: { integer, int16 } },
+      { label: 'Target Name', validations: { hostname, trailingDot } },
+      { label: 'Service Parameters', validations: { }, optional: true },
     ],
     errors: {
       integer: 'Please enter an integer.',

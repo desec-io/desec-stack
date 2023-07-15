@@ -1,5 +1,5 @@
 <script>
-import RecordTLSA from './TLSA.vue';
+import RecordTLSA from './RecordTLSA.vue';
 
 export default {
   name: 'RecordSMIMEA',

@@ -1,5 +1,5 @@
 <script>
-import RecordDNSKEY from './DNSKEY.vue';
+import RecordDNSKEY from './RecordDNSKEY.vue';
 
 export default {
   name: 'RecordCDNSKEY',

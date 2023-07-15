@@ -1,5 +1,5 @@
 <script>
-import RecordDS from './DS.vue';
+import RecordDS from './RecordDS.vue';
 
 export default {
   name: 'RecordCDS',

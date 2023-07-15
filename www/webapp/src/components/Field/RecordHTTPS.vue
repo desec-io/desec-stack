@@ -1,5 +1,5 @@
 <script>
-import RecordSVCB from './SVCB.vue';
+import RecordSVCB from './RecordSVCB.vue';
 
 export default {
   name: 'RecordHTTPS',
