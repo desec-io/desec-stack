@@ -38,6 +38,7 @@ module.exports = {
     'vue/no-deprecated-filter': 'warn', // Preparation for vue3
     'vue/no-deprecated-v-on-number-modifiers': 'warn', // Preparation for vue3
     'vue/no-deprecated-html-element-is': 'warn', // Preparation for vue3
+    'vue/match-component-file-name': ['error', {'extensions': ['vue'], 'shouldMatchCase': true}],
   },
   ignorePatterns: ['**/src/modules/**/*'],
 }
