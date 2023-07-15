@@ -116,6 +116,7 @@
 
     <!-- copy snackbar -->
     <v-snackbar v-model="snackbar">
+      <v-icon v-if="snackbar_icon">{{ snackbar_icon }}</v-icon>
       {{ snackbar_text }}
 
       <template #action="{ attrs }">
@@ -134,7 +135,7 @@
 
 <script>
 import {useUserStore} from "@/store/user";
-import {mdiContentCopy, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle} from "@mdi/js";
+import {mdiContentCopy, mdiAlert, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
 
 export default {
   name: 'DomainSetup',
@@ -157,6 +158,8 @@ export default {
     },
   },
   data: () => ({
+    mdiAlert,
+    mdiCheck,
     mdiContentCopy,
     mdiNumeric0Circle,
     mdiNumeric1Circle,
@@ -164,6 +167,7 @@ export default {
     mdiNumeric3Circle,
     user: useUserStore(),
     snackbar: false,
+    snackbar_icon: '',
     snackbar_text: '',
     tab1: 'ns',
     tab2: 'ds',
@@ -193,17 +197,18 @@ export default {
       try {
         await navigator.clipboard.writeText(text).then(
             () => {
-              this.showSnackbar("Copied to clipboard.");
+              this.showSnackbar("Copied to clipboard.", mdiCheck);
             },
             () => {
-              this.showSnackbar("Copy to clipboard not allowed. Please try again manually.");
+              this.showSnackbar("Copy to clipboard not allowed. Please try again manually.", mdiAlert);
             },
         );
       } catch (e) {
-        this.showSnackbar("Copy to clipboard failed. Please try again manually.");
+        this.showSnackbar("Copy to clipboard failed. Please try again manually.", mdiAlert);
       }
     },
-    showSnackbar: function (text) {
+    showSnackbar: function (text, icon = '') {
+      this.snackbar_icon = icon;
       this.snackbar_text = text;
       this.snackbar = true;
     }
