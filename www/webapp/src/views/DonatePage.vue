@@ -179,7 +179,7 @@
 
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
-  import QrcodeVue from "../modules/qrcode.vue";
+  import QrcodeVue from '../modules/qrcode.vue/dist/qrcode.vue.esm';
   import {mdiBankTransferIn, mdiBankTransferOut, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
 
   export default {
