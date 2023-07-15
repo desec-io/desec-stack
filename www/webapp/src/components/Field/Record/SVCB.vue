@@ -10,7 +10,7 @@ const MAX16 = 65535;
 const int16 = between(0, MAX16);
 
 export default {
-  name: 'RecordDNSKEY',
+  name: 'RecordSVCB',
   extends: RecordItem,
   data: () => ({
     fields: [

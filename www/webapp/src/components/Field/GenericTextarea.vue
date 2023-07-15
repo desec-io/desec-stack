@@ -20,7 +20,7 @@
 
 <script>
 export default {
-  name: 'GenericText',
+  name: 'GenericTextarea',
   props: {
     disabled: {
       type: Boolean,
