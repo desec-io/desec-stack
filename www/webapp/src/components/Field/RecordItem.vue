@@ -203,26 +203,26 @@ export default {
         && this.$refs.input[index].$refs.input.selectionStart === this.fields[index].value.length;
     },
     keydownHandler(index, event) {
-      switch (event.keyCode) {
-        case 8:
+      switch (event.key) {
+        case "Backspace":
           this.backspaceHandler(index, event);
           break;
-        case 32:
+        case " ":
           this.spaceHandler(index, event);
           break;
-        case 35:
+        case "End":
           this.endHandler(event);
           break;
-        case 36:
+        case "Home":
           this.homeHandler(event);
           break;
-        case 37:
+        case "ArrowLeft":
           this.leftHandler(index, event);
           break;
-        case 39:
+        case "ArrowRight":
           this.rightHandler(index, event);
           break;
-        case 46:
+        case "Delete":
           this.deleteHandler(index, event);
           break;
       }
