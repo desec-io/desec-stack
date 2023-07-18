@@ -15,7 +15,6 @@ COPY requirements.txt /usr/src/app/
 # freetype-dev is needed for captcha generation
 RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev postgresql-dev jpeg-dev zlib-dev \
     && pip install --upgrade pip \
-    && pip install "Cython<3.0" pyyaml --no-build-isolation \
     && pip install -r requirements.txt \
     && pip freeze
 
