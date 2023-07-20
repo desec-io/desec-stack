@@ -1,8 +1,12 @@
+/* eslint-env node */
+
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
   env: {
-    node: true
+    browser: true,
+    node: true, // Can be removed after migration to vite.
+    es2022: true,
   },
   extends: [
     'plugin:vue/essential',
@@ -24,17 +28,4 @@ module.exports = {
     'vue/no-deprecated-html-element-is': 'warn', // Preparation for vue3
   },
   ignorePatterns: ['**/src/modules/**/*'],
-  parserOptions: {
-    parser: '@babel/eslint-parser'
-  },
-  overrides: [
-    {
-      files: [
-        '**/__tests__/*.{j,t}s?(x)'
-      ],
-      env: {
-        mocha: true
-      }
-    }
-  ]
 }
