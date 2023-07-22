@@ -170,7 +170,7 @@
 <script>
   import axios from 'axios';
   import {digestError} from '@/utils';
-  import ErrorAlert from "@/components/ErrorAlert";
+  import ErrorAlert from "@/components/ErrorAlert.vue";
   import {useUserStore} from "@/store/user";
 
   const HTTP = axios.create({

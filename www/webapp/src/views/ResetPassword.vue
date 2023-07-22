@@ -121,7 +121,7 @@
   import axios from 'axios';
   import {email_pattern} from '@/validation';
   import {digestError} from '@/utils';
-  import ErrorAlert from '@/components/ErrorAlert';
+  import ErrorAlert from '@/components/ErrorAlert.vue';
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

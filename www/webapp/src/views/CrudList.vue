@@ -342,16 +342,16 @@
 
 <script>
 import { HTTP, withWorking, digestError } from '@/utils';
-import RRSetType from '@/components/Field/RRSetType';
-import TimeAgo from '@/components/Field/TimeAgo';
+import RRSetType from '@/components/Field/RRSetType.vue';
+import TimeAgo from '@/components/Field/TimeAgo.vue';
 import GenericCheckbox from '@/components/Field/GenericCheckbox.vue';
-import GenericText from '@/components/Field/GenericText';
-import GenericTextarea from '@/components/Field/GenericTextarea';
+import GenericText from '@/components/Field/GenericText.vue';
+import GenericTextarea from '@/components/Field/GenericTextarea.vue';
 import RecordItem from '@/components/Field/RecordItem.vue';
-import RecordList from '@/components/Field/RecordList';
+import RecordList from '@/components/Field/RecordList.vue';
 import GenericSwitchbox from '@/components/Field/GenericSwitchbox.vue';
-import TTL from '@/components/Field/TTL';
-import ErrorAlert from '@/components/ErrorAlert'
+import TTL from '@/components/Field/TTL.vue';
+import ErrorAlert from '@/components/ErrorAlert.vue'
 import {useUserStore} from "@/store/user";
 import {mdiClose, mdiContentSaveEdit, mdiDelete, mdiMagnify, mdiPlus} from "@mdi/js";
 

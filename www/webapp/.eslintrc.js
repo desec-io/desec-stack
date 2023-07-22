@@ -17,8 +17,16 @@ module.exports = {
     // 'plugin:vue/strongly-recommended',
     // 'plugin:vue/recommended',
     'plugin:vuetify/base',
-    'eslint:recommended'
+    'plugin:import/recommended',
+    'eslint:recommended',
   ],
+  settings: {
+    'import/resolver': {
+      alias: {
+        map: [['@', './src']],
+      },
+    },
+  },
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',

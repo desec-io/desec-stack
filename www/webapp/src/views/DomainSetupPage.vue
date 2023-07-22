@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import DomainSetup from "@/views/DomainSetup";
+import DomainSetup from "@/views/DomainSetup.vue";
 
 export default {
   name: 'DomainSetupPage',

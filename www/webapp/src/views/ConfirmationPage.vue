@@ -59,7 +59,7 @@
   import CreateTOTPActionHandler from '@/components/CreateTOTPActionHandler.vue';
   import ResetPasswordActionHandler from '@/components/ResetPasswordActionHandler.vue';
   import {digestError} from '@/utils';
-  import ErrorAlert from '@/components/ErrorAlert';
+  import ErrorAlert from '@/components/ErrorAlert.vue';
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

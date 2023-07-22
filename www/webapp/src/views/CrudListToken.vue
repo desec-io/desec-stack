@@ -1,5 +1,5 @@
 <script>
-import CrudList from './CrudList';
+import CrudList from './CrudList.vue';
 import {useUserStore} from "@/store/user";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericCheckbox from "@/components/Field/GenericCheckbox.vue";

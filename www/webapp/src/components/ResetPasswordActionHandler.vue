@@ -30,7 +30,7 @@
 </template>
 
 <script>
-  import GenericActionHandler from "./GenericActionHandler"
+  import GenericActionHandler from "./GenericActionHandler.vue"
 
   export default {
     name: 'ResetPasswordActionHandler',

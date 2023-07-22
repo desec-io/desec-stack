@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import DomainSetup from "@/views/DomainSetup";
+import DomainSetup from "@/views/DomainSetup.vue";
 import {mdiClose} from "@mdi/js";
 
 export default {

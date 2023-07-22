@@ -80,7 +80,7 @@
 
 <script>
 import {digestError, HTTP, withWorking} from '@/utils'
-import ErrorAlert from "../components/ErrorAlert";
+import ErrorAlert from "@/components/ErrorAlert.vue";
 import {mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 
 export default {

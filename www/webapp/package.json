@@ -26,6 +26,8 @@
     "@vue/cli-plugin-router": "^5.0.8",
     "@vue/cli-service": "^5.0.8",
     "eslint": "^8.31.0",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-vue": "^9.8.0",
     "eslint-plugin-vuetify": "^1.1.0",
     "sass": "~1.32.13",

@@ -176,7 +176,7 @@
   import axios from 'axios';
   import {domain_pattern, email_pattern} from '@/validation';
   import {digestError} from '@/utils';
-  import ErrorAlert from "@/components/ErrorAlert";
+  import ErrorAlert from "@/components/ErrorAlert.vue";
 
   const LOCAL_PUBLIC_SUFFIXES = process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 

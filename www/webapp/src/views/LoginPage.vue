@@ -87,7 +87,7 @@
 
 <script>
 import { HTTP, digestError } from '@/utils';
-import ErrorAlert from "@/components/ErrorAlert";
+import ErrorAlert from "@/components/ErrorAlert.vue";
 import {useUserStore} from "@/store/user";
 
 export default {

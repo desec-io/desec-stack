@@ -77,7 +77,7 @@
 
 <script>
   import { HTTP, withWorking, digestError } from '@/utils';
-  import ErrorAlert from "../components/ErrorAlert";
+  import ErrorAlert from "@/components/ErrorAlert.vue";
 
   export default {
     name: 'DeleteAccount',

@@ -91,7 +91,7 @@
 
 <script>
 import {digestError, HTTP, logout, withWorking} from '@/utils'
-import ErrorAlert from "../../components/ErrorAlert";
+import ErrorAlert from "@/components/ErrorAlert.vue";
 import QrcodeVue from '../../modules/qrcode.vue/dist/qrcode.vue.esm'
 import {mdiCheck, mdiClose, mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 

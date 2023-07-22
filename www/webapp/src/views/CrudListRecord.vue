@@ -1,5 +1,5 @@
 <script>
-import CrudList from '@/views/CrudList';
+import CrudList from '@/views/CrudList.vue';
 import {HTTP, withWorking} from "@/utils"
 import GenericText from "@/components/Field/GenericText.vue";
 import RecordList from "@/components/Field/RecordList.vue";

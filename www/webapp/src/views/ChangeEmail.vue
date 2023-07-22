@@ -90,10 +90,10 @@
 </template>
 
 <script>
-  import { HTTP, withWorking } from '@/utils';
+  import { HTTP, withWorking ,digestError} from '@/utils';
   import {email_pattern} from '@/validation';
-  import {digestError} from '@/utils';
-  import ErrorAlert from "@/components/ErrorAlert";
+  
+  import ErrorAlert from "@/components/ErrorAlert.vue";
 
   export default {
     name: 'ChangeEmail',

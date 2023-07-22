@@ -1,6 +1,6 @@
 <script>
-import CrudList from './CrudList';
-import TOTPVerifyDialog from '@/views/Console/TOTPVerifyDialog';
+import CrudList from './CrudList.vue';
+import TOTPVerifyDialog from '@/views/Console/TOTPVerifyDialog.vue';
 import GenericText from "@/components/Field/GenericText.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
 

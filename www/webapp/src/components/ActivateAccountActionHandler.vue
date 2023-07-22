@@ -65,7 +65,7 @@
 
 <script>
   import axios from 'axios';
-  import GenericActionHandler from "./GenericActionHandler"
+  import GenericActionHandler from "./GenericActionHandler.vue"
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

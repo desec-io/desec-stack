@@ -1,7 +1,7 @@
 <script>
 import { HTTP, withWorking } from '@/utils';
-import CrudList from './CrudList';
-import DomainSetupDialog from '@/views/Console/DomainSetupDialog';
+import CrudList from './CrudList.vue';
+import DomainSetupDialog from '@/views/Console/DomainSetupDialog.vue';
 import {mdiDownload, mdiInformation} from "@mdi/js";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
