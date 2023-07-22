@@ -5,8 +5,8 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "eslint --ignore-path .gitignore --no-fix  src/",
-    "lint:fix": "eslint --ignore-path .gitignore --fix  src/"
+    "lint": "eslint --ignore-path .gitignore --no-fix src/**/*.{vue,js,json}",
+    "lint:fix": "eslint --ignore-path .gitignore --fix src/**/*.{vue,js,json}"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.0.3",

@@ -6,7 +6,11 @@ module.exports = {
   env: {
     browser: true,
     node: true, // Can be removed after migration to vite.
-    es2022: true,
+    es2024: true,
+  },
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
   },
   extends: [
     'plugin:vue/essential',
