@@ -347,6 +347,13 @@ export default {
         left: '83.5%',
         top: '42.2%',
       },
+      {
+        name: 'Belgrade (ns1.desec.io)',
+        host: 'beg-1.a.desec.io',
+        left: '51.6%',
+        top: '25.5%',
+        adopted_by: 'SOX',
+      },
     ],
     features: [
       {
