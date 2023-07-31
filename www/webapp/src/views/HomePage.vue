@@ -77,7 +77,7 @@
           <h2>Supporters</h2>
         </v-col>
       </v-row>
-      <v-row align="center" justify="center">
+      <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
             <img loading="lazy" :src="require('../assets/non-free/sse.logo.png')" alt="SSE Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
@@ -89,10 +89,10 @@
           We trust them because creating and auditing security solutions is their daily business.
         </v-col>
       </v-row>
-      <v-row align="center" justify="center">
+      <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <img loading="lazy" :src="require('../assets/non-free/nlnet.logo.svg')" alt="NLnet Foundation Logo" class="mr-6" style="margin: 10% auto; max-width: 300px; width: 100%"/>
+            <img loading="lazy" :src="require('../assets/non-free/nlnet.logo.svg')" alt="NLnet Foundation Logo" class="mr-6" style="max-width: 180px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
@@ -103,10 +103,10 @@
           security and trustworthiness.
         </v-col>
       </v-row>
-      <v-row align="center" justify="center">
+      <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <img loading="lazy" :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="RIPE NCC Logo" class="mr-6" style="margin: -15% auto; max-width: 300px; width: 100%"/>
+            <img loading="lazy" :src="require('../assets/non-free/ripe-ncc.logo.svg')" alt="RIPE NCC Logo" class="mr-6" style="margin-bottom: -7%; margin-top: -7%; max-width: 240px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
@@ -115,7 +115,7 @@
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
-      <v-row align="center" justify="center">
+      <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
             <img loading="lazy" :src="require('../assets/non-free/sox.logo.svg')" alt="SOX Logo" class="mr-6" style="max-width: 170px; width: 100%"/>
