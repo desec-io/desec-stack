@@ -4,7 +4,7 @@
 location /prometheus/ {
     expires epoch;
     etag off;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
     auth_basic "Prometheus";
     auth_basic_user_file /etc/nginx/htpasswd;

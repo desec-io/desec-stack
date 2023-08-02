@@ -7,7 +7,7 @@ location /api/ {
 
     expires epoch;
     etag off;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     include uwsgi_params;
     uwsgi_pass desecapi;
 

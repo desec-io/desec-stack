@@ -29,7 +29,7 @@ server {
 	include global.conf;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
 	}
 }
@@ -48,7 +48,7 @@ server {
         include global.conf;
 
         location / {
-                add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload" always;
+                add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
                 return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
         }
 }

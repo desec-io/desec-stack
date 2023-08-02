@@ -88,7 +88,7 @@ def test_unknown_hosts(api_anon, protocol, hostname):
 def test_security_headers(api_anon):
     api_anon.headers = {}
     expected_headers = {
-        'Strict-Transport-Security': 'max-age=31536000; includeSubdomains; preload',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
         'Content-Security-Policy': "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; "
                                    "img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval'; "
                                    "style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; "
