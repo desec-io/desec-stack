@@ -6,6 +6,9 @@ import {VuetifyResolver} from 'unplugin-vue-components/resolvers'
 import vue from '@vitejs/plugin-vue2'
 
 export default defineConfig({
+    define: {
+        'process.env.BUILD': '"web"' // fix for vuelidate@0.7.7
+    },
     plugins: [
         vue(),
         Components({
