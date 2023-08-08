@@ -15,24 +15,24 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/SignUp.vue')
+    component: () => import('@/views/SignUp.vue'),
   },
   {
     path: '/custom-setup/:domain',
     name: 'customSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/DomainSetupPage.vue'),
+    component: () => import('@/views/DomainSetupPage.vue'),
     props: true,
   },
   {
     path: '/dyn-setup/:domain',
     alias: '/dynsetup/:domain',
     name: 'dynSetup',
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/DynSetup.vue')
+    component: () => import('@/views/DynSetup.vue'),
   },
   {
     path: '/welcome/:domain?',
     name: 'welcome',
-    component: () => import(/* webpackChunkName: "signup" */ '@/views/WelcomePage.vue'),
+    component: () => import('@/views/WelcomePage.vue'),
   },
   {
     path: 'https://desec.readthedocs.io/',
@@ -47,47 +47,47 @@ const routes = [
   {
     path: '/confirm/:action/:code',
     name: 'confirmation',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/ConfirmationPage.vue'),
+    component: () => import('@/views/ConfirmationPage.vue')
   },
   {
     path: '/reset-password/:email?',
     name: 'reset-password',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/ResetPassword.vue')
+    component: () => import('@/views/ResetPassword.vue'),
   },
   {
     path: '/totp/',
     name: 'totp',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/CrudListTOTP.vue'),
+    component: () => import('@/views/CrudListTOTP.vue'),
     meta: {guest: false},
   },
   {
     path: '/totp-verify/',
     name: 'TOTPVerify',
-    component: () => import(/* webpackChunkName: "login" */ '@/views/Console/TOTPVerifyDialog.vue'),
+    component: () => import('@/views/Console/TOTPVerifyDialog.vue'),
     props: (route) => ({...route.params}),
   },
   {
     path: '/mfa/',
     name: 'mfa',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/MFA.vue'),
+    component: () => import('@/views/MFA.vue'),
     meta: {guest: false},
   },
   {
     path: '/change-email/:email?',
     name: 'change-email',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/ChangeEmail.vue'),
+    component: () => import('@/views/ChangeEmail.vue'),
     meta: {guest: false},
   },
   {
     path: '/delete-account/',
     name: 'delete-account',
-    component: () => import(/* webpackChunkName: "account" */ '@/views/DeleteAccount.vue'),
+    component: () => import('@/views/DeleteAccount.vue'),
     meta: {guest: false},
   },
   {
     path: '/donate/',
     name: 'donate',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/DonatePage.vue'),
+    component: () => import('@/views/DonatePage.vue'),
   },
   {
     path: 'https://github.com/desec-io/desec-stack/projects?query=is%3Aopen+sort%3Aname-asc&type=classic',
@@ -97,44 +97,44 @@ const routes = [
   {
     path: '/impressum/',
     name: 'impressum',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/ImpressumPage.vue'),
+    component: () => import('@/views/ImpressumPage.vue'),
   },
   {
     path: '/privacy-policy/',
     name: 'privacy-policy',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/PrivacyPolicy.vue')
+    component: () => import('@/views/PrivacyPolicy.vue'),
   },
   {
     path: '/terms/',
     name: 'terms',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/TermsPage.vue'),
+    component: () => import('@/views/TermsPage.vue'),
   },
   {
     path: '/about/',
     name: 'about',
-    component: () => import(/* webpackChunkName: "extra" */ '@/views/AboutPage.vue'),
+    component: () => import('@/views/AboutPage.vue'),
   },
   {
     path: '/login',
     name: 'login',
-    component: () => import(/* webpackChunkName: "login" */ '@/views/LoginPage.vue'),
+    component: () => import('@/views/LoginPage.vue'),
   },
   {
     path: '/tokens',
     name: 'tokens',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListToken.vue'),
+    component: () => import('@/views/CrudListToken.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains',
     name: 'domains',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListDomain.vue'),
+    component: () => import('@/views/CrudListDomain.vue'),
     meta: {guest: false},
   },
   {
     path: '/domains/:domain',
     name: 'domain',
-    component: () => import(/* webpackChunkName: "gui" */ '@/views/CrudListRecord.vue'),
+    component: () => import('@/views/CrudListRecord.vue'),
     meta: {guest: false},
   },
 ]
