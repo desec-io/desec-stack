@@ -96,7 +96,7 @@
   export default {
     name: 'PrivacyPolicy',
     data: () => ({
-      email: process.env.VUE_APP_EMAIL,
+      email: import.meta.env.VITE_APP_EMAIL,
       privacy_policy: [
         {
           title: 'Visiting this Website',

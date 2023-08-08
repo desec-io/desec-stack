@@ -5,7 +5,6 @@ module.exports = {
   root: true,
   env: {
     browser: true,
-    node: true, // Can be removed after migration to vite.
     es2024: true,
   },
   parserOptions: {

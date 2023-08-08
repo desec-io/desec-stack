@@ -141,7 +141,7 @@ const routes = [
 
 const router = new VueRouter({
   mode: 'history',
-  base: process.env.BASE_URL,
+  base: import.meta.env.BASE_URL,
   scrollBehavior (to, from) {
     // Skip if destination full path has query parameters and differs in no other way from previous
     if (from && Object.keys(to.query).length) {

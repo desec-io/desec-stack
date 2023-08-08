@@ -78,7 +78,7 @@
     data: () => ({
       auto_submit: true,
       captchaWorking: false,
-      LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
+      LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
       captcha: null,
       captcha_required: false,
 

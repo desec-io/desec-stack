@@ -154,7 +154,7 @@ export default {
     },
     ns: {
       type: Array,
-      default: () => process.env.VUE_APP_DESECSTACK_NS.split(' '),
+      default: () => import.meta.env.VITE_APP_DESECSTACK_NS.split(' '),
     },
   },
   data: () => ({
@@ -171,7 +171,7 @@ export default {
     snackbar_text: '',
     tab1: 'ns',
     tab2: 'ds',
-    LOCAL_PUBLIC_SUFFIXES: process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
+    LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
   }),
   computed: {
     tabs: function () {

@@ -23,7 +23,7 @@
   export default {
     name: 'ImpressumPage',
     data: () => ({
-      email: process.env.VUE_APP_EMAIL,
+      email: import.meta.env.VITE_APP_EMAIL,
     }),
   }
 </script>

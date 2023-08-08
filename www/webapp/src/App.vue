@@ -199,7 +199,7 @@ export default {
   data: () => ({
     user: useUserStore(),
     drawer: false,
-    email: process.env.VUE_APP_EMAIL,
+    email: import.meta.env.VITE_APP_EMAIL,
     mdiHeart,
     mdiMenuDown,
     tabmenu: {

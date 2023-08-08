@@ -178,7 +178,7 @@
   import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
 
-  const LOCAL_PUBLIC_SUFFIXES = process.env.VUE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
+  const LOCAL_PUBLIC_SUFFIXES = import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

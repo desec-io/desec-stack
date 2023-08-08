@@ -246,7 +246,7 @@ export default {
   },
   data: () => ({
     mdiEmail,
-    contact_email: process.env.VUE_APP_EMAIL,
+    contact_email: import.meta.env.VITE_APP_EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
     contact_body: 'Dear deSEC,\n\nI would like to adopt a frontend server in your networks!',
     domainType: null,

@@ -128,8 +128,8 @@
       mdiEmail,
 
       /* from env */
-      creditorid: process.env.VUE_APP_DESECSTACK_API_SEPA_CREDITOR_ID,
-      creditorname: process.env.VUE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME,
+      creditorid: import.meta.env.VITE_APP_DESECSTACK_API_SEPA_CREDITOR_ID,
+      creditorname: import.meta.env.VITE_APP_DESECSTACK_API_SEPA_CREDITOR_NAME,
 
       /* account holder name field */
       name: '',
