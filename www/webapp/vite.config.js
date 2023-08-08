@@ -3,6 +3,7 @@ import {defineConfig} from 'vite'
 import {resolve} from 'node:path';
 import Components from 'unplugin-vue-components/vite'
 import {VuetifyResolver} from 'unplugin-vue-components/resolvers'
+import legacy from '@vitejs/plugin-legacy'
 import vue from '@vitejs/plugin-vue2'
 
 export default defineConfig({
@@ -14,6 +15,7 @@ export default defineConfig({
         Components({
             resolvers: [VuetifyResolver()],
         }),
+        legacy(), // Build for old browser.
     ],
     server: {
         port: 8080,

@@ -22,6 +22,7 @@
     "vuetify": "^2.7.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-legacy": "^4.1.1",
     "@vitejs/plugin-vue2": "^2.2.0",
     "eslint": "^8.45.0",
     "eslint-import-resolver-alias": "^1.1.2",
