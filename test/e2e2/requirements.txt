@@ -2,4 +2,4 @@ pytest
 pytest-schema
 pytest-xdist
 requests
-dnspython~=2.4.1
+dnspython~=2.4.2
