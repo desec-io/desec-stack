@@ -9,8 +9,9 @@ server {
 	return 444; # see https://httpstatuses.com/444
 }
 server {
-	listen 443 ssl http2 default_server;
-	listen [::]:443 ipv6only=on ssl http2 default_server;
+	listen 443 ssl default_server;
+	listen [::]:443 ipv6only=on ssl default_server;
+	http2 on;
 	server_name _;
 
 	ssl_certificate ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.cer;
