@@ -35,14 +35,10 @@
                                 </p>
                             </v-alert>
 
-                            <v-text-field
-                                    v-model="email"
-                                    label="Current Email"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    required
-                                    :disabled="true"
-                                    validate-on-blur
+                            <generic-email
+                                v-model="email"
+                                label="Current Email Address"
+                                :readonly="true"
                             />
                             <v-text-field
                                     v-model="password"
@@ -59,16 +55,9 @@
                                     ref="password"
                                     tabindex="1"
                             ></v-text-field>
-                            <v-text-field
+                            <generic-email
                                     v-model="new_email"
-                                    label="New Email"
-                                    prepend-icon="mdi-email"
-                                    outlined
-                                    required
-                                    :rules="[rules.required, rules.email]"
-                                    :error-messages="email_errors"
-                                    @change="email_errors=[]"
-                                    validate-on-blur
+                                    :new="true"
                                     tabindex="2"
                             />
                         </v-card-text>
@@ -91,13 +80,13 @@
 
 <script>
   import { HTTP, withWorking ,digestError} from '@/utils';
-  import {email_pattern} from '@/validation';
-  
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import GenericEmail from "@/components/Field/GenericEmail.vue";
 
   export default {
     name: 'ChangeEmail',
     components: {
+      GenericEmail,
       ErrorAlert,
     },
     data: () => ({
@@ -108,7 +97,6 @@
       email: '',
       rules: {
         required: v => !!v || 'Required.',
-        email: v => !!email_pattern.test(v) || 'Not a valid email address.'
       },
       show: false,
 

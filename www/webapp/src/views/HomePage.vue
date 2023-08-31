@@ -31,17 +31,11 @@
                       <v-radio class="pb-2" label="dynDNS account" value="dynDNS"></v-radio>
                     </v-radio-group>
                   </div>
-                  <v-text-field
-                    outlined
-                    solo
-                    flat
-                    v-model="email"
-                    :prepend-inner-icon="mdiEmail"
-                    type="email"
-                    placeholder="Account Email Address"
-                    :rules="email_rules"
-                    validate-on-blur
-                    ></v-text-field>
+                  <generic-email
+                      v-model="email"
+                      :standalone="true"
+                      :new="true"
+                  />
                   <v-btn
                     color="primary"
                     type="submit"
@@ -224,10 +218,12 @@ import {
     mdiRobot, mdiRunFast,
     mdiTwoFactorAuthentication
 } from "@mdi/js";
+import GenericEmail from "@/components/Field/GenericEmail.vue";
 
 export default {
   name: 'HomePage',
   components: {
+    GenericEmail
   },
   methods: {
     async signup() {

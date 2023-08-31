@@ -33,14 +33,10 @@
                                 </p>
                             </v-alert>
 
-                            <v-text-field
+                            <generic-email
                                     v-model="email"
-                                    label="Current Email"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    required
-                                    :disabled="true"
-                                    validate-on-blur
+                                    label="Current Email Address"
+                                    :readonly="true"
                             />
                             <v-text-field
                                     v-model="password"
@@ -78,10 +74,11 @@
 <script>
   import { HTTP, withWorking, digestError } from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import GenericEmail from "@/components/Field/GenericEmail.vue";
 
   export default {
     name: 'DeleteAccount',
-    components: {ErrorAlert},
+    components: {GenericEmail, ErrorAlert},
     data: () => ({
       valid: false,
       working: false,

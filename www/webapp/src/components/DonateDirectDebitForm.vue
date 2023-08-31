@@ -75,14 +75,10 @@
               validate-on-blur
       />
 
-      <v-text-field
+      <generic-email
               v-model="email"
-              label="Email Address (optional)"
-              :prepend-icon="mdiEmail"
-              outlined
-              :rules="email_rules"
-              :error-messages="email_errors"
-              validate-on-blur
+              :errorMessages="email_errors"
+              :required="false"
       />
 
       <v-btn
@@ -98,10 +94,10 @@
 
 <script>
   import axios from 'axios';
-  import {email_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from '@/components/ErrorAlert.vue';
-  import {mdiAccount, mdiBank, mdiCash100, mdiEmail, mdiMessageTextOutline} from "@mdi/js";
+  import {mdiAccount, mdiBank, mdiCash100, mdiMessageTextOutline} from "@mdi/js";
+  import GenericEmail from "@/components/Field/GenericEmail.vue";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -112,6 +108,7 @@
   export default {
     name: 'DonateDirectDebitForm',
     components: {
+      GenericEmail,
       ErrorAlert,
     },
     data: () => ({
@@ -125,7 +122,6 @@
       mdiBank,
       mdiCash100,
       mdiMessageTextOutline,
-      mdiEmail,
 
       /* from env */
       creditorid: import.meta.env.VITE_APP_DESECSTACK_API_SEPA_CREDITOR_ID,
@@ -154,7 +150,6 @@
 
       /* email field */
       email: '',
-      email_rules: [v => v === '' || !!email_pattern.test(v || '') || 'This is not an email address.'],
       email_errors: [],
 
       /* donation interval (every N months) */
