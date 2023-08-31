@@ -40,21 +40,13 @@
                                 label="Current Email Address"
                                 :readonly="true"
                             />
-                            <v-text-field
-                                    v-model="password"
-                                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    label="Password"
-                                    required
-                                    :rules="[rules.required]"
-                                    :type="show ? 'text' : 'password'"
-                                    :error-messages="password_errors"
-                                    @change="password_errors=[]"
-                                    @click:append="show = !show"
-                                    ref="password"
-                                    tabindex="1"
-                            ></v-text-field>
+
+                            <generic-password
+                                v-model="password"
+                                ref="password"
+                                tabindex="1"
+                            />
+
                             <generic-email
                                     v-model="new_email"
                                     :new="true"
@@ -82,11 +74,13 @@
   import { HTTP, withWorking ,digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
   import GenericEmail from "@/components/Field/GenericEmail.vue";
+  import GenericPassword from "@/components/Field/GenericPassword.vue";
 
   export default {
     name: 'ChangeEmail',
     components: {
       GenericEmail,
+      GenericPassword,
       ErrorAlert,
     },
     data: () => ({
@@ -102,7 +96,6 @@
 
       /* password field */
       password: '',
-      password_errors: [],
 
       /* email field */
       new_email: '',

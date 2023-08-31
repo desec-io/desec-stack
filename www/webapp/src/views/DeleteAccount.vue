@@ -38,21 +38,13 @@
                                     label="Current Email Address"
                                     :readonly="true"
                             />
-                            <v-text-field
-                                    v-model="password"
-                                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    label="Password"
-                                    required
-                                    :rules="[rules.required]"
-                                    :type="show ? 'text' : 'password'"
-                                    :error-messages="password_errors"
-                                    @change="password_errors=[]"
-                                    @click:append="show = !show"
-                                    ref="password"
-                                    tabindex="1"
-                            ></v-text-field>
+
+                            <generic-password
+                                v-model="password"
+                                :autofocus="true"
+                                ref="password"
+                                tabindex="1"
+                            />
                         </v-card-text>
                         <v-card-actions class="justify-center">
                             <v-btn
@@ -75,28 +67,21 @@
   import { HTTP, withWorking, digestError } from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
   import GenericEmail from "@/components/Field/GenericEmail.vue";
+  import GenericPassword from "@/components/Field/GenericPassword.vue";
 
   export default {
     name: 'DeleteAccount',
-    components: {GenericEmail, ErrorAlert},
+    components: {GenericEmail, GenericPassword, ErrorAlert},
     data: () => ({
       valid: false,
       working: false,
       done: false,
       errors: [],
       email: '',
-      rules: {
-        required: v => !!v || 'Required.',
-      },
-      show: false,
 
       /* password field */
       password: '',
-      password_errors: [],
     }),
-    mounted() {
-      this.initialFocus();
-    },
     async created() {
       const self = this;
       await withWorking(this.error, () => HTTP
@@ -105,9 +90,6 @@
       );
     },
     methods: {
-      initialFocus() {
-        return this.$refs.password.focus();
-      },
       async deleteAccount() {
         if (!this.$refs.form.validate()) {
           return;

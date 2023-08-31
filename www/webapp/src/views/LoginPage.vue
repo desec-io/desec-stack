@@ -32,16 +32,9 @@
                   :autofocus="true"
                   tabindex="1"
               />
-              <v-text-field
+              <generic-password
                 v-model="password"
-                label="Password"
-                :append-icon="hide_password ? 'mdi-eye' : 'mdi-eye-off'"
-                :type="hide_password ? 'password' : 'text'"
-                outlined
-                required
-                :rules="password_rules"
                 tabindex="2"
-                @click:append="() => (hide_password = !hide_password)"
               />
               <v-layout class="justify-center">
                 <v-checkbox
@@ -85,11 +78,13 @@ import { HTTP, digestError } from '@/utils';
 import ErrorAlert from "@/components/ErrorAlert.vue";
 import {useUserStore} from "@/store/user";
 import GenericEmail from "@/components/Field/GenericEmail.vue";
+import GenericPassword from "@/components/Field/GenericPassword.vue";
 
 export default {
   name: 'LoginPage',
   components: {
     GenericEmail,
+    GenericPassword,
     ErrorAlert,
   },
   data: () => ({
@@ -103,10 +98,7 @@ export default {
     email_errors: [],
 
     password: '',
-    password_rules: [
-      v => !!v || 'Enter your password to log in',
-    ],
-    hide_password: true,
+
     errors: [],
   }),
   methods: {
