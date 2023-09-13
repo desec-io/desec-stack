@@ -28,12 +28,14 @@ def exception_handler(exc, context):
         return Response({"detail": f"Conflict: {exc}"}, status=status.HTTP_409_CONFLICT)
 
     def _500():
+        _log()
         return Response(
             {"detail": "Internal Server Error. We're on it!"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
     def _503():
+        _log()
         return Response(
             {"detail": "Please try again later."},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -54,7 +56,6 @@ def exception_handler(exc, context):
             2026,  # SSL connection error
         )
     ):
-        _log()
         metrics.get("desecapi_database_unavailable").inc()
         return _503()
 
@@ -66,7 +67,6 @@ def exception_handler(exc, context):
 
     for exception_class, handler in handlers.items():
         if isinstance(exc, exception_class):
-            _log()
             # TODO add metrics
             return handler()
 
