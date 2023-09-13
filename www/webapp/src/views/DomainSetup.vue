@@ -1,5 +1,10 @@
 <template>
-  <div>
+  <div v-if="this.LOCAL_PUBLIC_SUFFIXES.some((suffix) => domain.endsWith('.' + suffix))">
+    <p class="mt-4">
+      You're domain is fully configured.
+    </p>
+  </div>
+  <div v-else>
     <p class="mt-4">
       The following steps need to be completed in order to use
       <span class="fixed-width">{{ domain }}</span> with deSEC.
