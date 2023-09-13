@@ -19,7 +19,7 @@ def exception_handler(exc, context):
     def _log():
         logger = logging.getLogger("django.request")
         logger.error(
-            "{} Supplementary Information".format(exc.__class__),
+            f"{exc.__class__.__module__}.{exc.__class__.__name__} Supplementary Information",
             exc_info=exc,
             stack_info=False,
         )
