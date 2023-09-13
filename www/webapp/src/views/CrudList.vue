@@ -128,6 +128,7 @@
                                 :error-messages="c.createErrors"
                                 :required="c.required || false"
                                 :disabled="createInhibited || createDialogSuccess"
+                                :hint="c.hint"
                                 autofocus
                                 @input="clearErrors(c)"
                         />

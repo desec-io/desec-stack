@@ -48,6 +48,7 @@ export default {
           name: 'item.subname',
           text: 'Subname',
           align: 'left',
+          hint: 'This is only the part in front of your domain. Example: "www"',
           sortable: true,
           value: 'subname',
           readonly: true,
