@@ -60,6 +60,11 @@ set_counter(
 
 # exception_handlers.py metrics
 set_counter("desecapi_database_unavailable", "number of times database was unavailable")
+set_counter(
+    "desecapi_exception",
+    "number of times an exception was raised",
+    ["exception_class"],
+)
 
 # pdns.py metrics
 set_counter(

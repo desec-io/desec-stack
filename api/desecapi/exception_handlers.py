@@ -15,11 +15,12 @@ def exception_handler(exc, context):
     we default to restframework's exception handling. See also
     https://www.django-rest-framework.org/api-guide/exceptions/#custom-exception-handling
     """
+    class_path = f"{exc.__class__.__module__}.{exc.__class__.__name__}"
 
     def _log():
         logger = logging.getLogger("django.request")
         logger.error(
-            f"{exc.__class__.__module__}.{exc.__class__.__name__} Supplementary Information",
+            f"{class_path} Supplementary Information",
             exc_info=exc,
             stack_info=False,
         )
@@ -67,7 +68,7 @@ def exception_handler(exc, context):
 
     for exception_class, handler in handlers.items():
         if isinstance(exc, exception_class):
-            # TODO add metrics
+            metrics.get("desecapi_exception").labels(class_path).inc()
             return handler()
 
     return drf_exception_handler(exc, context)
