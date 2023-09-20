@@ -6,117 +6,117 @@
   </div>
   <div v-else>
     <p class="mt-4">
-      The following steps need to be completed in order to use
-      <span class="fixed-width">{{ domain }}</span> with deSEC.
+      The following steps need to be completed in order to use your domain with deSEC.
     </p>
 
     <div v-if="!user.authenticated">
-      <div class="text-subtitle-1">
-        <v-icon>{{ mdiNumeric0Circle }}</v-icon>
-        DNS Configuration
+      <div class="my-2 text-h6">
+        <v-icon class="primary--text">{{ mdiNumeric0Circle }}</v-icon>
+        Configure your DNS records
       </div>
-      <p>
-        To ensure a smooth transition when moving your domain to deSEC, setup a password for your deSEC account,
-        log in and configure the DNS for <span class="fixed-width">{{ domain }}</span>, before you proceed below.
-      </p>
-      <v-btn outlined block :to="{name: 'reset-password'}" target="_blank">
-        Assign Account Password
-      </v-btn>
+      <p>Before delegating your domain, you might want to take the following steps:</p>
+      <ul>
+        <li><router-link :to="{name: 'reset-password'}" target="_blank">Set up a password for your deSEC account</router-link>,</li>
+        <li>Log in and <b>configure the DNS records for your domain</b>,</li>
+        <li>Proceed with the next step below.</li>
+      </ul>
     </div>
 
-    <div class="mt-2 text-subtitle-1">
-      <v-icon>{{ mdiNumeric1Circle }}</v-icon>
+    <div class="my-2 text-h6">
+      <v-icon class="primary--text">{{ mdiNumeric1Circle }}</v-icon>
       Delegate your domain
     </div>
-
     <p>
       Forward the following information to the organization/person where you bought the domain
       <strong>{{ domain }}</strong> (usually your provider or technical administrator):
     </p>
-    <v-card>
-      <v-tabs v-model="tab1" background-color="transparent" grow>
-        <v-tab href="#ns">Nameservers</v-tab>
-      </v-tabs>
-
-      <v-tabs-items v-model="tab1" class="mb-3">
-        <v-tab-item value="ns">
-          <v-card flat v-if="ns.join('\n')">
-            <pre class="pa-3">{{ ns.join('\n') }}</pre>
-            <v-card-actions>
-              <v-btn
-                  @click="copyToClipboard(ns.join('\n'))"
-                  outlined
-                  text
-              >
-                <v-icon>{{ mdiContentCopy }}</v-icon>
-                copy to clipboard
-              </v-btn>
-              <v-spacer></v-spacer>
-            </v-card-actions>
-          </v-card>
-          <v-card flat v-else>
-            <v-card-text>Nameservers could not be retrieved.</v-card-text>
-          </v-card>
-        </v-tab-item>
-      </v-tabs-items>
+    <v-card class="mb-4" v-if="ns">
+      <v-card-title class="grey lighten-2">
+        <v-row>
+          <v-col cols="auto">Nameservers</v-col>
+          <v-spacer></v-spacer>
+          <v-col class="text-right">
+            <v-btn @click="copyToClipboard(ns.join('\n'))" text small>
+              <v-icon>{{ mdiContentCopy }}</v-icon>
+              Copy
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-title>
+      <v-divider></v-divider>
+      <v-card-text v-if="ns.length">
+        <record-list readonly type="NS" :value="ns"></record-list>
+      </v-card-text>
+      <v-alert type="error" v-else>Nameservers could not be retrieved.</v-alert>
     </v-card>
+    <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <p>
-      Once your provider processes this information, the Internet will start directing DNS queries to deSEC.
-    </p>
+    <div v-if="user.authenticated">
+      <div class="my-2 text-h6">
+        <v-icon class="primary--text">{{ mdiNumeric2Circle }}</v-icon>
+        Enable DNSSEC
+      </div>
+      <p>
+        You also need to forward the following DNSSEC information to your domain provider.
+        The exact steps depend on your provider:
+        You may have to enter the information as a block in either <b>DS format</b> or <b>DNSKEY format</b>, or as
+        <b>individual values</b>.
+      </p>
+      <p class="small">
+        Notes: When using block format, some providers require you to add the domain name in the beginning. (Also,
+        <a class="grey--text text--darken-1" href="https://github.com/oskar456/cds-updates" target="_blank">depending on
+        your domain's suffix</a>, we will perform this step automatically.)
+      </p>
 
-    <div class="text-subtitle-1">
-      <v-icon>{{ mdiNumeric2Circle }}</v-icon>
-      Enable DNSSEC
-    </div>
-    <p>
-      To enable DNSSEC security, you also need to forward one or more of the following information to your
-      domain provider. Which information they accept varies from provider to provider.
-    </p>
-
-    <v-card>
-      <v-tabs
-          v-model="tab2"
-          background-color="transparent"
-          grow
-      >
-        <v-tab v-for="t in tabs" :key="t.key" :href="'#' + t.key">{{ t.title }}</v-tab>
-      </v-tabs>
-
-      <v-tabs-items v-model="tab2" class="mb-4">
-        <v-tab-item v-for="t in tabs" :key="t.key" :value="t.key">
-          <v-card flat v-if="t.data">
-            <v-card-text>{{ t.banner }}</v-card-text>
-            <pre class="pa-3">{{ t.data }}</pre>
-            <v-card-actions>
-              <v-btn
-                  @click="copyToClipboard(t.data)"
-                  outlined
-                  text
-              >
+      <v-card class="mb-4">
+        <v-card-title class="grey lighten-2">
+          <v-row>
+            <v-col cols="auto">DS Format</v-col>
+            <v-spacer></v-spacer>
+            <v-col class="text-right">
+              <v-btn @click="copyToClipboard(ds.join('\n'))" text small>
                 <v-icon>{{ mdiContentCopy }}</v-icon>
-                copy to clipboard
+                Copy
               </v-btn>
-              <v-spacer></v-spacer>
-            </v-card-actions>
-          </v-card>
-          <v-card flat v-else>
-            <v-card-text>
-              Records could not be retrieved, please
-              <router-link :to="{name: 'login'}">log in</router-link>.
-            </v-card-text>
-          </v-card>
-        </v-tab-item>
-      </v-tabs-items>
-    </v-card>
+            </v-col>
+          </v-row>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text style="overflow-x: scroll; overflow-y: hidden" v-if="ds.length">
+          <record-list readonly type="DS" :value="ds"></record-list>
+        </v-card-text>
+        <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
+      </v-card>
 
-    <div class="text-subtitle-1">
-      <v-icon>{{ mdiNumeric3Circle }}</v-icon>
-      Check Setup
+      <v-card>
+        <v-card-title class="grey lighten-2">
+          <v-row>
+            <v-col cols="auto">DNSKEY Format</v-col>
+            <v-spacer></v-spacer>
+            <v-col class="text-right">
+              <v-btn @click="copyToClipboard(dnskey.join('\n'))" text small>
+                <v-icon>{{ mdiContentCopy }}</v-icon>
+                Copy
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text style="overflow-x: scroll; overflow-y: hidden" v-if="dnskey.length">
+          <record-list readonly type="DNSKEY" :value="dnskey"></record-list>
+        </v-card-text>
+        <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
+      </v-card>
+
+      <div class="my-2 text-h6">
+        <v-icon class="primary--text">{{ mdiNumeric3Circle }}</v-icon>
+        Check Setup
+      </div>
+      <p>
+        All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take a
+        look at DNSSEC Analyzer</a> to check the status of your domain.
+      </p>
     </div>
-    All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take
-    a
-    look at DNSSEC Analyzer</a> to check the status of your domain.
 
     <!-- copy snackbar -->
     <v-snackbar v-model="snackbar">
@@ -138,11 +138,15 @@
 </template>
 
 <script>
+import RecordList from '@/components/Field/RecordList.vue';
 import {useUserStore} from "@/store/user";
 import {mdiContentCopy, mdiAlert, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
 
 export default {
   name: 'DomainSetup',
+  components: {
+    RecordList,
+  },
   props: {
     domain: {
       type: String,
@@ -158,7 +162,7 @@ export default {
     },
     ns: {
       type: Array,
-      default: () => import.meta.env.VITE_APP_DESECSTACK_NS.split(' '),
+      default: () => import.meta.env.VITE_APP_DESECSTACK_NS.split(' ').map(v => `${v}.`),
     },
   },
   data: () => ({
@@ -173,8 +177,6 @@ export default {
     snackbar: false,
     snackbar_icon: '',
     snackbar_text: '',
-    tab1: 'ns',
-    tab2: 'ds',
     LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
   }),
   computed: {
@@ -186,23 +188,6 @@ export default {
               && self.domain.endsWith('.' + suffix)
           )
       )
-    },
-    tabs: function () {
-      let self = this;
-      return [
-        {
-          key: 'ds', title: 'DS Records', data: self.ds.join('\n'),
-          banner: 'Your provider may require you to input this information as a block or as individual values. ' +
-              'To obtain individual values, split the text below at the spaces to obtain the key tag, algorithm, ' +
-              'digest type, and digest (in this order).'
-        },
-        {
-          key: 'dnskey', title: 'DNSKEY Records', data: self.dnskey.join('\n'),
-          banner: 'Your provider may require you to input this information as a block or as individual values. ' +
-              'To obtain individual values, split the text below at the spaces to obtain the flags, protocol, ' +
-              'algorithm, and public key (in this order).'
-        },
-      ]
     },
   },
   methods: {

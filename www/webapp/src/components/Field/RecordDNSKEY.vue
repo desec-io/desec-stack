@@ -12,14 +12,27 @@ const int16 = between(0, MAX16);
 
 const equals3 = (value) => !value || value == 3;
 
+const dnskey_flag_mnemonics = {
+  256: 'ZSK',
+  257: 'KSK',
+}
+
+export const dnskey_algorithm_mnemonics = {
+  8: 'RSASHA256',
+  13: 'ECDSAP256-SHA256',
+  14: 'ECDSAP384-SHA384',
+  15: 'ED25519',
+  16: 'ED448',
+}
+
 export default {
   name: 'RecordDNSKEY',
   extends: RecordItem,
   data: () => ({
     fields: [
-      { label: 'Flags', validations: { integer, int16 } },
+      { label: 'Flags', validations: { integer, int16 }, mnemonics: dnskey_flag_mnemonics },
       { label: 'Protocol', validations: { integer, equals3 } },
-      { label: 'Algorithm', validations: { integer, int8 } },
+      { label: 'Algorithm', validations: { integer, int8 }, mnemonics: dnskey_algorithm_mnemonics },
       { label: 'Public Key', validations: { base64 } },
     ],
     errors: {

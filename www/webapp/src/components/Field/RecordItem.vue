@@ -1,22 +1,23 @@
 <template>
-  <v-layout class="flex">
-    <div
+  <tr>
+    <td
       v-for="(field, index) in fields"
       :key="index"
-      :class="index == fields.length - 1 ? 'flex-grow-1' : ''"
+      style="vertical-align: top"
     >
       <v-text-field
         ref="input"
+        :hint="hints[index]"
+        :persistent-hint="'mnemonics' in field"
         v-model="field.value"
         :label="hideLabel ? '' : field.label"
         :class="hideLabel ? 'pt-0' : ''"
         :disabled="disabled"
         :readonly="readonly"
         :placeholder="required && !field.optional ? ' ' : '(optional)'"
-        :hide-details="!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid)"
+        :hide-details="!('mnemonics' in field) && (!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid))"
         :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
         :error-messages="fieldErrorMessages(index)"
-        :style="{ width: fieldWidth(index) }"
         :append-icon="index == fields.length-1 && !readonly && !disabled ? appendIcon : ''"
         @click:append="$emit('remove', $event)"
         @input="inputHandler()"
@@ -24,14 +25,9 @@
         @keydown="keydownHandler(index, $event)"
         @keyup="(e) => $emit('keyup', e)"
       />
-      <span
-        ref="mirror"
-        aria-hidden="true"
-        style="opacity: 0; position: absolute; width: auto; white-space: pre; z-index: -1"
-      />
       {{ errorMessages.join(' ') }}
-    </div>
-  </v-layout>
+    </td>
+  </tr>
 </template>
 
 <script>
@@ -39,8 +35,6 @@ import { requiredUnless } from 'vuelidate/lib/validators';
 
 export default {
   name: 'RecordItem',
-  components: {
-  },
   props: {
     content: {
       type: String,
@@ -80,6 +74,11 @@ export default {
     ],
     value: '',
   }),
+  computed: {
+    hints: function () {
+      return this.fields.map(field => ('mnemonics' in field && field.mnemonics[field.value]) || "");
+    },
+  },
   watch: {
     content: function () {
       this.update(this.content);
@@ -87,8 +86,58 @@ export default {
   },
   beforeMount() {
     // Initialize per-field value storage
-    this.fields.forEach((field) => {
+    this.fields.forEach((field, i) => {
       this.$set(field, 'value', '');
+      this.$set(field, 'hint', '');
+    });
+  },
+  mounted() {
+    // Set up mirror system
+    this.fields.forEach((field, i) => {
+      function createMirror(template) {
+        const style = window.getComputedStyle(template);
+        const mirror = document.createElement("div");
+        mirror.style.border = style.getPropertyValue('border');
+        mirror.style.fontSize = style.getPropertyValue('font-size');
+        mirror.style.fontFamily = style.getPropertyValue('font-family');
+        mirror.style.fontWeight = style.getPropertyValue('font-weight');
+        mirror.style.fontStyle = style.getPropertyValue('font-style');
+        mirror.style.fontFeatureSettings = style.getPropertyValue('font-feature-settings');
+        mirror.style.fontKerning = style.getPropertyValue('font-kerning');
+        mirror.style.fontStretch = style.getPropertyValue('font-stretch');
+        mirror.style.fontVariant = style.getPropertyValue('font-variant');
+        mirror.style.fontVariantCaps = style.getPropertyValue('font-variant-caps');
+        mirror.style.fontVariantLigatures = style.getPropertyValue('font-variant-ligatures');
+        mirror.style.fontVariantNumeric = style.getPropertyValue('font-variant-numeric');
+        mirror.style.letterSpacing = style.getPropertyValue('letter-spacing');
+        mirror.style.padding = style.getPropertyValue('padding');
+        mirror.style.transformOrigin = style.getPropertyValue('transform-origin');
+        mirror.style.textTransform = style.getPropertyValue('text-transform');
+        mirror.style.whiteSpace = style.getPropertyValue('white-space');
+        mirror.style.marginRight = '1ch';
+        mirror.style.height = '0';
+        mirror.style.visibility = 'hidden';
+        return mirror;
+      }
+      const el = this.$refs.input[i].$el;
+      let mirror;
+      let hint = el.getElementsByClassName("v-messages__message")[0];
+      if(hint) {
+        mirror = createMirror(hint);
+        mirror.className = 'mirror-hint'
+        el.after(mirror);
+      }
+      mirror = createMirror(el);
+      mirror.style.paddingTop = '0px';
+      mirror.className = 'mirror-input'
+      el.after(mirror);
+      let label = el.getElementsByClassName("v-label")[0];
+      if(label) {
+        mirror = createMirror(label);
+        mirror.style.transform = 'translateY(-18px) scale(0.75)';
+        mirror.className = 'mirror-label'
+        el.after(mirror);
+      }
     });
 
     // Update internal and graphical representation
@@ -125,44 +174,6 @@ export default {
       ];
 
       return validationStatus.filter(val => !val.passed).map(val => val.message || 'Invalid input.');
-    },
-    fieldWidth(index) {
-      let ret = 'auto';
-      const inputs = this.$refs.input;
-      const mirrors = this.$refs.mirror;
-      if (index < this.fields.length - 1 && inputs && mirrors) {
-        const mirror = mirrors[index];
-        while (mirror.childNodes.length) {
-          mirror.removeChild(mirror.childNodes[0]);
-        }
-
-        const style = window.getComputedStyle(inputs[index].$el);
-        mirror.style.border = style.getPropertyValue('border');
-        mirror.style.fontSize = style.getPropertyValue('font-size');
-        mirror.style.fontFamily = style.getPropertyValue('font-family');
-        mirror.style.fontWeight = style.getPropertyValue('font-weight');
-        mirror.style.fontStyle = style.getPropertyValue('font-style');
-        mirror.style.fontFeatureSettings = style.getPropertyValue('font-feature-settings');
-        mirror.style.fontKerning = style.getPropertyValue('font-kerning');
-        mirror.style.fontStretch = style.getPropertyValue('font-stretch');
-        mirror.style.fontVariant = style.getPropertyValue('font-variant');
-        mirror.style.fontVariantCaps = style.getPropertyValue('font-variant-caps');
-        mirror.style.fontVariantLigatures = style.getPropertyValue('font-variant-ligatures');
-        mirror.style.fontVariantNumeric = style.getPropertyValue('font-variant-numeric');
-        mirror.style.letterSpacing = style.getPropertyValue('letter-spacing');
-        mirror.style.padding = style.getPropertyValue('padding');
-        mirror.style.textTransform = style.getPropertyValue('text-transform');
-
-        mirror.appendChild(document.createTextNode(`${this.fields[index].value} `));
-
-        ret = mirror.getBoundingClientRect().width;
-
-        mirror.removeChild(mirror.childNodes[0]);
-        mirror.appendChild(document.createTextNode(`${this.fields[index].label} `));
-        ret = Math.max(ret, mirror.getBoundingClientRect().width);
-        ret += 'px';
-      }
-      return ret;
     },
     focus() {
       this.$refs.input[0].focus();
@@ -333,6 +344,26 @@ export default {
       // Make sure to reset trailing fields if value does not have enough spaces
       this.fields.forEach((foo, i) => {
         this.$set(this.fields[i], 'value', values[i] || '');
+        const el = this.$refs.input[i].$el.parentNode;
+        let mirror;
+        mirror = el.getElementsByClassName("mirror-label")[0];
+        if (mirror) {
+          mirror.textContent = el.getElementsByTagName("label")[0].textContent;
+        }
+        mirror = el.getElementsByClassName("mirror-input")[0];
+        if (mirror) {
+          mirror.textContent = this.fields[i].value;
+        }
+        mirror = el.getElementsByClassName("mirror-hint")[0];
+        if (mirror) {
+          this.$nextTick(() => {
+            try {
+              mirror.textContent = el.getElementsByClassName("v-messages__message")[0].textContent;
+            } catch {
+              mirror.textContent = ' ';
+            }
+          });
+        }
       });
     },
   },

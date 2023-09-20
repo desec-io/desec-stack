@@ -1,22 +1,24 @@
 <template>
   <div>
-    <component
-            :is="getRecordComponentName(type)"
-            v-for="(item, index) in value"
-            :key="index"
-            :content="item"
-            :error-messages="errorMessages[index] ? errorMessages[index].content : []"
-            :hide-label="index > 0"
-            :append-icon="value.length > 1 ? mdiClose : ''"
-            :disabled="disabled"
-            :readonly="readonly"
-            :required="required"
-            ref="inputFields"
-            @update:content="$set(value, index, $event)"
-            @input.native="$emit('dirty', $event)"
-            @remove="(e) => removeHandler(index, e)"
-            @keyup="(e) => $emit('keyup', e)"
-    />
+    <table style="border-spacing: 0; width: 100%">
+      <component
+              :is="getRecordComponentName(type)"
+              v-for="(item, index) in value"
+              :key="index"
+              :content="item"
+              :error-messages="errorMessages[index] ? errorMessages[index].content : []"
+              :hide-label="index > 0"
+              :append-icon="value.length > 1 ? mdiClose : ''"
+              :disabled="disabled"
+              :readonly="readonly"
+              :required="required"
+              ref="inputFields"
+              @update:content="$set(value, index, $event)"
+              @input.native="$emit('dirty', $event)"
+              @remove="(e) => removeHandler(index, e)"
+              @keyup="(e) => $emit('keyup', e)"
+      />
+    </table>
     <v-btn
             @click="addHandler"
             class="px-0 text-none"
@@ -25,7 +27,6 @@
             text
             v-if="!readonly && !disabled"
     ><v-icon>{{ mdiPlus }}</v-icon> add another value</v-btn>
-    <!--div><code style="white-space: normal">{{ value }}</code></div-->
   </div>
 </template>
 
@@ -157,3 +158,8 @@ export default {
   },
 };
 </script>
+<style scoped>
+table >>> td:last-child {
+  width: 100%;
+}
+</style>

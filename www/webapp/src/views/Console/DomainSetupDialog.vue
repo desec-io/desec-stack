@@ -1,7 +1,7 @@
 <template>
   <v-dialog
     v-model="show"
-    max-width="700px"
+    max-width="900px"
     persistent
     scrollable
     @keydown.esc="close"
