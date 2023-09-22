@@ -123,6 +123,8 @@ file similar to this one, with the three placeholders replaced by your domain
 name and your token secret::
 
   protocol=dyndns2
+  # Run in daemon mode: auto-update DNS every 10min. (Alternatively, use cron.)
+  #daemon=600
   # "use=cmd" and the curl command is one way of doing this; other ways exist
   use=cmd, cmd='curl https://checkipv4.dedyn.io/'
   ssl=yes
