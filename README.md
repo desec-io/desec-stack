@@ -7,7 +7,7 @@ This is a docker-compose application providing the basic stack for deSEC name se
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
 - `dbapi`, `dblord`, `dbmaster`: Postgres databases for `api` and `nsmaster`, MariaDB database for `nslord`, respectively.
-- `www`: nginx instance serving static web site content and proxying to `api`
+- `www`: nginx instance serving static website content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
 - `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
@@ -25,7 +25,7 @@ Although most configuration is contained in this repository, some external depen
 
     - [Get easy-rsa](https://github.com/OpenVPN/easy-rsa) and follow [this tutorial](https://github.com/OpenVPN/easy-rsa/blob/master/README.quickstart.md).
     - Then, copy `ca.crt`, `server.crt`, and `server.key` to `openvpn-server/secrets/`.
-    - Create a preshared secret using `openvpn --genkey --secret ta.key` inside `openvpn-server/secrets/`.
+    - Create a pre-shared secret using `openvpn --genkey --secret ta.key` inside `openvpn-server/secrets/`.
 
     For provisioning a secondary, use the same `easy-rsa` PKI and create a new `client.key` and `client.crt` pair. Transfer these securely onto the secondary, along with `ca.crt` and `ta.key`.
     (You can also create the key on the secondary and only transfer a certificate signing request and the certificate.)
@@ -109,7 +109,7 @@ This stack is IPv6-capable. Caveats:
     exposing ports on the host IPv6 address through `docker-proxy`.
 
   - Topology: Assuming 2a01:4f8:a0:12eb::/64 is the host network, and we reserve 2a01:4f8:a0:12eb:deec::/80 for the deSEC stack. Docker has more or less established that 
-    IPv6  addresses be composed of the /80 prefix and the container MAC address. We choose the private 06:42:ac MAC prefix, defining a /104 subnet. For the remaining 24 
+    IPv6 addresses be composed of the /80 prefix and the container MAC address. We choose the private 06:42:ac MAC prefix, defining a /104 subnet. For the remaining 24 
     bits of the MAC and IPv6 address, the convention seems to be to use the last 24 bits from the internally assigned IPv4 address. However, the first 8 of these are 
     configurable through the `DESECSTACK_IPV4_REAR_PREFIX16` variable. Since we don't want public IPv6 addresses to change if the internal IPv4 net prefix changes, we use 
     `0x10` for bits at position 24--17. We thus arrive at the subnet 2a01:4f8:a0:12eb:deec:642:ac10:0/108 for our public IPv6-enabled Docker containers. The last 16 bits 
@@ -139,7 +139,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     Further tools that are required to start hacking are git and curl.
     Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
     jq, httpie, libmariadbclient-dev, libpq-dev, python3-dev (>= 3.11) and python3-venv (>= 3.11) are useful if you want to follow this guide.
-    The webapp requires nodejs. To install everything you need for this guide except docker and docker-compose, use
+    The webapp requires Node.js. To install everything you need for this guide except docker and docker-compose, use
 
        sudo apt install certbot curl git httpie jq libmariadbclient-dev libpq-dev nodejs npm python3-dev python3-venv libmemcached-dev
 
@@ -232,7 +232,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
        sed "s/^DESECSTACK_DOMAIN=.*/DESECSTACK_DOMAIN=${DOMAIN}/" .env.dev > .env
 
     Optionally, edit the file and
-    1. configure an email server host name, user name, and password to deliver emails can be included in `.env`. A convenient option is a MailTrap account.
+    1. configure an email server host name, username, and password to deliver emails can be included in `.env`. A convenient option is a MailTrap account.
     2. adjust the network prefixes in `.env` to avoid collisions with other local networks.
 
     Additionally, the VPN server for the replication network needs to be equipped with a pre-shared key (PSK) and a public key infrastructure (PKI).
@@ -318,9 +318,9 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     Additionally, it is hard to connect a debugger to the docker containers.
     Our recommended solution is to develop the API using Django tests running outside the docker-compose application.
     This will dramatically decrease the time required for running the Django tests and enable just-in-time debugging in PyCharm.
-    Also, it will enable you to browse dependencies code within PyCharm and thus ease debugging.
+    Also, it will enable you to browse dependencies and code within PyCharm and thus ease debugging.
 
-    1. To get started, we create a virtual python environment that (to some extend) mimics the python environment in the docker container.
+    1. To get started, we create a virtual python environment that (to some extent) mimics the python environment in the docker container.
         In the project root,
 
            cd api
@@ -372,7 +372,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
            - Program: `docker-compose`
            - Arguments: `-f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi`
 
-    1. To see if the test configuration is working, right click on the api folder in the project view and select Run Test.
+    1. To see if the test configuration is working, right-click on the api folder in the project view and select Run Test.
        (Note that the first attempt may fail in case the `dbapi` container does not start up fast enough. In that case, just try again.)
 
     1. To use code inspection, click on Inspect Code… in PyCharm's Code menu and add a local custom scope with the following pattern:

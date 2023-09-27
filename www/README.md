@@ -1,7 +1,7 @@
 www
 =====
 
-This docker container provides an nginx-implemented proxy server to all deSEC services. It is the frontend-access method.
+This docker container provides a nginx-implemented proxy server to all deSEC services. It is the frontend-access method.
 
 
 Certificate Setup
