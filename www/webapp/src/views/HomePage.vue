@@ -15,7 +15,7 @@
               deSEC is free for everyone to use.
             </p>
           </h3>
-          <div class="pa-2">
+          <div class="pa-2" v-if="!user.authenticated">
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>
                 <v-col md="9" cols="12">
@@ -245,6 +245,7 @@ export default {
     }
   },
   data: () => ({
+    user: useUserStore(),
     mdiEmail,
     contact_email: import.meta.env.VITE_APP_EMAIL,
     contact_subject: 'Adopting of a Frontend Server',
