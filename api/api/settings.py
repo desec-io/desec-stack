@@ -230,7 +230,6 @@ CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
 
 # Watchdog
 WATCHDOG_SECONDARIES = os.environ.get("DESECSTACK_WATCHDOG_SECONDARIES", "").split()
-WATCHDOG_WINDOW_SEC = 600
 
 # PCH
 PCH_API = os.environ.get("DESECSTACK_API_PCH_API", "")

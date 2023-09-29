@@ -47,13 +47,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--delay",
             type=int,
-            default=120,
+            default=300,
             help="Delay SOA checks to allow pending AXFRs to finish.",
         )
         parser.add_argument(
             "--window",
             type=int,
-            default=settings.WATCHDOG_WINDOW_SEC,
+            default=1200,  # Should be sum of crontab interval and delay option (see above)
             help="Check domains that were published no longer than this many seconds ago.",
         )
 
@@ -129,10 +129,13 @@ class Command(BaseCommand):
         self.report(outdated_secondaries, output, timeouts)
 
     def report(self, outdated_secondaries, output, timeouts):
-        if not outdated_secondaries and not timeouts:
+        # Do not report when timeouts occur, unless there's also replication out-of-sync somwhere.
+        # Helps catch long-term unreachability, where subject will show timeouts for any emails.
+        # Individual node downtimes should be tracked by external monitoring.
+        if not outdated_secondaries:
             return
 
-        subject = f'{timeouts and "CRITICAL ALERT" or "ALERT"} {len(outdated_secondaries)} secondaries out of sync'
+        subject = f"{len(timeouts)} timeouts, {len(outdated_secondaries)} secondaries out of sync"
         message = ""
 
         if timeouts:
