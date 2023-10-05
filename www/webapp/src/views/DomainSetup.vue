@@ -71,8 +71,7 @@
     </div>
     <p>
       To enable DNSSEC security, you also need to forward one or more of the following information to your
-      domain provider. Which information they accept varies from provider to provider; unfortunately there are
-      also providers that do not support DNSSEC altogether.
+      domain provider. Which information they accept varies from provider to provider.
     </p>
 
     <v-card>
