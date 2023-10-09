@@ -12,7 +12,7 @@
   "dependencies": {
     "@fontsource/roboto": "^5.0.3",
     "@mdi/font": "^7.2.96",
-    "@mdi/js": "~7.2.96",
+    "@mdi/js": "~7.3.67",
     "axios": "^1.4.0",
     "date-fns": "^2.30.0",
     "pinia": "^2.0.30",
