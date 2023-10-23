@@ -29,7 +29,7 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-vue": "^9.15.1",
     "eslint-plugin-vuetify": "^1.1.0",
-    "sass": "~1.67.0",
+    "sass": "~1.69.4",
     "unplugin-vue-components": "^0.25.1",
     "vite": "^4.4.5",
     "vuetify-loader": "~1.9.1"
