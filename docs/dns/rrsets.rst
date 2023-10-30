@@ -240,7 +240,7 @@ For details about input validation and return status codes, please refer to
 Retrieving all RRsets in a Zone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``/api/v1/domains/{name}/rrsets/`` endpoint reponds to ``GET`` requests
+The ``/api/v1/domains/{name}/rrsets/`` endpoint responds to ``GET`` requests
 with an array of `RRset object`_\ s. For example, you may issue the following
 command::
 
