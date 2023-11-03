@@ -1,5 +1,5 @@
 <template>
-  <div v-if="this.LOCAL_PUBLIC_SUFFIXES.some((suffix) => domain.endsWith('.' + suffix))">
+  <div v-if="hasAutomaticDelegationMaintenance">
     <p class="mt-4">
       You're domain is fully configured.
     </p>
@@ -178,6 +178,15 @@ export default {
     LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
   }),
   computed: {
+    hasAutomaticDelegationMaintenance: function () {
+      let self = this;
+      return self.LOCAL_PUBLIC_SUFFIXES.some(
+          (suffix) => (
+              self.domain.split('.').length == suffix.split('.').length + 1
+              && self.domain.endsWith('.' + suffix)
+          )
+      )
+    },
     tabs: function () {
       let self = this;
       return [
