@@ -134,8 +134,7 @@ Field details:
 
     RRset type (uppercase).  A broad range of record types is supported, with
     most DNSSEC-related types (and the ``SOA`` type) managed automagically by
-    the backend.  For details, check `Supported Types`_ and `Restricted
-    Types`_.
+    the backend.  For details, check the section on `Record Types`_.
 
 ``touched``
     :Access mode: read-only
