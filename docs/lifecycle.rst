@@ -5,8 +5,8 @@ To enable users to build reliable tools on top of the deSEC API, we
 maintain stable versions of the API for extended periods of time.
 
 Each API version will advance through the API version lifecycle,
-starting from `unstable` and proceeding to `stable`, `deprecated`,
-and, finally, to `historical`.
+starting from *unstable* and proceeding to *stable*, *deprecated*,
+and, finally, to *historical*.
 
 Check out the `current status of the API versions`_ to make sure you
 are using the latest stable API whenever using our service in
