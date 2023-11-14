@@ -109,8 +109,8 @@ export default {
             );
           }
           let ds = d.keys.map(key => key.ds);
-          ds = ds.concat.apply([], ds)
-          let dnskey = d.keys.map(key => key.dnskey);
+          ds = ds.concat.apply([], ds).filter(v => v.split(" ")[2] == 2)
+          let dnskey = d.keys.map(key => key.dnskey).filter(v => v.split(" ")[0] == 257);
           this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
           this.extraComponentName = 'DomainSetupDialog';
         },
