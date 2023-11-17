@@ -26,7 +26,7 @@ export default {
       texts: {
         banner: () => 'You can edit your DNS records here. If you have questions, feel free to post in <a href="https://talk.desec.io/" target="_blank">our forum</a>, or shoot us an email.',
         create: () => (''),
-        destroy: rrset => (`Delete record set ${rrset.type} ${rrset.subname}?`),
+        destroy: rrset => (`Delete record set for type ${rrset.type} at ${rrset.subname && rrset.subname || "domain origin"}?`),
         destroyInfo: () => ('This operation will permanently remove this information from the DNS.'),
       },
       columns: {
