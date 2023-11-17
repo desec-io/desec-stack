@@ -448,7 +448,7 @@ export default {
       if (e.keyCode === 13) {
         // Submit
         document.activeElement.blur();
-        e.target.closest('tr').querySelector('.button-save').click();
+        e.target.closest('tr.crud-item').querySelector('.button-save').click();
       }
     },
     handleRowClick: () => {},
@@ -464,13 +464,13 @@ export default {
     defaultActions() {
       return {
         'save': {
-          go: d => this.save(d),
+          go: this.save,
           if: this.updatable,
           icon: mdiContentSaveEdit,
           tooltip: 'Save',
         },
         'delete': {
-          go: d => this.destroyAsk(d),
+          go: this.destroyAsk,
           if: this.destroyable,
           icon: mdiDelete,
           tooltip: 'Delete',
@@ -510,16 +510,17 @@ export default {
   },
   methods: {
     itemClass(item) {
+      const baseClass = 'crud-item';
       if (this.itemIsReadOnly(item)) {
-        return 'grey text--disabled grey lighten-4';
+        return baseClass + ' grey text--disabled grey lighten-4';
       }
       if (this.dirtyError.has(item)) {
-        return 'red lighten-5';
+        return baseClass + ' red lighten-5';
       }
       if (this.dirty.has(item)) {
-        return 'orange lighten-5';
+        return baseClass + ' orange lighten-5';
       }
-      return '';
+      return baseClass;
     },
     filterWriteableColumns(callback) {
       const columns = filter(this.columns, c => !c.readonly || c.writeOnCreate);
@@ -584,10 +585,9 @@ export default {
       const self = this;
       if (item) {
         // edit item
-        let tr;
         if (event) {
-          // TODO do not temper with the DOM directly -- bad things will happen (see commit msg)
-          tr = event.target.closest('tr');
+          // TODO do not tamper with the DOM directly -- bad things will happen (see commit msg)
+          const tr = event.target.closest('tr.crud-item');
           tr.addEventListener("animationend", () => tr.classList.remove('successFade'), true);
           tr.classList.add('successFade');
         }
