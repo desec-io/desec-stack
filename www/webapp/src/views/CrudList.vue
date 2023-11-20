@@ -702,6 +702,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+  >>> tr:not(.v-data-table__empty-wrapper) td {
+    vertical-align: top;
+  }
   /* If this is on tr instead of td, it doesn't work for the first one */
   >>> tr.successFade td {
     animation: successFade 1s;

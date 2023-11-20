@@ -163,9 +163,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-    >>> td {
-        vertical-align: top;
-    }
-</style>
