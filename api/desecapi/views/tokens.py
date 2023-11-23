@@ -11,7 +11,6 @@ from desecapi.models import TokenDomainPolicy
 from desecapi.serializers import TokenDomainPolicySerializer, TokenSerializer
 
 from .base import IdempotentDestroyMixin
-from .domains import DomainViewSet
 
 
 class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
@@ -55,8 +54,6 @@ class TokenPoliciesRoot(APIView):
 
 
 class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
-    lookup_field = "domain__name"
-    lookup_value_regex = DomainViewSet.lookup_value_regex
     pagination_class = None
     serializer_class = TokenDomainPolicySerializer
     throttle_scope = "account_management_passive"
@@ -75,16 +72,6 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         else:
             ret.append(permissions.HasManageTokensPermission)
         return ret
-
-    def dispatch(self, request, *args, **kwargs):
-        # map default policy onto domain_id IS NULL
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        try:
-            if kwargs[lookup_url_kwarg] == "default":
-                kwargs[lookup_url_kwarg] = None
-        except KeyError:
-            pass
-        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return TokenDomainPolicy.objects.filter(

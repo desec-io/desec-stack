@@ -48,10 +48,17 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = TokenDomainPolicy
         fields = (
+            "id",
             "domain",
+            "subname",
+            "type",
             "perm_dyndns",
             "perm_write",
         )
+        extra_kwargs = {
+            "subname": {"required": True},
+            "type": {"required": True},
+        }
 
     def to_internal_value(self, data):
         return {
