@@ -271,6 +271,15 @@ can use the :ref:`log-out` endpoint to delete it.
 
 Token Scoping: Domain Policies
 ``````````````````````````````
+
+.. warning::
+    The Token Scoping interface **will change** in late 2023. The below
+    description is **deprecated**.
+
+    The changes are necessary in order to enable higher scoping granularity
+    (on the RRset level). For development details, see
+    https://github.com/desec-io/desec-stack/pull/840.
+
 Tokens by default can be used to authorize arbitrary actions within the user's
 account, including DNS operations on any domain and some administrative tasks.
 As such, tokens are considered *privileged* when no further configuration is
