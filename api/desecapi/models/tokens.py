@@ -11,7 +11,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.postgres.fields import ArrayField
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
@@ -89,61 +89,24 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     def make_hash(plain):
         return make_password(plain, salt="static", hasher="pbkdf2_sha256_iter1")
 
-    def get_policy(self, *, domain=None):
-        order_by = F("domain").asc(
-            nulls_last=True
-        )  # default Postgres sorting, but: explicit is better than implicit
+    def get_policy(self, *, domain=None, subname=None, type=None):
+        order_by = [
+            F(field).asc(
+                nulls_last=True  # default Postgres sorting, but: explicit is better than implicit
+            )
+            for field in ["domain", "subname", "type"]
+        ]
         return (
-            self.tokendomainpolicy_set.filter(Q(domain=domain) | Q(domain__isnull=True))
-            .order_by(order_by)
+            self.tokendomainpolicy_set.filter(
+                Q(domain=domain) | Q(domain__isnull=True),
+                Q(subname=subname) | Q(subname__isnull=True),
+                Q(type=type) | Q(type__isnull=True),
+            )
+            .order_by(*order_by)
             .first()
         )
 
-    @transaction.atomic
-    def delete(self):
-        # This is needed because Model.delete() emulates cascade delete via django.db.models.deletion.Collector.delete()
-        # which deletes related objects in pk order.  However, the default policy has to be deleted last.
-        # Perhaps this will change with https://code.djangoproject.com/ticket/21961
-        self.tokendomainpolicy_set.filter(domain__isnull=False).delete()
-        self.tokendomainpolicy_set.filter(domain__isnull=True).delete()
-        return super().delete()
 
-
-@pgtrigger.register(
-    # Ensure that token_user is consistent with token
-    pgtrigger.Trigger(
-        name="token_user",
-        operation=pgtrigger.Update | pgtrigger.Insert,
-        when=pgtrigger.Before,
-        func="NEW.token_user_id = (SELECT user_id FROM desecapi_token WHERE id = NEW.token_id); RETURN NEW;",
-    ),
-    # Ensure that if there is *any* domain policy for a given token, there is always one with domain=None.
-    pgtrigger.Trigger(
-        name="default_policy_on_insert",
-        operation=pgtrigger.Insert,
-        when=pgtrigger.Before,
-        # Trigger `condition` arguments (corresponding to WHEN clause) don't support subqueries, so we use `func`
-        func="IF (NEW.domain_id IS NOT NULL and NOT EXISTS(SELECT * FROM desecapi_tokendomainpolicy WHERE domain_id IS NULL AND token_id = NEW.token_id)) THEN "
-        "  RAISE EXCEPTION 'Cannot insert non-default policy into % table when default policy is not present', TG_TABLE_NAME; "
-        "END IF; RETURN NEW;",
-    ),
-    pgtrigger.Protect(
-        name="default_policy_on_update",
-        operation=pgtrigger.Update,
-        when=pgtrigger.Before,
-        condition=pgtrigger.Q(old__domain__isnull=True, new__domain__isnull=False),
-    ),
-    # Ideally, a deferred trigger (https://github.com/Opus10/django-pgtrigger/issues/14). Available in 3.4.0.
-    pgtrigger.Trigger(
-        name="default_policy_on_delete",
-        operation=pgtrigger.Delete,
-        when=pgtrigger.Before,
-        # Trigger `condition` arguments (corresponding to WHEN clause) don't support subqueries, so we use `func`
-        func="IF (OLD.domain_id IS NULL and EXISTS(SELECT * FROM desecapi_tokendomainpolicy WHERE domain_id IS NOT NULL AND token_id = OLD.token_id)) THEN "
-        "  RAISE EXCEPTION 'Cannot delete default policy from % table when non-default policy is present', TG_TABLE_NAME; "
-        "END IF; RETURN OLD;",
-    ),
-)
 class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     token = models.ForeignKey(Token, on_delete=models.CASCADE)
@@ -166,41 +129,84 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["token", "domain"], name="unique_entry"),
             models.UniqueConstraint(
-                fields=["token"],
-                condition=Q(domain__isnull=True),
-                name="unique_entry_null_domain",
+                name="unique_policy",
+                fields=["token", "domain", "subname", "type"],
+                nulls_distinct=False,
+            ),
+        ]
+        triggers = [
+            # Ensure that token_user is consistent with token (to fulfill compound FK constraint, see migration)
+            pgtrigger.Trigger(
+                name="token_user",
+                operation=pgtrigger.Update | pgtrigger.Insert,
+                when=pgtrigger.Before,
+                func="NEW.token_user_id = (SELECT user_id FROM desecapi_token WHERE id = NEW.token_id); RETURN NEW;",
+            ),
+            # Ensure that if there is *any* domain policy for a given token, there is always one with domain=None.
+            pgtrigger.Trigger(
+                name="default_policy_primacy",
+                operation=pgtrigger.Insert | pgtrigger.Update | pgtrigger.Delete,
+                when=pgtrigger.After,
+                timing=pgtrigger.Deferred,
+                func=pgtrigger.Func(
+                    """
+                    IF
+                        EXISTS(SELECT * FROM {meta.db_table} WHERE token_id = COALESCE(NEW.token_id, OLD.token_id)) AND NOT EXISTS(
+                            SELECT * FROM {meta.db_table} WHERE token_id = COALESCE(NEW.token_id, OLD.token_id) AND domain_id IS NULL AND subname IS NULL AND type IS NULL
+                        )
+                    THEN
+                        RAISE EXCEPTION 'Token policies without a default policy are not allowed.';
+                    END IF;
+                    RETURN NULL;
+                """
+                ),
             ),
         ]
 
+    @property
+    def is_default_policy(self):
+        default_policy = self.token.get_policy()
+        return default_policy is not None and self.pk == default_policy.pk
+
+    @property
+    def represents_default_policy(self):
+        return self.domain is None and self.subname is None and self.type is None
+
     def clean(self):
-        default_policy = self.token.get_policy(domain=None)
-        if not self._state.adding:  # update
-            # Can't change policy's default status ("domain NULLness") to maintain policy precedence
-            if (self.domain is None) != (self.pk == default_policy.pk):
+        if self._state.adding:  # create
+            # Can't violate policy precedence (default policy has to be first)
+            default_policy = self.token.get_policy()
+            if (default_policy is None) and not self.represents_default_policy:
                 raise ValidationError(
                     {
-                        "domain": "Policy precedence: Cannot disable default policy when others exist."
+                        "non_field_errors": [
+                            "Policy precedence: The first policy must be the default policy."
+                        ]
                     }
                 )
-        else:  # create
-            # Can't violate policy precedence (default policy has to be first)
-            if (self.domain is not None) and (default_policy is None):
+        else:  # update
+            # Can't make non-default policy default and vice versa
+            if self.is_default_policy != self.represents_default_policy:
                 raise ValidationError(
                     {
-                        "domain": "Policy precedence: The first policy must be the default policy."
+                        "non_field_errors": [
+                            "When using policies, there must be exactly one default policy."
+                        ]
                     }
                 )
 
     def delete(self, *args, **kwargs):
         # Can't delete default policy when others exist
-        if (self.domain is None) and self.token.tokendomainpolicy_set.exclude(
-            domain__isnull=True
-        ).exists():
+        if (
+            self.is_default_policy
+            and self.token.tokendomainpolicy_set.exclude(pk=self.pk).exists()
+        ):
             raise ValidationError(
                 {
-                    "domain": "Policy precedence: Can't delete default policy when there exist others."
+                    "non_field_errors": [
+                        "Policy precedence: Can't delete default policy when there exist others."
+                    ]
                 }
             )
         return super().delete(*args, **kwargs)

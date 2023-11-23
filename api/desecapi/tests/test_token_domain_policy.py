@@ -57,6 +57,77 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.token_manage = self.create_token(self.owner, perm_manage_tokens=True)
         self.other_token = self.create_token(self.user)
 
+    def test_get_policy(self):
+        def get_policy(domain, subname, type):
+            return self.token.get_policy(domain=domain, subname=subname, type=type)
+
+        def assertPolicy(policy, domain, subname, type):
+            self.assertEqual(policy.domain, domain)
+            self.assertEqual(policy.subname, subname)
+            self.assertEqual(policy.type, type)
+
+        qs = self.token.tokendomainpolicy_set
+
+        # Default policy is fallback for everything
+        qs.create(domain=None, subname=None, type=None)
+        for kwargs in [
+            dict(subname=subname, type=type_)
+            for subname in (None, "www")
+            for type_ in (None, "A")
+        ]:
+            policy = get_policy(self.my_domain, **kwargs)
+            assertPolicy(policy, None, None, None)
+
+        # Type wins over default
+        qs.create(domain=None, subname=None, type="A")
+        policy = get_policy(self.my_domain, "www", "A")
+        assertPolicy(policy, None, None, "A")
+
+        # Subname wins over type
+        qs.create(domain=None, subname="www", type=None)
+        policy = get_policy(self.my_domain, "www", "A")
+        assertPolicy(policy, None, "www", None)
+
+        # Most specific wins
+        qs.create(domain=None, subname="www", type="A")
+        policy = get_policy(self.my_domain, "www", "A")
+        assertPolicy(policy, None, "www", "A")
+
+        # Domain wins over default and over subname and type
+        qs.create(domain=self.my_domain, subname=None, type=None)
+        policy = get_policy(self.my_domain, None, None)
+        assertPolicy(policy, self.my_domain, None, None)
+
+        # Subname wins over default or domain default
+        qs.create(domain=self.my_domain, subname="www", type=None)
+        for kwargs in [
+            dict(subname="www", type=None),
+            dict(subname="www", type="A"),
+        ]:
+            policy = get_policy(self.my_domain, **kwargs)
+            assertPolicy(policy, self.my_domain, "www", None)
+
+        # Type wins over default or domain default
+        qs.create(domain=self.my_domain, subname=None, type="A")
+        for kwargs in [
+            dict(subname=None, type="A"),
+            dict(subname="www2", type="A"),
+        ]:
+            policy = get_policy(self.my_domain, **kwargs)
+            assertPolicy(policy, self.my_domain, None, "A")
+
+        # Subname wins over type
+        policy = get_policy(self.my_domain, "www", "A")
+        assertPolicy(policy, self.my_domain, "www", None)
+
+        # Subname + type wins over less specific
+        qs.create(domain=self.my_domain, subname="www", type="A")
+        policy = get_policy(self.my_domain, "www", "A")
+        assertPolicy(policy, self.my_domain, "www", "A")
+
+        # Check that we did all combinations
+        self.assertEqual(qs.count(), 2**3)
+
     def test_policy_lifecycle_without_management_permission(self):
         # Prepare (with management token)
         data = {"domain": None, "subname": None, "type": None, "perm_write": True}
@@ -104,11 +175,9 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
             # Change
             data = dict(perm_dyndns=False, perm_write=True)
-            policy_id = models.TokenDomainPolicy.objects.get(
-                token=target, domain__isnull=True
-            )
+            policy = target.get_policy()
             response = self.client.patch_policy(
-                target, using=self.token, policy_id=policy_id, data=data
+                target, using=self.token, policy_id=policy.pk, data=data
             )
             self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
@@ -130,7 +199,8 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         ## without required field
         response = self.client.create_policy(self.token, using=self.token_manage)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["domain"], ["This field is required."])
+        for field in ["domain", "subname", "type"]:
+            self.assertEqual(response.data[field], ["This field is required."])
 
         ## without a default policy
         data = {"domain": self.my_domains[0].name, "subname": None, "type": None}
@@ -140,7 +210,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             )
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.data["domain"],
+            response.data["non_field_errors"],
             ["Policy precedence: The first policy must be the default policy."],
         )
 
@@ -257,12 +327,8 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             )
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.data,
-            {
-                "domain": [
-                    "Policy precedence: Cannot disable default policy when others exist."
-                ]
-            },
+            response.data["non_field_errors"],
+            ["When using policies, there must be exactly one default policy."],
         )
 
         ## partially modify the default policy
@@ -291,12 +357,8 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             )
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.data,
-            {
-                "domain": [
-                    "Policy precedence: Can't delete default policy when there exist others."
-                ]
-            },
+            response.data["non_field_errors"],
+            ["Policy precedence: Can't delete default policy when there exist others."],
         )
 
         ## delete other policy
@@ -384,6 +446,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             self.token, using=self.token_manage, data=data
         )
         self.assertStatus(response, status.HTTP_201_CREATED)
+        default_policy_id = response.data["id"]
 
         ## another policy
         data = {"domain": self.my_domains[0].name, "subname": None, "type": None}
@@ -400,13 +463,9 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, self.default_data | data | {"id": policy_id})
 
-        policies = {
-            self.my_domains[0]: self.token.tokendomainpolicy_set.get(
-                domain__isnull=False
-            ),
-            self.my_domains[1]: self.token.tokendomainpolicy_set.get(
-                domain__isnull=True
-            ),
+        policy_id_by_domain = {
+            self.my_domains[0]: policy_id,
+            self.my_domains[1]: default_policy_id,
         }
 
         kwargs = dict(HTTP_AUTHORIZATION=f"Token {self.token.plain}")
@@ -414,12 +473,14 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         # For each permission type
         for perm in self.default_data.keys():
             # For the domain with specific policy and for the domain covered by the default policy
-            for domain in policies.keys():
+            for domain in policy_id_by_domain.keys():
                 # For both possible values of the permission
                 for value in [True, False]:
                     # Set only that permission for that domain (on its effective policy)
                     _reset_policies(self.token)
-                    policy = policies[domain]
+                    policy = self.token.tokendomainpolicy_set.get(
+                        pk=policy_id_by_domain[domain]
+                    )
                     setattr(policy, perm, value)
                     policy.save()
 
@@ -505,8 +566,8 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         domain = domains.pop()
         domain.delete()
         self.assertEqual(
-            list(map(lambda x: x.domain, self.token.tokendomainpolicy_set.all())),
-            domains,
+            set(policy.domain for policy in self.token.tokendomainpolicy_set.all()),
+            set(domains),
         )
 
     def test_token_deletion(self):
