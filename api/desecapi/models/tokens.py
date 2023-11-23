@@ -143,6 +143,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     ),
 )
 class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     token = models.ForeignKey(Token, on_delete=models.CASCADE)
     domain = models.ForeignKey("Domain", on_delete=models.CASCADE, null=True)
     perm_dyndns = models.BooleanField(default=False)
@@ -164,7 +165,7 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
 
     def clean(self):
         default_policy = self.token.get_policy(domain=None)
-        if self.pk:  # update
+        if not self._state.adding:  # update
             # Can't change policy's default status ("domain NULLness") to maintain policy precedence
             if (self.domain is None) != (self.pk == default_policy.pk):
                 raise ValidationError(

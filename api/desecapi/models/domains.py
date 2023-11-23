@@ -79,6 +79,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         # Avoid super().__init__(owner=None, ...) to not mess up *values instantiation in django.db.models.Model.from_db
         super().__init__(*args, **kwargs)
         if (
+            # self._state.adding may be incorrect during signal processing (change tracker)
             self.pk is None
             and kwargs.get("renewal_state") is None
             and self.is_locally_registrable
