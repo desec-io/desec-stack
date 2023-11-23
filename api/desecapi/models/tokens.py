@@ -17,6 +17,8 @@ from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from netfields import CidrAddressField, NetManager
 
+from desecapi.models import RRset
+
 
 # No 0OIl characters, non-alphanumeric only (select by double-click no line-break)
 # https://github.com/bitcoin/bitcoin/blob/master/src/base58.h
@@ -146,6 +148,15 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     token = models.ForeignKey(Token, on_delete=models.CASCADE)
     domain = models.ForeignKey("Domain", on_delete=models.CASCADE, null=True)
+    subname = models.CharField(
+        max_length=178,
+        blank=True,
+        null=True,
+        validators=RRset.subname.field._validators,
+    )
+    type = models.CharField(
+        max_length=10, null=True, validators=RRset.type.field._validators
+    )
     perm_dyndns = models.BooleanField(default=False)
     perm_rrsets = models.BooleanField(default=False)
     # Token user, filled via trigger. Used by compound FK constraints to tie domain.owner to token.user (see migration).
