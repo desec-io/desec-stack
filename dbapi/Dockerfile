@@ -1,4 +1,4 @@
-FROM postgres:13-alpine
+FROM postgres:16-alpine
 
 RUN apk add --no-cache pwgen
 
