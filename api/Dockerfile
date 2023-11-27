@@ -13,8 +13,8 @@ ENV PIP_NO_CACHE_DIR=1
 
 COPY requirements.txt /usr/src/app/
 # freetype-dev is needed for captcha generation
-RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev postgresql-dev jpeg-dev zlib-dev \
-    && pip install --upgrade pip \
+RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev libmemcached-dev postgresql-dev jpeg-dev zlib-dev
+RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
     && pip freeze
 
