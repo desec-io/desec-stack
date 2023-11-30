@@ -89,7 +89,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     def make_hash(plain):
         return make_password(plain, salt="static", hasher="pbkdf2_sha256_iter1")
 
-    def get_policy(self, *, domain=None, subname=None, type=None):
+    def get_policy(self, rrset=None):
         order_by = [
             F(field).asc(
                 nulls_last=True  # default Postgres sorting, but: explicit is better than implicit
@@ -98,9 +98,9 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         ]
         return (
             self.tokendomainpolicy_set.filter(
-                Q(domain=domain) | Q(domain__isnull=True),
-                Q(subname=subname) | Q(subname__isnull=True),
-                Q(type=type) | Q(type__isnull=True),
+                Q(domain=rrset.domain if rrset else None) | Q(domain__isnull=True),
+                Q(subname=rrset.subname if rrset else None) | Q(subname__isnull=True),
+                Q(type=rrset.type if rrset else None) | Q(type__isnull=True),
             )
             .order_by(*order_by)
             .first()
@@ -120,7 +120,6 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
     type = models.CharField(
         max_length=10, null=True, validators=RRset.type.field._validators
     )
-    perm_dyndns = models.BooleanField(default=False)
     perm_write = models.BooleanField(default=False)
     # Token user, filled via trigger. Used by compound FK constraints to tie domain.owner to token.user (see migration).
     token_user = models.ForeignKey(

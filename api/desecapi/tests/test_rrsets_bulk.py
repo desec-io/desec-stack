@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 import copy
 
 from django.conf import settings
@@ -737,3 +738,76 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             ),
             status.HTTP_405_METHOD_NOT_ALLOWED,
         )
+
+    def test_bulk_rrsets_policies(self):
+        domain = self.my_empty_domain
+
+        def assertRequests(*, allowed):
+            cm = (
+                self.assertRequests(self.requests_desec_rr_sets_update(domain.name))
+                if allowed
+                else nullcontext()
+            )
+
+            data = [
+                {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+                {"subname": "sub", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]},
+            ]
+            with cm:
+                self.assertStatus(
+                    self.client.bulk_post_rr_sets(domain.name, data),
+                    status.HTTP_201_CREATED if allowed else status.HTTP_403_FORBIDDEN,
+                )
+
+            data[0]["records"] = ["4.3.2.1"]
+            with cm:
+                self.assertStatus(
+                    self.client.bulk_put_rr_sets(domain.name, data),
+                    status.HTTP_200_OK if allowed else status.HTTP_403_FORBIDDEN,
+                )
+
+            rrset_qs = domain.rrset_set.filter(type="A")
+            self.assertEqual(rrset_qs.exists(), allowed)
+
+            data[0]["records"] = data[1]["records"] = []  # delete
+            with cm:
+                self.assertStatus(
+                    self.client.bulk_patch_rr_sets(domain.name, data),
+                    status.HTTP_200_OK if allowed else status.HTTP_403_FORBIDDEN,
+                )
+
+            self.assertStatus(
+                self.client.bulk_patch_rr_sets(domain.name, data),
+                status.HTTP_200_OK if allowed else status.HTTP_403_FORBIDDEN,
+            )
+
+            if not allowed:
+                # Create RRset manually so we cn try manipulating it
+                for item in data:
+                    item["contents"] = item.pop("records")
+                    self.my_empty_domain.rrset_set.create(**item)
+                    item["records"] = item.pop("contents")
+
+                for response in [
+                    self.client.bulk_patch_rr_sets(domain.name, data),
+                    self.client.bulk_put_rr_sets(domain.name, data),
+                ]:
+                    self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+
+            # Clean up
+            if not allowed:
+                self.assertTrue(rrset_qs.exists())
+            rrset_qs.delete()
+            self.assertFalse(rrset_qs.exists())
+
+        assertRequests(allowed=True)
+
+        qs = self.token.tokendomainpolicy_set
+        qs.create(domain=None, subname=None, type=None)
+        assertRequests(allowed=False)
+
+        qs.create(domain=domain, subname=None, type="A", perm_write=True)
+        assertRequests(allowed=True)
+
+        qs.create(domain=domain, subname="www", type="A", perm_write=False)
+        assertRequests(allowed=False)

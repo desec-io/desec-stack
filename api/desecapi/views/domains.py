@@ -40,8 +40,6 @@ class DomainViewSet(
         ]
         if self.action == "create":
             ret.append(permissions.WithinDomainLimit)
-        if self.action == "zonefile":
-            ret.append(permissions.TokenHasDomainRRsetsPermission)
         if self.request.method not in SAFE_METHODS:
             ret.append(permissions.TokenNoDomainPolicy)
         return ret

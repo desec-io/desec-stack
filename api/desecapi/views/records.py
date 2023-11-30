@@ -40,7 +40,6 @@ class RRsetView(DomainViewMixin):
         IsAuthenticated,
         permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
         permissions.IsDomainOwner,
-        permissions.TokenHasDomainRRsetsPermission,
     )
 
     @property
@@ -74,6 +73,13 @@ class RRsetView(DomainViewMixin):
 class RRsetDetail(
     RRsetView, IdempotentDestroyMixin, generics.RetrieveUpdateDestroyAPIView
 ):
+    @property
+    def permission_classes(self):
+        ret = list(super().permission_classes)
+        if self.request.method not in SAFE_METHODS:
+            ret.append(permissions.TokenHasRRsetPermission)
+        return ret
+
     def get_object(self):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -124,8 +130,8 @@ class RRsetList(
     def get_object(self):
         # For this view, the object we're operating on is the queryset that one can also GET. Serializing a queryset
         # is fine as per https://www.django-rest-framework.org/api-guide/serializers/#serializing-multiple-objects.
-        # We skip checking object permissions here to avoid evaluating the queryset. The user can access all his RRsets
-        # anyways.
+        # To avoid evaluating the queryset, object permissions are checked in the serializer for write operations only.
+        # The user can read all their RRsets anyway.
         return self.filter_queryset(self.get_queryset())
 
     def get_serializer(self, *args, **kwargs):

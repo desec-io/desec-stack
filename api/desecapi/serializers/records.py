@@ -12,8 +12,7 @@ from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator
 
 from api import settings
-from desecapi import metrics, models
-from desecapi.validators import ExclusionConstraintValidator, ReadOnlyOnUpdateValidator
+from desecapi import metrics, models, validators
 
 
 class ConditionalExistenceModelSerializer(serializers.ModelSerializer):
@@ -83,7 +82,7 @@ class NonBulkOnlyDefault:
     def __call__(self, serializer_field):
         is_many = getattr(serializer_field.root, "many", False)
         if is_many:
-            raise serializers.SkipField()
+            serializer_field.fail("required")
         if callable(self.default):
             if getattr(self.default, "requires_context", False):
                 return self.default(serializer_field)
@@ -394,19 +393,20 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def get_fields(self):
         fields = super().get_fields()
-        fields["subname"].validators.append(ReadOnlyOnUpdateValidator())
-        fields["type"].validators.append(ReadOnlyOnUpdateValidator())
+        fields["subname"].validators.append(validators.ReadOnlyOnUpdateValidator())
+        fields["type"].validators.append(validators.ReadOnlyOnUpdateValidator())
         fields["ttl"].validators.append(MinValueValidator(limit_value=self.minimum_ttl))
         return fields
 
     def get_validators(self):
         return [
+            validators.PermissionValidator(),
             UniqueTogetherValidator(
                 self.domain.rrset_set,
                 ("subname", "type"),
                 message="Another RRset with the same subdomain and type exists for this domain.",
             ),
-            ExclusionConstraintValidator(
+            validators.ExclusionConstraintValidator(
                 self.domain.rrset_set,
                 ("subname",),
                 exclusion_condition=(

@@ -140,7 +140,7 @@ class DomainSerializer(serializers.ModelSerializer):
             ]
 
             rrset_list_serializer = RRsetSerializer(
-                data=data, context=dict(domain=domain), many=True
+                data=data, context=dict(self.context, domain=domain), many=True
             )
             # The following line raises if data passed validation by dnspython during zone file parsing,
             # but is rejected by validation in RRsetSerializer. See also

@@ -1,8 +1,10 @@
 from django.db import DataError
 from django.db.models import Model
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator
+
+from desecapi.permissions import TokenHasRRsetPermission
 
 
 def qs_exclude(queryset, **kwargs):
@@ -57,6 +59,34 @@ class ExclusionConstraintValidator(UniqueTogetherValidator):
             types = ", ".join(types)
             message = self.message.format(types=types)
             raise ValidationError(message, code="exclusive")
+
+
+class PermissionValidator:
+    """
+    Validator that checks write permission for an RRset.
+    """
+
+    requires_context = True
+
+    def __call__(self, attrs, serializer):
+        # On the RRsetDetail apex endpoint, subname is not in attrs
+        subname = attrs.get("subname")
+        if subname is None:
+            subname = serializer.context["view"].kwargs["subname"]
+        # On the RRsetDetail endpoint, the type is not in attrs
+        type_ = attrs.get("type") or serializer.instance.type
+
+        rrset = serializer.Meta.model(
+            domain=serializer.domain, subname=subname, type=type_
+        )
+        permission = TokenHasRRsetPermission()
+        if not permission.has_object_permission(
+            serializer.context.get("request"), None, rrset
+        ):
+            raise exceptions.PermissionDenied(
+                detail=getattr(permission, "message", None),
+                code=getattr(permission, "code", None),
+            )
 
 
 class Validator:

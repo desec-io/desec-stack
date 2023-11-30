@@ -52,7 +52,6 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
             "domain",
             "subname",
             "type",
-            "perm_dyndns",
             "perm_write",
         )
         extra_kwargs = {

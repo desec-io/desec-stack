@@ -2,6 +2,8 @@ from ipaddress import IPv4Address, IPv4Network
 
 from rest_framework import permissions
 
+from desecapi.models import RRset
+
 
 class IsActiveUser(permissions.BasePermission):
     """
@@ -70,60 +72,32 @@ class IsDomainOwner(permissions.BasePermission):
     Custom permission to only allow owners of a domain to view or edit an object owned by that domain.
     """
 
-    def has_object_permission(self, request, view, obj):
-        return obj.domain.owner == request.user
+    def has_permission(self, request, view):
+        return request.user == view.domain.owner
 
 
 class TokenNoDomainPolicy(permissions.BasePermission):
     """
-    Permission to check whether a token is unrestricted by any domain policy.
+    Permission to check whether a token is unrestricted by any policy.
     """
 
     def has_permission(self, request, view):
-        return request.auth.get_policy(domain=None) is None
+        return not request.auth.tokendomainpolicy_set.exists()
 
 
-class TokenDomainPolicyBasePermission(permissions.BasePermission):
+class TokenHasRRsetPermission(permissions.BasePermission):
     """
-    Base permission to check whether a token authorizes specific actions on a domain.
-    """
-
-    perm_field = None
-
-    def _has_object_permission(self, request, view, obj):
-        policy = request.auth.get_policy(domain=obj)
-
-        # If the token has no domain policy, there are no restrictions
-        if policy is None:
-            return True
-
-        # Otherwise, return the requested permission
-        return getattr(policy, self.perm_field)
-
-
-class TokenHasDomainBasePermission(TokenDomainPolicyBasePermission):
-    """
-    Base permission for checking a token's domain policy, for the view domain.
+    Permission to check whether a token authorizes writing the view's RRset.
     """
 
-    def has_permission(self, request, view):
-        return self._has_object_permission(request, view, view.domain)
+    code = "forbidden"
+    message = "Insufficient token permissions."
 
+    def has_object_permission(self, request, view, obj):
+        policy = request.auth.get_policy(obj)
 
-class TokenHasDomainDynDNSPermission(TokenHasDomainBasePermission):
-    """
-    Custom permission to check whether a token authorizes using the dynDNS interface for the view domain.
-    """
-
-    perm_field = "perm_dyndns"
-
-
-class TokenHasDomainRRsetsPermission(TokenHasDomainBasePermission):
-    """
-    Custom permission to check whether a token authorizes accessing RRsets for the view domain.
-    """
-
-    perm_field = "perm_write"
+        # Pass if there's no policy, otherwise return the permission
+        return (policy is None) or policy.perm_write
 
 
 class AuthTokenCorrespondsToViewToken(permissions.BasePermission):

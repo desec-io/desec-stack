@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from ipaddress import IPv4Network
 import re
 from itertools import product
@@ -1540,6 +1541,81 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     },
                 ],
             )
+
+    def test_rrsets_policies(self):
+        domain = self.my_empty_domain
+
+        def assertRequests(*, allowed):
+            cm = (
+                self.assertRequests(self.requests_desec_rr_sets_update(domain.name))
+                if allowed
+                else nullcontext()
+            )
+
+            data = {"subname": "www", "type": "A", "ttl": 3600, "records": ["1.2.3.4"]}
+            with cm:
+                self.assertStatus(
+                    self.client.post_rr_set(domain_name=domain.name, **data),
+                    status.HTTP_201_CREATED if allowed else status.HTTP_403_FORBIDDEN,
+                )
+
+            data["records"] = ["4.3.2.1"]
+            with cm:
+                self.assertStatus(
+                    self.client.put_rr_set(domain.name, "www", "A", data),
+                    status.HTTP_200_OK if allowed else status.HTTP_404_NOT_FOUND,
+                )
+
+            data["records"] = []  # delete
+            with cm:
+                self.assertStatus(
+                    self.client.patch_rr_set(domain.name, "www", "A", data),
+                    status.HTTP_204_NO_CONTENT
+                    if allowed
+                    else status.HTTP_404_NOT_FOUND,
+                )
+
+            self.assertStatus(
+                self.client.patch_rr_set(domain.name, "www", "A", data),
+                status.HTTP_404_NOT_FOUND,  # no permission needed to see that
+            )
+
+            self.assertStatus(
+                self.client.delete_rr_set(domain.name, "www", "A"),
+                status.HTTP_204_NO_CONTENT,  # no permission needed for idempotency
+            )
+
+            if not allowed:
+                # Create RRset manually so we cn try manipulating it
+                data["contents"] = data.pop("records")
+                self.my_empty_domain.rrset_set.create(**data)
+                data["records"] = data.pop("contents")
+
+                for response in [
+                    self.client.patch_rr_set(domain.name, "www", "A", data),
+                    self.client.put_rr_set(domain.name, "www", "A", data),
+                    self.client.delete_rr_set(domain.name, "www", "A"),
+                ]:
+                    self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+
+            # Clean up
+            rrset_qs = domain.rrset_set.filter(subname="www", type="A")
+            if not allowed:
+                self.assertTrue(rrset_qs.exists())
+                rrset_qs.delete()
+            self.assertFalse(rrset_qs.exists())
+
+        assertRequests(allowed=True)
+
+        qs = self.token.tokendomainpolicy_set
+        qs.create(domain=None, subname=None, type=None)
+        assertRequests(allowed=False)
+
+        qs.create(domain=domain, subname=None, type="A", perm_write=True)
+        assertRequests(allowed=True)
+
+        qs.create(domain=domain, subname="www", type="A", perm_write=False)
+        assertRequests(allowed=False)
 
 
 class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):

@@ -35,18 +35,18 @@ for :ref:`managing users <manage-account>` and :ref:`tokens <manage-tokens>`.
 |                                                      +------------+---------------------------------------------+
 |                                                      | ``DELETE`` | Delete token                                |
 +------------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/tokens/{id}/policies/rrsets/``          | ``GET``    | Retrieve all domain policies for the given  |
+| ...\ ``/auth/tokens/{id}/policies/rrsets/``          | ``GET``    | Retrieve all RRset policies for the given   |
 |                                                      |            | token                                       |
 |                                                      +------------+---------------------------------------------+
-|                                                      | ``POST``   | Create a domain policy for the given token  |
+|                                                      | ``POST``   | Create an RRset policy for the given token  |
 +------------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/tokens/{id}/policies/rrsets/{domain}/`` | ``GET``    | Retrieve a specific token domain policy     |
+| ...\ ``/auth/tokens/{id}/policies/rrsets/{policy}/`` | ``GET``    | Retrieve a specific token RRset policy      |
 |                                                      +------------+---------------------------------------------+
-|                                                      | ``PATCH``  | Modify a token domain policy                |
+|                                                      | ``PATCH``  | Modify a token policy                       |
 |                                                      +------------+---------------------------------------------+
-|                                                      | ``PUT``    | Replace a token domain policy               |
+|                                                      | ``PUT``    | Replace a token policy                      |
 |                                                      +------------+---------------------------------------------+
-|                                                      | ``DELETE`` | Delete a token domain policy                |
+|                                                      | ``DELETE`` | Delete a token policy                       |
 +------------------------------------------------------+------------+---------------------------------------------+
 | ...\ ``/auth/totp/``                                 |            | 2FA-related, interface subject to change    |
 +------------------------------------------------------+------------+---------------------------------------------+

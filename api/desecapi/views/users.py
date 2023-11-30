@@ -56,7 +56,7 @@ class AccountView(generics.RetrieveUpdateAPIView):
     permission_classes = (
         IsAuthenticated,
         permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
-        permissions.TokenNoDomainPolicy,
+        permissions.HasManageTokensPermission,
     )
     serializer_class = serializers.UserSerializer
     throttle_scope = "account_management_passive"

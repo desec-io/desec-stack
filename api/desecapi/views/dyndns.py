@@ -17,7 +17,7 @@ from desecapi.authentication import (
 from desecapi.exceptions import ConcurrencyException
 from desecapi.models import Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
-from desecapi.permissions import TokenHasDomainDynDNSPermission
+from desecapi.permissions import IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import RRsetSerializer
 
@@ -28,7 +28,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         BasicTokenAuthentication,
         URLParamAuthentication,
     )
-    permission_classes = (TokenHasDomainDynDNSPermission,)
+    permission_classes = (IsDomainOwner,)
     renderer_classes = [PlainTextRenderer]
     serializer_class = RRsetSerializer
     throttle_scope = "dyndns"

@@ -269,16 +269,8 @@ If you do not have the token ID, but you do have the token secret, you
 can use the :ref:`log-out` endpoint to delete it.
 
 
-Token Scoping: Domain Policies
-``````````````````````````````
-
-.. warning::
-    The Token Scoping interface **will change** in late 2023. The below
-    description is **deprecated**.
-
-    The changes are necessary in order to enable higher scoping granularity
-    (on the RRset level). For development details, see
-    https://github.com/desec-io/desec-stack/pull/840.
+Token Scoping: Policies
+```````````````````````
 
 Tokens by default can be used to authorize arbitrary actions within the user's
 account, including DNS operations on any domain and some administrative tasks.
@@ -290,19 +282,52 @@ Tokens can be *restricted* using Token Policies, which narrow down the scope
 of influence for a given API token.
 Using policies, the token's power can be limited in two ways:
 
-1. the types of DNS operations that can be performed, such as :ref:`dynDNS
-   updates <update-api>` or :ref:`general RRset management <manage-rrsets>`.
+1. the type of access control (*allow-by-default* or *deny-by-default)* for DNS
+   write operations, such as :ref:`dynDNS updates <update-api>` or
+   :ref:`general RRset management <manage-rrsets>`;
 
-2. the set of domains on which these actions can be performed.
+2. explicit access control for specific RRsets through the policy's ``domain``,
+   ``subname``, and ``type`` fields.
 
-Policies can be configured on a per-domain basis.
-Domains for which no explicit policy is configured are subject to the token's
-default policy.
-It is required to create such a default policy before any domain-specific
-policies can be created on a given token.
+All tokens can, regardless of their policy configuration, read any RRset (for
+all domains in the account).  This is because essentially the same information
+is also available through the DNS.  Note that the API in addition exposes some
+metadata, such as the RRset's ``created`` or ``touched`` timestamps.
+
+Write permissions can be configured on a per-RRset basis. When attempting to
+manipulate an RRset, the applicable policy is identified by matching the RRset
+against existing policies in the following order:
+
++----------+------------+-------------+----------+
+| Priority | ``domain`` | ``subname`` | ``type`` |
++==========+============+=============+==========+
+| 1        | match      | match       | match    |
++----------+------------+-------------+----------+
+| 2        | match      | match       | *null*   |
++----------+------------+-------------+----------+
+| 3        | match      | *null*      | match    |
++----------+------------+-------------+----------+
+| 4        | match      | *null*      | *null*   |
++----------+------------+-------------+----------+
+| 5        | *null*     | match       | match    |
++----------+------------+-------------+----------+
+| 6        | *null*     | match       | *null*   |
++----------+------------+-------------+----------+
+| 7        | *null*     | *null*      | match    |
++----------+------------+-------------+----------+
+| 8        | *null*     | *null*      | *null*   |
++----------+------------+-------------+----------+
+
+Taking the (``domain``, ``subname``, ``type``) tuple as a path, this can be
+considered a longest-prefix match algorithm. Wildcards are not expanded and
+match only RRsets with an identical wildcard ``subname``.
+
+RRsets for which no more specific policy is configured are eventually caught by
+the token's default policy.  It is therefore required to create such a default
+policy before any more specific policies can be created on a given token.
 
 Tokens with at least one policy are considered *restricted*, with their scope
-explicitly limited to DNS record management.
+limited to DNS record management.
 They can neither :ref:`retrieve-account-information` nor perform
 :ref:`domain-management` (such as domain creation or deletion).
 
@@ -313,18 +338,27 @@ In particular, a restricted token that at the same time has the
 restrictions (see `Token Field Reference`_).
 
 
-Token Domain Policy Field Reference
------------------------------------
+Token Policy Field Reference
+----------------------------
 
-A JSON object representing a token domain policy has the following structure::
+A JSON object representing a token policy has the following structure::
 
     {
+        "id": "7aed3f71-bc81-4f7e-90ae-8f0df0d1c211",
         "domain": "example.com",
-        "perm_dyndns": false,
+        "subname": null,
+        "type": null,
         "perm_write": true
     }
 
 Field details:
+
+``id``
+    :Access mode: read-only
+    :Type: UUID
+
+    Token policy ID, used for identification only (e.g. when modifying a
+    policy). (Not to be confused with the token's ID.)
 
 ``domain``
     :Access mode: read, write
@@ -332,25 +366,32 @@ Field details:
 
     Domain name to which the policy applies.  ``null`` for the default policy.
 
-``perm_dyndns``
+``subname``
     :Access mode: read, write
-    :Type: boolean
+    :Type: string or ``null``
 
-    Indicates whether :ref:`dynDNS updates <update-api>` are allowed.
-    Defaults to ``false``.
+    Subname to which the policy applies.  ``null`` for the default policy.
+
+``type``
+    :Access mode: read, write
+    :Type: string or ``null``
+
+    Record type to which the policy applies.  ``null`` for the default policy.
 
 ``perm_write``
     :Access mode: read, write
     :Type: boolean
 
-    Indicates whether :ref:`general RRset management <manage-rrsets>` is
-    allowed.  Defaults to ``false``.
+    Indicates write permission for the RRset specified by (``domain``,
+    ``subname``, ``type``) when using the :ref:`general RRset management
+    <manage-rrsets>` or :ref:`dynDNS <update-api>` interface.  Defaults to
+    ``false``.
 
 
-Token Domain Policy Management
-------------------------------
-Token Domain Policies are managed using the ``policies/rrsets/`` endpoint
-under the token's URL.
+Token Policy Management
+-----------------------
+Token Policies are managed using the ``policies/rrsets/`` endpoint under the
+token's URL.
 Usage of this endpoint requires that the request's authorization token has the
 ``perm_manage_tokens`` flag.
 
@@ -362,42 +403,42 @@ request as follows::
     curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
-The server will respond with a list of token domain policy objects.
+The server will respond with a list of token policy objects.
 
 To create the default policy, send a request like::
 
     curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
-        '{"domain": null}'
+        '{"domain": null, "subname": null, "type": null}'
 
-This will create a default policy.  Permission flags that are not given are
-assumed to be ``false``.  To enable permissions, they have to be set to
-``true`` explicitly.  As an example, let's create a policy that only allows
-dynDNS updates for a specific domain::
+This will create a default policy.  If the ``perm_write`` permission flag is
+not given, it is assumed to be ``false``.
+
+As an example, let's create a policy that only allows manipulating all A
+records for a specific domain::
 
     curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
-        '{"domain": "example.dedyn.io", "perm_dyndns": true}'
+        '{"domain": "example.dedyn.io", "subname": null, "type": "A", "perm_write": true}'
+
+**Tip:** To authorize dual-stack dynDNS updates, create two policies (for
+access to the A and AAAA RRsets, respectively).
 
 You can retrieve (``GET``), update (``PATCH``, ``PUT``), and remove
-(``DELETE``) policies by appending their ``domain`` to the endpoint::
+(``DELETE``) policies by appending their ``id`` to the endpoint::
 
-    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/{domain}/ \
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/{token.id}/policies/rrsets/{policy.id}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
-
-The default policy can be accessed using the special domain name ``default``
-(``/api/v1/auth/tokens/{id}/policies/rrsets/default/``).
 
 When modifying or deleting policies, the API enforces the default policy's
 primacy:
-You cannot create domain-specific policies without first creating a default
-policy, and you cannot remove a default policy when other policies are still
-in place.
+You cannot create specific policies without first creating a default policy,
+and you cannot remove a default policy when other policies are still in place.
 
 During deletion of tokens, users, or domains, policies are cleaned up
-automatically.  (It is not necessary to first remove policies manually.)
+automatically.
 
 Security Considerations
 ```````````````````````
