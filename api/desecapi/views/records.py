@@ -116,11 +116,10 @@ class RRsetList(
                         "You cannot tinker with the %s RRset." % value
                     )
 
-                rrsets = rrsets.filter(**{"%s__exact" % filter_field: value})
+                rrsets = rrsets.filter(**{filter_field: value})
 
-        return (
-            rrsets.all()
-        )  # without .all(), cache is sometimes inconsistent with actual state in bulk tests. (Why?)
+        # Without .all(), cache is sometimes inconsistent with actual state in bulk tests. (Why?)
+        return rrsets.all()
 
     def get_object(self):
         # For this view, the object we're operating on is the queryset that one can also GET. Serializing a queryset
