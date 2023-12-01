@@ -48,7 +48,7 @@ class TokenDomainPolicyClient(APIClient):
 
 class TokenDomainPolicyTestCase(DomainOwnerTestCase):
     client_class = TokenDomainPolicyClient
-    default_data = dict(perm_dyndns=False, perm_rrsets=False)
+    default_data = dict(perm_dyndns=False, perm_write=False)
 
     def setUp(self):
         super().setUp()
@@ -58,7 +58,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
     def test_policy_lifecycle_without_management_permission(self):
         # Prepare (with management token)
-        data = dict(domain=None, perm_rrsets=True)
+        data = dict(domain=None, perm_write=True)
         response = self.client.create_policy(
             self.token, using=self.token_manage, data=data
         )
@@ -98,7 +98,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
             # Change
             data = dict(
-                domain=self.my_domains[1].name, perm_dyndns=False, perm_rrsets=True
+                domain=self.my_domains[1].name, perm_dyndns=False, perm_write=True
             )
             response = self.client.patch_policy(
                 target, using=self.token, domain=self.my_domains[0].name, data=data
@@ -142,7 +142,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
         # Create
         ## default policy
-        data = dict(domain=None, perm_rrsets=True)
+        data = dict(domain=None, perm_write=True)
         response = self.client.create_policy(
             self.token, using=self.token_manage, data=data
         )
@@ -163,7 +163,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertEqual(response.data, self.default_data | data)
 
         ## can't create policy for other user's domain
-        data = dict(domain=self.other_domain.name, perm_dyndns=True, perm_rrsets=True)
+        data = dict(domain=self.other_domain.name, perm_dyndns=True, perm_write=True)
         response = self.client.create_policy(
             self.token, using=self.token_manage, data=data
         )
@@ -200,7 +200,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
         # Change
         ## all fields of a policy
-        data = dict(domain=self.my_domains[1].name, perm_dyndns=False, perm_rrsets=True)
+        data = dict(domain=self.my_domains[1].name, perm_dyndns=False, perm_write=True)
         response = self.client.patch_policy(
             self.token,
             using=self.token_manage,
@@ -244,7 +244,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             self.token, using=self.token_manage, domain=None, data=data
         )
         self.assertStatus(response, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"domain": None, "perm_rrsets": True} | data)
+        self.assertEqual(response.data, {"domain": None, "perm_write": True} | data)
 
         # Delete
         ## can't delete default policy while others exist
@@ -318,7 +318,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
                     )
                 return responses
 
-            if perm == "perm_rrsets":
+            if perm == "perm_write":
                 url_detail = self.reverse("v1:rrset@", name=name, subname="", type="A")
                 url_list = self.reverse("v1:rrsets", name=name)
 

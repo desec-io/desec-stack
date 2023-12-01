@@ -158,7 +158,7 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
         max_length=10, null=True, validators=RRset.type.field._validators
     )
     perm_dyndns = models.BooleanField(default=False)
-    perm_rrsets = models.BooleanField(default=False)
+    perm_write = models.BooleanField(default=False)
     # Token user, filled via trigger. Used by compound FK constraints to tie domain.owner to token.user (see migration).
     token_user = models.ForeignKey(
         "User", on_delete=models.CASCADE, db_constraint=False, related_name="+"

@@ -123,7 +123,7 @@ class TokenHasDomainRRsetsPermission(TokenHasDomainBasePermission):
     Custom permission to check whether a token authorizes accessing RRsets for the view domain.
     """
 
-    perm_field = "perm_rrsets"
+    perm_field = "perm_write"
 
 
 class AuthTokenCorrespondsToViewToken(permissions.BasePermission):

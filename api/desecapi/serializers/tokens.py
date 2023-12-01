@@ -50,7 +50,7 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
         fields = (
             "domain",
             "perm_dyndns",
-            "perm_rrsets",
+            "perm_write",
         )
 
     def to_internal_value(self, data):

@@ -321,7 +321,7 @@ A JSON object representing a token domain policy has the following structure::
     {
         "domain": "example.com",
         "perm_dyndns": false,
-        "perm_rrsets": true
+        "perm_write": true
     }
 
 Field details:
@@ -339,7 +339,7 @@ Field details:
     Indicates whether :ref:`dynDNS updates <update-api>` are allowed.
     Defaults to ``false``.
 
-``perm_rrsets``
+``perm_write``
     :Access mode: read, write
     :Type: boolean
 
