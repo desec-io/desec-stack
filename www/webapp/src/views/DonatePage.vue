@@ -120,6 +120,27 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
+                    <v-icon class="mr-2">{{ mdiBitcoin }}</v-icon> Crypto Currency (BTC, ETH)
+                  </v-layout>
+                </v-expansion-panel-header>
+                <v-expansion-panel-content class="pt-4">
+                  <p>If you prefer to donate in a crypto currency, you can use the following wallets:</p>
+                  <table>
+                    <tr>
+                      <th>Bitcoin (BTC)</th>
+                      <td><span class="fixed-width">1NMsTB3ML9t7QiEyiyXaU2oi72i2aDhVEK</span></td>
+                    </tr>
+                    <tr>
+                      <th>Etherum (ETH)</th>
+                      <td><span class="fixed-width">0xb9594A8d1BF512eAC59069d9d5cbA457E0d35998</span></td>
+                    </tr>
+                  </table>
+                  <p class="mt-4">Note that we cannot provide you a donation receipt for crypto donations.</p>
+                </v-expansion-panel-content>
+              </v-expansion-panel>
+              <v-expansion-panel>
+                <v-expansion-panel-header class="text-subtitle-1">
+                  <v-layout>
                     <v-icon class="mr-2">{{ mdiHeartMultipleOutline }}</v-icon> Double-up with Your Employer
                   </v-layout>
                 </v-expansion-panel-header>
@@ -188,7 +209,7 @@
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
   import QrcodeVue from '../modules/qrcode.vue/dist/qrcode.vue.esm';
-  import {mdiBankTransferIn, mdiBankTransferOut, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
+  import {mdiBankTransferIn, mdiBankTransferOut, mdiBitcoin, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
 
   export default {
     name: 'DonatePage',
@@ -208,6 +229,7 @@
         ),
         mdiBankTransferIn,
         mdiBankTransferOut,
+        mdiBitcoin,
         mdiCreditCardOutline,
         mdiGithub,
         mdiGiftOutline,
