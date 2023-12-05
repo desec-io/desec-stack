@@ -1,8 +1,16 @@
 <template>
   <v-container>
-    <h1>Donate now to support our mission</h1>
-    <h2>Like our community service? Your donation shows us we're on the right track.
-      All donations are used in accordance with <router-link :to="{name: 'about'}">our statutes</router-link>.</h2>
+    <v-row align="center">
+      <v-col class="col-md-6 col-12 py-8">
+        <h1 class="text-h4 font-weight-bold">Donate to Support our Mission</h1>
+        <h3 class="subheading mt-6 font-weight-regular">
+          <p>
+            Like our community service? Your donation shows us we're on the right track.
+            All donations are used in accordance with <router-link :to="{name: 'about'}">our statutes</router-link>.
+          </p>
+        </h3>
+      </v-col>
+    </v-row>
     <v-row>
       <v-col cols="12" md="6">
         <v-card>
@@ -209,7 +217,11 @@
   }
 </script>
 
-<style lang="scss">
+<style scoped>
+  th {
+    padding-right: 1ch;
+    text-align: left;
+  }
   .fixed-width {
     font-family: monospace;
   }
