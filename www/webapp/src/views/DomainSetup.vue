@@ -82,7 +82,7 @@
           </v-row>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text style="overflow-x: scroll; overflow-y: hidden" v-if="ds.length">
+        <v-card-text v-if="ds.length">
           <record-list readonly type="DS" :value="ds"></record-list>
         </v-card-text>
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
@@ -102,7 +102,7 @@
           </v-row>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text style="overflow-x: scroll; overflow-y: hidden" v-if="dnskey.length">
+        <v-card-text v-if="dnskey.length">
           <record-list readonly type="DNSKEY" :value="dnskey"></record-list>
         </v-card-text>
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
@@ -213,17 +213,3 @@ export default {
   },
 };
 </script>
-
-<style lang="scss" scoped>
-.caption {
-  text-transform: uppercase;
-}
-
-.code, .fixed-width {
-  font-family: monospace;
-}
-
-pre {
-  overflow: auto;
-}
-</style>

@@ -134,7 +134,15 @@ export default {
     >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr:not(:last-child).v-data-table__mobile-table-row > td:last-child {
         border-bottom-width: 4px;
     }
-
+    >>> .theme--light.v-data-table > .v-data-table__wrapper > table {
+      width: 100%;
+    }
+    @media screen and (min-width: 600px) {
+      >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3),
+      >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3) > div{
+        width: 45vw;
+      }
+    }
     >>> tr.successFade td {
         animation: successFade 1s;
     }

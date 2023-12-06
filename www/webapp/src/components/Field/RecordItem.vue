@@ -129,6 +129,7 @@ export default {
       }
       mirror = createMirror(el);
       mirror.style.paddingTop = '0px';
+      mirror.style.whiteSpace = 'pre';
       mirror.className = 'mirror-input'
       el.after(mirror);
       let label = el.getElementsByClassName("v-label")[0];

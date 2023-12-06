@@ -1,24 +1,26 @@
 <template>
   <div>
-    <table style="border-spacing: 0; width: 100%">
-      <component
-              :is="getRecordComponentName(type)"
-              v-for="(item, index) in value"
-              :key="index"
-              :content="item"
-              :error-messages="errorMessages[index] ? errorMessages[index].content : []"
-              :hide-label="index > 0"
-              :append-icon="value.length > 1 ? mdiClose : ''"
-              :disabled="disabled"
-              :readonly="readonly"
-              :required="required"
-              ref="inputFields"
-              @update:content="$set(value, index, $event)"
-              @input.native="$emit('dirty', $event)"
-              @remove="(e) => removeHandler(index, e)"
-              @keyup="(e) => $emit('keyup', e)"
-      />
-    </table>
+    <div style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
+      <table style="border-spacing: 0; width: 100%">
+        <component
+                :is="getRecordComponentName(type)"
+                v-for="(item, index) in value"
+                :key="index"
+                :content="item"
+                :error-messages="errorMessages[index] ? errorMessages[index].content : []"
+                :hide-label="index > 0"
+                :append-icon="value.length > 1 ? mdiClose : ''"
+                :disabled="disabled"
+                :readonly="readonly"
+                :required="required"
+                ref="inputFields"
+                @update:content="$set(value, index, $event)"
+                @input.native="$emit('dirty', $event)"
+                @remove="(e) => removeHandler(index, e)"
+                @keyup="(e) => $emit('keyup', e)"
+        />
+      </table>
+    </div>
     <v-btn
             @click="addHandler"
             class="px-0 text-none"
@@ -160,6 +162,6 @@ export default {
 </script>
 <style scoped>
 table >>> td:last-child {
-  width: 100%;
+  padding-right: 4px;
 }
 </style>
