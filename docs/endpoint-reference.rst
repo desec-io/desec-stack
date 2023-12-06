@@ -35,12 +35,12 @@ for :ref:`managing users <manage-account>` and :ref:`tokens <manage-tokens>`.
 |                                                      +------------+---------------------------------------------+
 |                                                      | ``DELETE`` | Delete token                                |
 +------------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/tokens/{id}/policies/domain/``          | ``GET``    | Retrieve all domain policies for the given  |
+| ...\ ``/auth/tokens/{id}/policies/rrsets/``          | ``GET``    | Retrieve all domain policies for the given  |
 |                                                      |            | token                                       |
 |                                                      +------------+---------------------------------------------+
 |                                                      | ``POST``   | Create a domain policy for the given token  |
 +------------------------------------------------------+------------+---------------------------------------------+
-| ...\ ``/auth/tokens/{id}/policies/domain/{domain}/`` | ``GET``    | Retrieve a specific token domain policy     |
+| ...\ ``/auth/tokens/{id}/policies/rrsets/{domain}/`` | ``GET``    | Retrieve a specific token domain policy     |
 |                                                      +------------+---------------------------------------------+
 |                                                      | ``PATCH``  | Modify a token domain policy                |
 |                                                      +------------+---------------------------------------------+

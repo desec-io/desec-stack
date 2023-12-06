@@ -39,7 +39,7 @@ auth_urls = [
         name="token-policies-root",
     ),
     path(
-        "tokens/<uuid:token_id>/policies/domain/",
+        "tokens/<uuid:token_id>/policies/rrsets/",
         include(tokendomainpolicies_router.urls),
     ),
     path("totp/", include(totp_router.urls)),

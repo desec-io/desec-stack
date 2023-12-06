@@ -349,7 +349,7 @@ Field details:
 
 Token Domain Policy Management
 ------------------------------
-Token Domain Policies are managed using the ``policies/domain/`` endpoint
+Token Domain Policies are managed using the ``policies/rrsets/`` endpoint
 under the token's URL.
 Usage of this endpoint requires that the request's authorization token has the
 ``perm_manage_tokens`` flag.
@@ -359,14 +359,14 @@ rest of the API, so is not documented in detail here.
 For example, to retrieve a list of policies for a given token, issue a ``GET``
 request as follows::
 
-    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
+    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will respond with a list of token domain policy objects.
 
 To create the default policy, send a request like::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
+    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"domain": null}'
@@ -376,7 +376,7 @@ assumed to be ``false``.  To enable permissions, they have to be set to
 ``true`` explicitly.  As an example, let's create a policy that only allows
 dynDNS updates for a specific domain::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/domain/ \
+    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"domain": "example.dedyn.io", "perm_dyndns": true}'
@@ -384,11 +384,11 @@ dynDNS updates for a specific domain::
 You can retrieve (``GET``), update (``PATCH``, ``PUT``), and remove
 (``DELETE``) policies by appending their ``domain`` to the endpoint::
 
-    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/domain/{domain}/ \
+    curl -X DELETE https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/{domain}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The default policy can be accessed using the special domain name ``default``
-(``/api/v1/auth/tokens/{id}/policies/domain/default/``).
+(``/api/v1/auth/tokens/{id}/policies/rrsets/default/``).
 
 When modifying or deleting policies, the API enforces the default policy's
 primacy:
