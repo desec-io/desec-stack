@@ -488,7 +488,7 @@ RRset.  With ``POST``, only new RRsets are acceptable (i.e. the domain must
 not yet have an RRset with the same subname and type), while ``PUT`` allows
 both creating new RRsets and modifying existing ones.
 
-For the ``PATCH`` method, only ``subname `` and ``type`` is required; if you
+For the ``PATCH`` method, only ``subname`` and ``type`` is required; if you
 want to modify only ``ttl`` or ``records``, you can skip the other field.  To
 create a new RRset using ``PATCH``, all fields but ``subname`` must be
 specified.
