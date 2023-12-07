@@ -219,6 +219,11 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
+        # Other token gives 404
+        other_token = self.create_token(user=self.create_user())
+        response = self.client.list_policies(other_token, using=self.token_manage)
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+
         # Create
         ## default policy
         data = {"domain": None, "subname": None, "type": None, "perm_write": True}
@@ -245,6 +250,12 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertEqual(
             response.data, self.default_data | data | {"id": default_policy_id}
         )
+
+        ## Non-existing policy gives 404
+        response = self.client.get_policy(
+            self.token, using=self.token_manage, policy_id=other_token.pk
+        )
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
         ## can't create policy for other user's domain
         data = {

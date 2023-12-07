@@ -1,13 +1,13 @@
 import django.core.exceptions
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.views import APIView
 
 from desecapi import permissions
-from desecapi.models import TokenDomainPolicy
+from desecapi.models import Token
 from desecapi.serializers import TokenDomainPolicySerializer, TokenSerializer
 
 from .base import IdempotentDestroyMixin
@@ -35,7 +35,10 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class TokenPoliciesRoot(APIView):
+class TokenPoliciesRoot(RetrieveAPIView):
+    serializer_class = TokenSerializer
+    lookup_url_kwarg = "token_id"
+    throttle_scope = "account_management_passive"
     permission_classes = [
         IsAuthenticated,
         permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
@@ -43,7 +46,11 @@ class TokenPoliciesRoot(APIView):
         | permissions.AuthTokenCorrespondsToViewToken,
     ]
 
+    def get_queryset(self):
+        return self.request.user.token_set.all()
+
     def get(self, request, *args, **kwargs):
+        self.get_object()  # raises if token does not exist
         return Response(
             {
                 "domain": reverse(
@@ -74,9 +81,8 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         return ret
 
     def get_queryset(self):
-        return TokenDomainPolicy.objects.filter(
-            token_id=self.kwargs["token_id"], token__user=self.request.user
-        )
+        qs = Token.objects.filter(user=self.request.user)
+        return get_object_or_404(qs, pk=self.kwargs["token_id"]).tokendomainpolicy_set
 
     def perform_destroy(self, instance):
         try:
