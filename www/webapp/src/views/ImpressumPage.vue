@@ -16,6 +16,15 @@
     </p>
     <h3>Registergericht / Registration court</h3>
     <p>AG Berlin (Charlottenburg)<br>VR 37525<br></p>
+    <h3>Gemeinnützigkeit / Charitable status</h3>
+    <p>
+      Der Verein wurde vom Finanzamt für Körperschaften I, Berlin, als gemeinnützig anerkannt
+      (Freistellungsbescheid vom 01.11.2019, Steuernummer 27/663/65101).
+    </p>
+    <p>
+      The organization has been recognized as charitable by the competent tax office
+      (Finanzamt für Körperschaften I, Berlin; exemption notice dated November 1, 2019, tax number 27/663/65101).
+    </p>
   </v-container>
 </template>
 
