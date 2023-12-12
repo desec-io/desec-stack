@@ -7,7 +7,7 @@ from django.core.management import BaseCommand
 from django.utils import timezone
 import dns.message, dns.rdatatype, dns.query
 
-from desecapi import models, serializers
+from desecapi import models
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
 
@@ -39,17 +39,12 @@ class Command(BaseCommand):
             print(f"{name} zone is not configured; skipping TXT record update")
             return
 
-        instances = domain.rrset_set.filter(subname="", type="TXT").all()
-        timestamp = int(time.time())
-        content = f'"{timestamp}"'
-        data = [{"subname": "", "type": "TXT", "ttl": "3600", "records": [content]}]
-        context = {"domain": domain}
-        serializer = serializers.RRsetSerializer(
-            instances, data=data, many=True, partial=True, context=context
-        )
-        serializer.is_valid(raise_exception=True)
+        content = f'"{int(time.time())}"'
         with PDNSChangeTracker():
-            serializer.save()
+            rrset, _ = domain.rrset_set.update_or_create(
+                subname="", type="TXT", defaults={"ttl": settings.MINIMUM_TTL_DEFAULT}
+            )
+            rrset.save_records([content])
         print(f"TXT {name} updated to {content}")
 
     @staticmethod
