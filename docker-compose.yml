@@ -357,6 +357,11 @@ services:
         tag: "desec/prometheus"
     restart: unless-stopped
 
+  libfaketime:
+    # trajano/alpine-libfaketime is incompatible and stale; its libfaketime
+    # version is incompatible with Python 3.11's time.sleep(). Rebuilding helps.
+    build: https://github.com/trajano/alpine-libfaketime.git#6fa8f6f44ea04bf7e442462a29d695eb9e89d0e0
+
 volumes:
   dbapi_postgres:
   dblord_mysql:

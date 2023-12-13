@@ -1,6 +1,6 @@
 FROM python:3.11-alpine
 
-COPY --from=trajano/alpine-libfaketime /faketime.so /lib/libfaketime.so
+COPY --from=desec-stack_libfaketime /faketime.so /lib/libfaketime.so
 RUN mkdir -p /etc/faketime
 
 RUN apk add --no-cache bash dcron postgresql-client sqlite
