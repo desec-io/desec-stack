@@ -297,3 +297,29 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     def __str__(self):
         return self.name
+
+
+class DomainSerial(ExportModelOperationsMixin("DomainSerial"), models.Model):
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated = models.DateTimeField(null=True)
+    domain = models.ForeignKey("Domain", on_delete=models.CASCADE)
+    node = models.CharField(max_length=255)
+    serial = models.PositiveBigIntegerField(null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                name="domain_serial_unique_policy",
+                fields=["domain", "node", "updated", "serial"],
+                nulls_distinct=False,
+            ),
+        ]
+
+    def __str__(self):
+        return "<DomainSerial %s domain=%s node=%s serial=%s updated=%s>" % (
+            self.pk,
+            self.domain.name,
+            self.node,
+            self.serial,
+            self.updated,
+        )
