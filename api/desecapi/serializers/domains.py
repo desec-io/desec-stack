@@ -3,7 +3,7 @@ import dns.zone
 from rest_framework import serializers
 
 from api import settings
-from desecapi.models import Domain, RR_SET_TYPES_AUTOMATIC
+from desecapi.models import Domain, DomainSerial, RR_SET_TYPES_AUTOMATIC
 from desecapi.validators import ReadOnlyOnUpdateValidator
 
 from .records import RRsetSerializer
@@ -170,3 +170,24 @@ class DomainSerializer(serializers.ModelSerializer):
             rrset_list_serializer.save()
 
         return domain
+
+
+class DomainSerialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DomainSerializer
+        fields = (
+            "created",
+            "updated",
+            "domain",
+            "node",
+            "serial",
+        )
+        read_only_fields = fields
+
+    def create(self, validated_data):
+        # TODO
+        self.domain.domainserial_set.bulk_create(
+            [DomainSerial(domain=self.domain, node=node) for node in NODES],
+            ignore_conflicts=True,
+        )
+        return None  # TODO
