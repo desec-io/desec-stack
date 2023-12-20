@@ -110,6 +110,36 @@ class DomainViewSet(
         return Response(prefix + instance.zonefile, content_type="text/dns")
 
 
+class DomainSerialViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = DomainSerialSerializer
+    lookup_field = "name"
+    lookup_value_regex = r"[^/]+"
+    permission_classes = [
+        IsAuthenticated,
+        permissions.MFARequiredIfEnabled,
+        permissions.IsOwner,
+    ]
+
+    @property
+    def throttle_scope(self):
+        return (
+            "dns_api_cheap"
+            if self.request.method in SAFE_METHODS
+            else "dns_api_per_domain_expensive"
+        )
+
+    @property
+    def domain(self):
+        return self.get_object()
+
+    def get_queryset(self):
+        return self.domain.domainserial_set.all()  # TODO
+
+
 class SerialListView(APIView):
     permission_classes = (permissions.IsVPNClient,)
     throttle_classes = (
