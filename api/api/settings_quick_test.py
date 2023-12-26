@@ -36,4 +36,6 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"user": "1000/s"}
 # Carry email backend connection over to test mail outbox
 CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ["connection"]
 
+LIMIT_USER_DOMAIN_COUNT_DEFAULT = 15
+
 PCH_API = "http://api.invalid"

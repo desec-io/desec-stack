@@ -487,6 +487,14 @@ export default {
             "have not expired in the meantime are now working when opened. Direct login to the web interface and " +
             "deSEC DNS operations were not affected.",
       },
+      {
+        id: 'news-20231226001',
+        start: new Date(Date.UTC(2023, 12 - 1, 26)),  // first day of showing
+        end: new Date(Date.UTC(2024, 1 - 1, 8)),  // first day of not showing
+        icon: 'mdi-heart-broken',
+        teaser: "Due to a recent spike in abusive domain registrations, new accounts need manual verification before " +
+            "domains can be created. Please contact support explaining your use case to enable domain creation.",
+      },
     ],
   })
 }
