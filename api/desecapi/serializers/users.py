@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
@@ -82,6 +83,13 @@ class RegisterAccountSerializer(UserSerializer):
             raise serializers.ValidationError(
                 serializer.default_error_messages["name_unavailable"],
                 code="name_unavailable",
+            )
+        if (
+            not settings.REGISTER_LPS_ON_SIGNUP
+            and DomainSerializer.Meta.model(name=value).is_locally_registrable
+        ):
+            raise serializers.ValidationError(
+                "Registration during sign-up disabled; please create account without a domain name.",
             )
         return value
 
