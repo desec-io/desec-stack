@@ -5,6 +5,10 @@
         <v-row class="pt-8">
           <v-col class="text-center">
             <h1>Privacy Policy</h1>
+            <p>
+              This privacy policy applies to web content at desec.io. Our forum has a
+              <a href="https://talk.desec.io/privacy">separate privacy policy</a>.
+            </p>
           </v-col>
         </v-row>
         <v-row class="pb-8">
