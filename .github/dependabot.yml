@@ -22,6 +22,8 @@ updates:
       timezone: "Europe/Berlin"
       day: "monday"
       time: "05:00"
+    ignore:
+      - dependency-name: "sass"
     groups:
       npm-webapp:
         patterns:
