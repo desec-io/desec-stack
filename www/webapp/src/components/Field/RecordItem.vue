@@ -86,7 +86,7 @@ export default {
   },
   beforeMount() {
     // Initialize per-field value storage
-    this.fields.forEach((field, i) => {
+    this.fields.forEach((field, /*i*/) => {
       this.$set(field, 'value', '');
       this.$set(field, 'hint', '');
     });
