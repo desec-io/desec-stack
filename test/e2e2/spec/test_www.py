@@ -88,12 +88,12 @@ def test_unknown_hosts(api_anon, protocol, hostname):
 def test_security_headers(api_anon):
     api_anon.headers = {}
     # CSP hashes are for legacy browser support.
-    # Source: https://github.com/vitejs/vite/tree/v4/packages/plugin-legacy#content-security-policy
+    # Source: https://github.com/vitejs/vite/tree/v5.0.10/packages/plugin-legacy#content-security-policy
     expected_headers = {
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
         'Content-Security-Policy': "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; "
                                    "img-src 'self' data:; media-src data:; "
-                                   "script-src 'self' 'unsafe-eval' 'sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=' 'sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=' 'sha256-4y/gEB2/KIwZFTfNqwXJq4olzvmQ0S214m9jwKgNXoc=' 'sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc='; "
+                                   "script-src 'self' 'unsafe-eval' 'sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=' 'sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=' 'sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=' 'sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc='; "
                                    "style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; "
                                    "block-all-mixed-content; form-action 'none';",
         'X-Frame-Options': 'deny',
