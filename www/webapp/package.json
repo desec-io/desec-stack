@@ -9,6 +9,7 @@
     "lint": "eslint --ignore-path .gitignore --no-fix src/**/*.{vue,js,json}",
     "lint:fix": "eslint --ignore-path .gitignore --fix src/**/*.{vue,js,json}"
   },
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
