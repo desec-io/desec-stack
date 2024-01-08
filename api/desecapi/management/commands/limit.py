@@ -1,9 +1,6 @@
 from django.core.management import BaseCommand, CommandError
-from django.db.models import Q
 
-from api import settings
-from desecapi.models import RRset, Domain, User
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.models import Domain, User
 
 
 class Command(BaseCommand):

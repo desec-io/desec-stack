@@ -2,9 +2,9 @@ from base64 import b64encode
 
 from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
+from django.conf import settings
 from rest_framework import serializers
 
-from api import settings
 from desecapi.models import Captcha
 
 

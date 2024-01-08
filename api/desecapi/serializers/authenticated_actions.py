@@ -2,11 +2,11 @@ import binascii
 import json
 from datetime import timedelta
 
+from django.conf import settings
 from rest_framework import fields, serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueValidator, qs_filter
 
-from api import settings
 from desecapi import crypto, models
 
 from .captcha import CaptchaSolutionSerializer

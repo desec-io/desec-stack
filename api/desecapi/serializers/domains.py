@@ -1,8 +1,8 @@
 import dns.name
 import dns.zone
+from django.conf import settings
 from rest_framework import serializers
 
-from api import settings
 from desecapi.models import Domain, RR_SET_TYPES_AUTOMATIC
 from desecapi.validators import ReadOnlyOnUpdateValidator
 

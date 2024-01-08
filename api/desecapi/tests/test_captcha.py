@@ -3,13 +3,13 @@ from io import BytesIO
 from unittest import mock
 
 from PIL import Image
+from django.conf import settings
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from api import settings
 from desecapi.models import Captcha
 from desecapi.serializers import CaptchaSolutionSerializer
 from desecapi.tests.base import DesecTestCase

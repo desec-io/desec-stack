@@ -21,6 +21,7 @@ from unittest import mock
 from urllib.parse import urlparse
 
 from django.contrib.auth.hashers import is_password_usable
+from django.conf import settings
 from django.core import mail
 from django.core.management import call_command
 from django.urls import resolve
@@ -29,7 +30,6 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from api import settings
 from desecapi.models import Domain, User, Captcha
 from desecapi.tests.base import (
     DesecTestCase,

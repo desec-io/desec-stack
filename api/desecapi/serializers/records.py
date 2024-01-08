@@ -3,6 +3,7 @@ import copy
 import django.core.exceptions
 import dns.name
 import dns.zone
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db.models import F, Q
 from django.utils import timezone
@@ -11,7 +12,6 @@ from rest_framework import serializers
 from rest_framework.settings import api_settings
 from rest_framework.validators import UniqueTogetherValidator
 
-from api import settings
 from desecapi import metrics, models, validators
 
 

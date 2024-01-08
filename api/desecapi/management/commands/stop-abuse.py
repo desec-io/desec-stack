@@ -1,8 +1,8 @@
 import dns.resolver
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from api import settings
 from desecapi.models import BlockedSubnet, Domain, RR, RRset, User
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 

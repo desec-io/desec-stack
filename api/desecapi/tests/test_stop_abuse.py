@@ -1,6 +1,6 @@
+from django.conf import settings
 from django.core import management
 
-from api import settings
 from desecapi import models
 from desecapi.tests.base import DomainOwnerTestCase
 
