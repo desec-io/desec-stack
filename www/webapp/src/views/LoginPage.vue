@@ -27,26 +27,14 @@
             </v-toolbar>
             <v-card-text>
               <error-alert :errors="errors"></error-alert>
-              <v-text-field
-                v-model="email"
-                label="Email"
-                outlined
-                required
-                :rules="email_rules"
-                :error-messages="email_errors"
-                tabindex="1"
-                @change="email_errors=[]"
+              <generic-email
+                  v-model="email"
+                  :autofocus="true"
+                  tabindex="1"
               />
-              <v-text-field
+              <generic-password
                 v-model="password"
-                label="Password"
-                :append-icon="hide_password ? 'mdi-eye' : 'mdi-eye-off'"
-                :type="hide_password ? 'password' : 'text'"
-                outlined
-                required
-                :rules="password_rules"
                 tabindex="2"
-                @click:append="() => (hide_password = !hide_password)"
               />
               <v-layout class="justify-center">
                 <v-checkbox
@@ -89,26 +77,28 @@
 import { HTTP, digestError } from '@/utils';
 import ErrorAlert from "@/components/ErrorAlert.vue";
 import {useUserStore} from "@/store/user";
+import GenericEmail from "@/components/Field/GenericEmail.vue";
+import GenericPassword from "@/components/Field/GenericPassword.vue";
 
 export default {
   name: 'LoginPage',
   components: {
+    GenericEmail,
+    GenericPassword,
     ErrorAlert,
   },
   data: () => ({
     user: useUserStore(),
     valid: false,
     working: false,
-    email: '',
-    password: '',
     terms: false,
     useSessionStorage: false,
-    email_rules: [v => !!v || 'Please enter the email address associated with your account'],
+
+    email: '',
     email_errors: [],
-    password_rules: [
-      v => !!v || 'Enter your password to log in',
-    ],
-    hide_password: true,
+
+    password: '',
+
     errors: [],
   }),
   methods: {

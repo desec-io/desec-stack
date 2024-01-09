@@ -29,18 +29,11 @@
             <v-card-text>
               <error-alert :errors="errors"></error-alert>
 
-              <v-text-field
-                      v-model="email"
-                      label="Email"
-                      prepend-icon="mdi-email"
-                      outlined
-                      required
-                      :rules="email_rules"
-                      :error-messages="email_errors"
-                      @change="email_errors=[]"
-                      validate-on-blur
-                      ref="emailField"
-                      tabindex="1"
+              <generic-email
+                  v-model="email"
+                  :new="true"
+                  tabindex="1"
+                  ref="emailField"
               />
 
               <v-radio-group
@@ -174,9 +167,10 @@
 
 <script>
   import axios from 'axios';
-  import {domain_pattern, email_pattern} from '@/validation';
+  import {domain_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import GenericEmail from "@/components/Field/GenericEmail.vue";
 
   const LOCAL_PUBLIC_SUFFIXES = import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
@@ -189,6 +183,7 @@
   export default {
     name: 'SignUp',
     components: {
+      GenericEmail,
       ErrorAlert,
     },
     data: () => ({
@@ -201,7 +196,6 @@
 
       /* email field */
       email: '',
-      email_rules: [v => !!email_pattern.test(v || '') || 'We need an email address for account recovery and technical support.'],
       email_errors: [],
 
       /* captcha field */

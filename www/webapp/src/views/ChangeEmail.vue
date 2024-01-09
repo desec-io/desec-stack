@@ -35,40 +35,21 @@
                                 </p>
                             </v-alert>
 
-                            <v-text-field
-                                    v-model="email"
-                                    label="Current Email"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    required
-                                    :disabled="true"
-                                    validate-on-blur
+                            <generic-email
+                                v-model="email"
+                                label="Current Email Address"
+                                :readonly="true"
                             />
-                            <v-text-field
-                                    v-model="password"
-                                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-                                    prepend-icon="mdi-blank"
-                                    outlined
-                                    label="Password"
-                                    required
-                                    :rules="[rules.required]"
-                                    :type="show ? 'text' : 'password'"
-                                    :error-messages="password_errors"
-                                    @change="password_errors=[]"
-                                    @click:append="show = !show"
-                                    ref="password"
-                                    tabindex="1"
-                            ></v-text-field>
-                            <v-text-field
+
+                            <generic-password
+                                v-model="password"
+                                ref="password"
+                                tabindex="1"
+                            />
+
+                            <generic-email
                                     v-model="new_email"
-                                    label="New Email"
-                                    prepend-icon="mdi-email"
-                                    outlined
-                                    required
-                                    :rules="[rules.required, rules.email]"
-                                    :error-messages="email_errors"
-                                    @change="email_errors=[]"
-                                    validate-on-blur
+                                    :new="true"
                                     tabindex="2"
                             />
                         </v-card-text>
@@ -91,13 +72,15 @@
 
 <script>
   import { HTTP, withWorking ,digestError} from '@/utils';
-  import {email_pattern} from '@/validation';
-  
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import GenericEmail from "@/components/Field/GenericEmail.vue";
+  import GenericPassword from "@/components/Field/GenericPassword.vue";
 
   export default {
     name: 'ChangeEmail',
     components: {
+      GenericEmail,
+      GenericPassword,
       ErrorAlert,
     },
     data: () => ({
@@ -108,13 +91,11 @@
       email: '',
       rules: {
         required: v => !!v || 'Required.',
-        email: v => !!email_pattern.test(v) || 'Not a valid email address.'
       },
       show: false,
 
       /* password field */
       password: '',
-      password_errors: [],
 
       /* email field */
       new_email: '',
