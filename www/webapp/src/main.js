@@ -9,7 +9,6 @@ import "@fontsource/roboto/400.css" /* regular */
 import "@fontsource/roboto/400-italic.css" /* regular-italic */
 import "@fontsource/roboto/500.css" /* medium */
 import "@fontsource/roboto/700.css" /* bold */
-import '@mdi/font/css/materialdesignicons.css'
 import {createPinia, PiniaVuePlugin} from "pinia";
 
 

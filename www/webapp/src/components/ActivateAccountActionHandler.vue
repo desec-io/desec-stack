@@ -7,7 +7,7 @@
             <v-text-field
                     v-model="payload.captcha.solution"
                     label="Type CAPTCHA text here"
-                    prepend-icon="mdi-account-check"
+                    :prepend-icon="mdiAccountCheck"
                     outlined
                     required
                     :disabled="working"
@@ -38,12 +38,12 @@
             </audio>
             <br/>
             <v-btn-toggle>
-              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
             </v-btn-toggle>
             &nbsp;
             <v-btn-toggle v-model="captcha_kind">
-              <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
-              <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
+              <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEye }}</v-icon></v-btn>
+              <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEarHearing }}</v-icon></v-btn>
             </v-btn-toggle>
           </v-col>
         </v-row>
@@ -66,6 +66,7 @@
 <script>
   import axios from 'axios';
   import GenericActionHandler from "./GenericActionHandler.vue"
+  import {mdiAccountCheck, mdiEarHearing, mdiEye, mdiRefresh} from "@mdi/js";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -81,6 +82,11 @@
       LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
       captcha: null,
       captcha_required: false,
+
+      mdiAccountCheck: mdiAccountCheck,
+      mdiEarHearing: mdiEarHearing,
+      mdiEye: mdiEye,
+      mdiRefresh: mdiRefresh,
 
       /* captcha field */
       captchaSolution: '',

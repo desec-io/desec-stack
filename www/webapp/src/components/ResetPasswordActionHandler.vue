@@ -3,7 +3,7 @@
     <div class="text-center" v-if="!success">
         <v-text-field
                 v-model="payload.new_password"
-                :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+                :append-icon="show ? mdiEyeOff : mdiEye"
                 label="New password"
                 required
                 :disabled="working"
@@ -31,11 +31,14 @@
 
 <script>
   import GenericActionHandler from "./GenericActionHandler.vue"
+  import {mdiEye, mdiEyeOff} from "@mdi/js";
 
   export default {
     name: 'ResetPasswordActionHandler',
     extends: GenericActionHandler,
     data: () => ({
+      mdiEyeOff: mdiEyeOff,
+      mdiEye: mdiEye,
       rules: {
         required: value => !!value || 'Required.',
         min: v => (v !== undefined && v.length >= 8) || 'Min 8 characters',

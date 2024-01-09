@@ -40,7 +40,7 @@
               <v-text-field
                 v-model="password"
                 label="Password"
-                :append-icon="hide_password ? 'mdi-eye' : 'mdi-eye-off'"
+                :append-icon="hide_password ? mdiEyeOff : mdiEye"
                 :type="hide_password ? 'password' : 'text'"
                 outlined
                 required
@@ -89,6 +89,7 @@
 import { HTTP, digestError } from '@/utils';
 import ErrorAlert from "@/components/ErrorAlert.vue";
 import {useUserStore} from "@/store/user";
+import {mdiEye, mdiEyeOff} from "@mdi/js";
 
 export default {
   name: 'LoginPage',
@@ -97,6 +98,8 @@ export default {
   },
   data: () => ({
     user: useUserStore(),
+    mdiEyeOff: mdiEyeOff,
+    mdiEye: mdiEye,
     valid: false,
     working: false,
     email: '',

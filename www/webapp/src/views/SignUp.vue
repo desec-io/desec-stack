@@ -32,7 +32,7 @@
               <v-text-field
                       v-model="email"
                       label="Email"
-                      prepend-icon="mdi-email"
+                      :prepend-icon="mdiEmail"
                       outlined
                       required
                       :rules="email_rules"
@@ -48,7 +48,7 @@
                       hint="You can also use our REST API or web interface to create domains."
                       label="Do you want to set up a domain right away?"
                       persistent-hint
-                      prepend-icon="mdi-dns"
+                      :prepend-icon="mdiDns"
               >
                 <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
                 <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
@@ -82,7 +82,7 @@
                     <v-text-field
                         v-model="captchaSolution"
                         label="Type CAPTCHA text here"
-                        prepend-icon="mdi-account-check"
+                        :prepend-icon="mdiAccountCheck"
                         outlined
                         required
                         :rules="captcha_rules"
@@ -112,12 +112,12 @@
                     </audio>
                     <br/>
                     <v-btn-toggle>
-                      <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+                      <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
                     </v-btn-toggle>
                     &nbsp;
                     <v-btn-toggle v-model="captcha_kind">
-                      <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
-                      <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
+                      <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEye }}</v-icon></v-btn>
+                      <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEarHearing }}</v-icon></v-btn>
                     </v-btn-toggle>
                   </v-col>
                 </v-row>
@@ -177,6 +177,7 @@
   import {domain_pattern, email_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import {mdiAccountCheck, mdiDns, mdiEarHearing, mdiEmail, mdiEye, mdiRefresh} from "@mdi/js";
 
   const LOCAL_PUBLIC_SUFFIXES = import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
 
@@ -198,6 +199,13 @@
       errors: [],
       captcha: null,
       LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+
+      mdiAccountCheck: mdiAccountCheck,
+      mdiDns: mdiDns,
+      mdiEarHearing: mdiEarHearing,
+      mdiEmail: mdiEmail,
+      mdiEye: mdiEye,
+      mdiRefresh: mdiRefresh,
 
       /* email field */
       email: '',

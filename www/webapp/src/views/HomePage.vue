@@ -491,7 +491,7 @@ export default {
         id: 'news-20231226001',
         start: new Date(Date.UTC(2023, 12 - 1, 26)),  // first day of showing
         end: new Date(Date.UTC(2024, 1 - 1, 8)),  // first day of not showing
-        icon: 'mdi-heart-broken',
+        icon: mdiHeartBroken,
         teaser: "Due to a recent spike in abusive domain registrations, new accounts need manual verification before " +
             "domains can be created. Please contact support explaining your use case to enable domain creation.",
       },

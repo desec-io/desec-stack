@@ -42,7 +42,7 @@
                             <v-text-field
                                     v-model="email"
                                     label="Email"
-                                    prepend-icon="mdi-email"
+                                    :prepend-icon="mdiEmail"
                                     outlined
                                     required
                                     :rules="email_rules"
@@ -59,7 +59,7 @@
                                     <v-text-field
                                             v-model="captchaSolution"
                                             label="Type CAPTCHA text here"
-                                            prepend-icon="mdi-account-check"
+                                            :prepend-icon="mdiAccountCheck"
                                             outlined
                                             required
                                             :rules="captcha_rules"
@@ -89,12 +89,12 @@
                                     </audio>
                                     <br/>
                                     <v-btn-toggle>
-                                      <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>mdi-refresh</v-icon></v-btn>
+                                      <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
                                     </v-btn-toggle>
                                     &nbsp;
                                     <v-btn-toggle v-model="captcha_kind">
-                                      <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-eye</v-icon></v-btn>
-                                      <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>mdi-ear-hearing</v-icon></v-btn>
+                                      <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEye }}</v-icon></v-btn>
+                                      <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEarHearing }}</v-icon></v-btn>
                                     </v-btn-toggle>
                                   </v-col>
                                 </v-row>
@@ -122,6 +122,7 @@
   import {email_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from '@/components/ErrorAlert.vue';
+  import {mdiAccountCheck, mdiEarHearing, mdiEmail, mdiEye, mdiRefresh} from "@mdi/js";
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',
@@ -140,6 +141,12 @@
       captchaWorking: true,
       errors: [],
       captcha: null,
+
+      mdiAccountCheck: mdiAccountCheck,
+      mdiEarHearing: mdiEarHearing,
+      mdiEmail: mdiEmail,
+      mdiEye: mdiEye,
+      mdiRefresh: mdiRefresh,
 
       /* email field */
       email: '',

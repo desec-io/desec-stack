@@ -44,7 +44,7 @@
                             />
                             <v-text-field
                                     v-model="password"
-                                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+                                    :append-icon="show ? mdiEyeOff : mdiEye"
                                     prepend-icon="mdi-blank"
                                     outlined
                                     label="Password"
@@ -78,11 +78,14 @@
 <script>
   import { HTTP, withWorking, digestError } from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import {mdiEye, mdiEyeOff} from "@mdi/js";
 
   export default {
     name: 'DeleteAccount',
     components: {ErrorAlert},
     data: () => ({
+      mdiEyeOff: mdiEyeOff,
+      mdiEye: mdiEye,
       valid: false,
       working: false,
       done: false,

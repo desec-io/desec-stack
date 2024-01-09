@@ -46,7 +46,7 @@
                             />
                             <v-text-field
                                     v-model="password"
-                                    :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
+                                    :append-icon="show ? mdiEyeOff : mdiEye"
                                     prepend-icon="mdi-blank"
                                     outlined
                                     label="Password"
@@ -62,7 +62,7 @@
                             <v-text-field
                                     v-model="new_email"
                                     label="New Email"
-                                    prepend-icon="mdi-email"
+                                    :prepend-icon="mdiEmail"
                                     outlined
                                     required
                                     :rules="[rules.required, rules.email]"
@@ -92,8 +92,9 @@
 <script>
   import { HTTP, withWorking ,digestError} from '@/utils';
   import {email_pattern} from '@/validation';
-  
+
   import ErrorAlert from "@/components/ErrorAlert.vue";
+  import {mdiEmail, mdiEye, mdiEyeOff} from "@mdi/js";
 
   export default {
     name: 'ChangeEmail',
@@ -111,6 +112,10 @@
         email: v => !!email_pattern.test(v) || 'Not a valid email address.'
       },
       show: false,
+
+      mdiEmail: mdiEmail,
+      mdiEyeOff: mdiEyeOff,
+      mdiEye: mdiEye,
 
       /* password field */
       password: '',
