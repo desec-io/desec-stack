@@ -286,6 +286,7 @@ services:
     user: memcache:memcache
     networks:
     - rearapi_celery
+    command: ["memcached", "-I", "2m"]
     logging:
       driver: "syslog"
       options:
