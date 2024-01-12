@@ -3,12 +3,12 @@
     <v-row align="center">
       <v-col class="col-md-6 col-12 py-8">
         <h1 class="text-h4 font-weight-bold">Donate to Support our Mission</h1>
-        <h3 class="subheading mt-6 font-weight-regular">
+        <div class="text-subtitle-1 mt-6 font-weight-regular">
           <p>
             Like our community service? Your donation shows us we're on the right track.
             All donations are used in accordance with <router-link :to="{name: 'about'}">our statutes</router-link>.
           </p>
-        </h3>
+        </div>
       </v-col>
     </v-row>
     <v-row>

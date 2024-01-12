@@ -6,7 +6,7 @@
       <v-row align="center">
         <v-col class="col-md-6 col-12 py-8 triangle-fg">
           <h1 class="text-h4 font-weight-bold">Modern DNS Hosting for Everyone</h1>
-          <h3 class="subheading mt-2 pt-8 font-weight-regular">
+          <div class="text-subtitle-1 mt-2 pt-8 font-weight-regular">
             <p>
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
             </p>
@@ -14,7 +14,7 @@
               Running on <strong>open-source software</strong> and <strong>supported by <a href="https://securesystems.de/">SSE</a></strong>,
               deSEC is free for everyone to use.
             </p>
-          </h3>
+          </div>
           <div class="pa-2" v-if="!user.authenticated">
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>

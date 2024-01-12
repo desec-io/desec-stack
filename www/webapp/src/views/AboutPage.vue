@@ -13,7 +13,7 @@
         <v-row align="center">
           <v-col class="col-md-6 col-12 py-8 triangle-fg">
             <h1 class="text-h4 font-weight-bold">About Us</h1>
-            <h3 class="subheading mt-2 py-8 font-weight-regular">
+            <div class="text-subtitle-1 mt-2 py-8 font-weight-regular">
               <p>
                 Our services are operated by deSEC e.V., a registered non-profit organization in Berlin, Germany.
               </p>
@@ -21,7 +21,7 @@
                 As a charity, all operations abide by our statutes which define guidelines of all operations.
                 For details regarding our statutes, please refer to the legally binding version (German) below.
               </p>
-            </h3>
+            </div>
           </v-col>
         </v-row>
       </v-container>
