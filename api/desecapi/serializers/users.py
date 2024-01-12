@@ -84,14 +84,24 @@ class RegisterAccountSerializer(UserSerializer):
                 serializer.default_error_messages["name_unavailable"],
                 code="name_unavailable",
             )
+        return value
+
+    def validate(self, attrs):
         if (
-            not settings.REGISTER_LPS_ON_SIGNUP
-            and DomainSerializer.Meta.model(name=value).is_locally_registrable
+            not settings.REGISTER_LPS
+            and attrs.get("captcha") is not None
+            and attrs.get("domain") is not None
+            and DomainSerializer.Meta.model(name=attrs["domain"]).is_locally_registrable
         ):
             raise serializers.ValidationError(
-                "Registration during sign-up disabled; please create account without a domain name.",
+                {
+                    "domain": [
+                        DomainSerializer.default_error_messages["name_unavailable"]
+                    ]
+                },
+                code="name_unavailable",
             )
-        return value
+        return super().validate(attrs)
 
     def create(self, validated_data):
         validated_data.pop("domain", None)

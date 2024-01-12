@@ -25,6 +25,7 @@ from django.contrib.auth.hashers import is_password_usable
 from django.conf import settings
 from django.core import mail
 from django.core.management import call_command
+from django.test import override_settings
 from django.urls import resolve
 from django.utils import timezone
 from rest_framework import status
@@ -610,6 +611,19 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 domain=self.random_domain_name(suffix=local_public_suffix)
             )
 
+    @override_settings(REGISTER_LPS=False)
+    def test_registration_with_domain_lps_disabled(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        with self.get_psl_context_manager("."):
+            _, _, domain = self._test_registration_with_domain()
+
+        local_public_suffix = random.sample(list(self.AUTO_DELEGATION_DOMAINS), 1)[0]
+        with self.get_psl_context_manager(local_public_suffix):
+            self._test_registration_with_domain(
+                domain=self.random_domain_name(suffix=local_public_suffix),
+                expect_failure_response=self.assertRegistrationFailureDomainUnavailableResponse,
+            )
+
     def test_registration_without_domain_and_password(self):
         email, password = self._test_registration(self.random_username(), None)
         confirmation_link = self.assertResetPasswordEmail(email)
@@ -692,6 +706,20 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
 
     def test_registration_late_captcha(self):
         self._test_registration(password=self.random_password(), late_captcha=True)
+
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        local_public_suffix = random.sample(list(self.AUTO_DELEGATION_DOMAINS), 1)[0]
+        # Late captcha sign-up allows domain registration (Nextcloud VM workflow)
+        for register_lps in [True, False]:
+            domain = self.random_domain_name(suffix=local_public_suffix)
+            with (
+                override_settings(REGISTER_LPS=register_lps),
+                self.get_psl_context_manager(local_public_suffix),
+                self.assertRequests(
+                    self.requests_desec_domain_creation_auto_delegation(domain)
+                ),
+            ):
+                self._test_registration(domain=domain, late_captcha=True)
 
 
 class OtherUserAccountTestCase(UserManagementTestCase):
