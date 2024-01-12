@@ -6,6 +6,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
@@ -83,6 +84,14 @@ class DomainViewSet(
         return super().get_serializer(*args, include_keys=include_keys, **kwargs)
 
     def perform_create(self, serializer):
+        if (
+            not settings.REGISTER_LPS
+            and Domain(name=serializer.validated_data["name"]).is_locally_registrable
+        ):
+            raise ValidationError(
+                {"name": [DomainSerializer.default_error_messages["name_unavailable"]]},
+                code="name_unavailable",
+            )
         with PDNSChangeTracker():
             domain = serializer.save(owner=self.request.user)
 
