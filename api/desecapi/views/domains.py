@@ -121,5 +121,5 @@ class SerialListView(APIView):
         serials = cache.get(key)
         if serials is None:
             serials = get_serials()
-            cache.get_or_set(key, serials, timeout=15)
+            cache.get_or_set(key, serials, timeout=60)
         return Response(serials)
