@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import formatDistanceToNow from 'date-fns/formatDistanceToNow';
+import {formatDistanceToNow} from 'date-fns/formatDistanceToNow';
 
 export default {
   name: 'TimeAgo',
