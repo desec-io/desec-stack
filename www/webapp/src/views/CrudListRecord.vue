@@ -124,38 +124,38 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-    >>> tr:not(.v-data-table__empty-wrapper) td {
+    ::v-deep tr:not(.v-data-table__empty-wrapper) td {
         vertical-align: top;
     }
-    >>> .v-data-table .v-data-table__mobile-row {
+    ::v-deep .v-data-table .v-data-table__mobile-row {
         height: auto;
         margin: -11px 0;
     }
-    >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr:not(:last-child).v-data-table__mobile-table-row > td:last-child {
+    ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr:not(:last-child).v-data-table__mobile-table-row > td:last-child {
         border-bottom-width: 4px;
     }
-    >>> .theme--light.v-data-table > .v-data-table__wrapper > table {
+    ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table {
       width: 100%;
     }
     @media screen and (min-width: 600px) {
-      >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3),
-      >>> .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3) > div{
+      ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3),
+      ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3) > div{
         width: 45vw;
       }
     }
-    >>> tr.successFade td {
+    ::v-deep tr.successFade td {
         animation: successFade 1s;
     }
-    >>> tr.successFade:focus-within td {
+    ::v-deep tr.successFade:focus-within td {
         animation: none;
     }
     @keyframes successFade {
         from { background-color: forestgreen; }
     }
-    >>> tr:focus-within .button-save .v-icon {
+    ::v-deep tr:focus-within .button-save .v-icon {
         color: forestgreen;
     }
-    >>> tr:focus-within :focus {
+    ::v-deep tr:focus-within :focus {
         background-color: #FFFFFF;
     }
 </style>

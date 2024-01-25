@@ -161,7 +161,7 @@ export default {
 };
 </script>
 <style scoped>
-table >>> td:last-child {
+table ::v-deep td:last-child {
   padding-right: 4px;
 }
 </style>

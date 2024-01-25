@@ -702,29 +702,29 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  >>> tr:not(.v-data-table__empty-wrapper) td {
+  ::v-deep tr:not(.v-data-table__empty-wrapper) td {
     vertical-align: top;
   }
   /* If this is on tr instead of td, it doesn't work for the first one */
-  >>> tr.successFade td {
+  ::v-deep tr.successFade td {
     animation: successFade 1s;
   }
-  >>> tr.successFade:focus-within td {
+  ::v-deep tr.successFade:focus-within td {
     animation: none;
   }
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
-  >>> tr.orange .button-save .v-icon, >>> tr.red .button-save .v-icon {
+  ::v-deep tr.orange .button-save .v-icon, ::v-deep tr.red .button-save .v-icon {
     color: forestgreen;
   }
-  >>> tr:focus-within :focus {
+  ::v-deep tr:focus-within :focus {
     background-color: #FFFFFF;
   }
-  >>> tbody tr > :hover {
+  ::v-deep tbody tr > :hover {
     cursor: pointer;
   }
-  >>> tbody tr.text--disabled > :hover {
+  ::v-deep tbody tr.text--disabled > :hover {
     cursor: auto;
   }
 </style>

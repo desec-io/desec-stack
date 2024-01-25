@@ -17,6 +17,7 @@ module.exports = {
     // 'plugin:vue/recommended',
     'plugin:vuetify/base',
     'plugin:import/recommended',
+    'plugin:vue-scoped-css/recommended', // vue2
     'eslint:recommended',
   ],
   settings: {
@@ -37,6 +38,8 @@ module.exports = {
     'vue/no-deprecated-filter': 'warn', // Preparation for vue3
     'vue/no-deprecated-v-on-number-modifiers': 'warn', // Preparation for vue3
     'vue/no-deprecated-html-element-is': 'warn', // Preparation for vue3
+    'vue-scoped-css/enforce-style-type': 'off',
+    'vue-scoped-css/no-deprecated-deep-combinator': 'warn', // Preparation for vue3
     'vue/match-component-file-name': ['error', {'extensions': ['vue'], 'shouldMatchCase': true}],
   },
   ignorePatterns: ['**/src/modules/**/*'],
