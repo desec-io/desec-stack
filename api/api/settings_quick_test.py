@@ -9,9 +9,11 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "desec",
         "USER": "desec",
-        "HOST": "127.0.0.1"
-        if os.environ.get("DESECSTACK_DJANGO_TEST", "") == "1"
-        else "dbapi",
+        "HOST": (
+            "127.0.0.1"
+            if os.environ.get("DESECSTACK_DJANGO_TEST", "") == "1"
+            else "dbapi"
+        ),
     },
 }
 

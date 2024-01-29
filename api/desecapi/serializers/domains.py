@@ -115,9 +115,11 @@ class DomainSerializer(serializers.ModelSerializer):
                 {
                     "type": dns.rdatatype.to_text(rrset.rdtype),
                     "ttl": max(min_ttl, min(max_ttl, rrset.ttl)),
-                    "subname": (owner_name - zone_name).to_text()
-                    if owner_name - zone_name != dns.name.empty
-                    else "",
+                    "subname": (
+                        (owner_name - zone_name).to_text()
+                        if owner_name - zone_name != dns.name.empty
+                        else ""
+                    ),
                     "records": [rr.to_text() for rr in rrset],
                 }
                 for owner_name, node in nodes.items()

@@ -1145,9 +1145,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
             self.assertContains(
                 response,
-                text="managed automatically"
-                if _type in RR_SET_TYPES_AUTOMATIC
-                else "type is currently unsupported",
+                text=(
+                    "managed automatically"
+                    if _type in RR_SET_TYPES_AUTOMATIC
+                    else "type is currently unsupported"
+                ),
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1570,9 +1572,11 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             with cm:
                 self.assertStatus(
                     self.client.patch_rr_set(domain.name, "www", "A", data),
-                    status.HTTP_204_NO_CONTENT
-                    if allowed
-                    else status.HTTP_404_NOT_FOUND,
+                    (
+                        status.HTTP_204_NO_CONTENT
+                        if allowed
+                        else status.HTTP_404_NOT_FOUND
+                    ),
                 )
 
             self.assertStatus(

@@ -229,9 +229,11 @@ class AssertRequestsContextManager:
             else:
                 match = self._find_matching_request(
                     request,
-                    unmatched_requests
-                    if self.single_expectation_single_request
-                    else seen_requests,
+                    (
+                        unmatched_requests
+                        if self.single_expectation_single_request
+                        else seen_requests
+                    ),
                 )
 
             # check match
@@ -741,9 +743,11 @@ class MockPDNSTestCase(APITestCase):
                     status,
                     response.status_code,
                     response,
-                    str(response.data).replace("\\n", "\n")
-                    if hasattr(response, "data")
-                    else "",
+                    (
+                        str(response.data).replace("\\n", "\n")
+                        if hasattr(response, "data")
+                        else ""
+                    ),
                 )
             )
 
@@ -1285,9 +1289,11 @@ class PublicSuffixMockMixin:
         else:
             side_effect = partial(
                 self._mock_get_public_suffix,
-                public_suffixes=[side_effect_parameter]
-                if not isinstance(side_effect_parameter, list)
-                else list(side_effect_parameter),
+                public_suffixes=(
+                    [side_effect_parameter]
+                    if not isinstance(side_effect_parameter, list)
+                    else list(side_effect_parameter)
+                ),
             )
 
         return mock.patch.object(psl, "get_public_suffix", side_effect=side_effect)

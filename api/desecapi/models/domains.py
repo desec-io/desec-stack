@@ -197,12 +197,14 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
                     self._keys.append(
                         {
                             "dnskey": rr.content,
-                            "ds": [
-                                dns.dnssec.make_ds(name, key, algo).to_text()
-                                for algo in (2, 4)
-                            ]
-                            if key_is_sep
-                            else [],
+                            "ds": (
+                                [
+                                    dns.dnssec.make_ds(name, key, algo).to_text()
+                                    for algo in (2, 4)
+                                ]
+                                if key_is_sep
+                                else []
+                            ),
                             "flags": key.flags,  # deprecated
                             "keytype": None,  # deprecated
                             "managed": False,
