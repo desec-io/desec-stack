@@ -29,7 +29,7 @@
     <v-app-bar app class="white">
       <v-toolbar-title><router-link :to="{name: 'home'}">
         <v-img
-                :src="require('./assets/logo.svg')"
+                src="./assets/logo.svg"
                 alt="deSEC Logo"
                 eager
                 contain

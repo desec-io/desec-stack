@@ -11,7 +11,13 @@ export default defineConfig({
         'process.env.BUILD': '"web"' // fix for vuelidate@0.7.7
     },
     plugins: [
-        vue(),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    'v-img': ['src'],
+                },
+            },
+        }),
         Components({
             resolvers: [VuetifyResolver()],
         }),

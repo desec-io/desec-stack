@@ -113,7 +113,7 @@
                     you can use one of the other methods, that would be appreciated!
                   </p>
                   <v-layout class="justify-center">
-                    <v-img :src="require('../assets/paypal-qrcode.png')" alt="PayPal QR Code" style="max-width: 256px"></v-img>
+                    <v-img src="../assets/paypal-qrcode.png" alt="PayPal QR Code" style="max-width: 256px"></v-img>
                   </v-layout>
                 </v-expansion-panel-content>
               </v-expansion-panel>
