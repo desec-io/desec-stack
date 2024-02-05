@@ -1,7 +1,7 @@
 captcha~=0.5.0
 celery~=5.3.6
 coverage~=7.4.1
-cryptography~=42.0.1
+cryptography~=42.0.2
 Django~=5.0.1
 django-cors-headers~=4.3.1
 djangorestframework~=3.14.0
