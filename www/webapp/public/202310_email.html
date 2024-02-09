@@ -1,0 +1,61 @@
+<html>
+<head>
+  <title>deSEC email from October 2023</title>
+  <meta charset="utf-8">
+</head>
+
+<body>
+
+<div style="margin: 1em auto; max-width: 700px">
+<p>
+  From: deSEC<br>
+  Subject: <b>[deSEC] Reminder: Insecure domain</b>
+</p>
+
+<div style="font-family: monospace">
+
+<p>Hi there,<br>
+<br>
+This is a reminder for the message we sent 7 days ago. Please note that performing the below steps is required to use deSEC (see §4 of our Terms of Use).<br>
+<br>
+You are running domain names on the Internet using the deSEC DNS hosting platform. As part of your configuration, you already have set deSEC's nameservers for your domain (usually via your domain provider), so that the parent domain (e.g. .com) now directs DNS queries for your domain to our nameservers ("delegation").<br>
+<br>
+We take security very seriously, and sign all your DNS data with DNSSEC automatically. Unfortunately, signing is only part of the story: clients also need to know which key to use for validation. This requires an additional step of configuration.<br>
+<br>
+To complete your DNSSEC configuration, it is necessary to forward your domain's DNSSEC key data to your domain provider (just like you have configured the nameservers). Only once that is done, your domain's signatures can be validated.<br>
+<br>
+We found that you have not yet configured DNSSEC for the following domain(s) in your account:<br>
+<br>
+&nbsp;&nbsp;* example.com<br>
+<br>
+It is important that you complete this process for each domain, so that your DNS is as secure as possible. Our terms require a proper DNSSEC setup in order to use deSEC (see §4 of our Terms of Use).<br>
+<br>
+To finish your domain's DNSSEC configuration, please log into the deSEC web portal, and click the (i) button next to your domain. The page will then display your domain's DNSSEC information, which you need to forward to your domain provider. (You can choose between two formats, DS and DNSKEY. It depends on your parent domain which format is needed, but your domain provider should tell you. For "DS" style, the shorter variant is preferred.)<br>
+<br>
+Thank you for following these instructions at your earliest convenience. If you have any questions about this process, you can just reply to this message.<br>
+<br>
+Stay secure,<br>
+Peter<br>
+<br>
+PS: We know that some users have taken appropriate steps, and are now awaiting completion of the process at their domain provider or registry. In these cases, you can disregard this message.<br>
+<br>
+--<br>
+Like our community service? 💛<br>
+Please consider donating at<br>
+<br>
+https://desec.io/<br>
+<br>
+deSEC e.V.<br>
+Kyffhäuserstr. 5<br>
+10781 Berlin<br>
+Germany<br>
+<br>
+Vorstandsvorsitz: Nils Wisiol<br>
+Registergericht: AG Berlin (Charlottenburg) VR 37525
+</p>
+
+</div>
+
+</body>
+
+</html>
