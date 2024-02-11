@@ -168,6 +168,7 @@
                       type="submit"
                       :loading="working"
                       tabindex="7"
+                      aria-label="Sign up"
               >Sign up</v-btn>
             </v-card-actions>
           </v-card>

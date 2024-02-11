@@ -28,6 +28,7 @@
             small
             text
             v-if="!readonly && !disabled"
+            aria-label="Add another value"
     ><v-icon>{{ mdiPlus }}</v-icon> add another value</v-btn>
   </div>
 </template>

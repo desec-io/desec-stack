@@ -21,6 +21,7 @@
                 :disabled="working || !valid"
                 :loading="working"
                 tabindex="2"
+                aria-label="Submit"
         >Submit</v-btn>
     </div>
     <v-alert type="success" v-else>
