@@ -195,8 +195,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                     "type", flat=True
                 )
                 indices[s] = {type_: {None} for type_ in types}
-            items = indices[s].setdefault(t, set())
-            items.add(idx)
+            indices[s].setdefault(t, set()).add(idx)
 
         collapsed_indices = copy.deepcopy(indices)
         for idx, item in enumerate(data):
