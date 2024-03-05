@@ -303,6 +303,8 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
                 raise ValueError(
                     f'Record content for type {type_} malformed: {",".join(e.args)}'
                 )
+        except dns.name.NameTooLong:
+            raise ValueError("Hostname must be no longer than 255 characters")
         except dns.name.NeedAbsoluteNameOrOrigin:
             raise ValueError(
                 'Hostname must be fully qualified (i.e., end in a dot: "example.com.")'

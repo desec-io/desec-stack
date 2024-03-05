@@ -987,7 +987,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 "6454 8 1 aabbccddeeff",
                 "0 0 0 0",
             ],
-            "CNAME": ["example.com", "10 example.com.", "@."],
+            "CNAME": ["example.com", "10 example.com.", "@.", "abcd123." * 32],
             "CSYNC": ["0 -1 A", "444 65536 A", "0 3 AAA"],
             "DHCID": ["x", "xx", "xxx"],
             "DLV": [
