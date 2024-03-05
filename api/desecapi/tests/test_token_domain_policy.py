@@ -227,6 +227,12 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         # Create
         ## default policy
         data = {"domain": None, "subname": None, "type": None, "perm_write": True}
+        # Other token gives 404
+        response = self.client.create_policy(
+            models.Token(), using=self.token_manage, data=data
+        )
+        self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+        # Existing token works
         response = self.client.create_policy(
             self.token, using=self.token_manage, data=data
         )

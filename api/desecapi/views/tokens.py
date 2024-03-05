@@ -1,4 +1,5 @@
 import django.core.exceptions
+from django.http import Http404
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, RetrieveAPIView
@@ -79,6 +80,12 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         else:
             ret.append(permissions.HasManageTokensPermission)
         return ret
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Token.DoesNotExist:
+            raise Http404
 
     def get_queryset(self):
         qs = Token.objects.filter(user=self.request.user)
