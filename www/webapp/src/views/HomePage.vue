@@ -115,17 +115,6 @@
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
-            <img loading="lazy" src="../assets/non-free/sox.logo.svg" alt="SOX Logo" class="mr-6" style="max-width: 170px; width: 100%"/>
-          </v-layout>
-        </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          The Serbian Open eXchange, <a class="primary--text text--darken-2" href="https://sox.rs/">SOX</a>, provides us
-          with an anycast node in Belgrade, extending our presence to Eastern Europe.
-        </v-col>
-      </v-row>
     </v-container>
   </v-container>
   <v-container fluid>
@@ -347,13 +336,6 @@ export default {
         host: 'hkg-1.a.desec.io',
         left: '83.5%',
         top: '42.2%',
-      },
-      {
-        name: 'Belgrade (ns1.desec.io)',
-        host: 'beg-1.a.desec.io',
-        left: '51.6%',
-        top: '25.5%',
-        adopted_by: 'SOX',
       },
     ],
     features: [
