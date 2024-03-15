@@ -115,6 +115,20 @@
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
+      <v-row align="center" class="py-2" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
+          <v-layout class="justify-center">
+            <img loading="lazy" src="../assets/non-free/eu.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
+          </v-layout>
+        </v-col>
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          As a <a class="primary--text text--darken-2" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
+          deSEC works to ensure implementation of robust and modern DNS security and privacy features.
+          This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.<br />
+          The project is co-funded by the European Union (project number: 101095329 21-EU-DIG-EU-DNS, project name:
+          DNS4EU and European DNS Shield).
+        </v-col>
+      </v-row>
     </v-container>
   </v-container>
   <v-container fluid>
@@ -122,6 +136,18 @@
       <v-row align="center">
         <v-col class="text-center">
           <h2>Partners</h2>
+        </v-col>
+      </v-row>
+      <v-row align="center" class="py-2" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
+          <v-layout class="justify-center">
+            <a href="https://www.joindns4.eu/"><img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/></a>
+          </v-layout>
+        </v-col>
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          DNS4EU is an initiative of the European Commission to provide an EU-based alternative public DNS resolver.
+          The purpose of DNS4EU is to provide EU citizens, companies, and institutions with a secure, privacy-compliant,
+          and powerful recursive DNS to protect European digital independence.
         </v-col>
       </v-row>
       <v-row justify="center">
