@@ -111,7 +111,7 @@
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
           Through their Community Projects Fund, <a class="primary--text text--darken-2" href="https://ripe.net/">RIPE NCC</a>
-          supports the ongoing operation of our DNS platform and covers global Anycast network expenses in
+          in 2023 supported the ongoing operation of our DNS platform and covers global Anycast network expenses in
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
