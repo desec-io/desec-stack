@@ -72,11 +72,6 @@
   </v-container>
   <v-container fluid class="grey lighten-4">
     <v-container class="py-8">
-      <v-row align="center">
-        <v-col class="text-center">
-          <h2>Supporters</h2>
-        </v-col>
-      </v-row>
       <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
@@ -111,19 +106,20 @@
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
           Through their Community Projects Fund, <a class="primary--text text--darken-2" href="https://ripe.net/">RIPE NCC</a>
-          supports the ongoing operation of our DNS platform and covers global Anycast network expenses in
+          in 2023 supported the ongoing operation of our DNS platform and covers global Anycast network expenses in
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <img loading="lazy" src="../assets/non-free/sox.logo.svg" alt="SOX Logo" class="mr-6" style="max-width: 170px; width: 100%"/>
+            <img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          The Serbian Open eXchange, <a class="primary--text text--darken-2" href="https://sox.rs/">SOX</a>, provides us
-          with an anycast node in Belgrade, extending our presence to Eastern Europe.
+          As a consortium member of <a class="primary--text text--darken-2" href="https://www.joindns4.eu/">DNS4EU</a>,
+          deSEC works to ensure implementation of robust and modern DNS security and privacy practices.
+          This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.
         </v-col>
       </v-row>
     </v-container>
@@ -347,13 +343,6 @@ export default {
         host: 'hkg-1.a.desec.io',
         left: '83.5%',
         top: '42.2%',
-      },
-      {
-        name: 'Belgrade (ns1.desec.io)',
-        host: 'beg-1.a.desec.io',
-        left: '51.6%',
-        top: '25.5%',
-        adopted_by: 'SOX',
       },
     ],
     features: [
