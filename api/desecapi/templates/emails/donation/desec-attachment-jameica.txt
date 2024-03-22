@@ -33,7 +33,7 @@
     <targetdate type="java.sql.Date">{{ donation.due | date:"d.m.Y H:i:s" }}</targetdate>
         
     {# deSEC donation #}
-    <zweck type="java.lang.String">deSEC Spende/Donation authorized at {{ donation.created | date:"Y-m-d H:i:s" }} UTC</zweck>
+    <zweck type="java.lang.String">Thank you - deSEC Spende/Donation authorized at {{ donation.created | date:"Y-m-d H:i:s" }} UTC</zweck>
 
     {# direct debit type: one-off #}
     <sequencetype type="java.lang.String">OOFF</sequencetype>
