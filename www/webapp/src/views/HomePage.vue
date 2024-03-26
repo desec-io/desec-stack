@@ -48,6 +48,7 @@
                     depressed
                     x-large
                     block
+                    aria-label="Create Account"
                   >
                     Create Account
                   </v-btn>

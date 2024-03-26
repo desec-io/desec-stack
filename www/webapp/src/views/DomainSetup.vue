@@ -36,7 +36,7 @@
           <v-col cols="auto">Nameservers</v-col>
           <v-spacer></v-spacer>
           <v-col class="text-right">
-            <v-btn @click="copyToClipboard(ns.join('\n'))" text small>
+            <v-btn @click="copyToClipboard(ns.join('\n'))" text small aria-label="Copy nameservers">
               <v-icon>{{ mdiContentCopy }}</v-icon>
               Copy
             </v-btn>
@@ -74,7 +74,7 @@
             <v-col cols="auto">DS Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(ds.join('\n'))" text small>
+              <v-btn @click="copyToClipboard(ds.join('\n'))" text small aria-label="Copy DS information">
                 <v-icon>{{ mdiContentCopy }}</v-icon>
                 Copy
               </v-btn>
@@ -94,7 +94,7 @@
             <v-col cols="auto">DNSKEY Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(dnskey.join('\n'))" text small>
+              <v-btn @click="copyToClipboard(dnskey.join('\n'))" text small aria-label="Copy DNSKey information">
                 <v-icon>{{ mdiContentCopy }}</v-icon>
                 Copy
               </v-btn>
@@ -129,6 +129,7 @@
             text
             v-bind="attrs"
             @click="snackbar = false"
+            aria-label="Close"
         >
           Close
         </v-btn>

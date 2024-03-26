@@ -45,9 +45,9 @@
           <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{ item.post_icon }}</v-icon>
         </span>
       </div>
-      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated">Create Account</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!user.authenticated">Log In</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="user.authenticated">Log Out</v-btn>
+      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated" aria-label="Create Account">Create Account</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!user.authenticated" aria-label="Log In">Log In</v-btn>
+      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="user.authenticated" aria-label="Log Out">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
       <template #extension v-if="user.authenticated">
         <v-tabs background-color="primary darken-1" fixed-tabs>
@@ -68,6 +68,7 @@
                       text
                       class="align-self-center mr-4"
                       v-on="on"
+                      aria-label="more"
               >
                 more
                 <v-icon right>{{ mdiMenuDown }}</v-icon>
@@ -105,6 +106,7 @@
             depressed
             :href="alert.href"
             v-if="alert.href"
+            :aria-label="alert.button || 'More'"
           >
             {{ alert.button || 'More' }}
           </v-btn>
@@ -112,6 +114,7 @@
             color="primary"
             text
             @click="user.unalert(alert.id)"
+            aria-label="Hide"
           >
             Hide
           </v-btn>

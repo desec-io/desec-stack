@@ -65,6 +65,7 @@
                                     type="submit"
                                     :loading="working"
                                     tabindex="2"
+                                    aria-label="Delete Account"
                             >Delete Account
                             </v-btn>
                         </v-card-actions>

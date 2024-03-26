@@ -40,7 +40,7 @@
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn block outlined :to="{name: 'donate'}" aria-label="Donate">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>

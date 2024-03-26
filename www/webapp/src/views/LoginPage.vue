@@ -65,6 +65,7 @@
                 :disabled="!valid"
                 :loading="working"
                 tabindex="4"
+                aria-label="Log In"
               >
                 Log In
               </v-btn>
@@ -74,6 +75,7 @@
                 color="primary"
                 :to="{name: 'reset-password', params: email ? {email: email} : {}}"
                 tabindex="5"
+                aria-label="Forgot password"
               >
                 Forgot password
               </v-btn>
