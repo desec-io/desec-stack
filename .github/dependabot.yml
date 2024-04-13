@@ -26,8 +26,6 @@ updates:
       - dependency-name: "sass"
     groups:
       npm-webapp:
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
@@ -40,8 +38,6 @@ updates:
       time: "05:00"
     groups:
       pip-api:
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
