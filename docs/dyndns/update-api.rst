@@ -135,6 +135,22 @@ deleted.
 When using the ``myip`` parameter, a mixed-type list of both IPv4 and IPv6
 addresses may be given.
 
+.. warning::
+    **It is recommended to always specify query string parameters for both IP
+    address types.** If your device does not have both types, use ``preserve``
+    for the non-existing address. You can also use the empty value (which will
+    delete any existing such address).
+
+    Background: If you do not specify parameters for both IPv4 and IPv6, the
+    connection's IP address may be used to set the missing IP address record.
+    This is in line with the dynDNS protocol, but there's a chance of
+    manipulation: If an on-path attacker (MitM) succeeds to redirect your
+    connection through their machine, *their* connection's IP address will
+    appear as yours. As a result, the attacker's IP address will be set in the
+    DNS for your domain.
+
+    Note that using an encrypted connection (TLS) does *not* protect against
+    this attack, as TLS does not protect the IP address.
 
 Update Response
 ```````````````

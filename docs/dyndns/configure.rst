@@ -40,6 +40,8 @@ following details in your router configuration:
 with permissions restricted to DNS management (not allowing account
 management).
 
+**Note:** Please read the security warning at :ref:`determine-ip-addresses`.
+
 IPv6 Support
 ------------
 There is a chance that your router already properly supports pushing its IPv6
@@ -160,6 +162,8 @@ documentation.
 
 To test your setup, run ``sudo ddclient -force`` and see if everything works as
 expected.
+
+**Note:** Please read the security warning at :ref:`determine-ip-addresses`.
 
 
 .. _updating-multiple-dyn-domains:
