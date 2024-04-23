@@ -23,7 +23,7 @@ except ImportError:
 # -- Project information -----------------------------------------------------
 
 project = 'deSEC DNS API'
-copyright = '2023, deSEC e.V., Individual Contributors'
+copyright = '2024, deSEC e.V., Individual Contributors'
 author = 'deSEC e.V., Individual Contributors'
 
 
