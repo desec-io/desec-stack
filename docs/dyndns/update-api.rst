@@ -6,7 +6,7 @@ IP Update API
 In case you want to dig deeper, here are the details on how our IP update API
 works.  We provide this API to be compatible with
 most dynDNS clients. However, we also provide a RESTful API that is
-more powerful and always preferred over the legacy interface described here.
+more powerful and generally preferred over the legacy interface described here.
 
 Please note that when using HTTPS (which we highly recommend), outdated setups
 (such as TLS < 1.2) are not supported.  If you encounter SSL/TLS handshake

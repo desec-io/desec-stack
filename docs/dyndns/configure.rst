@@ -37,7 +37,8 @@ following details in your router configuration:
 - Token secret (long random string for authentication, displayed after sign-up)
 
 **Advanced API users:** The dynDNS token technically is a regular API token
-with permissions restricted to DNS management (but not account management).
+with permissions restricted to DNS management (not allowing account
+management).
 
 IPv6 Support
 ------------
@@ -163,7 +164,7 @@ expected.
 
 .. _updating-multiple-dyn-domains:
 
-Updating multiple domains
+Updating Multiple Domains
 `````````````````````````
 To update multiple domain or subdomains, it is best to designate one of them
 as the main domain, and create CNAME records for the others, so that they act
