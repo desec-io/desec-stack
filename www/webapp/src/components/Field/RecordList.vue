@@ -1,7 +1,7 @@
 <template>
   <div>
     <div style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
-      <table style="border-spacing: 0; width: 100%" @paste.prevent="pasteHandler($event)">
+      <table style="border-spacing: 0; width: 100%" @keydown="keydownHandler($event)" @paste.prevent="pasteHandler($event)">
         <component
                 :is="getRecordComponentName(type)"
                 v-for="(item, index) in value"
@@ -148,6 +148,32 @@ export default {
     }
   },
   methods: {
+    keydownHandler(e) {
+      let offset;
+      switch (e.key) {
+        case "ArrowDown":
+          offset = 1;
+          break;
+        case "ArrowUp":
+          offset = -1
+          break;
+      }
+      if (!offset) {
+        return;
+      }
+      let index = this.$refs.inputFields.findIndex(ref => ref.$el === e.target.closest('tr'));
+      const field = this.$refs.inputFields[index];
+      let pos = field.getPosition();
+      let i = 0;
+      while (pos > field.fields[i].value.length && i + 1 < field.fields.length) {
+        pos -= field.fields[i].value.length + 1;
+        i++;
+      }
+      index += offset;
+      if (index >= 0 && index < this.$refs.inputFields.length) {
+        this.$nextTick(() => this.$refs.inputFields[index].select(i));
+      }
+    },
     pasteHandler(e) {
       const index = this.$refs.inputFields.findIndex(ref => ref.$el === e.target.closest('tr'));
       this.$emit('dirty', e);

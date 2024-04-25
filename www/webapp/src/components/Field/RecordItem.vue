@@ -339,6 +339,14 @@ export default {
       await this.$nextTick();
       this.$refs.input[i].$refs.input.setSelectionRange(pos, pos);
     },
+    async select(i) {
+      await this.$nextTick();
+      this.$refs.input[i].$refs.input.focus();
+      await this.$nextTick();
+      this.$refs.input[i].$refs.input.select();  // for some reason this doesn't seem to work
+      //console.log(this.$refs.input[i].$refs.input.selectionStart, this.$refs.input[i].$refs.input.selectionEnd);
+      //window.setTimeout(() => console.log(this.$refs.input[i].$refs.input.selectionStart, this.$refs.input[i].$refs.input.selectionEnd), 1000);
+    },
     getPosition() {
       const refs = this.$refs.input;
       const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement);
