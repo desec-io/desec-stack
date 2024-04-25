@@ -720,7 +720,7 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         domain = "foo." + next(iter(self.AUTO_DELEGATION_DOMAINS))
         response = self.client.post(self.reverse("v1:domain-list"), {"name": domain})
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["name"][0].code, "name_unavailable")
+        self.assertEqual(response.data["name"][0].code, "registration_suspended")
 
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = "amazonaws.com"

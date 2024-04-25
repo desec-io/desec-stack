@@ -84,13 +84,15 @@ class DomainViewSet(
         return super().get_serializer(*args, include_keys=include_keys, **kwargs)
 
     def perform_create(self, serializer):
-        if (
-            not settings.REGISTER_LPS
-            and Domain(name=serializer.validated_data["name"]).is_locally_registrable
-        ):
+        domain = Domain(name=serializer.validated_data["name"])
+        if not settings.REGISTER_LPS and domain.is_locally_registrable:
             raise ValidationError(
-                {"name": [DomainSerializer.default_error_messages["name_unavailable"]]},
-                code="name_unavailable",
+                {
+                    "name": [
+                        f"Domain registration under {domain.parent_domain_name} is currently suspended."
+                    ]
+                },
+                code="registration_suspended",
             )
         with PDNSChangeTracker():
             domain = serializer.save(owner=self.request.user)
