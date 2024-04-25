@@ -12,7 +12,7 @@ from .records import RRsetSerializer
 class DomainSerializer(serializers.ModelSerializer):
     default_error_messages = {
         **serializers.Serializer.default_error_messages,
-        "name_unavailable": "This domain name conflicts with an existing zone, or is disallowed by policy.",
+        "name_unavailable": "This domain name conflicts with an existing domain, or is disallowed by policy.",
     }
     zonefile = serializers.CharField(write_only=True, required=False, allow_blank=True)
 

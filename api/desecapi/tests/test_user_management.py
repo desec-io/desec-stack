@@ -251,7 +251,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertRegistrationFailureDomainUnavailableResponse(self, response, domain):
         self.assertContains(
             response=response,
-            text="This domain name conflicts with an existing zone, or is disallowed by policy.",
+            text="This domain name conflicts with an existing domain, or is disallowed by policy.",
             status_code=status.HTTP_400_BAD_REQUEST,
             msg_prefix=str(response.data),
         )
