@@ -300,19 +300,20 @@ export default {
       this.update(value, pos);
     },
     pasteHandler(e) {
-      let value = this.fields.map(field => field.value).join(' ');
-      const pos = this.getPosition();
       const clipboardData = e.clipboardData.getData('text');
+      let value = this.fields.map(field => field.value).join(' ');
+      const selectionStart = this.getPosition();
+      const selectionEnd = selectionStart + this.getSelectionWidth();
 
-      // number of fields covered by this paste, minus 1 (given by number of spaces in the clipboard text, bounded from
-      // above by the number of fields (minus 1) at or to the right of the caret position
-      const nBeforeCaret = (value.slice(0, pos).match(/ /g) || []).length
+      // number of field gaps covered by this paste, minus 1 (given by number of spaces in the clipboard text, bounded
+      // from above by the number of fields (minus 1) at or to the right of the caret position
+      const nBeforeCaret = (value.slice(0, selectionStart).match(/ /g) || []).length
       const n = Math.min((clipboardData.match(/ /g) || []).length, this.fields.length - 1 - nBeforeCaret);
 
       // Insert clipboard text and remove up to n spaces form the right
-      value = value.slice(0, pos) + clipboardData + value.slice(pos);
+      value = value.slice(0, selectionStart) + clipboardData + value.slice(selectionEnd);
       value = value.replace(new RegExp(` {0,${n}}$`,'g'), '');
-      this.update(value, pos + clipboardData.length);
+      this.update(value, selectionStart + clipboardData.length);
     },
     async setPosition(pos) {
       await this.$nextTick();
@@ -326,16 +327,18 @@ export default {
       this.$refs.input[i].$refs.input.focus();
     },
     getPosition() {
-      let caretPosition;
       const refs = this.$refs.input;
       const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement);
-      if (dirty >= 0) {
-        caretPosition = refs[dirty].$refs.input.selectionStart;
-        for (let i = 0; i < dirty; i++) {
-          caretPosition += refs[i].$refs.input.value.length + 1;
-        }
+      let selectionStart = refs[dirty].$refs.input.selectionStart;
+      for (let i = 0; i < dirty; i++) {
+        selectionStart += refs[i].$refs.input.value.length + 1;
       }
-      return caretPosition;
+      return selectionStart;
+    },
+    getSelectionWidth() {
+      const refs = this.$refs.input;
+      const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement);
+      return refs[dirty].$refs.input.selectionEnd - refs[dirty].$refs.input.selectionStart;
     },
     updateFields() {
       let values = this.value.split(' ');
