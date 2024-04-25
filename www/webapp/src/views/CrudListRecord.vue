@@ -143,10 +143,10 @@ export default {
         width: 45vw;
       }
     }
-    ::v-deep tr.successFade td {
+    ::v-deep tr.successFade > td {
         animation: successFade 1s;
     }
-    ::v-deep tr.successFade:focus-within td {
+    ::v-deep tr.successFade:focus-within > td {
         animation: none;
     }
     @keyframes successFade {
