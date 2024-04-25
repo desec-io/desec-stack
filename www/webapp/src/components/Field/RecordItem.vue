@@ -287,10 +287,16 @@ export default {
       this.setPosition(this.getPosition() + 1);
     },
     endHandler(event) {
+      if (event.shiftKey) {
+        return;
+      }
       event.preventDefault();
       this.setPosition(this.value.length);
     },
     homeHandler(event) {
+      if (event.shiftKey) {
+        return;
+      }
       event.preventDefault();
       this.setPosition(0);
     },
