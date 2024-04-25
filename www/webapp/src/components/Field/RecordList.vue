@@ -1,7 +1,7 @@
 <template>
   <div>
     <div style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
-      <table style="border-spacing: 0; width: 100%">
+      <table style="border-spacing: 0; width: 100%" @paste.prevent="pasteHandler($event)">
         <component
                 :is="getRecordComponentName(type)"
                 v-for="(item, index) in value"
@@ -148,6 +148,27 @@ export default {
     }
   },
   methods: {
+    pasteHandler(e) {
+      const index = this.$refs.inputFields.findIndex(ref => ref.$el === e.target.closest('tr'));
+      this.$emit('dirty', e);
+      let [ index_value, selectionStart, selectionEnd, clipboardData ] = e.data;
+      let lines = clipboardData.split("\n");
+
+      // number of field gaps in last line covered by this paste, minus 1 (given by number of spaces in the clipboard
+      // text, bounded from above by the number of fields (minus 1) at or to the right of the initial caret position
+      const nBeforeCaret = (index_value.slice(0, selectionStart).match(/ /g) || []).length
+      const n = Math.min((lines[lines.length - 1].match(/ /g) || []).length, this.$refs.inputFields[0].fields.length - 1 - nBeforeCaret);
+
+      let value = [].concat(
+          this.value.slice(0, index),
+          [index_value.slice(0, selectionStart) + lines[0]],
+          lines.slice(1, -1),
+          [lines[lines.length - 1] + index_value.slice(selectionEnd).replace(new RegExp(` {0,${n}}$`,'g'), '')],
+          this.value.slice(index + 1)
+      );
+      this.$emit('input', value);
+      this.$nextTick(() => this.$refs.inputFields[index + lines.length - 1].setPosition(lines[lines.length - 1].length));
+    },
     getRecordComponentName(type) {
       const prefixComponentName = 'Record';
       const genericComponentName = prefixComponentName + 'Item';

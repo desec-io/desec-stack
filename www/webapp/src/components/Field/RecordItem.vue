@@ -310,6 +310,12 @@ export default {
       let value = this.fields.map(field => field.value).join(' ');
       const selectionStart = this.getPosition();
       const selectionEnd = selectionStart + this.getSelectionWidth();
+      if (clipboardData.includes("\n")) {
+        e.data = [ value, selectionStart, selectionEnd, clipboardData ];
+        return;
+      } else {
+        e.stopPropagation();
+      }
 
       // number of field gaps covered by this paste, minus 1 (given by number of spaces in the clipboard text, bounded
       // from above by the number of fields (minus 1) at or to the right of the caret position
@@ -329,8 +335,9 @@ export default {
         i++;
       }
 
-      this.$refs.input[i].$refs.input.setSelectionRange(pos, pos);
       this.$refs.input[i].$refs.input.focus();
+      await this.$nextTick();
+      this.$refs.input[i].$refs.input.setSelectionRange(pos, pos);
     },
     getPosition() {
       const refs = this.$refs.input;
