@@ -119,9 +119,9 @@ REST_FRAMEWORK = {
         ],  # DNS API requests affecting domains as a whole
         "dns_api_per_domain_expensive": [
             "2/s",
-            "120/min",
-            "1000/h",
-            # "300/d",
+            "15/min",
+            "100/h",
+            "300/d",
         ],  # DNS API requests affecting RRset(s) of a single domain
         # UserRateThrottle
         "user": "10000/d",  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
