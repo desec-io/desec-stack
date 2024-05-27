@@ -85,7 +85,8 @@ def test_unknown_hosts(api_anon, protocol, hostname):
     assert 'RemoteDisconnected' in str(excinfo)
 
 
-def test_security_headers(api_anon):
+@pytest.mark.parametrize("url", [https_url + relpath for relpath in ('', 'signup')])
+def test_security_headers(api_anon, url):
     api_anon.headers = {}
     # CSP hashes are for legacy browser support.
     # Source: https://github.com/vitejs/vite/tree/v5.0.10/packages/plugin-legacy#content-security-policy
@@ -101,7 +102,7 @@ def test_security_headers(api_anon):
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'X-XSS-Protection': '1; mode=block',
     }
-    response = api_anon.get(https_url)
+    response = api_anon.get(url)
     for k, v in expected_headers.items():
         assert response.headers[k] == v
 

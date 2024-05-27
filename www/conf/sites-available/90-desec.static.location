@@ -8,7 +8,7 @@ location / {
     gzip on;
     gzip_types *;
 
-    location /index.html {  # Also includes / via internal redirect, see https://nginx.org/en/docs/http/ngx_http_index_module.html#index
+    location /index.html {
         expires epoch;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
         # CSP hashes are for legacy browser support.
@@ -21,8 +21,8 @@ location / {
     }
 
     location / {  # all other files
-        index  index.html;
-        try_files $uri $uri/ /index.html =404;
+        index index.html;  # causes internal redirect, i.e. above location applies
+        try_files $uri $uri/ /index.html;  # only last parameter causes internal redirect
         expires 1M;
     }
 }
