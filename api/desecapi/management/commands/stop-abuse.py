@@ -47,10 +47,11 @@ class Command(BaseCommand):
                 ).exists():
                     try:
                         blocked_subnet = BlockedSubnet.from_ip(rr.content)
-                    except dns.resolver.NXDOMAIN:  # for unallocated IP addresses
+                    except dns.resolver.NXDOMAIN:  # IP address unallocated/private
                         continue
-                    blocked_subnet.save()
-                    blocked_subnets.append(blocked_subnet)
+                    if not blocked_subnet.subnet.is_private:
+                        blocked_subnet.save()
+                        blocked_subnets.append(blocked_subnet)
 
             # Print summary
             print(
