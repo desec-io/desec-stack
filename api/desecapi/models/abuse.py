@@ -29,11 +29,16 @@ class BlockedSubnet(models.Model):
         qname = IPv4Address(ip).reverse_pointer.replace(
             "in-addr.arpa", "origin.asn.cymru.com"
         )
-        answer = dns.resolver.resolve(qname, "TXT")[0]
-        parts = str(answer).strip('"').split("|")
+        try:
+            answer = dns.resolver.resolve(qname, "TXT")[0]
+            parts = str(answer).strip('"').split("|")
+        except dns.resolver.LifetimeTimeout:
+            # In over a year of operation, there was never a smaller network than /24
+            print(f"Could not determine ASN and subnet for {ip}, using 0 and /24")
+            parts = ["0", f"{ip}/24", "", "", str(date.today())]
         return cls(
             asn=int(parts[0].strip()),
-            subnet=IPv4Network(parts[1].strip()),
+            subnet=IPv4Network(parts[1].strip(), strict=False),
             country=parts[2].strip(),
             registry=parts[3].strip(),
             allocation_date=date.fromisoformat(parts[4].strip()),
