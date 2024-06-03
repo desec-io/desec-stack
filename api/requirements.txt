@@ -16,5 +16,5 @@ psycopg~=3.1.19
 psl-dns~=1.1.0
 pylibmc~=1.6.3
 pyyaml~=6.0.1
-requests~=2.31.0
+requests~=2.32.3
 uwsgi~=2.0.25
