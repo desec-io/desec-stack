@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from unittest import mock
 import time
 
@@ -9,13 +10,14 @@ from rest_framework.views import APIView
 from rest_framework.test import APIRequestFactory
 
 
-def override_rates(rates):
-    return override_settings(
-        REST_FRAMEWORK={
-            "DEFAULT_THROTTLE_CLASSES": ["desecapi.throttling.ScopedRatesThrottle"],
-            "DEFAULT_THROTTLE_RATES": {"test_scope": rates},
-        }
-    )
+@contextmanager
+def override_bucket(bucket):
+    old_bucket = getattr(MockView, "throttle_scope_bucket", None)
+    MockView.throttle_scope_bucket = bucket
+    try:
+        yield
+    finally:
+        MockView.throttle_scope_bucket = old_bucket
 
 
 class MockView(APIView):
@@ -65,12 +67,14 @@ class ThrottlingTestCase(TestCase):
 
         cache.clear()
         request = self.factory.get("/")
-        with override_rates(rates):
+        with override_settings(
+            REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {MockView.throttle_scope: rates}}
+        ):
             do_test()
             if buckets is not None:
                 for bucket in buckets:
-                    MockView.throttle_scope_bucket = bucket
-                    do_test()
+                    with override_bucket(bucket):
+                        do_test()
 
     def test_requests_are_throttled_4sec(self):
         self._test_requests_are_throttled(["4/sec"], [(0, 4, 1), (1, 4, 1)])
