@@ -76,3 +76,31 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
     def get_cache_key(self, request, view):
         key = super().get_cache_key(request, view)
         return [f"{key}_{duration}" for duration in self.duration]
+
+
+class UserRateThrottle(throttling.UserRateThrottle):
+    """
+    Like DRF's UserRateThrottle, but supports individual rates per user.
+    """
+
+    def __init__(self):
+        pass  # defer to allow_request() where request object is available
+
+    def allow_request(self, request, view):
+        self.request = request
+        super().__init__()  # gets and parses rate
+        return super().allow_request(request, view)
+
+    def get_rate(self):
+        try:
+            return f"{self.request.user.throttle_daily_rate:d}/d"
+        except (
+            AttributeError,  # request.user is AnonymousUser
+            TypeError,  # .throttle_daily_rate is None
+        ):
+            return super().get_rate()
+
+    # Override the static attribute of the parent class so that we can dynamically apply override settings for testing
+    @property
+    def THROTTLE_RATES(self):
+        return api_settings.DEFAULT_THROTTLE_RATES

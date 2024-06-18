@@ -30,9 +30,7 @@ CACHES = {
 }
 
 REST_FRAMEWORK["PAGE_SIZE"] = 20
-REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = [
-    "rest_framework.throttling.UserRateThrottle"
-]
+REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = ["desecapi.throttling.UserRateThrottle"]
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"user": "1000/s"}
 
 # Carry email backend connection over to test mail outbox

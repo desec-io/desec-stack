@@ -49,6 +49,7 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     )
     needs_captcha = models.BooleanField(default=True)
     outreach_preference = models.BooleanField(default=True)
+    throttle_daily_rate = models.PositiveIntegerField(null=True)
 
     objects = MyUserManager()
 

@@ -95,7 +95,7 @@ REST_FRAMEWORK = {
     "ALLOWED_VERSIONS": ["v1", "v2"],
     "DEFAULT_THROTTLE_CLASSES": [
         "desecapi.throttling.ScopedRatesThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "desecapi.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {  # When changing rate limits, make sure to keep docs/rate-limits.rst consistent
         # ScopedRatesThrottle
