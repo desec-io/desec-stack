@@ -124,7 +124,7 @@ REST_FRAMEWORK = {
             "300/d",
         ],  # DNS API requests affecting RRset(s) of a single domain
         # UserRateThrottle
-        "user": "10000/d",  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
+        "user": "2000/d",  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },
     "NUM_PROXIES": 0,  # Do not use X-Forwarded-For header when determining IP for throttling
 }
