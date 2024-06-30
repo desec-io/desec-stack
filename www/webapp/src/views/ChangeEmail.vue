@@ -79,6 +79,7 @@
                                     type="submit"
                                     :loading="working"
                                     tabindex="3"
+                                    aria-label="Change Email Address"
                             >Change Email Address
                             </v-btn>
                         </v-card-actions>

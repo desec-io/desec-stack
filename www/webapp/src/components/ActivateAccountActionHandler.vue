@@ -38,7 +38,7 @@
             </audio>
             <br/>
             <v-btn-toggle>
-              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
+              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking" aria-label="Refresh"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
             </v-btn-toggle>
             &nbsp;
             <v-btn-toggle v-model="captcha_kind">
@@ -55,6 +55,7 @@
                 :disabled="working || !valid"
                 :loading="working"
                 tabindex="2"
+                aria-label="Submit"
         >Submit</v-btn>
     </div>
     <v-alert type="success" v-if="success">

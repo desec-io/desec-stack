@@ -110,7 +110,7 @@
                 Please verify that your client is using the credentials provided by deSEC and then come back to check
                 again.
               </p>
-              <v-btn depressed outlined block @click="check" :loading="working">Check Again</v-btn>
+              <v-btn depressed outlined block @click="check" :loading="working" aria-label="Check Again">Check Again</v-btn>
             </v-alert>
             <v-alert type="success" v-if="ips !== undefined && ips.length > 0">
               <p>
@@ -129,7 +129,7 @@
                 Enjoy!
               </p>
               <p>
-                <v-btn depressed outlined block @click="check" :loading="working">Update</v-btn>
+                <v-btn depressed outlined block @click="check" :loading="working" aria-label="Update">Update</v-btn>
               </p>
               <p>
                 Please note that deSEC only assigns your IP address to your domain name.
@@ -155,7 +155,7 @@
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn block outlined :to="{name: 'donate'}" aria-label="Donate">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>
