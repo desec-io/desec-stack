@@ -173,9 +173,11 @@ stand-in for an IPv6 address. Replace those (including the ``<`` and ``>``)
 with your respective values.
 
 
-Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
+Basic authentication with automatic IP detection (IPv4 **or** IPv6), option 1::
 
   curl --user <your domain>:<your token secret> https://update.dedyn.io/
+
+or option 2::
 
   curl https://update.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your token secret>"
@@ -185,17 +187,31 @@ Basic authentication with forced use of IPv4 (will remove IPv6 address from the 
   curl --ipv4 https://update.dedyn.io/?hostname=<your domain> \
     --header "Authorization: Token <your token secret>"
 
-Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
+Basic authentication with forced use of IPv4 (while preserving the IPv6 address from the DNS)::
 
-  curl --ipv6 https://update.dedyn.io/?hostname=<your domain> \
+  curl --ipv4 "https://update.dedyn.io/?hostname=<your domain>&myipv6=preserve" \
     --header "Authorization: Token <your token secret>"
+
+Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS), option 1::
 
   curl --user <your domain>:<your token secret> https://update6.dedyn.io/
 
-Basic authentication with simultaneous update of IPv4 and IPv6::
+or option 2::
+
+  curl https://update6.dedyn.io/?hostname=<your domain> \
+    --header "Authorization: Token <your token secret>"
+
+Basic authentication with forced use of IPv6 (while preserving the IPv4 address from the DNS)::
+
+  curl "https://update6.dedyn.io/?hostname=<your domain>&myipv4=preserve" \
+    --header "Authorization: Token <your token secret>"
+
+Basic authentication with simultaneous update of IPv4 and IPv6, option 1::
 
   curl --user <your domain>:<your token secret> \
     "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
+
+or option 2::
 
   curl "https://update6.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv6=fd08::1234" \
     --header "Authorization: Token <your token secret>"
