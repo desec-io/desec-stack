@@ -122,7 +122,7 @@ Insert the update interval and the domain name to update.
 HTTPS connection by default. To enable it, open ``/etc/ddclient.conf`` and add
 ``ssl=yes`` above the ``server=`` statement. We **strongly recommend** doing
 so; otherwise, your credentials will be exposed during transmission. Also webservers
-like ``checkipv4.dedyn.io`` for IP checks depend on it!
+like ``checkipv4.dedyn.io`` for IP checks depend on it.
 
 Manual configuration (other systems)
 ************************************
