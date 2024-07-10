@@ -115,14 +115,16 @@ Enter ``update.dedyn.io`` as the dynamic DNS service.
 Enter the domain you want to update as the username.
 As your password, use an API token.
 Tell ddclient how to detect your IP address. One option to detect your IP would be
-to use ``checkipv4.dedyn.io`` to check your IPv4 or ``checkipv6.dedyn.io`` to check your IPv6.
+to use ``https://checkipv4.dedyn.io`` to check your IPv4 or ``https://checkipv6.dedyn.io`` to check your IPv6.
 Insert the update interval and the domain name to update.
 
 **Note:** As of the time of this writing, ddclient does not use an encrypted
 HTTPS connection by default. To enable it, open ``/etc/ddclient.conf`` and add
 ``ssl=yes`` above the ``server=`` statement. We **strongly recommend** doing
-so; otherwise, your credentials will be exposed during transmission. Also webservers
-like ``checkipv4.dedyn.io`` for IP checks depend on it.
+so; otherwise, your credentials will be exposed during transmission.
+
+To test your setup, run ``sudo ddclient -force`` and see if everything works as
+expected.
 
 Manual configuration (other systems)
 ************************************
