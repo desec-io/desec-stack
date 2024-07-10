@@ -99,6 +99,7 @@ Option 2: Use ddclient
 
 Automatic configuration (Debian-/Ubuntu-based systems)
 ******************************************************
+
 If you're on Debian, Ubuntu or any other Linux distribution that provides you
 with the ddclient package, you can use it to update your IP address with our
 servers. Note that depending on the ddclient version you are using, IPv6
@@ -108,16 +109,21 @@ To install ddclient, run ``sudo apt-get install ddclient``. If a configuration
 dialog does not appear automatically, use ``sudo dpkg-reconfigure ddclient`` to
 start the configuration process.
 
-In the configuration process, select "other" dynamic DNS service provider, and
-enter ``update.dedyn.io`` as the dynamic DNS server. Next, tell ddclient to use
-the "dyndns2" protocol to perform updates. Afterwards, enter the username and
-the token secret that you received during registration. Last, tell ddclient how to
-detect your IP address, your domain name and the update interval.
+In the configuration process, select "other" dynamic DNS service provider. 
+Next, tell ddclient to use the "dyndns2" protocol to perform updates.
+Enter ``update.dedyn.io`` as the dynamic DNS service. Afterwards, enter the domain 
+you want to update as the username.
+As your password, use a token that you generated under ``https://desec.io/tokens``.
+Tell ddclient how to detect your IP address. You can use any webservice on the list
+or select ``others`` and then insert ``https://checkipv4.dedyn.io/`` to check your IPv4
+or ``https://checkipv6.dedyn.io/`` to check your IPv6.
+Insert the update interval and then the domain name to update.
 
 **Note:** As of the time of this writing, ddclient does not use an encrypted
 HTTPS connection by default. To enable it, open ``/etc/ddclient.conf`` and add
 ``ssl=yes`` above the ``server=`` statement. We **strongly recommend** doing
-so; otherwise, your credentials will be exposed during transmission.
+so; otherwise, your credentials will be exposed during transmission. Also webservices
+like ``https://checkipv4.dedyn.io/`` for IP checks depend on it!
 
 Manual configuration (other systems)
 ************************************
