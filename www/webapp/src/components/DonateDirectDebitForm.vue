@@ -17,7 +17,7 @@
         may be the name appearing on your bank statement.
       </p>
       <p>Again, thank you so much.</p>
-      <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
+      <v-btn depressed outlined block :to="{name: 'home'}" aria-label="Done">Done</v-btn>
     </v-alert>
     <v-form
         v-if="!done"
@@ -91,6 +91,7 @@
               color="primary"
               type="submit"
               :loading="working"
+              aria-label="Donate Now"
       >Donate Now</v-btn>
     </v-form>
   </div>

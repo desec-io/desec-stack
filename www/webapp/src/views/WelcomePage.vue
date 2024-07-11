@@ -31,7 +31,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer/>
-            <v-btn outlined text depressed :to="{name: 'home'}">Home</v-btn>
+            <v-btn outlined text depressed :to="{name: 'home'}" aria-label="Home">Home</v-btn>
           </v-card-actions>
         </v-card>
         </v-form>
