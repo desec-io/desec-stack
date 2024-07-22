@@ -129,7 +129,7 @@ class Command(BaseCommand):
         self.report(outdated_secondaries, output, timeouts)
 
     def report(self, outdated_secondaries, output, timeouts):
-        # Do not report when timeouts occur, unless there's also replication out-of-sync somwhere.
+        # Do not report when timeouts occur, unless there's also replication out-of-sync somewhere.
         # Helps catch long-term unreachability, where subject will show timeouts for any emails.
         # Individual node downtimes should be tracked by external monitoring.
         if not outdated_secondaries:
