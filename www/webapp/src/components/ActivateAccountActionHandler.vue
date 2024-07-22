@@ -1,53 +1,11 @@
 <template>
   <div>
     <div class="text-center" v-if="captcha_required && !success">
-      <v-container class="pa-0">
-        <v-row dense align="center" class="text-center">
-          <v-col cols="12" sm="">
-            <v-text-field
-                    v-model="payload.captcha.solution"
-                    label="Type CAPTCHA text here"
-                    :prepend-icon="mdiAccountCheck"
-                    outlined
-                    required
-                    :disabled="working"
-                    :rules="captcha_rules"
-                    :error-messages="captcha_errors"
-                    @change="captcha_errors=[]"
-                    @keypress="captcha_errors=[]"
-                    class="uppercase"
-                    ref="captchaField"
-                    tabindex="3"
-                    :hint="captcha_kind === 'image' ? 'Can\'t see? Hear an audio CAPTCHA instead.' : 'Trouble hearing? Switch to an image CAPTCHA.'"
-            />
-          </v-col>
-          <v-col cols="12" sm="auto">
-            <v-progress-circular
-                  indeterminate
-                  v-if="captchaWorking"
-            ></v-progress-circular>
-            <img
-                  v-if="captcha && !captchaWorking && captcha_kind === 'image'"
-                  :src="'data:image/png;base64,'+captcha.challenge"
-                  alt="Passwords can also be reset by sending an email to our support."
-            />
-            <audio controls
-                  v-if="captcha && !captchaWorking && captcha_kind === 'audio'"
-            >
-              <source :src="'data:audio/wav;base64,'+captcha.challenge" type="audio/wav"/>
-            </audio>
-            <br/>
-            <v-btn-toggle>
-              <v-btn text outlined @click="getCaptcha(true)" :disabled="captchaWorking"><v-icon>{{ mdiRefresh }}</v-icon></v-btn>
-            </v-btn-toggle>
-            &nbsp;
-            <v-btn-toggle v-model="captcha_kind">
-              <v-btn text outlined value="image" aria-label="Switch to Image CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEye }}</v-icon></v-btn>
-              <v-btn text outlined value="audio" aria-label="Switch to Audio CAPTCHA" :disabled="captchaWorking"><v-icon>{{ mdiEarHearing }}</v-icon></v-btn>
-            </v-btn-toggle>
-          </v-col>
-        </v-row>
-      </v-container>
+        <generic-captcha
+            @update="(id, solution) => {setCaptchaPayload(id, solution)}"
+            tabindex="3"
+            ref="captchaField"
+        />
         <v-btn
                 depressed
                 color="primary"
@@ -64,66 +22,35 @@
 </template>
 
 <script>
-  import axios from 'axios';
   import GenericActionHandler from "./GenericActionHandler.vue"
-  import {mdiAccountCheck, mdiEarHearing, mdiEye, mdiRefresh} from "@mdi/js";
-
-  const HTTP = axios.create({
-    baseURL: '/api/v1/',
-    headers: {},
-  });
+  import GenericCaptcha from "@/components/Field/GenericCaptcha.vue";
 
   export default {
     name: 'ActivateAccountActionHandler',
+    components: {GenericCaptcha},
     extends: GenericActionHandler,
     data: () => ({
       auto_submit: true,
-      captchaWorking: false,
       LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
-      captcha: null,
-      captcha_required: false,
-
-      mdiAccountCheck: mdiAccountCheck,
-      mdiEarHearing: mdiEarHearing,
-      mdiEye: mdiEye,
-      mdiRefresh: mdiRefresh,
 
       /* captcha field */
-      captchaSolution: '',
-      captcha_rules: [v => !!v || 'Please enter the text displayed in the picture so we are (somewhat) convinced you are human'],
-      captcha_errors: [],
-      captcha_kind: 'image',
+      captcha_required: false,
     }),
-    computed: {
-      captcha_error: function () {
-        return this.error && this.response.data.captcha !== undefined
-      }
-    },
     methods: {
-      async getCaptcha() {
-        this.captchaWorking = true;
-        this.captchaSolution = "";
-        try {
-          this.captcha = (await HTTP.post('captcha/', {kind: this.captcha_kind})).data;
-          this.payload.captcha.id = this.captcha.id;
-          this.$refs.captchaField.focus()
-        } finally {
-          this.captchaWorking = false;
-        }
+      /* captcha field */
+      setCaptchaPayload(id, solution) {
+        this.payload.captcha = {
+          id: id,
+          solution: solution,
+        };
       },
     },
     watch: {
-      captcha_error(value) {
-        if(value) {
+      error(value) {
+        if(value && this.response.data.captcha !== undefined) {
+          // Captcha is required because not verified during the initial registration.
           this.$emit('clearerrors');
           this.captcha_required = true;
-          this.payload.captcha = {};
-          this.getCaptcha();
-        }
-      },
-      captcha_kind: function (oldKind, newKind) {
-        if (oldKind !== newKind) {
-          this.getCaptcha();
         }
       },
       success(value) {
