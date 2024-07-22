@@ -8,7 +8,7 @@ import time
 import warnings
 from datetime import datetime
 from json import JSONDecodeError
-from typing import Optional, Tuple, Iterable
+from collections.abc import Iterable
 
 import dns
 import dns.name
@@ -143,7 +143,7 @@ class DeSECAPIV1Client:
         tsprint(f'API <<< SSL could not be verified against any verification method')
         raise exc
 
-    def _request(self, method: str, *, path: str, data: Optional[dict] = None, headers: Optional[dict] = None, **kwargs) -> requests.Response:
+    def _request(self, method: str, *, path: str, data: dict | None = None, headers: dict | None = None, **kwargs) -> requests.Response:
         if data is not None:
             data = json.dumps(data)
 
@@ -183,16 +183,16 @@ class DeSECAPIV1Client:
     def options(self, path: str, **kwargs) -> requests.Response:
         return self._request("OPTIONS", path=path, **kwargs)
 
-    def post(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+    def post(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
         return self._request("POST", path=path, data=data, **kwargs)
 
-    def patch(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+    def patch(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
         return self._request("PATCH", path=path, data=data, **kwargs)
 
     def delete(self, path: str, **kwargs) -> requests.Response:
         return self._request("DELETE", path=path, **kwargs)
 
-    def register(self, email: str, password: str) -> Tuple[requests.Response, requests.Response]:
+    def register(self, email: str, password: str) -> tuple[requests.Response, requests.Response]:
         self.email = email
         self.password = password
         captcha = self.post("/captcha/")
@@ -458,7 +458,7 @@ class SecondaryNSClient(NSClient):
 
 
 def return_eventually(expression: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
-                      retry_on: Tuple[type] = (Exception,)):
+                      retry_on: tuple[type] = (Exception,)):
     if not callable(expression):
         raise ValueError('Expression given not callable. Did you forget "lambda:"?')
 
@@ -479,7 +479,7 @@ def return_eventually(expression: callable, min_pause: float = .1, max_pause: fl
 
 
 def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: float = 2, timeout: float = 5,
-                      retry_on: Tuple[type] = (AssertionError,), assertion_kwargs=None) -> None:
+                      retry_on: tuple[type] = (AssertionError,), assertion_kwargs=None) -> None:
     def _assert():
         assert assertion(**(assertion_kwargs or dict()))
     return_eventually(_assert, min_pause, max_pause, timeout, retry_on=retry_on)
