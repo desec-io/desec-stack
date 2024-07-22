@@ -1,11 +1,9 @@
-from typing import List, Tuple
-
 import pytest
 
 from conftest import DeSECAPIV1Client, assert_all_ns
 
 
-def generate_params(dict_value_lists_by_type: dict) -> List[Tuple[str, str]]:
+def generate_params(dict_value_lists_by_type: dict) -> list[tuple[str, str]]:
     return [
         (rr_type, value)
         for rr_type in dict_value_lists_by_type.keys()
