@@ -6,7 +6,6 @@ import string
 from contextlib import nullcontext
 from functools import partial, reduce
 from json import JSONDecodeError
-from typing import Union, List, Dict, Set
 from unittest import mock
 
 from django.conf import settings
@@ -422,7 +421,7 @@ class MockPDNSTestCase(APITestCase):
         }
 
     def request_pdns_zone_update_assert_body(
-        self, name: str = None, updated_rr_sets: Union[List[RRset], Dict] = None
+        self, name: str = None, updated_rr_sets: list[RRset] | dict = None
     ):
         if updated_rr_sets is None:
             updated_rr_sets = []
@@ -1119,7 +1118,7 @@ class DesecTestCase(MockPDNSTestCase):
         subname: str,
         type_: str,
         ttl: int = None,
-        rr_contents: Set[str] = None,
+        rr_contents: set[str] = None,
     ):
         if rr_contents is not None:
             try:
