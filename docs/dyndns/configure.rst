@@ -113,9 +113,12 @@ enter ``update.dedyn.io`` as the dynamic DNS server. Next, tell ddclient to use
 the "dyndns2" protocol to perform updates. Afterwards, enter the username and
 the token secret that you received during registration. Last, tell ddclient how to
 detect your IP address, your domain name and the update interval.
+To test your setup, run ``sudo ddclient -force`` and see if everything works as
+expected.
 
 **Note:** As of the time of this writing, ddclient does not use an encrypted
-HTTPS connection by default. To enable it, open ``/etc/ddclient.conf`` and add
+HTTPS connection by default when the scheme (either "http://" or "https://") is
+missing from a URL. To enable it, open ``/etc/ddclient.conf`` and add
 ``ssl=yes`` above the ``server=`` statement. We **strongly recommend** doing
 so; otherwise, your credentials will be exposed during transmission.
 
