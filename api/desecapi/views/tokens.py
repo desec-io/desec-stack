@@ -54,7 +54,7 @@ class TokenPoliciesRoot(RetrieveAPIView):
         self.get_object()  # raises if token does not exist
         return Response(
             {
-                "domain": reverse(
+                "rrsets": reverse(
                     "token_domain_policies-list", request=request, kwargs=kwargs
                 )
             }

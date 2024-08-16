@@ -22,6 +22,7 @@ class TokenPoliciesTestCase(DomainOwnerTestCase):
         kwargs.update(HTTP_AUTHORIZATION=f"Token {self.token_manage.plain}")
         response = self.client.get(url, **kwargs)
         self.assertStatus(response, status.HTTP_200_OK)
+        self.assertIn("rrsets", response.data)
 
         kwargs.update(HTTP_AUTHORIZATION=f"Token {self.token.plain}")
         response = self.client.get(url, **kwargs)
