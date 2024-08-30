@@ -7,6 +7,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import re
 import uuid
+from django.contrib.postgres.operations import CreateCollation
 
 
 class Migration(migrations.Migration):
@@ -15,6 +16,13 @@ class Migration(migrations.Migration):
     dependencies = []
 
     operations = [
+        # Explanation: https://adamj.eu/tech/2023/02/23/migrate-django-postgresql-ci-fields-case-insensitive-collation/
+        CreateCollation(
+            "case_insensitive",
+            provider="icu",
+            locale="und-u-ks-level2",
+            deterministic=False,
+        ),
         migrations.CreateModel(
             name="User",
             fields=[
@@ -37,7 +45,10 @@ class Migration(migrations.Migration):
                 (
                     "email",
                     models.EmailField(
-                        max_length=191, unique=True, verbose_name="email address"
+                        db_collation="case_insensitive",
+                        max_length=254,
+                        unique=True,
+                        verbose_name="email address",
                     ),
                 ),
                 ("is_active", models.BooleanField(default=True)),
