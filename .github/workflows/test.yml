@@ -64,7 +64,7 @@ jobs:
       with:
         images: api dbapi nslord nsmaster dblord dbmaster
     - name: Check for missing migrations
-      run: docker-compose run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
+      run: docker compose run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
 
   test-e2e2:
     # runs e2e2 tests
@@ -75,13 +75,13 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
     - name: Run e2e2 Tests
-      run: docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
+      run: docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
     - name: e2e2 Tests Logs and Cleanup
       if: always()
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
+        docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml ps
         grep 'desec/' /var/log/syslog
-        docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
+        docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml down -v
 
   test-api:
     # runs API tests
@@ -94,10 +94,10 @@ jobs:
       with:
         images: api dbapi nslord nsmaster dblord dbmaster
     - name: Run API Tests
-      run: docker-compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
+      run: docker compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
     - name: API Tests Logs and Cleanup
       if: always()
       run: |
-        docker-compose -f docker-compose.yml -f docker-compose.test-api.yml ps
+        docker compose -f docker-compose.yml -f docker-compose.test-api.yml ps
         grep 'desec/' /var/log/syslog
-        docker-compose -f docker-compose.yml -f docker-compose.test-api.yml down -v
+        docker compose -f docker-compose.yml -f docker-compose.test-api.yml down -v

@@ -12,7 +12,7 @@ runs:
     uses: actions/checkout@v2
   - name: Build Images
     shell: bash
-    run: docker-compose build ${{ inputs.images }}
+    run: docker compose build ${{ inputs.images }}
   - name: Build e2e2 Image
     shell: bash
-    run: docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build libfaketime && docker-compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2
+    run: docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build libfaketime && docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml build test-e2e2

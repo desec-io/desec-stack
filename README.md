@@ -1,7 +1,7 @@
 deSEC Stack
 ===========
 
-This is a docker-compose application providing the basic stack for deSEC name services. It consists of
+This is a docker compose application providing the basic stack for deSEC name services. It consists of
 
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
 - `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
@@ -81,7 +81,7 @@ Development:
 
 Production:
 
-    $ docker-compose build && docker-compose up
+    $ docker compose build && docker compose up
 
 Storage
 -------
@@ -133,13 +133,13 @@ Development: Getting Started Guide
 As desec-stack utilizes a number of different technologies and software packages, it requires some effort to setup a stack ready for development.
 While there are certainly many ways to get started hacking desec-stack, here is one way to do it.
 
-1. **Requirements.** This guide is intended and tested on Ubuntu 20.20.
+1. **Requirements.** This guide is intended and tested on Ubuntu 22.04 LTS.
     However, many other Linux distributions will also do fine.
-    For desec-stack, [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/) and [docker-compose](https://docs.docker.com/compose/install/) are required.
+    For desec-stack, [docker and docker compose v2](https://docs.docker.com/engine/install/ubuntu/) are required.
     Further tools that are required to start hacking are git and curl.
     Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
     jq, httpie, libmariadbclient-dev, libpq-dev, python3-dev (>= 3.11) and python3-venv (>= 3.11) are useful if you want to follow this guide.
-    The webapp requires Node.js. To install everything you need for this guide except docker and docker-compose, use
+    The webapp requires Node.js. To install everything you need for this guide except docker and docker compose, use
 
        sudo apt install certbot curl git httpie jq libmariadbclient-dev libpq-dev nodejs npm python3-dev python3-venv libmemcached-dev
 
@@ -224,7 +224,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     The last two steps need to be repeated whenever the certificates are renewed.
     While any location for the certificates is fine, the `certs/` folder is configured to be ignored by git so that private keys do not accidentally end up being committed.
 
-1. **Configure desec-stack.** As docker-compose application, desec-stack is configured by environment variables defined in the `.env` file in the project root directory.
+1. **Configure desec-stack.** As docker compose application, desec-stack is configured by environment variables defined in the `.env` file in the project root directory.
     Because it contains sensitive information for each deployment, `.env` is not part of the repository and ignored by git.
     However, we ship `.env.default` and `.env.dev` with templates for production and development, respectively.
     `.env.dev` is almost good enough for a basic development system, so let's use that as a basis:
@@ -238,7 +238,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     Additionally, the VPN server for the replication network needs to be equipped with a pre-shared key (PSK) and a public key infrastructure (PKI).
     To generate the PSK, use the openvpn-server container:
 
-        docker-compose build openvpn-server && docker-compose run openvpn-server openvpn --genkey --secret /dev/stdout > openvpn-server/secrets/ta.key
+        docker compose build openvpn-server && docker compose run openvpn-server openvpn --genkey --secret /dev/stdout > openvpn-server/secrets/ta.key
 
     To build the PKI, we recommend [easy RSA](https://github.com/OpenVPN/easy-rsa).
     **Please note that PKI instructions here are for development deployments only!**
@@ -291,7 +291,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     A convenient way to create a test user account is via
 
-       docker-compose exec api python3 manage.py shell -c 'from desecapi.models import User; User.objects.create_user(email="test@example.com", password="test1234");'
+       docker compose exec api python3 manage.py shell -c 'from desecapi.models import User; User.objects.create_user(email="test@example.com", password="test1234");'
 
     but users can also be created by signing up via the web GUI.
     The latter, however, requires that you can read email that is sent from your local setup.
@@ -314,9 +314,9 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     to see if the nameserver is behaving as expected.
 
-1. **(Optional) Configure PyCharm for API Development.** As a docker-compose application, desec-stack takes a while to start.
+1. **(Optional) Configure PyCharm for API Development.** As a docker compose application, desec-stack takes a while to start.
     Additionally, it is hard to connect a debugger to the docker containers.
-    Our recommended solution is to develop the API using Django tests running outside the docker-compose application.
+    Our recommended solution is to develop the API using Django tests running outside the docker compose application.
     This will dramatically decrease the time required for running the Django tests and enable just-in-time debugging in PyCharm.
     Also, it will enable you to browse dependencies and code within PyCharm and thus ease debugging.
 
@@ -351,7 +351,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
         Fourth, run the database:
 
-           docker-compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
+           docker compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
 
         Finally, you can manage Django using the `manage.py` CLI.
         As an example, to run the tests, use
@@ -369,8 +369,8 @@ While there are certainly many ways to get started hacking desec-stack, here is 
         3. Fill the Custom Settings field with the path to the `settings_quick_test` module.
         4. At the bottom in the "Before launch" sections, add an "External tool" with the following settings:
            - Name: `Postgres Test Container`
-           - Program: `docker-compose`
-           - Arguments: `-f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi`
+           - Program: `docker`
+           - Arguments: `compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi`
 
     1. To see if the test configuration is working, right-click on the api folder in the project view and select Run Test.
        (Note that the first attempt may fail in case the `dbapi` container does not start up fast enough. In that case, just try again.)
