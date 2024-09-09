@@ -69,6 +69,7 @@ DATABASES = {
         "USER": "desec",
         "PASSWORD": os.environ["DESECSTACK_DBAPI_PASSWORD_desec"],
         "HOST": "dbapi",
+        "CONN_MAX_AGE": 3600,  # don't reconnect to database on each request
     },
 }
 
