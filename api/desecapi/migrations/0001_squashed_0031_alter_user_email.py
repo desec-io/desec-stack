@@ -24,17 +24,6 @@ from django.db import migrations, models
 from django.db.models import F, Q
 
 
-# Functions from the following migrations need manual copying.
-# Move them and any dependencies into this file, then update the
-# RunPython operations to refer to the local versions:
-# desecapi.migrations.0007_email_citext
-# desecapi.migrations.0019_alter_user_is_active
-# desecapi.migrations.0020_user_email_verified
-# desecapi.migrations.0025_alter_token_max_age_alter_token_max_unused_period
-# desecapi.migrations.0027_user_credentials_changed
-# desecapi.migrations.0031_alter_user_email
-
-
 def alter_user_is_active_forward(apps, schema_editor):
     User = apps.get_model("desecapi", "User")
     db_alias = schema_editor.connection.alias
@@ -77,43 +66,6 @@ def user_credentials_changed_forward(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
-    replaces = [
-        ("desecapi", "0001_initial_squashed_again"),
-        ("desecapi", "0002_unmanaged_donations"),
-        ("desecapi", "0003_rr_content"),
-        ("desecapi", "0004_immortal_domains"),
-        ("desecapi", "0005_subname_validation"),
-        ("desecapi", "0006_cname_exclusivity"),
-        ("desecapi", "0007_email_citext"),
-        ("desecapi", "0008_token_perm_manage_tokens"),
-        ("desecapi", "0009_token_allowed_subnets"),
-        ("desecapi", "0010_token_expiration"),
-        ("desecapi", "0011_captcha_kind"),
-        ("desecapi", "0012_rrset_label_length"),
-        ("desecapi", "0013_user_needs_captcha"),
-        ("desecapi", "0014_replication"),
-        ("desecapi", "0015_rrset_touched_index"),
-        ("desecapi", "0016_default_auto_field"),
-        ("desecapi", "0017_alter_user_limit_domains"),
-        ("desecapi", "0018_tokendomainpolicy"),
-        ("desecapi", "0019_alter_user_is_active"),
-        ("desecapi", "0020_user_email_verified"),
-        ("desecapi", "0021_authenticatednoopuseraction"),
-        ("desecapi", "0022_user_outreach_preference"),
-        ("desecapi", "0023_authenticatedemailuseraction"),
-        ("desecapi", "0024_authenticatedchangeoutreachpreferenceuseraction"),
-        ("desecapi", "0025_alter_token_max_age_alter_token_max_unused_period"),
-        ("desecapi", "0026_remove_domain_replicated_and_more"),
-        ("desecapi", "0027_user_credentials_changed"),
-        (
-            "desecapi",
-            "0028_authenticatedcreatetotpfactoruseraction_basefactor_and_more",
-        ),
-        ("desecapi", "0029_token_mfa"),
-        ("desecapi", "0030_blockedsubnet_blockedsubnet_subnet_idx"),
-        ("desecapi", "0031_alter_user_email"),
-    ]
 
     initial = True
 

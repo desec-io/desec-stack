@@ -7,7 +7,7 @@ import pgtrigger.migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("desecapi", "0031_alter_user_email"),
+        ("desecapi", "0001_squashed_0031_alter_user_email"),
     ]
 
     operations = [
