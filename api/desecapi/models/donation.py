@@ -25,6 +25,7 @@ class Donation(ExportModelOperationsMixin("Donation"), models.Model):
         ONCE = 0
         MONTHLY = 1
         QUARTERLY = 3
+        ANNUALLY = 12
 
     created = models.DateTimeField(default=_created_default)
     name = models.CharField(max_length=255)

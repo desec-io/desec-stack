@@ -34,6 +34,7 @@
         <v-radio label="Just once" :value="0"></v-radio>
         <v-radio label="Monthly" :value="1"></v-radio>
         <v-radio label="Quarterly" :value="3"></v-radio>
+        <v-radio label="Yearly" :value="12"></v-radio>
       </v-radio-group>
 
       <v-text-field
