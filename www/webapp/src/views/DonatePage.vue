@@ -131,7 +131,7 @@
                       <td><span class="fixed-width">1NMsTB3ML9t7QiEyiyXaU2oi72i2aDhVEK</span></td>
                     </tr>
                     <tr>
-                      <th>Etherum (ETH)</th>
+                      <th>Ethereum (ETH)</th>
                       <td><span class="fixed-width">0xb9594A8d1BF512eAC59069d9d5cbA457E0d35998</span></td>
                     </tr>
                   </table>
