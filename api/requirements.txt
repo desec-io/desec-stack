@@ -15,6 +15,6 @@ pyotp~=2.9.0
 psycopg~=3.2.1
 psl-dns~=1.1.0
 pylibmc~=1.6.3
-pyyaml~=6.0.1
+pyyaml~=6.0.2
 requests~=2.32.3
 uwsgi~=2.0.26
