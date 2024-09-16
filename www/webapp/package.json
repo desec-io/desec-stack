@@ -17,7 +17,7 @@
     "@fontsource/roboto": "^5.0.3",
     "@mdi/js": "~7.4.47",
     "axios": "^1.4.0",
-    "date-fns": "^3.3.1",
+    "date-fns": "^4.0.0",
     "pinia": "^2.0.30",
     "vue": "~2.7.14",
     "vue-router": "~3.6.5",
