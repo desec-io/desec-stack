@@ -172,7 +172,8 @@ affiliated with the respective account (see :ref:`manage-tokens` for details.)
 stand-in for an IPv6 address. Replace those (including the ``<`` and ``>``)
 with your respective values.
 
-**Examples with headers** (recommended)
+Examples with headers (recommended)
+'''''''''''''''''''''''''''''''''''''
 
 Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
 
@@ -204,29 +205,30 @@ Basic authentication with simultaneous update of IPv4 and IPv6::
   curl "https://update.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv6=fd08::1234" \
     --header "Authorization: Token <your token secret>"
 
-**Examples without headers** (not recommended)
+Examples without headers (not recommended)
+''''''''''''''''''''''''''''''''''''''''''''
 
 Basic authentication with automatic IP detection (IPv4 **or** IPv6)::
 
-curl --user <your domain>:<your token secret> https://update.dedyn.io/
+  curl --user <your domain>:<your token secret> https://update.dedyn.io/
 
 Basic authentication with forced use of IPv4 (will remove IPv6 address from the DNS)::
 
-curl --ipv4 --user <your domain>:<your token secret> https://update.dedyn.io/
+  curl --ipv4 --user <your domain>:<your token secret> https://update.dedyn.io/
 
 Basic authentication with forced use of IPv4 (while preserving the IPv6 address from the DNS)::
 
-curl --ipv4 --user <your domain>:<your token secret> "https://update.dedyn.io/&myipv6=preserve"
+  curl --ipv4 --user <your domain>:<your token secret> https://update.dedyn.io/?myipv6=preserve
 
 Basic authentication with forced use of IPv6 (will remove IPv4 address from the DNS)::
 
-curl --user <your domain>:<your token secret> https://update6.dedyn.io/
+  curl --user <your domain>:<your token secret> https://update6.dedyn.io/
 
 Basic authentication with forced use of IPv6 (while preserving the IPv4 address from the DNS)::
 
-curl --user <your domain>:<your token secret> "https://update6.dedyn.io/&myipv4=preserve"
+  curl --user <your domain>:<your token secret> https://update6.dedyn.io/?myipv4=preserve
 
 Basic authentication with simultaneous update of IPv4 and IPv6::
 
-curl --user <your domain>:<your token secret> \
-  "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
+  curl --user <your domain>:<your token secret> \
+    "https://update.dedyn.io/?myipv4=1.2.3.4&myipv6=fd08::1234"
