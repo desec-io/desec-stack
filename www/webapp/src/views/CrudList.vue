@@ -12,7 +12,7 @@
             :timeout="-1"
           >
             {{ errors[errors.length - 1] }}
-            <v-btn @click="snackbar = false">
+            <v-btn @click="snackbar = false" aria-label="Close">
               Close
             </v-btn>
           </v-snackbar>
@@ -61,6 +61,7 @@
                         fab
                         depressed
                         :disabled="user.working"
+                        aria-label="Add new entry"
                 >
                   <v-icon>{{ mdiPlus }}</v-icon>
                 </v-btn>
@@ -170,6 +171,7 @@
                                 :outlined="!createDialogSuccess"
                                 :disabled="createDialogWorking"
                                 @click.native="close"
+                                :aria-label="createDialogSuccess ? 'Close' : 'Cancel'"
                         >
                           {{ createDialogSuccess ? 'Close' : 'Cancel' }}
                         </v-btn>
@@ -181,6 +183,7 @@
                                 :disabled="createInhibited || !valid || createDialogWorking || createDialogSuccess"
                                 :loading="createDialogWorking"
                                 v-if="!createDialogSuccess"
+                                aria-label="Save"
                         >
                           Save
                         </v-btn>
@@ -313,6 +316,7 @@
                     outlined
                     :disabled="destroyDialogWorking"
                     @click.native="destroyClose"
+                    aria-label="Cancel"
                   >
                     Cancel
                   </v-btn>
@@ -322,6 +326,7 @@
                     depressed
                     type="submit"
                     :loading="destroyDialogWorking"
+                    aria-label="Delete"
                   >
                     Delete
                   </v-btn>

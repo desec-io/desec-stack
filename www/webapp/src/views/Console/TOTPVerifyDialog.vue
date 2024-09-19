@@ -72,6 +72,7 @@
                         :loading="working"
                         ref="submit"
                         tabindex="3"
+                        aria-label="Verify"
                 >Verify</v-btn>
               </v-col>
               <v-col cols="auto"></v-col>
