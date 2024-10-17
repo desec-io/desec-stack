@@ -6,7 +6,7 @@ const MAX8 = 255;
 const int8 = between(0, MAX8);
 
 // https://www.iana.org/assignments/pkix-parameters/pkix-parameters.xhtml#caa-properties
-const tags = ['issue', 'issuewild', 'iodef', 'contactemail', 'contactphone'];
+const tags = ['issue', 'issuewild', 'iodef', 'contactemail', 'contactphone', 'issuevmc', 'issuemail'];
 const tag = (value) => !value || tags.some(v => value == v);
 
 export default {
