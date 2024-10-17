@@ -6,7 +6,7 @@ RUN git checkout ba9ed5b2898f234cfcefbe5c694b7d89dcec4334 \
     && make \
     && make install
 
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
 RUN apk add --no-cache bash curl
 
