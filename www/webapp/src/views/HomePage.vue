@@ -187,13 +187,12 @@
           >
             <v-tooltip bottom v-for="f in frontends" :key="f.host">
               <template #activator="{ on }">
-                <v-img
+                <v-icon
                   v-on="on"
-                  src="../assets/mapmarker.svg" alt="Anycast POP" height="2em" width="2em"
+                  large
+                  style="transform: translate(-50%, -100%); position: absolute"
                   :style="{left: f.left, top: f.top}"
-                  style="transform: translate(-50%, -100%); position: absolute; overflow: visible;" contain
-                >
-                </v-img>
+                >{{ mdiMapMarker }}</v-icon>
               </template>
               <span>
                 {{ f.name }}
@@ -234,6 +233,7 @@ import {
     mdiDns, mdiEmail, mdiFileCertificate, mdiFlower, mdiGift, mdiHeartBroken,
     mdiIpNetworkOutline, mdiLan,
     mdiLockOutline,
+    mdiMapMarker,
     mdiMonitorCellphoneStar,
     mdiRobot, mdiRunFast,
     mdiTwoFactorAuthentication
@@ -503,6 +503,7 @@ export default {
             "domains can be created. Please contact support explaining your use case to enable domain creation.",
       },
     ],
+    mdiMapMarker: mdiMapMarker,
   })
 }
 </script>
