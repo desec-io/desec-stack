@@ -75,7 +75,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
                 {"subname": ["This field is required."]},
                 {
                     "non_field_errors": [
-                        "Another RRset with the same subdomain and type exists for this domain."
+                        "Another RRset with the same subdomain and type exists for this domain. (Try modifying it.)"
                     ]
                 },
             ],
@@ -107,7 +107,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             * [
                 {
                     "non_field_errors": [
-                        "Another RRset with the same subdomain and type exists for this domain."
+                        "Another RRset with the same subdomain and type exists for this domain. (Try modifying it.)"
                     ]
                 }
             ],

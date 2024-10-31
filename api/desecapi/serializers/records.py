@@ -403,7 +403,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             UniqueTogetherValidator(
                 self.domain.rrset_set,
                 ("subname", "type"),
-                message="Another RRset with the same subdomain and type exists for this domain.",
+                message="Another RRset with the same subdomain and type exists for this domain. (Try modifying it.)",
             ),
             validators.ExclusionConstraintValidator(
                 self.domain.rrset_set,
