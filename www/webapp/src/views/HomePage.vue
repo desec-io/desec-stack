@@ -191,13 +191,18 @@
                   v-on="on"
                   large
                   style="transform: translate(-50%, -100%); position: absolute"
+                  :style="{color: f.adopted_by ? 'black' : null, left: f.left, top: f.top}"
+                >{{ f.adopted_by ? mdiMapMarkerStar : mdiMapMarker }}</v-icon>
+                <v-icon
+                  v-if="!!f.adopted_by"
+                  large
+                  style="color: gold; transform: translate(-50%, -100%); position: absolute"
                   :style="{left: f.left, top: f.top}"
-                >{{ mdiMapMarker }}</v-icon>
+                >{{ mdiMapMarkerStarOutline }}</v-icon>
               </template>
               <span>
-                {{ f.name }}
-                <span v-if="f.adopted_by">sponsored by {{ f.adopted_by }}</span>
-                <span v-else>has no sponsor, support it now!</span>
+                {{ f.name }}<span v-if="f.adopted_by">, sponsored by {{ f.adopted_by }}</span>
+                <span v-else> has no sponsor, support it now!</span>
               </span>
             </v-tooltip>
           </v-img>
@@ -233,7 +238,7 @@ import {
     mdiDns, mdiEmail, mdiFileCertificate, mdiFlower, mdiGift, mdiHeartBroken,
     mdiIpNetworkOutline, mdiLan,
     mdiLockOutline,
-    mdiMapMarker,
+    mdiMapMarker, mdiMapMarkerStar, mdiMapMarkerStarOutline,
     mdiMonitorCellphoneStar,
     mdiRobot, mdiRunFast,
     mdiTwoFactorAuthentication
@@ -312,6 +317,7 @@ export default {
         host: 'fra-1.c.desec.io',
         left: '49.0%',
         top: '23.0%',
+        adopted_by: 'Christian Hase',
       },
       {
         name: 'New York (ns2.desec.org)',
@@ -361,8 +367,9 @@ export default {
         host: 'hkg-1.a.desec.io',
         left: '83.5%',
         top: '42.2%',
+        adopted_by: 'Christian Hase',
       },
-    ],
+    ].sort((a, b) => !b.adopted_by - !a.adopted_by),
     features: [
       {
         href: '#',
@@ -503,7 +510,9 @@ export default {
             "domains can be created. Please contact support explaining your use case to enable domain creation.",
       },
     ],
-    mdiMapMarker: mdiMapMarker,
+    mdiMapMarker,
+    mdiMapMarkerStar,
+    mdiMapMarkerStarOutline,
   })
 }
 </script>
