@@ -379,7 +379,7 @@ Confirmation Codes
     The code is a base64-encoded encrypted-then-signed JSON representation of
     the user's intent. Encryption/decryption and authentication (sign/verify)
     is handled by `pyca/cryptography's Fernet implementation
-    <https://cryptography.io/en/latest/fernet/>`_ which is uses AES-CBC and
+    <https://cryptography.io/en/latest/fernet/>`_ which uses AES-CBC and
     HMAC-SHA256 with specifically derived key material. The HMAC also signs the
     current time (i.e. when the intent was expressed). During verification,
     codes are checked for freshness and rejected when older than allowed.
@@ -397,8 +397,9 @@ Confirmation Codes
     data which we use to invalidate codes when the user state is modified (e.g.
     by performing another sensitive account operation). This is achieved by
     including the combined hash of a) the account operation type (e.g. password
-    reset), b) the account's activation status, c) the account's current email
-    address, and d) the user's password hash. When a confirmation code is used,
+    reset), b) the account's activation status, c) a timestamp of the user's
+    most recent change of credentials, and/or d) other information as
+    appropriate for the activity in question. When a confirmation code is used,
     we recompute this hash based on the user's current state, and only perform
     the requested action if the hash is reproduced identically. If any of these
     parameters happens to change before a code is applied, the code will be
@@ -407,23 +408,23 @@ Confirmation Codes
     recent password change. (Note that it is sometimes possible to revert the
     state so that an old code becomes valid again, such as when you change the
     email address twice, with the second change undoing the first one. This
-    issue does not occur for password changes; those do permanently invalidate
-    other codes.)
+    does not apply to password changes, which permanently invalidate other
+    codes even when changed back.)
 
     This approach allows us to securely authenticate sensitive user operations
     without keeping a list of requested operations on the server. This is both
     an operational and a privacy advantage. For example, if the user expresses
-    her intent to change the account email address, we do not store that new
+    their intent to change the account email address, we do not store that new
     address on the server until the confirmation code is used (from which the
     new address is then extracted).
 
 Email verification
-    Operations that require verification of a new email address (such as when
-    registering first), the server response does not depend on whether another
+    For operations that require verification of a new email address (such as
+    when signing up), the server response does not depend on whether another
     user is already using that address. This is to prevent clients from
     telling whether a certain email address is registered with deSEC or not.
 
-    Verification emails will only be sent out if the email address is not yet
+    Sign-up emails will only be sent out if the email address is not yet
     associated with an account. Otherwise, nothing will happen.
 
     Also, accounts are created on the server side when the registration
@@ -431,9 +432,8 @@ Email verification
     on the server even before the email address is confirmed. Confirmation
     merely activates the existing account. The purpose of this is to avoid
     running the risk of sending out large numbers of emails to the same
-    address when a client decides to send multiple registration requests for
-    the same address. In this case, no emails will be sent after the first
-    one.
+    address when a client decides to send multiple sign-up requests for the
+    same address. In this case, no emails will be sent after the first one.
 
 Password Security
     Password information is stored using `Django's default method, PBKDF2
