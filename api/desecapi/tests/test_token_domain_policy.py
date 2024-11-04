@@ -458,19 +458,6 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
                     setattr(policy, perm, value)
                     policy.save()
 
-                    # Can't create domain
-                    data = {"name": self.random_domain_name()}
-                    response = self.client.post(
-                        self.reverse("v1:domain-list"), data, **kwargs
-                    )
-                    self.assertStatus(response, status.HTTP_403_FORBIDDEN)
-
-                    # Can't delete domain
-                    response = self.client.delete(
-                        self.reverse("v1:domain-detail", name=domain), {}, **kwargs
-                    )
-                    self.assertStatus(response, status.HTTP_403_FORBIDDEN)
-
                     # Can't access account details
                     response = self.client.get(self.reverse("v1:account"), **kwargs)
                     self.assertStatus(response, status.HTTP_403_FORBIDDEN)
@@ -597,7 +584,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
             with transaction.atomic():  # https://stackoverflow.com/a/23326971/6867099
                 self.token.save()
 
-    def test_domain_deletion(self):
+    def test_domain_deletion_policy_cleanup(self):
         domains = [None] + self.my_domains[:2]
         for domain in domains:
             models.TokenDomainPolicy(

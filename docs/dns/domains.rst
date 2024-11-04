@@ -149,6 +149,7 @@ endpoint, like this::
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'
 
+This operation requires the ``perm_create_domain`` permission on the token.
 Only the ``name`` field is mandatory.
 
 Upon success, the response status code will be ``201 Created``, with the
@@ -283,5 +284,8 @@ Deleting a Domain
 ~~~~~~~~~~~~~~~~~
 
 To delete a domain, send a ``DELETE`` request to the endpoint representing the
-domain.  Upon success or if the domain did not exist in your account, the
-response status code is ``204 No Content``.
+domain. This operation requires the ``perm_delete_domain`` permission on the
+token, and no conflicting token scoping policies.
+
+Upon success or if the domain did not exist in your account, the response
+status code is ``204 No Content``.

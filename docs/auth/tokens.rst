@@ -28,6 +28,8 @@ A JSON object representing a token has the following structure::
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
         "last_used": null,
         "name": "my new token",
+        "perm_create_domain": false,
+        "perm_delete_domain": false,
         "perm_manage_tokens": false,
         "allowed_subnets": [
             "0.0.0.0/0",
@@ -116,6 +118,19 @@ Field details:
     Certain API operations will automatically populate the ``name`` field with
     suitable values such as "login" or "dyndns".
 
+``perm_create_domain``
+    :Access mode: read, write
+    :Type: boolean
+
+    Permission to create a new domain.
+
+``perm_delete_domain``
+    :Access mode: read, write
+    :Type: boolean
+
+    Permission to delete a domain. When using :ref:`token scoping policies`,
+    deleting a domain also requires write permission on all its RRsets.
+
 ``perm_manage_tokens``
     :Access mode: read, write
     :Type: boolean
@@ -151,6 +166,8 @@ Note that the name and other fields are optional.  The server will reply with
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
         "last_used": null,
         "name": "my new token",
+        "perm_create_domain": false,
+        "perm_delete_domain": false,
         "perm_manage_tokens": false,
         "allowed_subnets": [
             "0.0.0.0/0",
@@ -164,10 +181,10 @@ In particular, the ``perm_manage_tokens`` flag will not be set, so that the
 new token cannot be used to retrieve, modify, or delete any tokens (including
 itself).
 
-With the default set of permissions, tokens qualify for carrying out all API
-operations related to DNS management (i.e. managing both domains and DNS
-records).  Note that it is always possible to use the :ref:`log-out` endpoint
-to delete a token.
+Similarly, tokens by default cannot create or delete any domains (although they
+can manage DNS records of existing domains, unless restricted through
+:ref:`token scoping policies`). Note that it is always possible to use the
+:ref:`log-out` endpoint to delete a token.
 
 If you require tokens with extra permissions, you can provide the desired
 configuration during creation:
@@ -176,6 +193,12 @@ configuration during creation:
   subnets) that clients must connect from in order to use the token.  If not
   provided, access is not restricted based on the IP address.  Both IPv4 and
   IPv6 are supported.
+
+- ``perm_create_domain``:  If set to ``true``, the token can be used to
+  create domains.
+
+- ``perm_delete_domain``:  If set to ``true``, the token can be used to
+  delete domains.
 
 - ``perm_manage_tokens``:  If set to ``true``, the token can be used to
   authorize token management operations (as described in this chapter).
@@ -269,6 +292,8 @@ If you do not have the token ID, but you do have the token secret, you
 can use the :ref:`log-out` endpoint to delete it.
 
 
+.. _`token scoping policies`:
+
 Token Scoping: Policies
 ```````````````````````
 
@@ -326,10 +351,12 @@ RRsets for which no more specific policy is configured are eventually caught by
 the token's default policy.  It is therefore required to create such a default
 policy before any more specific policies can be created on a given token.
 
-Tokens with at least one policy are considered *restricted*, with their scope
-limited to DNS record management.
-They can neither :ref:`retrieve-account-information` nor perform
-:ref:`domain-management` (such as domain creation or deletion).
+Tokens with at least one policy are considered *restricted*, with their DNS
+record management capabilities limited as per policy configuration.
+Whether :ref:`domain-management` is allowed depends on the
+``perm_create_domain`` and ``perm_delete_domain`` permissions.
+Restricted tokens cannot be used to perform other actions (e.g.,
+:ref:`retrieve-account-information`).
 
 **Note:**  Token policies are *independent* of high-level token permissions
 that can be assigned when `Creating a Token`_.

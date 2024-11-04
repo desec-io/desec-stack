@@ -39,10 +39,17 @@ class DomainViewSet(
             permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
             permissions.IsOwner,
         ]
-        if self.action == "create":
-            ret.append(permissions.WithinDomainLimit)
         if self.request.method not in SAFE_METHODS:
-            ret.append(permissions.TokenNoDomainPolicy)
+            match self.action:
+                case None:
+                    pass  # occurs when HTTP method is not allowed; leads to status 405
+                case "create":
+                    ret.append(permissions.HasCreateDomainPermission)
+                    ret.append(permissions.WithinDomainLimit)
+                case "destroy":
+                    ret.append(permissions.HasDeleteDomainPermission)
+                case _:
+                    raise ValueError(f"Invalid action: {self.action}")
         return ret
 
     @property

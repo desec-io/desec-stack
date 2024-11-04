@@ -19,6 +19,8 @@ class TokenSerializer(serializers.ModelSerializer):
             "max_age",
             "max_unused_period",
             "name",
+            "perm_create_domain",
+            "perm_delete_domain",
             "perm_manage_tokens",
             "allowed_subnets",
             "is_valid",

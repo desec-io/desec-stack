@@ -101,6 +101,8 @@ class AccountLoginView(generics.GenericAPIView):
         user = self.request.user
         token = Token.objects.create(
             user=user,
+            perm_create_domain=True,
+            perm_delete_domain=True,
             perm_manage_tokens=True,
             max_age=timedelta(days=7),
             max_unused_period=timedelta(hours=1),

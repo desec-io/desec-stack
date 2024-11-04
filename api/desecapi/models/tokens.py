@@ -41,6 +41,8 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     name = models.CharField("Name", blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     mfa = models.BooleanField(default=None, null=True)
+    perm_create_domain = models.BooleanField(default=False)
+    perm_delete_domain = models.BooleanField(default=False)
     perm_manage_tokens = models.BooleanField(default=False)
     allowed_subnets = ArrayField(
         CidrAddressField(), default=_allowed_subnets_default.__func__
@@ -105,6 +107,33 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
             .order_by(*order_by)
             .first()
         )
+
+    def can_safely_delete_domain(self, domain):
+        forbidden = (
+            # Check if token is explicitly prohibited from writing some RRsets in this domain
+            # (priority order 1-4, see /docs/auth/tokens.rst#token-scoping-policies)
+            self.tokendomainpolicy_set.filter(domain=domain)
+            .filter(perm_write=False)
+            .exists()
+            or
+            # Check that the token has no permissive default policy for this domain
+            # (priority order 4) and apply fall-through to domain-independent policies (5-8)
+            (
+                not self.tokendomainpolicy_set.filter(
+                    domain=domain, subname=None, type=None
+                )
+                .filter(perm_write=True)
+                .exists()
+                # Fall-through. Uses a conservative approximation and does not account for
+                # permissive policies of priority order 1, 2, 3 shadowing restrictive policies
+                # of priority order 5, 6, 7, respectively. For details, see
+                # https://github.com/desec-io/desec-stack/pull/990#discussion_r1864977009.
+                and self.tokendomainpolicy_set.filter(domain=None)
+                .filter(perm_write=False)
+                .exists()
+            )
+        )
+        return not forbidden
 
 
 class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.Model):

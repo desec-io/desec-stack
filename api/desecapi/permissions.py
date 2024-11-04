@@ -76,15 +76,6 @@ class IsDomainOwner(permissions.BasePermission):
         return request.user == view.domain.owner
 
 
-class TokenNoDomainPolicy(permissions.BasePermission):
-    """
-    Permission to check whether a token is unrestricted by any policy.
-    """
-
-    def has_permission(self, request, view):
-        return not request.auth.tokendomainpolicy_set.exists()
-
-
 class TokenHasRRsetPermission(permissions.BasePermission):
     """
     Permission to check whether a token authorizes writing the view's RRset.
@@ -119,6 +110,27 @@ class IsVPNClient(permissions.BasePermission):
     def has_permission(self, request, view):
         ip = IPv4Address(request.META.get("REMOTE_ADDR"))
         return ip in IPv4Network("10.8.0.0/24")
+
+
+class HasCreateDomainPermission(permissions.BasePermission):
+    """
+    Permission to check whether a token has "create domain" permission.
+    """
+
+    def has_permission(self, request, view):
+        return request.auth.perm_create_domain
+
+
+class HasDeleteDomainPermission(permissions.BasePermission):
+    """
+    Permission to check whether a token has "delete domian" permission.
+    """
+
+    def has_permission(self, request, view):
+        return request.auth.perm_delete_domain
+
+    def has_object_permission(self, request, view, obj):
+        return request.auth.can_safely_delete_domain(obj)
 
 
 class HasManageTokensPermission(permissions.BasePermission):

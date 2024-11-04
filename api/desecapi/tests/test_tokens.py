@@ -59,6 +59,8 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 "max_age",
                 "max_unused_period",
                 "name",
+                "perm_create_domain",
+                "perm_delete_domain",
                 "perm_manage_tokens",
                 "allowed_subnets",
                 "is_valid",
@@ -111,6 +113,8 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         datas = [
             {},
             {"name": "", "perm_manage_tokens": True},
+            {"name": "", "perm_delete_domain": True},
+            {"name": "", "perm_create_domain": True, "perm_delete_domain": True},
             {"name": "foobar"},
             {"allowed_subnets": ["1.2.3.32/28", "bade::affe/128"]},
         ]
@@ -126,6 +130,8 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                     "max_age",
                     "max_unused_period",
                     "name",
+                    "perm_create_domain",
+                    "perm_delete_domain",
                     "perm_manage_tokens",
                     "allowed_subnets",
                     "is_valid",
@@ -137,10 +143,12 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 response.data["allowed_subnets"],
                 data.get("allowed_subnets", ["0.0.0.0/0", "::/0"]),
             )
-            self.assertEqual(
-                response.data["perm_manage_tokens"],
-                data.get("perm_manage_tokens", False),
-            )
+            for perm in [
+                "perm_create_domain",
+                "perm_delete_domain",
+                "perm_manage_tokens",
+            ]:
+                self.assertEqual(response.data[perm], data.get(perm, False))
             self.assertIsNone(response.data["last_used"])
             self.assertIsNone(Token.objects.get(pk=response.data["id"]).mfa)
 

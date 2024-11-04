@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
@@ -279,6 +281,61 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
+    def test_delete_my_domain_policy_constraints(self):
+        policy_sets = [
+            ([dict(domain=None, subname=None, type=None, perm_write=True)], True),
+            ([dict(domain=None, subname=None, type=None, perm_write=False)], False),
+            (
+                [
+                    dict(domain=None, subname=None, type=None, perm_write=False),
+                    dict(
+                        domain=self.my_domain, subname=None, type=None, perm_write=True
+                    ),
+                ],
+                True,
+            ),
+            (
+                [
+                    dict(domain=None, subname=None, type=None, perm_write=False),
+                    dict(
+                        domain=self.my_domain, subname=None, type=None, perm_write=True
+                    ),
+                    dict(
+                        domain=self.my_domain,
+                        subname="_acme-challenge",
+                        type=None,
+                        perm_write=False,
+                    ),
+                ],
+                False,
+            ),
+        ]
+        for policies, permitted in policy_sets:
+            for policy in policies:
+                self.token.tokendomainpolicy_set.create(**policy)
+
+            url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+            with (
+                self.assertRequests(
+                    self.requests_desec_domain_deletion(domain=self.my_domain)
+                )
+                if permitted
+                else nullcontext()
+            ):
+                response = self.client.delete(url)
+                self.assertStatus(
+                    response,
+                    (
+                        status.HTTP_204_NO_CONTENT
+                        if permitted
+                        else status.HTTP_403_FORBIDDEN
+                    ),
+                )
+
+            # Clean-up
+            self.token.tokendomainpolicy_set.all().delete()
+            self.my_domain.save()
+
     def test_delete_other_domain(self):
         url = self.reverse("v1:domain-detail", name=self.other_domain.name)
         response = self.client.delete(url)
@@ -378,6 +435,15 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             domain = Domain.objects.get(name=name)
             self.assertFalse(domain.is_locally_registrable)
             self.assertEqual(domain.renewal_state, Domain.RenewalState.IMMORTAL)
+
+    def test_create_domain_no_permission(self):
+        self.token.perm_create_domain = False
+        self.token.save()
+
+        response = self.client.post(
+            self.reverse("v1:domain-list"), {"name": "foobar.example"}
+        )
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
     def test_create_domain_zonefile_import(self):
         zonefile = """$ORIGIN .
@@ -828,6 +894,14 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_my_domain_no_permission(self):
+        self.token.perm_delete_domain = False
+        self.token.save()
+
+        url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+        response = self.client.delete(url)
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
     def test_delete_other_domains(self):
         url = self.reverse("v1:domain-detail", name=self.other_domain.name)
