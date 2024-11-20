@@ -11,7 +11,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.postgres.fields import ArrayField
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
@@ -52,6 +52,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         null=True, default=None, validators=_validators
     )
     domain_policies = models.ManyToManyField("Domain", through="TokenDomainPolicy")
+    auto_policy = models.BooleanField(default=False)
 
     plain = None
     objects = NetManager()
@@ -59,6 +60,27 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["id", "user"], name="unique_id_user")
+        ]
+        triggers = [
+            # Ensure that a default policy is defined when auto_policy=true
+            pgtrigger.Trigger(
+                name="token_auto_policy",
+                operation=pgtrigger.Update | pgtrigger.Insert,
+                when=pgtrigger.After,
+                timing=pgtrigger.Deferred,
+                func=pgtrigger.Func(
+                    """
+                    IF
+                        NEW.auto_policy = true AND NOT EXISTS(
+                            SELECT * FROM {meta.many_to_many[0].remote_field.through._meta.db_table} WHERE token_id = NEW.id AND domain_id IS NULL AND subname IS NULL AND type IS NULL
+                        )
+                    THEN
+                        RAISE EXCEPTION 'Token auto policy without a default policy is not allowed. (token.id=%s)', NEW.id;
+                    END IF;
+                    RETURN NULL;
+                """
+                ),
+            ),
         ]
 
     @property
@@ -135,6 +157,24 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         )
         return not forbidden
 
+    def clean(self):
+        if not self.auto_policy:
+            return
+        default_policy = self.get_policy()
+        if default_policy and default_policy.perm_write:
+            raise ValidationError(
+                {"auto_policy": ["Auto policy requires a restrictive default policy."]}
+            )
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        # Do not perform policy checks when only updating fields like last_used
+        if "auto_policy" in kwargs.get("update_fields", ["auto_policy"]):
+            self.clean()
+        super().save(*args, **kwargs)
+        if self.auto_policy and self.get_policy() is None:
+            TokenDomainPolicy(token=self).save()
+
 
 class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -190,6 +230,22 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
                 """
                 ),
             ),
+            # Ensure default policy when auto_policy is in effect
+            pgtrigger.Trigger(
+                name="default_policy_when_auto_policy",
+                operation=pgtrigger.Delete,
+                when=pgtrigger.Before,
+                func=pgtrigger.Func(
+                    """
+                    IF
+                        OLD.domain_id IS NULL AND OLD.subname IS NULL AND OLD.type IS NULL AND (SELECT auto_policy FROM {fields.token.remote_field.model._meta.db_table} WHERE id = OLD.token_id) = true
+                    THEN
+                        RAISE EXCEPTION 'Cannot delete default policy while auto_policy is in effect. (tokendomainpolicy.id=%s)', OLD.id;
+                    END IF;
+                    RETURN OLD;
+                """
+                ),
+            ),
         ]
 
     @property
@@ -223,6 +279,15 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
                         ]
                     }
                 )
+            # Can't relax default policy if auto_policy is in effect
+            if self.perm_write and self.is_default_policy and self.token.auto_policy:
+                raise ValidationError(
+                    {
+                        "perm_write": [
+                            "Must be false when auto_policy is in effect for the token."
+                        ]
+                    }
+                )
 
     def delete(self, *args, **kwargs):
         # Can't delete default policy when others exist
@@ -234,6 +299,15 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
                 {
                     "non_field_errors": [
                         "Policy precedence: Can't delete default policy when there exist others."
+                    ]
+                }
+            )
+        # Can't delete default policy when auto_policy is in effect
+        if self.is_default_policy and self.token.auto_policy:
+            raise ValidationError(
+                {
+                    "non_field_errors": [
+                        "Can't delete default policy when auto_policy is in effect for the token."
                     ]
                 }
             )

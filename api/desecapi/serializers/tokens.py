@@ -23,6 +23,7 @@ class TokenSerializer(serializers.ModelSerializer):
             "perm_delete_domain",
             "perm_manage_tokens",
             "allowed_subnets",
+            "auto_policy",
             "is_valid",
             "token",
         )
@@ -37,6 +38,12 @@ class TokenSerializer(serializers.ModelSerializer):
         if not self.include_plain:
             fields.pop("token")
         return fields
+
+    def save(self, **kwargs):
+        try:
+            return super().save(**kwargs)
+        except django.core.exceptions.ValidationError as exc:
+            raise serializers.ValidationError(exc.message_dict)
 
 
 class DomainSlugRelatedField(serializers.SlugRelatedField):

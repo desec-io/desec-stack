@@ -63,6 +63,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 "perm_delete_domain",
                 "perm_manage_tokens",
                 "allowed_subnets",
+                "auto_policy",
                 "is_valid",
             },
         )
@@ -134,6 +135,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                     "perm_delete_domain",
                     "perm_manage_tokens",
                     "allowed_subnets",
+                    "auto_policy",
                     "is_valid",
                     "token",
                 },

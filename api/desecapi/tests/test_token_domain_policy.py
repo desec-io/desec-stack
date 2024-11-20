@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.utils import IntegrityError
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -632,3 +632,92 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
 
         self.token.user.delete()
         self.assertFalse(models.TokenDomainPolicy.objects.filter(pk=policy_pk).exists())
+
+
+class TokenAutoPolicyTestCase(DomainOwnerTestCase):
+    client_class = TokenDomainPolicyClient
+
+    def setUp(self):
+        super().setUp()
+        self.client.credentials()  # remove default credential (corresponding to domain owner)
+        self.token_manage = self.create_token(self.owner, perm_manage_tokens=True)
+        self.other_token = self.create_token(self.user)
+
+    def test_default_policy_constraints(self):
+        self.assertFalse(self.token.tokendomainpolicy_set.exists())
+
+        # Restrictive default policy created when setting auto_policy=true
+        url = DomainOwnerTestCase.reverse("v1:token-detail", pk=self.token.id)
+        response = self.client._request(
+            self.client.patch, url, using=self.token_manage, data={"auto_policy": True}
+        )
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(self.token.tokendomainpolicy_set.count(), 1)
+        default_policy = self.token.get_policy()
+        self.assertFalse(default_policy.perm_write)
+
+        # Can't relax default policy
+        response = self.client.patch_policy(
+            self.token,
+            using=self.token_manage,
+            policy_id=default_policy.id,
+            data={"perm_write": True},
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["perm_write"][0],
+            "Must be false when auto_policy is in effect for the token.",
+        )
+
+        # Can't delete default policy
+        response = self.client.delete_policy(
+            self.token, using=self.token_manage, policy_id=default_policy.id
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["non_field_errors"][0],
+            "Can't delete default policy when auto_policy is in effect for the token.",
+        )
+
+        # Can relax default policy when auto_policy=false
+        self.token.auto_policy = False
+        self.token.save()
+        connection.check_constraints()  # simulate transaction commit
+
+        response = self.client.patch_policy(
+            self.token,
+            using=self.token_manage,
+            policy_id=default_policy.id,
+            data={"perm_write": True},
+        )
+        self.assertStatus(response, status.HTTP_200_OK)
+        connection.check_constraints()  # simulate transaction commit
+
+        # Can't set auto_policy when default policy is permissive
+        response = self.client._request(
+            self.client.patch, url, using=self.token_manage, data={"auto_policy": True}
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["auto_policy"][0],
+            "Auto policy requires a restrictive default policy.",
+        )
+
+        # Can delete default policy when auto_policy=false
+        response = self.client.delete_policy(
+            self.token, using=self.token_manage, policy_id=default_policy.id
+        )
+        self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+
+    def test_auto_policy_from_creation(self):
+        url = DomainOwnerTestCase.reverse("v1:token-list")
+        response = self.client._request(
+            self.client.post, url, using=self.token_manage, data={"auto_policy": True}
+        )
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["auto_policy"])
+
+        # Check that restrictive default policy has been created
+        token = models.Token.objects.get(pk=response.data["id"])
+        self.assertEqual(token.tokendomainpolicy_set.count(), 1)
+        self.assertFalse(token.get_policy().perm_write)
