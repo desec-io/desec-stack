@@ -23,13 +23,13 @@ class BaseFactor(models.Model):
             models.UniqueConstraint(fields=["user", "name"], name="unique_user_name"),
         ]
 
-    @transaction.atomic()
+    @transaction.atomic
     def delete(self):
         if self.last_used is not None:
             self.user.save(credentials_changed=True)
         return super().delete()
 
-    @transaction.atomic()
+    @transaction.atomic
     def save(self, *args, **kwargs):
         if not self.user.mfa_enabled:  # enabling MFA
             self.user.save(credentials_changed=True)

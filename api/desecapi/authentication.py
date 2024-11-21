@@ -76,7 +76,7 @@ class TokenAuthentication(RestFrameworkTokenAuthentication):
         if not token.is_valid:
             raise exceptions.AuthenticationFailed("Invalid token.")
         token.last_used = timezone.now()
-        token.save()
+        token.save(update_fields=["last_used"])
         return user, token
 
 

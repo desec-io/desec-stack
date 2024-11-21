@@ -1002,9 +1002,7 @@ class DesecTestCase(MockPDNSTestCase):
 
     @classmethod
     def create_token(cls, user, **kwargs):
-        token = Token.objects.create(user=user, **kwargs)
-        token.save()
-        return token
+        return Token.objects.create(user=user, **kwargs)
 
     @classmethod
     def create_user(cls, needs_captcha=False, **kwargs):
