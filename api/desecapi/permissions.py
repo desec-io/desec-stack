@@ -123,7 +123,7 @@ class HasCreateDomainPermission(permissions.BasePermission):
 
 class HasDeleteDomainPermission(permissions.BasePermission):
     """
-    Permission to check whether a token has "delete domian" permission.
+    Permission to check whether a token has "delete domain" permission.
     """
 
     def has_permission(self, request, view):
