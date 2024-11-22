@@ -721,3 +721,34 @@ class TokenAutoPolicyTestCase(DomainOwnerTestCase):
         token = models.Token.objects.get(pk=response.data["id"])
         self.assertEqual(token.tokendomainpolicy_set.count(), 1)
         self.assertFalse(token.get_policy().perm_write)
+
+    def test_create_domain(self):
+        self.token.auto_policy = True
+        self.token.save()
+        self.token_manage.perm_create_domain = True
+        self.token_manage.save()
+
+        name_auto = "domain.example"
+        name_other = "other.example"
+        with self.assertRequests(self.requests_desec_domain_creation(name_other)):
+            response = self.client._request(
+                self.client.post,
+                self.reverse("v1:domain-list"),
+                using=self.token_manage,
+                data={"name": name_other},
+            )
+            self.assertStatus(response, status.HTTP_201_CREATED)
+        with self.assertRequests(self.requests_desec_domain_creation(name_auto)):
+            response = self.client._request(
+                self.client.post,
+                self.reverse("v1:domain-list"),
+                using=self.token,
+                data={"name": name_auto},
+            )
+            self.assertStatus(response, status.HTTP_201_CREATED)
+
+        self.assertEqual(self.token.tokendomainpolicy_set.count(), 2)
+        rrset = models.RRset(domain=models.Domain.objects.get(name=name_auto))
+        self.assertTrue(self.token.get_policy(rrset).perm_write)
+        rrset = models.RRset(domain=models.Domain.objects.get(name=name_other))
+        self.assertFalse(self.token.get_policy(rrset).perm_write)

@@ -35,6 +35,7 @@ A JSON object representing a token has the following structure::
             "0.0.0.0/0",
             "::/0"
         ],
+        "auto_policy": false,
         "max_age": "365 00:00:00",
         "max_unused_period": null,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
@@ -49,6 +50,17 @@ Field details:
     Exhaustive list of IP addresses or subnets clients must connect from in
     order to successfully authenticate with the token.  Both IPv4 and IPv6 are
     supported.  Defaults to ``0.0.0.0/0, ::/0`` (no restriction).
+
+``auto_policy``
+    :Access mode: read, write
+    :Type: boolean
+
+    When using this token to create a domain, automatically configure a
+    permissive scoping policy for it (``perm_write=true``).  Requires a
+    restrictive default policy (``perm_write=false``), which is created
+    automatically when setting this flag.  Cannot be set to true if a
+    permissive default policy exists.  For details, see
+    :ref:`token scoping policies`.
 
 ``created``
     :Access mode: read-only
@@ -173,6 +185,7 @@ Note that the name and other fields are optional.  The server will reply with
             "0.0.0.0/0",
             "::/0"
         ],
+        "auto_policy": false,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -350,6 +363,8 @@ match only RRsets with an identical wildcard ``subname``.
 RRsets for which no more specific policy is configured are eventually caught by
 the token's default policy.  It is therefore required to create such a default
 policy before any more specific policies can be created on a given token.
+A domain-wide permissive policy can be configured automatically during domain
+creation by setting the token's ``auto_policy`` flag.
 
 Tokens with at least one policy are considered *restricted*, with their DNS
 record management capabilities limited as per policy configuration.

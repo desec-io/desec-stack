@@ -103,6 +103,10 @@ class DomainViewSet(
             )
         with PDNSChangeTracker():
             domain = serializer.save(owner=self.request.user)
+            if self.request.auth.auto_policy:
+                self.request.auth.tokendomainpolicy_set.create(
+                    domain=domain, perm_write=True
+                )
 
         # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
