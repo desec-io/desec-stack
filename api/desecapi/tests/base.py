@@ -756,12 +756,12 @@ class MockPDNSTestCase(APITestCase):
         if body:
             self.assertJSONEqual(response.content, body)
 
-    def assertToken(self, plain, user=None):
-        user = user or self.owner
+    def assertToken(self, plain, owner=None):
+        owner = owner or self.owner
         self.assertTrue(
             any(
                 check_password(plain, hashed, preferred="pbkdf2_sha256_iter1")
-                for hashed in Token.objects.filter(user=user).values_list(
+                for hashed in Token.objects.filter(owner=owner).values_list(
                     "key", flat=True
                 )
             )
@@ -1001,8 +1001,8 @@ class DesecTestCase(MockPDNSTestCase):
         )
 
     @classmethod
-    def create_token(cls, user, **kwargs):
-        return Token.objects.create(user=user, **kwargs)
+    def create_token(cls, owner, **kwargs):
+        return Token.objects.create(owner=owner, **kwargs)
 
     @classmethod
     def create_user(cls, needs_captcha=False, **kwargs):
@@ -1351,7 +1351,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
         cls.create_rr_set(cls.other_domain, ["40.1.1.1"], type="A", ttl=456)
 
         cls.token = cls.create_token(
-            user=cls.owner, perm_create_domain=True, perm_delete_domain=True
+            owner=cls.owner, perm_create_domain=True, perm_delete_domain=True
         )
 
     def setUp(self):

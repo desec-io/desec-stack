@@ -33,7 +33,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 class TokenPoliciesRoot(RetrieveAPIView):
@@ -88,7 +88,7 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
             raise Http404
 
     def get_queryset(self):
-        qs = Token.objects.filter(user=self.request.user)
+        qs = Token.objects.filter(owner=self.request.user)
         return get_object_or_404(qs, pk=self.kwargs["token_id"]).tokendomainpolicy_set
 
     def perform_destroy(self, instance):

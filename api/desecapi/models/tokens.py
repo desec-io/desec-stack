@@ -13,6 +13,8 @@ from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F, Q
+from django.db.models.fields.related import ForeignObject
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from netfields import CidrAddressField, NetManager
@@ -37,7 +39,24 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField("Key", max_length=128, db_index=True, unique=True)
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    owner = models.ForeignKey("User", on_delete=models.CASCADE, related_name="+")
+    user_id = models.GeneratedField(
+        expression=Coalesce("user_override", "owner"),
+        output_field=models.UUIDField(),
+        db_index=True,
+        db_persist=True,
+    )
+    user = ForeignObject(
+        "User",
+        on_delete=models.CASCADE,
+        from_fields=["user_id"],
+        to_fields=["id"],
+        null=True,
+        related_name="token_set",
+    )
+    user_override = models.ForeignKey(
+        "User", on_delete=models.CASCADE, null=True, related_name="+"
+    )
     name = models.CharField("Name", blank=True, max_length=64)
     last_used = models.DateTimeField(null=True, blank=True)
     mfa = models.BooleanField(default=None, null=True)
@@ -59,7 +78,15 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["id", "user"], name="unique_id_user")
+            models.UniqueConstraint(fields=["id", "user_id"], name="unique_id_user"),
+            models.CheckConstraint(
+                condition=Q(user_override__isnull=True)
+                | (
+                    Q(perm_manage_tokens=False, mfa__isnull=True)
+                    & ~Q(user_override=F("owner"))
+                ),
+                name="user_override_conditions",
+            ),
         ]
         triggers = [
             # Ensure that a default policy is defined when auto_policy=true
@@ -77,6 +104,25 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
                     THEN
                         RAISE EXCEPTION 'Token auto policy without a default policy is not allowed. (token.id=%)', NEW.id;
                     END IF;
+                    RETURN NULL;
+                """
+                ),
+            ),
+            # Update TokenDomainPolicy.token_user when .user_override changes (will fail FK if token
+            # has domain-specific policies). Also protect against further .user_override changes.
+            pgtrigger.Trigger(
+                name="token_policy_user_id",
+                operation=pgtrigger.UpdateOf("user_id"),
+                condition=pgtrigger.AnyChange("user_id"),
+                when=pgtrigger.After,
+                func=pgtrigger.Func(
+                    """
+                    IF
+                        OLD.user_override_id IS NOT NULL
+                    THEN
+                        RAISE EXCEPTION 'Cannot alter Token.user_override_id once set. (token.id=%)', NEW.id;
+                    END IF;
+                    UPDATE {meta.many_to_many[0].remote_field.through._meta.db_table} SET token_user_id = NEW.user_id WHERE token_id = NEW.id;
                     RETURN NULL;
                 """
                 ),
@@ -158,6 +204,15 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
         return not forbidden
 
     def clean(self):
+        if self.perm_manage_tokens and self.user_override:
+            # Prevent raw database constraint error from leaking
+            raise ValidationError(
+                {
+                    "non_field_errors": [
+                        "perm_manage_tokens and user_override are mutually exclusive."
+                    ]
+                }
+            )
         if not self.auto_policy:
             return
         default_policy = self.get_policy()
@@ -169,7 +224,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
     @transaction.atomic
     def save(self, *args, **kwargs):
         # Do not perform policy checks when only updating fields like last_used
-        if "auto_policy" in kwargs.get("update_fields", ["auto_policy"]):
+        if kwargs.get("update_fields") != ["last_used"]:
             self.clean()
         super().save(*args, **kwargs)
         if self.auto_policy and self.get_policy() is None:
@@ -206,10 +261,23 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
         triggers = [
             # Ensure that token_user is consistent with token (to fulfill compound FK constraint, see migration)
             pgtrigger.Trigger(
-                name="token_user",
-                operation=pgtrigger.Update | pgtrigger.Insert,
+                name="token_user_insert",
+                operation=pgtrigger.Insert,
                 when=pgtrigger.Before,
                 func="NEW.token_user_id = (SELECT user_id FROM desecapi_token WHERE id = NEW.token_id); RETURN NEW;",
+            ),
+            pgtrigger.Trigger(
+                name="token_user_update",
+                operation=pgtrigger.UpdateOf("token_user_id"),
+                when=pgtrigger.Before,
+                func="""
+                    IF
+                        NEW.token_user_id != (SELECT user_id FROM desecapi_token WHERE id = NEW.token_id)
+                    THEN
+                        RAISE EXCEPTION 'Invalid token_user_id: %', NEW.token_user_id;
+                    END IF;
+                    RETURN NEW;
+                """,
             ),
             # Ensure that if there is *any* domain policy for a given token, there is always one with domain=None.
             pgtrigger.Trigger(
