@@ -164,7 +164,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         if domain.is_locally_registrable:
             # TODO the following line raises Domain.DoesNotExist under unknown conditions
             PDNSChangeTracker.track(lambda: DomainViewSet.auto_delegate(domain))
-            token = Token.objects.create(user=domain.owner, name="dyndns")
+            token = Token.objects.create(owner=domain.owner, name="dyndns")
             return Response(
                 {
                     "detail": 'Success! Here is the password ("token") to configure your router (or any other dynDNS '

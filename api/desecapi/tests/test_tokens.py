@@ -34,7 +34,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         self.assertNotContains(response, self.token.plain)
 
     def test_delete_my_token(self):
-        token_id = Token.objects.get(user=self.owner, name="testtoken").id
+        token_id = Token.objects.get(owner=self.owner, name="testtoken").id
         url = self.reverse("v1:token-detail", pk=token_id)
 
         response = self.client.delete(url)
@@ -45,7 +45,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_retrieve_my_token(self):
-        token_id = Token.objects.get(user=self.owner, name="testtoken").id
+        token_id = Token.objects.get(owner=self.owner, name="testtoken").id
         url = self.reverse("v1:token-detail", pk=token_id)
 
         response = self.client.get(url)
@@ -75,7 +75,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
         )
 
     def test_retrieve_other_token(self):
-        token_id = Token.objects.get(user=self.user).id
+        token_id = Token.objects.get(owner=self.user).id
         url = self.reverse("v1:token-detail", pk=token_id)
 
         response = self.client.get(url)
@@ -152,7 +152,9 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
             ]:
                 self.assertEqual(response.data[perm], data.get(perm, False))
             self.assertIsNone(response.data["last_used"])
-            self.assertIsNone(Token.objects.get(pk=response.data["id"]).mfa)
+            token = Token.objects.get(pk=response.data["id"])
+            self.assertIsNone(token.mfa)
+            self.assertEqual(token.user, token.owner)
 
         self.assertEqual(
             len(Token.objects.filter(user=self.owner).all()), n + len(datas)
@@ -176,7 +178,7 @@ class TokenForbiddenTestCase(DomainOwnerTestCase):
 
     def test_delete_my_token(self):
         for token_id in [
-            Token.objects.get(user=self.owner, name="testtoken").id,
+            Token.objects.get(owner=self.owner, name="testtoken").id,
             self.token.id,
         ]:
             url = self.reverse("v1:token-detail", pk=token_id)
@@ -185,7 +187,7 @@ class TokenForbiddenTestCase(DomainOwnerTestCase):
 
     def test_retrieve_my_token(self):
         for token_id in [
-            Token.objects.get(user=self.owner, name="testtoken").id,
+            Token.objects.get(owner=self.owner, name="testtoken").id,
             self.token.id,
         ]:
             url = self.reverse("v1:token-detail", pk=token_id)
@@ -193,7 +195,7 @@ class TokenForbiddenTestCase(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_other_token(self):
-        token_id = Token.objects.get(user=self.user).id
+        token_id = Token.objects.get(owner=self.user).id
         url = self.reverse("v1:token-detail", pk=token_id)
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_403_FORBIDDEN)
