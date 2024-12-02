@@ -65,7 +65,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
             # Ensure that a default policy is defined when auto_policy=true
             pgtrigger.Trigger(
                 name="token_auto_policy",
-                operation=pgtrigger.Update | pgtrigger.Insert,
+                operation=pgtrigger.Insert | pgtrigger.UpdateOf("auto_policy"),
                 when=pgtrigger.After,
                 timing=pgtrigger.Deferred,
                 func=pgtrigger.Func(
@@ -75,7 +75,7 @@ class Token(ExportModelOperationsMixin("Token"), rest_framework.authtoken.models
                             SELECT * FROM {meta.many_to_many[0].remote_field.through._meta.db_table} WHERE token_id = NEW.id AND domain_id IS NULL AND subname IS NULL AND type IS NULL
                         )
                     THEN
-                        RAISE EXCEPTION 'Token auto policy without a default policy is not allowed. (token.id=%s)', NEW.id;
+                        RAISE EXCEPTION 'Token auto policy without a default policy is not allowed. (token.id=%)', NEW.id;
                     END IF;
                     RETURN NULL;
                 """
@@ -234,13 +234,14 @@ class TokenDomainPolicy(ExportModelOperationsMixin("TokenDomainPolicy"), models.
             pgtrigger.Trigger(
                 name="default_policy_when_auto_policy",
                 operation=pgtrigger.Delete,
-                when=pgtrigger.Before,
+                when=pgtrigger.After,
+                timing=pgtrigger.Deferred,
                 func=pgtrigger.Func(
                     """
                     IF
                         OLD.domain_id IS NULL AND OLD.subname IS NULL AND OLD.type IS NULL AND (SELECT auto_policy FROM {fields.token.remote_field.model._meta.db_table} WHERE id = OLD.token_id) = true
                     THEN
-                        RAISE EXCEPTION 'Cannot delete default policy while auto_policy is in effect. (tokendomainpolicy.id=%s)', OLD.id;
+                        RAISE EXCEPTION 'Cannot delete default policy while auto_policy is in effect. (tokendomainpolicy.id=%)', OLD.id;
                     END IF;
                     RETURN OLD;
                 """

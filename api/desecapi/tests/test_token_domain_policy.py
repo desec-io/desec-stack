@@ -752,3 +752,15 @@ class TokenAutoPolicyTestCase(DomainOwnerTestCase):
         self.assertTrue(self.token.get_policy(rrset).perm_write)
         rrset = models.RRset(domain=models.Domain.objects.get(name=name_other))
         self.assertFalse(self.token.get_policy(rrset).perm_write)
+
+    def test_delete_token_with_autopolicy(self):
+        self.token_manage.auto_policy = True
+        self.token_manage.save()
+        connection.check_constraints()  # simulate transaction commit
+
+        response = self.client._request(
+            self.client.delete,
+            self.reverse("v1:token-detail", pk=self.token_manage.id),
+            using=self.token_manage,
+        )
+        self.assertStatus(response, status.HTTP_204_NO_CONTENT)
