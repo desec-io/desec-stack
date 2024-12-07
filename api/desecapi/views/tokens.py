@@ -1,4 +1,5 @@
 import django.core.exceptions
+from django.db.models import Q
 from django.http import Http404
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
@@ -16,15 +17,24 @@ from .base import IdempotentDestroyMixin
 
 class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     serializer_class = TokenSerializer
-    permission_classes = (
-        IsAuthenticated,
-        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
-        permissions.HasManageTokensPermission,
-    )
     throttle_scope = "account_management_passive"
 
+    @property
+    def permission_classes(self):
+        ret = [
+            IsAuthenticated,
+            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+            permissions.HasManageTokensPermission,
+        ]
+        # The effective user may manage the token; its owner can only delete it
+        if self.request.method not in SAFE_METHODS and self.action != "destroy":
+            ret.append(permissions.IsUser)
+        return ret
+
     def get_queryset(self):
-        return self.request.user.token_set.all()
+        return Token.objects.filter(
+            Q(owner=self.request.user) | Q(user_override=self.request.user)
+        ).all()
 
     def get_serializer(self, *args, **kwargs):
         # When creating a new token, return the plaintext representation
@@ -47,8 +57,7 @@ class TokenPoliciesRoot(RetrieveAPIView):
         | permissions.AuthTokenCorrespondsToViewToken,
     ]
 
-    def get_queryset(self):
-        return self.request.user.token_set.all()
+    get_queryset = TokenViewSet.get_queryset
 
     def get(self, request, *args, **kwargs):
         self.get_object()  # raises if token does not exist
@@ -79,6 +88,7 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
             )
         else:
             ret.append(permissions.HasManageTokensPermission)
+            ret.append(permissions.IsTokenUser)
         return ret
 
     def create(self, request, *args, **kwargs):
@@ -88,7 +98,7 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
             raise Http404
 
     def get_queryset(self):
-        qs = Token.objects.filter(owner=self.request.user)
+        qs = TokenViewSet.get_queryset(self)
         return get_object_or_404(qs, pk=self.kwargs["token_id"]).tokendomainpolicy_set
 
     def perform_destroy(self, instance):

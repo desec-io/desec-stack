@@ -6,6 +6,8 @@ from desecapi.models import Token, TokenDomainPolicy
 
 
 class TokenSerializer(serializers.ModelSerializer):
+    owner = serializers.SlugRelatedField(slug_field="email", read_only=True)
+    user_override = serializers.SlugRelatedField(slug_field="email", read_only=True)
     allowed_subnets = serializers.ListField(child=CidrAddressField(), required=False)
     token = serializers.ReadOnlyField(source="plain")
     is_valid = serializers.ReadOnlyField()
@@ -16,6 +18,8 @@ class TokenSerializer(serializers.ModelSerializer):
             "id",
             "created",
             "last_used",
+            "owner",
+            "user_override",
             "max_age",
             "max_unused_period",
             "name",
@@ -27,7 +31,14 @@ class TokenSerializer(serializers.ModelSerializer):
             "is_valid",
             "token",
         )
-        read_only_fields = ("id", "created", "last_used", "token")
+        read_only_fields = (
+            "id",
+            "created",
+            "last_used",
+            "owner",
+            "user_override",
+            "token",
+        )
 
     def __init__(self, *args, include_plain=False, **kwargs):
         self.include_plain = include_plain
