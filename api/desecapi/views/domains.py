@@ -2,6 +2,7 @@ from datetime import timezone, datetime
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Subquery
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
@@ -79,6 +80,10 @@ class DomainViewSet(
 
     def get_queryset(self):
         qs = self.request.user.domains
+        policy_set = self.request.auth.tokendomainpolicy_set
+
+        if self.request.auth.user_override is not None and policy_set.exists():
+            qs = qs.filter(pk__in=Subquery(policy_set.values("domain")))
 
         owns_qname = self.request.query_params.get("owns_qname")
         if owns_qname is not None:

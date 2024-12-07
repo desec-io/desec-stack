@@ -67,6 +67,25 @@ class IsOwner(permissions.BasePermission):
         return obj.owner == request.user
 
 
+class IsUser(permissions.BasePermission):
+    """
+    Custom permission to only allow object access for the user associated with it.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+
+class IsTokenUser(permissions.BasePermission):
+    """
+    Custom permission to only allow object access for the user of the token associated with it.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        permission = IsUser()
+        return permission.has_object_permission(request, view, obj.token)
+
+
 class IsDomainOwner(permissions.BasePermission):
     """
     Custom permission to only allow owners of a domain to view or edit an object owned by that domain.

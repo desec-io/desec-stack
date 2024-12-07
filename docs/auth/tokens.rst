@@ -24,9 +24,13 @@ Token Field Reference
 A JSON object representing a token has the following structure::
 
     {
-        "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
+        "created": "2018-09-06T09:08:43.762697Z",
         "last_used": null,
+        "owner": "youremailaddress@example.com"",
+        "user_override": null,
+        "max_age": "365 00:00:00",
+        "max_unused_period": null,
         "name": "my new token",
         "perm_create_domain": false,
         "perm_delete_domain": false,
@@ -36,8 +40,6 @@ A JSON object representing a token has the following structure::
             "::/0"
         ],
         "auto_policy": false,
-        "max_age": "365 00:00:00",
-        "max_unused_period": null,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -136,6 +138,12 @@ Field details:
 
     Permission to create a new domain.
 
+``owner``
+    :Access mode: read
+    :Type: string
+
+    Email address associated with the deSEC account that created the token.
+
 ``perm_delete_domain``
     :Access mode: read, write
     :Type: boolean
@@ -159,6 +167,16 @@ Field details:
     cannot be recovered (we store it in irreversibly hashed form).  For
     security details, see `Security Considerations`_.
 
+``user_override``
+    :Access mode: read
+    :Type: string or ``null``
+
+    Email address associated with the deSEC account to which actions performed
+    with this token will pertain (default: ``null``).
+    In other words, if this field is set, then the token will not authenticate
+    as the ``owner`` user, but as the ``user_override`` user.
+    For details, see `User Override`_.
+
 
 Creating a Token
 ````````````````
@@ -177,6 +195,8 @@ Note that the name and other fields are optional.  The server will reply with
         "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
         "last_used": null,
+        "owner": "youremailaddress@example.com"",
+        "user_override": null,
         "name": "my new token",
         "perm_create_domain": false,
         "perm_delete_domain": false,
@@ -481,6 +501,70 @@ and you cannot remove a default policy when other policies are still in place.
 
 During deletion of tokens, users, or domains, policies are cleaned up
 automatically.
+
+
+User Override
+`````````````
+One user can authorize another such that the latter can use their token to
+perform actions in the name of the former.
+For example, Alice can authorize Bob to use his (Bob's) token to act within her
+(Alice's) account.
+
+To this end, the email address associated with Alice's account needs to be set
+in the ``user_override`` field of Bob's token.
+After this, the token is called an "override token", and said to be "bound" to
+the user given in the ``user_override`` field.
+(Note that at this time, this feature is under development, and write access to
+this field is not available.)
+
+This construction allows Bob to act in Alice's name without requiring Alice to
+share any secrets with Bob. (Bob can use his own secret token.)
+
+Override tokens can access any domains in the target account, unless the token
+has at least one policy configured.
+In this case, visibility is restricted to domains for which a policy exists.
+(This implies read permissions for domains listed with ``perm_write: false``.)
+
+This feature is particularly useful when combined with the
+``perm_create_domain`` and ``perm_delete_domain`` permissions, as well as the
+``auto_policy`` flag:
+In this case, Bob will be able to create, manage (due to ``auto_policy``) and
+delete domains in Alice's account, without being able to see or modify other
+domains (or even tokens) that Alice might have in her account.
+
+When listing tokens, the configuration of override tokens is visible to both
+their owner and the user listed in the ``user_override`` field.
+To discern which tokens are (or are not) override tokens, associated email
+addresses are listed in both the ``owner`` and ``user_override`` fields.
+Note that as a result, both parties can observe when either deSEC account email
+address changes.
+
+Only the override user (not the token owner) can manage an override token,
+including changing its name or permissions.
+Token owners therefore should not rely on the name field for telling tokens
+apart.
+Further, only API tokens without the ``perm_manage_tokens`` permission are
+eligible to become override tokens. (This is to prevent Bob from managing
+Alice's tokens.)
+However, both the owner and the override user can delete an override token.
+
+Once ``user_override`` has been set, the binding of the token to the target
+account is permanent. In particular, the binding will not be removed when the
+associated account is deleted; instead, the override token will be silently
+deleted.
+(Example: If Bob owns an override token for Alice's account and she deletes her
+account, then Bob's token will be deleted.)
+
+In effect, there are two types of tokens: One that acts as the account that
+owns it, and another that acts as a specific account that the token owner has
+been authorized to act on behalf of. Once an override token has been authorized
+to act on behalf of another user, it cannot be re-authorized to act on behalf
+of a different user (including of its owner).
+
+If you have ideas how this feature could be improved, please send us an email.
+One question we're interested in is whether we should notify Bob (how?) about
+the deletion of his override token when Alice deletes her account.
+
 
 Security Considerations
 ```````````````````````
