@@ -100,7 +100,7 @@ class AccountLoginView(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         user = self.request.user
         token = Token.objects.create(
-            user=user,
+            owner=user,
             perm_create_domain=True,
             perm_delete_domain=True,
             perm_manage_tokens=True,
