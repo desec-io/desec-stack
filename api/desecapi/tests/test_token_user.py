@@ -5,10 +5,6 @@ from desecapi.tests.base import DomainOwnerTestCase
 
 
 class TokenUserTestCase(DomainOwnerTestCase):
-    def setUp(self):
-        super().setUp()
-        self.token.save()
-
     def _add_default_policies(self, token, additional=True):
         token.tokendomainpolicy_set.create(domain=None, subname=None, type=None)
         if additional:
@@ -17,7 +13,6 @@ class TokenUserTestCase(DomainOwnerTestCase):
             token.tokendomainpolicy_set.create(domain=None, subname="sub", type="type")
 
     def _override_user(self, token, user_override):
-        assert token.owner != user_override
         token.user_override = user_override
         token.save()
         token.refresh_from_db()
