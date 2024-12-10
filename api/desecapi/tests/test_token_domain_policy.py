@@ -1,5 +1,5 @@
 from django.db import connection, transaction
-from django.db.utils import IntegrityError
+from django.db.utils import IntegrityError, ProgrammingError
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -220,7 +220,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         self.assertEqual(response.data, [])
 
         # Other token gives 404
-        other_token = self.create_token(user=self.create_user())
+        other_token = self.create_token(owner=self.create_user())
         response = self.client.list_policies(other_token, using=self.token_manage)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
@@ -557,13 +557,9 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         )
         policy.save()
 
-        self.token.user = self.other_domains[0].owner
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():  # https://stackoverflow.com/a/23326971/6867099
-                self.token.save()
-
-        policy.delete()
-        self.token.save()
+        policy.token_user = self.other_domains[0].owner
+        with self.assertRaises(ProgrammingError):
+            policy.save()
 
     def test_domain_owner_equals_token_user(self):
         models.TokenDomainPolicy(
@@ -578,11 +574,6 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
                     subname=None,
                     type=None,
                 ).save()
-
-        self.token.user = self.other_domain.owner
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():  # https://stackoverflow.com/a/23326971/6867099
-                self.token.save()
 
     def test_domain_deletion_policy_cleanup(self):
         domains = [None] + self.my_domains[:2]
@@ -630,7 +621,7 @@ class TokenDomainPolicyTestCase(DomainOwnerTestCase):
         # Only the default policy should be left, so get can simply get() it
         policy_pk = self.token.tokendomainpolicy_set.get().pk
 
-        self.token.user.delete()
+        self.token.owner.delete()
         self.assertFalse(models.TokenDomainPolicy.objects.filter(pk=policy_pk).exists())
 
 
