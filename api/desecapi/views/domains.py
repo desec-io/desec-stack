@@ -81,7 +81,7 @@ class DomainViewSet(
     def get_queryset(self):
         qs = self.request.user.domains
 
-        if (  # other conditions? check policies?
+        if (  # TODO other conditions? check policies?
             self.request.auth.auto_policy
             and self.request.auth.user_override is not None
         ):

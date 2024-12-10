@@ -171,10 +171,11 @@ Field details:
     :Access mode: read
     :Type: string or ``null``
 
-    Email address associated with the deSEC account to which the action
-    performed with this token will pertain (default: ``null``). In other words,
-    if this field is set, then the token will not authenticate as the ``owner``
-    user, but as the ``user_override`` user. For details, see `User Override`_.
+    Email address associated with the deSEC account to which actions performed
+    with this token will pertain (default: ``null``).
+    In other words, if this field is set, then the token will not authenticate
+    as the ``owner`` user, but as the ``user_override`` user.
+    For details, see `User Override`_.
 
 
 Creating a Token
@@ -510,8 +511,9 @@ For example, Alice can authorize Bob to use his (Bob's) token to act within her
 (Alice's) account.
 
 To this end, the email address associated with Alice's account needs to be set
-in the ``user_override`` field of Bob's token, after which the token is called
-an "override token".
+in the ``user_override`` field of Bob's token.
+After this, the token is called an "override token", and said to be "bound" to
+the user given in the ``user_override`` field.
 (Note that at this time, this feature is under development, and write access to
 this field is not available.)
 
@@ -544,6 +546,12 @@ associated account is deleted; instead, the override token will be silently
 deleted.
 (Example: If Bob owns an override token for Alice's account and she deletes her
 account, then Bob's token will be deleted.)
+
+Put differently, there are two types of tokens: One that acts as the account
+that owns it, and another that acts as a specific account that the token owner
+has been authorized to act on behalf of. Once an override token has been
+authorized to act on behalf of another user, it cannot be re-authorized to act
+on behalf of a different user (including of its owner).
 
 If you have ideas how this feature could be improved, please send us an email.
 One question we're interested in is whether we should notify Bob (how?) about
