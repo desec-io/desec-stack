@@ -287,6 +287,7 @@ export default {
         host: 'lhr-1.c.desec.io',
         left: '45%',
         top: '20%',
+        adopted_by: 'Jason Liquorish',
       },
       {
         name: 'Singapore (ns2.desec.org)',
