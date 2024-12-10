@@ -338,6 +338,7 @@ export default {
         host: 'fra-1.a.desec.io',
         left: '48.5%',
         top: '23.5%',
+        adopted_by: 'Liip AG',
       },
       {
         name: 'Johannesburg (ns1.desec.io)',
