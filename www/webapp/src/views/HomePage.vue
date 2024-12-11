@@ -287,6 +287,7 @@ export default {
         host: 'lhr-1.c.desec.io',
         left: '45%',
         top: '20%',
+        adopted_by: 'Jason Liquorish',
       },
       {
         name: 'Singapore (ns2.desec.org)',
@@ -337,6 +338,7 @@ export default {
         host: 'fra-1.a.desec.io',
         left: '48.5%',
         top: '23.5%',
+        adopted_by: 'Liip AG',
       },
       {
         name: 'Johannesburg (ns1.desec.io)',
