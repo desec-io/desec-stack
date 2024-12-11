@@ -65,35 +65,35 @@ export default {
   data: () => ({
     terms_of_use: [
       {
-        title: 'Keep Server Load Low',
-        text: 'Only send update requests when there is something to update, and use reasonable TTLs. Accounts ' +
+        title: 'Keep Server Load Low / Expiration',
+        text: 'a) Only send update requests when there is something to update, and use reasonable TTLs. Accounts ' +
                 'that cause extraordinarily high load or cost may be disabled or throttled. Account ' +
-                'holders will be asked for cooperation to resolve the issue.',
+                'holders will be asked for cooperation to resolve the issue.<br />' +
+                'b) Dynamic DNS domains that are not updated for six months or longer will be ' +
+                'deleted after a warning with 4 weeks notice. The notice contains instructions for owners to confirm ' +
+                'active use and prevent deletion.',
       },
       {
         title: 'Users Must be Responsive',
         text: 'Users are required to register with an email address which will be used for authentication and ' +
             'maintenance purposes. Control of the mailbox is strictly required for authentication with deSEC ' +
             'support, e.g. for account recovery. Users are obliged to read and react to our emails. For users who do ' +
-            'not react or cooperate, deSEC reserves the right to disable the account and/or zone in order to ensure ' +
+            'not react or cooperate, deSEC reserves the right to disable the account and/or domain in order to ensure ' +
             'smooth operation of deSEC services.',
       },
       {
-        title: 'Expiration of Inactive dynDNS Domains',
-        text: 'Dynamic DNS domains that are not updated for six months or longer will be ' +
-                'deleted after a warning with 4 weeks notice. The notice contains instructions for owners to confirm ' +
-                'active use and prevent deletion.',
+        title: 'Withdrawal / Transfer to User with Proven Control',
+        text: 'Anyone who can prove control of a domain at the parent (upstream registry) may claim control over ' +
+            'that domain at all deSEC nameservers. If the domain has been created in the deSEC platform by another ' +
+            'user, we will notify that user via email and ask whether the domain should be transferred including its ' +
+            'currently configured DNS records, or whether it should first be purged. In case the email cannot be ' +
+            'delivered or we do not hear back within 48 hours, the transfer may be done including DNS records.',
       },
       {
         title: 'Secure Delegation Required',
         text: 'Domains created at deSEC which do not include deSEC\'s nameservers in their set of authoritative ' +
             'nameservers ("NS records") or which fail to establish a DNSSEC chain of trust may receive a deletion ' +
-            'warning and may be deleted four weeks thereafter if that condition still applies. <br/>' +
-            'Anyone who can prove ownership of a domain name by an upstream registry may claim control over this ' +
-            'domain at all deSEC nameservers, even if a corresponding deSEC zone has been created by another user. ' +
-            'During the transfer of control, the zone\'s DNS information and signing keys will be deleted; a backup ' +
-            'of the zone\'s record sets will be made available to the user account that previously held the domain ' +
-            'at deSEC.',
+            'warning and may be deleted four weeks thereafter if that condition still applies.',
       },
       {
         title: 'Domains with Illegal Activity',
