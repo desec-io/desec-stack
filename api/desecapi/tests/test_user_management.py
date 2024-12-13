@@ -32,7 +32,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
-from desecapi.models import Domain, User, Captcha
+from desecapi.models import Captcha, Domain, Token, User
 from desecapi.tests.base import (
     DesecTestCase,
     DomainOwnerTestCase,
@@ -177,6 +177,15 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         return self.assertEmailSent(
             subject_contains="deSEC",
             body_contains="Thank you for registering with deSEC!",
+            recipient=[recipient],
+            reset=reset,
+            pattern=r"following link[^:]*:\s+([^\s]*)",
+        )
+
+    def assertRegistrationWithOverrideTokenEmail(self, recipient, owner, reset=True):
+        return self.assertEmailSent(
+            subject_contains="Your invitation to deSEC",
+            body_contains=f"{owner.email} has requested that you open a deSEC account",
             recipient=[recipient],
             reset=reset,
             pattern=r"following link[^:]*:\s+([^\s]*)",
@@ -720,6 +729,66 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 ),
             ):
                 self._test_registration(domain=domain, late_captcha=True)
+
+    def test_registration_with_override_token(self):
+        limit_domains = 15
+        token = self.create_token(owner=self.create_user(), perm_manage_tokens=True)
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
+
+        for outreach_preference in [True, False]:
+            data = {"outreach_preference": outreach_preference}
+            email = self.random_username()
+            response = self.client.post(
+                reverse("v1:token-list"), {"user_override": email}
+            )
+            self.assertStatus(response, status.HTTP_202_ACCEPTED)
+            self.assertIsNone(response.data["user_override"])
+            override_token_id = response.data["id"]
+
+            # Check that user is preconfigured correctly
+            self.assertUserExists(email)
+            user = User.objects.get(email=email)
+            self.assertFalse(user.is_active)
+            self.assertIsNone(user.is_active)
+            self.assertTrue(user.needs_captcha)
+            self.assertFalse(user.outreach_preference)
+            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertPassword(email, None)
+
+            # Check confirmation email
+            confirmation_link = self.assertRegistrationWithOverrideTokenEmail(
+                email, owner=token.owner
+            )
+            self.assertConfirmationLinkRedirect(confirmation_link)
+
+            # Check that outreach_preference is required
+            response = self.client.verify(confirmation_link)
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(
+                response.data["outreach_preference"][0], "This field is required."
+            )
+
+            # Check that captcha is required
+            response = self.client.verify(confirmation_link, data=data)
+            self.assertRegistrationVerificationFailureResponse(response)
+
+            # Check that confirmation works if required data is provided
+            captcha_id, captcha_solution = self.get_captcha()
+            data["captcha"] = {"id": captcha_id, "solution": captcha_solution}
+            response = self.client.verify(confirmation_link, data=data)
+            self.assertRegistrationVerificationSuccessResponse(response)
+
+            # Check user has been activated correctly
+            user.refresh_from_db()
+            self.assertTrue(user.is_active)
+            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertFalse(user.needs_captcha)
+            self.assertEqual(user.outreach_preference, outreach_preference)
+            self.assertPassword(email, None)
+            override_token = Token.objects.get(pk=override_token_id)
+
+            # Check .user_override has been set on the token
+            self.assertEqual(override_token.user_override, user)
 
 
 class OtherUserAccountTestCase(UserManagementTestCase):

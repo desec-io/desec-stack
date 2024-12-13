@@ -199,6 +199,23 @@ class AuthenticatedActivateUserActionSerializer(AuthenticatedBasicUserActionSeri
         return attrs
 
 
+class AuthenticatedActivateUserWithOverrideTokenActionSerializer(
+    AuthenticatedActivateUserActionSerializer
+):
+    outreach_preference = serializers.BooleanField(write_only=True)
+
+    reason = "activate-account-with-override-token"
+
+    class Meta(AuthenticatedBasicUserActionSerializer.Meta):
+        model = models.AuthenticatedActivateUserWithOverrideTokenAction
+        fields = AuthenticatedBasicUserActionSerializer.Meta.fields + (
+            "captcha",
+            "outreach_preference",
+            "token",
+        )
+        extra_kwargs = {"token": {"pk_field": serializers.UUIDField()}}
+
+
 class AuthenticatedChangeEmailUserActionSerializer(
     AuthenticatedBasicUserActionSerializer
 ):

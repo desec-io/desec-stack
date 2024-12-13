@@ -1,15 +1,15 @@
 import django.core.exceptions
 from django.db.models import Q
 from django.http import Http404
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from desecapi import permissions
-from desecapi.models import Token
+from desecapi import permissions, serializers
+from desecapi.models import Token, User
 from desecapi.serializers import TokenDomainPolicySerializer, TokenSerializer
 
 from .base import IdempotentDestroyMixin
@@ -41,6 +41,39 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         if self.action == "create":
             kwargs.setdefault("include_plain", True)
         return super().get_serializer(*args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Remove user_override field to prevent it from being written to the database,
+        # and instead perform special treatment.
+        # Do not re-add for rendering the response, as existing accounts would have their
+        # email address rewritten to uppercase/lowercase as in the database, which would
+        # expose their existence.
+        user_override = serializer.validated_data.pop("user_override")
+        self.perform_create(serializer)
+        if user_override:
+            http_status = status.HTTP_202_ACCEPTED
+            if user_override._state.adding:  # user does not exist
+                user_override = User.objects.create_user(
+                    email=user_override.email,
+                    password=None,
+                    is_active=None,
+                    limit_domains=15,
+                    needs_captcha=True,
+                    outreach_preference=False,
+                )
+                serializers.AuthenticatedActivateUserWithOverrideTokenActionSerializer.build_and_save(
+                    user=user_override,
+                    token=self.get_queryset().get(pk=serializer.data["id"]),
+                )
+            else:  # user exists
+                pass  # for now, not supported
+        else:
+            http_status = status.HTTP_201_CREATED
+
+        return Response(serializer.data, status=http_status)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

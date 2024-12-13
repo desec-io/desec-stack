@@ -184,6 +184,24 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             )
 
 
+class AuthenticatedActivateUserWithOverrideTokenActionView(AuthenticatedActionView):
+    html_url = "/confirm/activate-account-with-override-token/{code}/"
+    permission_classes = ()  # don't require that user is activated already
+    serializer_class = (
+        serializers.AuthenticatedActivateUserWithOverrideTokenActionSerializer
+    )
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        return Response(
+            {
+                "detail": f"Success! Welcome to deSEC. {self.authenticated_action.token.owner.email} will "
+                "manage your domains for you. You can reset the password to your account at any time to "
+                "access your account directly."
+            }
+        )
+
+
 class AuthenticatedChangeEmailUserActionView(AuthenticatedActionView):
     html_url = "/confirm/change-email/{code}/"
     serializer_class = serializers.AuthenticatedChangeEmailUserActionSerializer

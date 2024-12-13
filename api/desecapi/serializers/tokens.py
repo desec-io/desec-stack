@@ -2,18 +2,35 @@ import django.core.exceptions
 from netfields.rest_framework import CidrAddressField
 from rest_framework import serializers
 
-from desecapi.models import Token, TokenDomainPolicy
+from desecapi import models, validators
+
+
+class SensitiveSlugRelatedField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        queryset = self.get_queryset()
+        try:
+            return queryset.get(**{self.slug_field: data})
+        except django.core.exceptions.ObjectDoesNotExist:
+            # Retain to prevent responses from exposing object non-existence in database
+            return queryset.model(**{self.slug_field: data})
+        except (TypeError, ValueError):
+            self.fail("invalid")
 
 
 class TokenSerializer(serializers.ModelSerializer):
     owner = serializers.SlugRelatedField(slug_field="email", read_only=True)
-    user_override = serializers.SlugRelatedField(slug_field="email", read_only=True)
+    user_override = SensitiveSlugRelatedField(
+        slug_field="email",
+        queryset=models.User.objects.all(),
+        allow_null=True,
+        default=None,
+    )
     allowed_subnets = serializers.ListField(child=CidrAddressField(), required=False)
     token = serializers.ReadOnlyField(source="plain")
     is_valid = serializers.ReadOnlyField()
 
     class Meta:
-        model = Token
+        model = models.Token
         fields = (
             "id",
             "created",
@@ -36,7 +53,6 @@ class TokenSerializer(serializers.ModelSerializer):
             "created",
             "last_used",
             "owner",
-            "user_override",
             "token",
         )
 
@@ -48,7 +64,15 @@ class TokenSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
         if not self.include_plain:
             fields.pop("token")
+        fields["user_override"].validators.append(
+            validators.ReadOnlyOnUpdateValidator()
+        )
         return fields
+
+    def validate_user_override(self, value):
+        if self.instance and value != self.instance.user_override:
+            raise serializers.ValidationError(f"Cannot alter this field once set.")
+        return value
 
     def save(self, **kwargs):
         try:
@@ -66,7 +90,7 @@ class TokenDomainPolicySerializer(serializers.ModelSerializer):
     domain = DomainSlugRelatedField(allow_null=True, slug_field="name")
 
     class Meta:
-        model = TokenDomainPolicy
+        model = models.TokenDomainPolicy
         fields = (
             "id",
             "domain",

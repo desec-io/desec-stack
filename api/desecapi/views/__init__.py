@@ -1,6 +1,7 @@
 from .domains import DomainViewSet, SerialListView
 from .authenticated_actions import (
     AuthenticatedActivateUserActionView,
+    AuthenticatedActivateUserWithOverrideTokenActionView,
     AuthenticatedChangeEmailUserActionView,
     AuthenticatedChangeOutreachPreferenceUserActionView,
     AuthenticatedConfirmAccountUserActionView,

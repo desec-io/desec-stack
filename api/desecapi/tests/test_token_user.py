@@ -180,9 +180,15 @@ class TokenViewTestCase(DomainOwnerTestCase):
         assert self.user.token.perm_manage_tokens
 
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.user.token.plain)
-        for method in [self.client.patch, self.client.put]:
-            response = method(url, data={"name": "<NAME>"})
-            self.assertStatus(response, status.HTTP_200_OK)
+        response = self.client.patch(url, data={"name": "<NAME>"})
+        self.assertStatus(response, status.HTTP_200_OK)
+
+        # Cannot change .user_override once set (here, via PUT which sets it to None (default))
+        response = self.client.put(url, data={"name": "<NAME>"})
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "Cannot alter this field once set.", response.data["user_override"]
+        )
 
         assert self.token.perm_manage_tokens
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
@@ -290,7 +296,7 @@ class TokenViewTestCase(DomainOwnerTestCase):
         data = {k: self.user.email for k in ("owner", "user", "user_override")}
         url = self.reverse("v1:token-list")
         response = self.client.post(url, data=data)
-        self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertStatus(response, status.HTTP_202_ACCEPTED)
         self.assertNotIn("user", response.data)
         self.assertEqual(response.data["owner"], self.owner.email)
         self.assertIsNone(response.data["user_override"])
@@ -314,15 +320,23 @@ class TokenViewTestCase(DomainOwnerTestCase):
             token.save()
 
         url = self.reverse("v1:token-detail", pk=self.owner.token_with_override.id)
-        for request_token, expected_status in {
-            self.token: status.HTTP_403_FORBIDDEN,  # wrong user
-            self.user.token: status.HTTP_200_OK,  # can modify, but field is no-op
-            self.owner.token_with_override: status.HTTP_403_FORBIDDEN,  # perm_manage_tokens=False
-        }.items():
-            self.client.credentials(HTTP_AUTHORIZATION="Token " + request_token.plain)
-            for method in [self.client.patch, self.client.put]:
-                for field in ["owner", "user", "user_override"]:
-                    response = method(url, data={field: self.create_user().email})
+        for method in [self.client.patch, self.client.put]:
+            for request_token, expected_status in {
+                self.token: status.HTTP_403_FORBIDDEN,  # wrong user
+                self.user.token: status.HTTP_200_OK,  # has permission but no-op
+                self.owner.token_with_override: status.HTTP_403_FORBIDDEN,  # perm_manage_tokens=False
+            }.items():
+                self.client.credentials(
+                    HTTP_AUTHORIZATION="Token " + request_token.plain
+                )
+                for field in ["owner", "user"]:
+                    response = method(
+                        url,
+                        data={
+                            field: self.create_user().email,
+                            "user_override": self.owner.token_with_override.user_override.email,
+                        },
+                    )
                     self.assertStatus(response, expected_status)
                     self.owner.token_with_override.refresh_from_db()
                     self.assertEqual(self.owner.token_with_override.owner, self.owner)
@@ -330,6 +344,16 @@ class TokenViewTestCase(DomainOwnerTestCase):
                         self.owner.token_with_override.user_override, self.user
                     )
                     self.assertEqual(self.owner.token_with_override.user, self.user)
+            for request_token, expected_status in {
+                self.token: status.HTTP_403_FORBIDDEN,  # wrong user
+                self.user.token: status.HTTP_400_BAD_REQUEST,  # has permission
+                self.owner.token_with_override: status.HTTP_403_FORBIDDEN,  # perm_manage_tokens=False
+            }.items():
+                self.client.credentials(
+                    HTTP_AUTHORIZATION="Token " + request_token.plain
+                )
+                response = method(url, data={"user_override": self.create_user().email})
+                self.assertStatus(response, expected_status)
 
 
 class TokenDomainTestCase(DomainOwnerTestCase):

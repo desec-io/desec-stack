@@ -1,5 +1,6 @@
 from .authenticated_actions import (
     AuthenticatedActivateUserActionSerializer,
+    AuthenticatedActivateUserWithOverrideTokenActionSerializer,
     AuthenticatedBasicUserActionSerializer,
     AuthenticatedChangeEmailUserActionSerializer,
     AuthenticatedChangeOutreachPreferenceUserActionSerializer,

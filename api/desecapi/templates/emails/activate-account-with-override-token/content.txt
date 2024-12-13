@@ -1,0 +1,22 @@
+{% extends "emails/content.txt" %}
+{% block content %}{% load action_extras %}Hi there,
+
+{{ action_serializer.instance.token.owner.email }} has requested that you open a deSEC account, and is asking for permission to manage domains in that account.
+
+By confirming, you will grant {{ action_serializer.instance.token.owner.email }} (the "authorized party") permission to manage your DNS.
+
+This permission is limited to domains that the authorized will create in your account. They will have permission to both modify and delete the domains created by them. If you create additional domains in your account by hand, they will not be visible to the authorized party.
+
+If you ever would like to revoke this authorization, you can remove it in the "Token Management" section of our web interface. Authorization can also be withdrawn by the authorized party itself.
+
+To confirm that you would like to open a deSEC account and grant DNS management permission to {{ action_serializer.instance.token.owner.email }}, please use the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
+
+{% action_link action_serializer %}
+
+In case the link has already expired, please request a new one from the authorized party.
+
+We hope you enjoy deSEC!
+
+Stay secure,
+Nils
+{% endblock %}

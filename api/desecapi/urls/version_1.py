@@ -88,6 +88,11 @@ api_urls = [
         name="confirm-activate-account",
     ),
     path(
+        "v/activate-account-with-override-token/<code>/",
+        views.AuthenticatedActivateUserWithOverrideTokenActionView.as_view(),
+        name="confirm-activate-account-with-override-token",
+    ),
+    path(
         "v/change-email/<code>/",
         views.AuthenticatedChangeEmailUserActionView.as_view(),
         name="confirm-change-email",

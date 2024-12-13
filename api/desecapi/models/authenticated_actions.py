@@ -171,6 +171,35 @@ class AuthenticatedActivateUserAction(AuthenticatedUserAction):
         self.user.activate()
 
 
+class AuthenticatedActivateUserWithOverrideTokenAction(AuthenticatedUserAction):
+    outreach_preference = models.BooleanField(default=True)
+    token = models.ForeignKey("Token", on_delete=models.DO_NOTHING, related_name="+")
+
+    class Meta:
+        managed = False
+
+    @property
+    def _state_fields(self):
+        # State does not cover self.token.tokendomainpolicy_set for now
+        return super()._state_fields + [
+            str(self.token.id),
+            str(self.token.user.id),
+            self.token.user_override and str(self.token.user_override.id),
+            self.token.name,
+            self.token.perm_create_domain,
+            self.token.perm_delete_domain,
+            self.token.auto_policy,
+            self.token.max_age,
+            self.token.max_unused_period,
+        ]
+
+    def _act(self):
+        self.user.outreach_preference = self.outreach_preference
+        self.user.activate()
+        self.token.user_override = self.user
+        self.token.save()
+
+
 class AuthenticatedChangeEmailUserAction(AuthenticatedUserAction):
     new_email = models.EmailField()
 

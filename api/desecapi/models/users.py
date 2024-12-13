@@ -131,6 +131,7 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         immediate_lane = "email_immediate_lane"
         lanes = {
             "activate-account": slow_lane,
+            "activate-account-with-override-token": fast_lane,
             "change-email": slow_lane,
             "change-email-confirmation-old-email": fast_lane,
             "change-outreach-preference": slow_lane,
