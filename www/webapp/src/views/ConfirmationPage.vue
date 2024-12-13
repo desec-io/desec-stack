@@ -56,6 +56,7 @@
   import axios from 'axios';
   import GenericActionHandler from '@/components/GenericActionHandler.vue';
   import ActivateAccountActionHandler from '@/components/ActivateAccountActionHandler.vue';
+  import ActivateAccountWithOverrideTokenActionHandler from '@/components/ActivateAccountWithOverrideTokenActionHandler.vue'
   import CreateTOTPActionHandler from '@/components/CreateTOTPActionHandler.vue';
   import ResetPasswordActionHandler from '@/components/ResetPasswordActionHandler.vue';
   import {digestError} from '@/utils';
@@ -71,6 +72,7 @@
     components: {
       GenericActionHandler,
       ActivateAccountActionHandler,
+      ActivateAccountWithOverrideTokenActionHandler,
       CreateTOTPActionHandler,
       ResetPasswordActionHandler,
       ErrorAlert,
@@ -80,6 +82,7 @@
       errors: [],
       handler_map: {
         'activate-account': ActivateAccountActionHandler.name,
+        'activate-account-with-override-token': ActivateAccountWithOverrideTokenActionHandler.name,
         'create-totp': CreateTOTPActionHandler.name,
         'reset-password': ResetPasswordActionHandler.name,
       },
