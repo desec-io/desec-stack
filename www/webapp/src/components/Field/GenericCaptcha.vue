@@ -122,8 +122,8 @@ export default {
       this.working = false;
       this.emitChange();
     },
-    addError(values) {
-      this.errors.push(values);
+    addError(...values) {
+      this.errors.push(...values);
     },
     captchaID() {
       return this.captcha.id;

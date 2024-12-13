@@ -111,7 +111,13 @@
           let errors = await digestError(ex);
           this.post_response = ex.response
           for (const c in errors) {
-            this.errors.push(...errors[c])
+            if (c === 'captcha' && this.$refs.actionHandler.$refs.captchaField !== undefined) {
+              this.$refs.actionHandler.$refs.captchaField.addError(...(errors[c]['id'] ?? []));
+              this.$refs.actionHandler.$refs.captchaField.addError(...(errors[c]['non_field_errors'] ?? []));
+              this.$refs.actionHandler.$refs.captchaField.addError(...(errors[c]['solution'] ?? []));
+            } else {
+              this.errors.push(...errors[c]);
+            }
           }
         }
         this.working = false
