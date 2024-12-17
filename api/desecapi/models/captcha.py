@@ -35,7 +35,7 @@ class Captcha(ExportModelOperationsMixin("Captcha"), models.Model):
         AUDIO = "audio"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
     content = models.CharField(max_length=24, default="")
     kind = models.CharField(choices=Kind.choices, default=Kind.IMAGE, max_length=24)
 

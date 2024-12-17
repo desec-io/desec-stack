@@ -40,7 +40,7 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
         unique=True,
     )
     email_verified = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True, null=True)
+    is_active = models.BooleanField(db_index=True, default=True, null=True)
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     credentials_changed = models.DateTimeField(auto_now_add=True)
@@ -55,6 +55,9 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    class Meta:
+        indexes = [models.Index(fields=["last_login"])]
 
     def get_full_name(self):
         return self.email

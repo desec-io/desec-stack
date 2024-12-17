@@ -60,7 +60,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
     renewal_state = models.IntegerField(
-        choices=RenewalState.choices, default=RenewalState.IMMORTAL
+        choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
 
