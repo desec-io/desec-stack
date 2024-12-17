@@ -173,10 +173,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         with self.assertRaises(User.DoesNotExist):
             User.objects.get(email=email)
 
-    def assertRegistrationEmail(self, recipient, reset=True):
+    def assertRegistrationEmail(self, recipient, domain=None, reset=True):
         return self.assertEmailSent(
             subject_contains="deSEC",
-            body_contains="Thank you for registering with deSEC!",
+            body_contains=(
+                "You are about to set up"
+                if domain
+                else "As we may need to contact you in the future"
+            ),
             recipient=[recipient],
             reset=reset,
             pattern=r"following link[^:]*:\s+([^\s]*)",
@@ -426,7 +430,9 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             kwargs.get("outreach_preference", True),
         )
         self.assertPassword(email, password)
-        confirmation_link = self.assertRegistrationEmail(email)
+        confirmation_link = self.assertRegistrationEmail(
+            email, domain=kwargs.get("domain")
+        )
         self.assertConfirmationLinkRedirect(confirmation_link)
         response = self.client.verify(confirmation_link)
         if late_captcha:
@@ -461,7 +467,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertIsNone(User.objects.get(email=email).is_active)
         self.assertPassword(email, password)
 
-        confirmation_link = self.assertRegistrationEmail(email)
+        confirmation_link = self.assertRegistrationEmail(email, domain=domain)
 
         if tampered_domain is not None:
             self.assertNotEqual(domain, tampered_domain)

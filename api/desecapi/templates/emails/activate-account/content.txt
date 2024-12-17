@@ -1,9 +1,9 @@
 {% extends "emails/content.txt" %}
 {% block content %}{% load action_extras %}Hi there,
 
-Thank you for registering with deSEC!{% if domain is not None %} You are about to set up the
-following domain: {{ domain }}{% endif %}
-{% if domain is None %}
+Thank you for registering with deSEC!{% if action_serializer.instance.domain is not None %} You are about to set up the
+following domain: {{ action_serializer.instance.domain }}{% endif %}
+{% if action_serializer.instance.domain is None %}
 As we may need to contact you in the future, you need to verify your
 email address before you can use your account. To do so, please use
 the following link (valid for {% action_link_expiration_hours action_serializer %} hours):
@@ -15,7 +15,7 @@ hours):
 {% action_link action_serializer %}
 
 After that, please follow the instructions on the confirmation page.
-If link has already expired, please register again.
+In case the link has already expired, please register again.
 
 Please also take a look at the following resources:
 
