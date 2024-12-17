@@ -34,18 +34,16 @@
                       @clearerrors="clearErrors"
               ></component>
             </v-form>
-            <h2 class="text-h6">Keep deSEC Going</h2>
+            <hr class="mt-6 mb-4" />
+            <h2 class="text-h6">... keep deSEC going!</h2>
             <p>
               To offer free DNS hosting for everyone, deSEC relies on donations only.
               If you like our service, please consider donating.
             </p>
-            <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+            <p class="text-center">
+              <v-btn outlined :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
