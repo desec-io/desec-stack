@@ -1,3 +1,20 @@
+FROM alpine AS oqs-provider
+
+RUN apk add --no-cache cmake git g++ make ninja openssl openssl-dev
+
+ARG LIBOQS_VERSION="0.12.0"
+ARG OQSPROVIDER_VERSION="0.8.0"
+
+RUN if [ -z ${LIBOQS_VERSION} ]; then exit 1; fi;
+RUN if [ -z ${OQSPROVIDER_VERSION} ]; then exit 2; fi;
+
+RUN git clone --depth 1 --branch ${LIBOQS_VERSION} https://github.com/open-quantum-safe/liboqs.git
+RUN git clone --depth 1 --branch ${OQSPROVIDER_VERSION} https://github.com/open-quantum-safe/oqs-provider.git
+
+ARG liboqs_DIR=/.local
+RUN cd liboqs && cmake -GNinja -DCMAKE_INSTALL_PREFIX=$liboqs_DIR -S . -B _build && cd _build && ninja && ninja install
+RUN cd oqs-provider && cmake -S . -B _build && cmake --build _build && cmake --install _build
+
 FROM node:lts AS webapp
 RUN \
   apt-get update \
@@ -28,6 +45,19 @@ FROM nginx:mainline-alpine
 
 # Add dependencies for our scripts
 RUN apk add --no-cache bash openssl inotify-tools
+
+# configure openssl to use OQS provider
+COPY --from=oqs-provider /oqs-provider/_build/lib/oqsprovider.so /usr/local/lib/
+RUN cat <<EOF  >> /etc/ssl/openssl.cnf
+[provider_sect]
+default = default_sect
+oqsprovider = oqsprovider_sect
+[default_sect]
+activate = 1
+[oqsprovider_sect]
+activate = 1
+module = /usr/local/lib/oqsprovider.so
+EOF
 
 # nginx configuration and entrypoint
 COPY conf /etc/nginx
