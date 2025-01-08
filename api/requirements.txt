@@ -11,6 +11,7 @@ django-pgtrigger~=4.13.3
 django-prometheus~=2.3.1
 dnspython~=2.7.0
 httpretty~=1.0.5  # 1.1 breaks tests. Does not run in production, so stick to it.
+packaging~=24.2  # for patching httpretty depending on urllib3 version
 pyotp~=2.9.0
 psycopg~=3.2.3
 psl-dns~=1.1.1

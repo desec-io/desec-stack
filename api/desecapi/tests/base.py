@@ -3,9 +3,11 @@ import operator
 import random
 import re
 import string
+import urllib3
 from contextlib import nullcontext
 from functools import partial, reduce
 from json import JSONDecodeError
+from packaging.version import Version
 from unittest import mock
 
 from django.conf import settings
@@ -25,6 +27,19 @@ from desecapi.models.records import (
     RR_SET_TYPES_UNSUPPORTED,
     RR_SET_TYPES_MANAGEABLE,
 )
+
+
+# patch httpretty against urllib3>=2.3.0 (https://github.com/gabrielfalcao/HTTPretty/issues/484)
+# inspired by https://github.com/PyGithub/PyGithub/pull/3102/commits/10a7135a04f71e6101f8b013aded8a662d08fd1f
+if Version(urllib3.__version__) >= Version("2.3.0"):
+    hr_core.fakesock.socket.__getattr__ = lambda self, name: (
+        None
+        if (
+            name == "shutdown"
+            and not (hr_core.httpretty.allow_net_connect or self.truesock)
+        )
+        else hr_core.fakesock.socket.__getattr__(self, name)
+    )
 
 
 class DesecAPIClient(APIClient):
