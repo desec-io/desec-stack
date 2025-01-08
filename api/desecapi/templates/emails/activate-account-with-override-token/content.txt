@@ -5,7 +5,7 @@
 
 By confirming, you will grant {{ action_serializer.instance.token.owner.email }} (the "authorized party") permission to manage your DNS.
 
-This permission is limited to domains that the authorized will create in your account. They will have permission to both modify and delete the domains created by them. If you create additional domains in your account by hand, they will not be visible to the authorized party.
+This permission is limited to domains that the authorized party will create in your account. They will have permission to both modify and delete the domains created by them. If you create additional domains in your account by hand, they will not be visible to the authorized party.
 
 If you ever would like to revoke this authorization, you can remove it in the "Token Management" section of our web interface. Authorization can also be withdrawn by the authorized party itself.
 
