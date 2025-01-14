@@ -27,8 +27,8 @@
       <p>Verantwortlich im Sinne der Datenschutzgesetze, insbesondere der EU-Datenschutzgrundverordnung (DSGVO), ist:</p>
       <p>deSEC e.V.
         <br>Nils Wisiol
-        <br>Kyffhäuserstr. 5
-        <br>10781 Berlin</p>
+        <br>Möckernstraße 74
+        <br>10965 Berlin</p>
       <h3>Ihre Betroffenenrechte</h3>
       <p>Unter den angegebenen Kontaktdaten unseres Datenschutzbeauftragten können Sie jederzeit folgende Rechte ausüben:</p>
       <ul>

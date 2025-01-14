@@ -5,7 +5,7 @@
     <h2>Angaben gemäß § 5 TMG</h2>
     <p>deSEC e.V.</p>
     <h3>Postanschrift / Address</h3>
-    <p>Kyffhäuserstr. 5<br>10781 Berlin</p>
+    <p>Möckernstraße 74<br/>10965 Berlin</p>
     <h3>E-Mail</h3>
     <p>{{ email }}</p>
     <h3>Vertreten durch / Represented by</h3>

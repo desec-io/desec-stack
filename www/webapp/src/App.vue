@@ -145,8 +145,8 @@
         <div>
           <p>{{ email }}</p>
           <p>
-            Kyffhäuserstraße 5<br/>
-            10781 Berlin<br/>
+            Möckernstraße 74<br/>
+            10965 Berlin<br/>
             Germany
           </p>
         </div>
