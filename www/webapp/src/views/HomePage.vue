@@ -306,6 +306,7 @@ export default {
         host: 'lax-1.c.desec.io',
         left: '6%',
         top: '32%',
+        adopted_by: 'Brian Banerjee',
       },
       {
         name: 'Tokyo (ns2.desec.org)',
