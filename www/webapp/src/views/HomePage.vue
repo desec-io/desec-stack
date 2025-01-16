@@ -191,7 +191,7 @@
                   v-on="on"
                   large
                   style="transform: translate(-50%, -100%); position: absolute"
-                  :style="{color: f.adopted_by ? 'black' : null, left: f.left, top: f.top}"
+                  :style="{color: f.adopted_by ? 'black' : 'rgba(0, 0, 0, 0.60)', left: f.left, top: f.top}"
                 >{{ f.adopted_by ? mdiMapMarkerStar : mdiMapMarker }}</v-icon>
                 <v-icon
                   v-if="!!f.adopted_by"
