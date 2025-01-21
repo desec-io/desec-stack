@@ -7,9 +7,13 @@ export const useUserStore = defineStore('user', {
         token: {},
         work_count: 0,
         alerts: [],
+        component_args: {},
     }),
     getters: {
         working: state => !!state.work_count,
+        component_arg: state => {
+            return (componentName) => state.component_args[componentName];
+        },
     },
     actions: {
         login(token) {
@@ -22,6 +26,9 @@ export const useUserStore = defineStore('user', {
         },
         changeWork(working = true) {
             this.work_count += working ? 1 : -1;
+        },
+        updateComponentArg(componentName, value) {
+            this.component_args[componentName] = value;
         },
         alert(alert) {
             for (const known_alert of this.alerts) {

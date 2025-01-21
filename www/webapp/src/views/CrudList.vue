@@ -499,6 +499,11 @@ export default {
       return this.filterWriteableColumns(col => (col.advanced || false));
     },
   },
+  watch: {
+    search: function() {
+      this.user.updateComponentArg(this.$options.name, this.search);
+    },
+  },
   async created() {
     const self = this;
     const url = self.resourcePath(self.paths.list, self.$route.params, '::');
@@ -507,6 +512,7 @@ export default {
             .then(r => self.rows = r.data)
     );
     this.createDialogItem = Object.assign({}, this.itemDefaults());
+    this.search = this.user.component_arg(this.$options.name) || '';
   },
   methods: {
     itemClass(item) {
