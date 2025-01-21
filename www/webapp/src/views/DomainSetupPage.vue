@@ -1,7 +1,7 @@
 <template>
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="8">
+      <v-col cols="12" sm="8" md="6">
         <v-card>
           <v-toolbar
               color="primary"
@@ -19,7 +19,7 @@
       </v-col>
     </v-row>
     <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="4">
+      <v-col cols="12" sm="8" md="3">
         <v-card>
           <v-card-title><div class="text-h6">Find Help</div></v-card-title>
           <v-card-text>
@@ -32,7 +32,7 @@
           </v-card-actions>
         </v-card>
       </v-col>
-      <v-col cols="12" sm="8" md="4">
+      <v-col cols="12" sm="8" md="3">
         <v-card>
           <v-card-title><div class="text-h6">Keep deSEC Going</div></v-card-title>
           <v-card-text>

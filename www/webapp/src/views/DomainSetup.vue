@@ -28,8 +28,30 @@
     </div>
     <p>
       Forward the following information to the organization/person where you bought the domain
-      <strong>{{ domain }}</strong> (usually your provider or technical administrator):
+      <strong>{{ domain }}</strong> (usually your provider or technical administrator).
     </p>
+    <v-expansion-panels class="mb-4">
+      <v-expansion-panel>
+        <v-expansion-panel-header class="primary lighten-4">
+          <span><v-icon>{{ mdiAlert }}</v-icon> Moving a domain that had DNSSEC enabled before? Read this!</span>
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <div class="mt-4">
+            <strong>Be careful!</strong>
+            Simply replacing records can cause errors, because resolvers may have old NS or DNSSEC settings cached.
+            To prevent this, choose one of the following:
+            <ul>
+              <li>
+                Keep DNSSEC enabled throughout: please contact support to configure a temporary "multi-signer" setup (RFC 8901).
+              </li>
+              <li>
+                Temporarily "go insecure" (easier): turn off old DNSSEC, wait 24h, change NS records, wait 24h, re-enable DNSSEC.
+              </li>
+            </ul>
+          </div>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
     <v-card class="mb-4" v-if="ns">
       <v-card-title class="grey lighten-2">
         <v-row>
@@ -51,11 +73,11 @@
     </v-card>
     <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
+    <div class="my-2 text-h6">
+      <v-icon class="primary--text">{{ mdiNumeric2Circle }}</v-icon>
+      Enable DNSSEC
+    </div>
     <div v-if="user.authenticated">
-      <div class="my-2 text-h6">
-        <v-icon class="primary--text">{{ mdiNumeric2Circle }}</v-icon>
-        Enable DNSSEC
-      </div>
       <p>
         You also need to forward the following DNSSEC information to your domain provider.
         The exact steps depend on your provider:
@@ -117,6 +139,12 @@
         look at DNSSEC Analyzer</a> to check the status of your domain.
       </p>
     </div>
+    <div v-else>
+      <p>
+        To enable DNSSEC, you will also need to forward some information to your domain provider.
+        You can retrieve this information by logging in, and then clicking on the <v-icon>{{ mdiInformation }}</v-icon> button next to your domain name.
+      </p>
+    </div>
 
     <!-- copy snackbar -->
     <v-snackbar v-model="snackbar">
@@ -140,7 +168,7 @@
 <script>
 import RecordList from '@/components/Field/RecordList.vue';
 import {useUserStore} from "@/store/user";
-import {mdiContentCopy, mdiAlert, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
+import {mdiContentCopy, mdiAlert, mdiInformation, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
 
 export default {
   name: 'DomainSetup',
@@ -169,6 +197,7 @@ export default {
     mdiAlert,
     mdiCheck,
     mdiContentCopy,
+    mdiInformation,
     mdiNumeric0Circle,
     mdiNumeric1Circle,
     mdiNumeric2Circle,
