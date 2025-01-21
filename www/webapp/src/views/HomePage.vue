@@ -287,13 +287,14 @@ export default {
         host: 'lhr-1.c.desec.io',
         left: '45%',
         top: '20%',
-        adopted_by: 'Jason Liquorish',
+        adopted_by: 'Layershift',
       },
       {
         name: 'Singapore (ns2.desec.org)',
         host: 'sin-1.c.desec.io',
         left: '81%',
         top: '57.5%',
+        adopted_by: 'Layershift',
       },
       {
         name: 'Dubai (ns2.desec.org)',
@@ -326,6 +327,7 @@ export default {
         host: 'lga-1.c.desec.io',
         left: '22%',
         top: '29%',
+        adopted_by: 'Layershift',
       },
 
       {
@@ -333,6 +335,7 @@ export default {
         host: 'ams-1.a.desec.io',
         left: '47%',
         top: '22%',
+        adopted_by: 'Jason Liquorish',
       },
       {
         name: 'Frankfurt (ns1.desec.io)',
