@@ -16,7 +16,7 @@ class ReplicationTest(DesecTestCase):
         pdns_requests = [
             {
                 "method": "GET",
-                "uri": self.get_full_pdns_url(r"/zones", ns="MASTER"),
+                "url": self.get_full_pdns_url(r"/zones", ns="MASTER"),
                 "status": 200,
                 "body": json.dumps(zones),
             }

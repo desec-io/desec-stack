@@ -10,25 +10,24 @@ def block_exists(ip):
 
 
 class StopAbuseCommandTest(DomainOwnerTestCase):
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
-        cls.create_rr_set(
-            cls.my_domains[1], ["127.0.0.1", "4.2.2.4"], type="A", ttl=123
+    def setUp(self):
+        super().setUp()
+        self.create_rr_set(
+            self.my_domains[1], ["127.0.0.1", "4.2.2.4"], type="A", ttl=123
         )
-        cls.create_rr_set(
-            cls.other_domains[1], ["40.1.1.1", "127.0.0.2"], type="A", ttl=456
+        self.create_rr_set(
+            self.other_domains[1], ["40.1.1.1", "127.0.0.2"], type="A", ttl=456
         )
-        for d in cls.my_domains + cls.other_domains:
-            cls.create_rr_set(d, ["ns1.example.", "ns2.example."], type="NS", ttl=456)
-            cls.create_rr_set(
+        for d in self.my_domains + self.other_domains:
+            self.create_rr_set(d, ["ns1.example.", "ns2.example."], type="NS", ttl=456)
+            self.create_rr_set(
                 d,
                 ["ns1.example.", "ns2.example."],
                 type="NS",
                 ttl=456,
                 subname="subname",
             )
-            cls.create_rr_set(d, ['"foo"'], type="TXT", ttl=456)
+            self.create_rr_set(d, ['"foo"'], type="TXT", ttl=456)
 
     def test_noop(self):
         # test implicit by absence assertPdnsRequests

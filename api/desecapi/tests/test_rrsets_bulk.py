@@ -8,11 +8,10 @@ from desecapi.tests.base import AuthenticatedRRSetBaseTestCase
 
 
 class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
+    def setUp(self):
+        super().setUp()
 
-        cls.data = [
+        self.data = [
             {
                 "subname": "my-cname",
                 "records": ["example.com."],
@@ -27,30 +26,30 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             },
         ]
 
-        cls.data_no_records = copy.deepcopy(cls.data)
-        cls.data_no_records[1].pop("records")
+        self.data_no_records = copy.deepcopy(self.data)
+        self.data_no_records[1].pop("records")
 
-        cls.data_empty_records = copy.deepcopy(cls.data)
-        cls.data_empty_records[1]["records"] = []
+        self.data_empty_records = copy.deepcopy(self.data)
+        self.data_empty_records[1]["records"] = []
 
-        cls.data_no_subname = copy.deepcopy(cls.data)
-        cls.data_no_subname[0].pop("subname")
+        self.data_no_subname = copy.deepcopy(self.data)
+        self.data_no_subname[0].pop("subname")
 
-        cls.data_no_ttl = copy.deepcopy(cls.data)
-        cls.data_no_ttl[0].pop("ttl")
+        self.data_no_ttl = copy.deepcopy(self.data)
+        self.data_no_ttl[0].pop("ttl")
 
-        cls.data_no_type = copy.deepcopy(cls.data)
-        cls.data_no_type[1].pop("type")
+        self.data_no_type = copy.deepcopy(self.data)
+        self.data_no_type[1].pop("type")
 
-        cls.data_no_records_no_ttl = copy.deepcopy(cls.data_no_records)
-        cls.data_no_records_no_ttl[1].pop("ttl")
+        self.data_no_records_no_ttl = copy.deepcopy(self.data_no_records)
+        self.data_no_records_no_ttl[1].pop("ttl")
 
-        cls.data_no_subname_empty_records = copy.deepcopy(cls.data_no_subname)
-        cls.data_no_subname_empty_records[0]["records"] = []
+        self.data_no_subname_empty_records = copy.deepcopy(self.data_no_subname)
+        self.data_no_subname_empty_records[0]["records"] = []
 
-        cls.bulk_domain = cls.create_domain(owner=cls.owner)
-        for data in cls.data:
-            cls.create_rr_set(cls.bulk_domain, **data)
+        self.bulk_domain = self.create_domain(owner=self.owner)
+        for data in self.data:
+            self.create_rr_set(self.bulk_domain, **data)
 
     def test_bulk_post_my_rr_sets(self):
         with self.assertRequests(

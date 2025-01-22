@@ -2,18 +2,16 @@ import base64
 import operator
 import random
 import re
+import responses
+import socket
 import string
-import urllib3
 from contextlib import nullcontext
 from functools import partial, reduce
-from json import JSONDecodeError
-from packaging.version import Version
 from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core import mail
-from httpretty import httpretty, core as hr_core
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase, APIClient
@@ -26,19 +24,7 @@ from desecapi.models.records import (
     RR_SET_TYPES_UNSUPPORTED,
     RR_SET_TYPES_MANAGEABLE,
 )
-
-
-# patch httpretty against urllib3>=2.3.0 (https://github.com/gabrielfalcao/HTTPretty/issues/484)
-# inspired by https://github.com/PyGithub/PyGithub/pull/3102/commits/10a7135a04f71e6101f8b013aded8a662d08fd1f
-if Version(urllib3.__version__) >= Version("2.3.0"):
-    hr_core.fakesock.socket.__getattr__ = lambda self, name: (
-        None
-        if (
-            name == "shutdown"
-            and not (hr_core.httpretty.allow_net_connect or self.truesock)
-        )
-        else hr_core.fakesock.socket.__getattr__(self, name)
-    )
+from .matchers import body_matcher
 
 
 class DesecAPIClient(APIClient):
@@ -151,7 +137,7 @@ class AssertRequestsContextManager:
             test_case: Test case in which this context lives. Used to fail test if observed requests do not meet
             expectations.
             expected_requests: (Possibly nested) list of requests, represented by kwarg-dictionaries for
-            `httpretty.register_uri`.
+            `responses.add`.
             single_expectation_single_request: If True (default), each expected request needs to be matched by exactly
             one observed request.
             expect_order: If True (default), requests made are expected in order of expectations given.
@@ -160,23 +146,24 @@ class AssertRequestsContextManager:
         self.expected_requests = list(self._flatten_nested_lists(expected_requests))
         self.single_expectation_single_request = single_expectation_single_request
         self.expect_order = expect_order
-        self.old_httpretty_entries = None
 
     def __enter__(self):
-        hr_core.POTENTIAL_HTTP_PORTS.add(
-            8081
-        )  # FIXME should depend on self.expected_requests
-        # noinspection PyProtectedMember
-        self.old_httpretty_entries = (
-            httpretty._entries.copy()
-        )  # FIXME accessing private properties of httpretty
+        self.test_case.responses.reset()
         for request in self.expected_requests:
-            httpretty.register_uri(**request)
+            if "callback" in request:
+                self.test_case.responses.add_callback(**request)
+            else:
+                self.test_case.responses.add(**request)
+        # Used in pdns module
+        self._gethostbyname, socket.gethostbyname = (
+            socket.gethostbyname,
+            lambda host: "127.0.0.1",
+        )
 
     @staticmethod
     def _find_matching_request(pattern, requests):
         for request in requests:
-            if pattern["method"] == request[0] and pattern["uri"].match(request[1]):
+            if pattern["method"] == request[0] and pattern["url"].match(request[1]):
                 if pattern.get("payload") and pattern["payload"] not in request[2]:
                     continue
                 return request
@@ -185,14 +172,8 @@ class AssertRequestsContextManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # organize seen requests in a primitive data structure
         seen_requests = [
-            (r.command, "http://%s%s" % (r.headers["Host"], r.path), r.parsed_body)
-            for r in httpretty.latest_requests
+            (r.method, r.url, r.body) for r, _ in self.test_case.responses.calls
         ]
-        httpretty.reset()
-        hr_core.POTENTIAL_HTTP_PORTS.add(
-            8081
-        )  # FIXME should depend on self.expected_requests
-        httpretty._entries = self.old_httpretty_entries
         unmatched_requests = seen_requests[:]
 
         # go through expected requests one by one
@@ -237,14 +218,14 @@ class AssertRequestsContextManager:
                     )
                     % (
                         request["method"],
-                        request["uri"],
+                        request["url"],
                         len(seen_requests),
                         "\n".join(map(str, seen_requests)),
                         "\n".join(
                             map(
                                 str,
                                 [
-                                    (r["method"], r["uri"])
+                                    (r["method"], r["url"])
                                     for r in self.expected_requests
                                 ],
                             )
@@ -268,11 +249,12 @@ class AssertRequestsContextManager:
                     "\n".join(
                         map(
                             str,
-                            [(r["method"], r["uri"]) for r in self.expected_requests],
+                            [(r["method"], r["url"]) for r in self.expected_requests],
                         )
                     ),
                 )
             )
+        socket.gethostbyname = self._gethostbyname
 
 
 class MockPDNSTestCase(APITestCase):
@@ -282,9 +264,6 @@ class MockPDNSTestCase(APITestCase):
 
     By default, requests are intercepted but unexpected will result in a failed test. To set pdns API request
     expectations, use the `with MockPDNSTestCase.assertPdns*` context managers.
-
-    Subclasses may not touch httpretty.enable() or httpretty.disable(). For 'local' usage, httpretty.register_uri()
-    and httpretty.reset() may be used.
     """
 
     PDNS_ZONES = r"/zones\?rrsets=false"
@@ -345,14 +324,13 @@ class MockPDNSTestCase(APITestCase):
             return [x.rstrip(".") + "." for x in arg]
 
     @classmethod
-    def request_pdns_zone_create(cls, ns, **kwargs):
+    def request_pdns_zone_create(cls, ns, *match):
         return {
             "method": "POST",
-            "uri": cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
+            "url": cls.get_full_pdns_url(cls.PDNS_ZONES, ns=ns),
             "status": 201,
             "body": "",
-            "match_querystring": True,
-            **kwargs,
+            "match": match,
         }
 
     @classmethod
@@ -365,7 +343,7 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_delete(cls, name=None, ns="LORD"):
         return {
             "method": "DELETE",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE, ns=ns, id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -376,7 +354,7 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_update(cls, name=None):
         return {
             "method": "PATCH",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE, id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -389,14 +367,14 @@ class MockPDNSTestCase(APITestCase):
         if updated_rr_sets is None:
             updated_rr_sets = []
 
-        def request_callback(r, _, response_headers):
+        def request_callback(request):
             if not updated_rr_sets:
                 # nothing to assert
-                return [200, response_headers, ""]
+                return [200, {}, ""]
 
-            body = json.loads(r.parsed_body)
-            self.failIf(
-                "rrsets" not in body.keys(),
+            body = json.loads(request.body)
+            self.assertTrue(
+                "rrsets" in body.keys(),
                 "pdns zone update request malformed: did not contain a list of RR sets.",
             )
 
@@ -453,24 +431,24 @@ class MockPDNSTestCase(APITestCase):
                                 name,
                                 expected_name,
                                 exp_type,
-                                request["uri"],
+                                request["url"],
                                 json.dumps(body["rrsets"], indent=4),
                             )
                         )
             finally:
-                return [200, response_headers, ""]
+                return [200, {}, ""]
 
         request = self.request_pdns_zone_update(name)
         request.pop("status")
-        # noinspection PyTypeChecker
-        request["body"] = request_callback
+        request.pop("body")
+        request["callback"] = request_callback
         return request
 
     @classmethod
     def request_pdns_zone_retrieve(cls, name=None):
         return {
             "method": "GET",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE, id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -527,7 +505,7 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_retrieve_zone_export(cls, name=None):
         return {
             "method": "GET",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE_EXPORT, id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -538,7 +516,7 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_retrieve_crypto_keys(cls, name=None):
         return {
             "method": "GET",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE_CRYPTO_KEYS, id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -549,7 +527,7 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_zone_axfr(cls, name=None):
         return {
             "method": "PUT",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE_AXFR, ns="MASTER", id=cls._pdns_zone_id_heuristic(name)
             ),
             "status": 200,
@@ -560,28 +538,27 @@ class MockPDNSTestCase(APITestCase):
     def request_pdns_update_catalog(cls):
         return {
             "method": "PATCH",
-            "uri": cls.get_full_pdns_url(
+            "url": cls.get_full_pdns_url(
                 cls.PDNS_ZONE,
                 ns="MASTER",
                 id=cls._pdns_zone_id_heuristic("catalog.internal"),
             ),
             "status": 204,
             "body": "",
-            "priority": 1,  # avoid collision with DELETE zones/(?P<id>[^/]+)$ (httpretty does not match the method)
         }
 
-    def request_pch_zone_create(self, name, **kwargs):
-        def request_callback(r, _, response_headers):
+    def request_pch_zone_create(self, name):
+        def request_callback(request):
             try:
                 self.assertEqual(
-                    r.parsed_body,
+                    request.body,
                     {"zones": [name]},
-                    f"Expected PCH zone creation request for {name}, but got '{r.parsed_body}'.",
+                    f"Expected PCH zone creation request for {name}, but got '{request.body}'.",
                 )
             finally:
                 return [
                     201,
-                    response_headers,
+                    {},
                     json.dumps(
                         {
                             "status": True,
@@ -593,23 +570,22 @@ class MockPDNSTestCase(APITestCase):
 
         return {
             "method": "POST",
-            "uri": re.compile("^" + settings.PCH_API + self.PCH_ZONE_CREATE),
-            "body": request_callback,
-            **kwargs,
+            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_CREATE),
+            "callback": request_callback,
         }
 
-    def request_pch_zone_delete(self, name, **kwargs):
-        def request_callback(r, _, response_headers):
+    def request_pch_zone_delete(self, name):
+        def request_callback(request):
             try:
                 self.assertEqual(
-                    r.parsed_body,
+                    request.body,
                     {"zones": [name]},
-                    f"Expected PCH zone deletion request for {name}, but got '{r.parsed_body}'.",
+                    f"Expected PCH zone deletion request for {name}, but got '{request.body}'.",
                 )
             finally:
                 return [
                     200,
-                    response_headers,
+                    {},
                     json.dumps(
                         {
                             "status": True,
@@ -621,9 +597,8 @@ class MockPDNSTestCase(APITestCase):
 
         return {
             "method": "DELETE",
-            "uri": re.compile("^" + settings.PCH_API + self.PCH_ZONE_DELETE),
-            "body": request_callback,
-            **kwargs,
+            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_DELETE),
+            "callback": request_callback,
         }
 
     def assertRequests(self, *expected_requests, expect_order=True):
@@ -724,94 +699,30 @@ class MockPDNSTestCase(APITestCase):
         )
         self.assertEqual(len(Token.make_hash(plain).split("$")), 4)
 
-    @classmethod
-    def setUpTestData(cls):
-        httpretty.enable(allow_net_connect=False)
-        httpretty.reset()
-        hr_core.POTENTIAL_HTTP_PORTS.add(
-            8081
-        )  # FIXME static dependency on settings variable
-        for request in [
-            # TODO delete not in this list - is this even needed?
-            cls.request_pdns_zone_create(ns="LORD"),
-            cls.request_pdns_zone_create(ns="MASTER"),
-            cls.request_pdns_zone_axfr(),
-            cls.request_pdns_zone_update(),
-            cls.request_pdns_zone_retrieve_crypto_keys(),
-            cls.request_pdns_zone_retrieve(),
-        ]:
-            httpretty.register_uri(**request)
-        cls.setUpTestDataWithPdns()
-        httpretty.reset()
-
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        """
-        Override this method to set up test data. During the run of this method, httpretty is configured to accept
-        all pdns API requests.
-        """
-        pass
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        httpretty.disable()
+    def tearDown(self):
+        super().tearDown()
+        try:
+            self.responses.stop()
+        finally:
+            self.responses.reset()
 
     def setUp(self):
-        def request_callback(r, _, response_headers):
-            try:
-                request = json.loads(r.parsed_body)
-            except JSONDecodeError:
-                request = r.parsed_body
-
-            return [
-                599,
-                response_headers,
-                json.dumps(
-                    {
-                        "MockPDNSTestCase": "This response was generated upon an unexpected request.",
-                        "request": request,
-                        "method": str(r.method),
-                        "requestline": str(r.raw_requestline),
-                        "host": str(r.headers["Host"]) if "Host" in r.headers else None,
-                        "headers": {
-                            str(key): str(value) for key, value in r.headers.items()
-                        },
-                    },
-                    indent=4,
-                ),
-            ]
-
         super().setUp()
-        httpretty.reset()
-        hr_core.POTENTIAL_HTTP_PORTS.add(
-            8081
-        )  # FIXME should depend on self.expected_requests
-        for method in [
-            httpretty.GET,
-            httpretty.PUT,
-            httpretty.POST,
-            httpretty.DELETE,
-            httpretty.HEAD,
-            httpretty.PATCH,
-            httpretty.OPTIONS,
-            httpretty.CONNECT,
+        self.responses = responses.RequestsMock(assert_all_requests_are_fired=False)
+        self.responses.start()
+        for request in [
+            # TODO delete not in this list - is this even needed?
+            self.request_pdns_zone_create(ns="LORD"),
+            self.request_pdns_zone_create(ns="MASTER"),
+            self.request_pdns_zone_axfr(),
+            self.request_pdns_zone_update(),
+            self.request_pdns_zone_retrieve_crypto_keys(),
+            self.request_pdns_zone_retrieve(),
         ]:
-            for ns in ["LORD", "MASTER"]:
-                httpretty.register_uri(
-                    method,
-                    self.get_full_pdns_url(".*", ns),
-                    body=request_callback,
-                    status=599,
-                    priority=-100,
-                )
-            httpretty.register_uri(
-                method,
-                re.compile("^" + settings.PCH_API + ".*"),
-                body=request_callback,
-                status=599,
-                priority=-100,
-            )
+            if "callback" in request:
+                self.responses.add_callback(**request)
+            else:
+                self.responses.add(**request)
 
 
 class DesecTestCase(MockPDNSTestCase):
@@ -890,15 +801,14 @@ class DesecTestCase(MockPDNSTestCase):
     def reverse(cls, view_name, **kwargs):
         return reverse(view_name, kwargs=kwargs)
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
+    def setUp(self):
+        super().setUp()
         random.seed(0xDE5EC)
-        cls.admin = cls.create_user(is_admin=True)
-        cls.auto_delegation_domains = [
-            cls.create_domain(name=name) for name in cls.AUTO_DELEGATION_DOMAINS
+        self.admin = self.create_user(is_admin=True)
+        self.auto_delegation_domains = [
+            self.create_domain(name=name) for name in self.AUTO_DELEGATION_DOMAINS
         ]
-        cls.user = cls.create_user()
+        self.user = self.create_user()
 
     @classmethod
     def random_string(cls, length=6, chars=string.ascii_letters + string.digits):
@@ -1007,7 +917,7 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_domain_creation(self, name=None, axfr=True, keys=True):
         soa_content = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
         requests = [
-            self.request_pdns_zone_create(ns="LORD", payload=soa_content),
+            self.request_pdns_zone_create("LORD", body_matcher(soa_content)),
             self.request_pdns_zone_create(ns="MASTER"),
             self.request_pdns_update_catalog(),
             self.request_pch_zone_create(name=name),
@@ -1278,40 +1188,38 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
     other_domain = None
     token = None
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
+    def setUpPdns(self):
+        self.owner = self.create_user()
 
-        cls.owner = cls.create_user()
-
-        domain_kwargs = {"suffix": cls.AUTO_DELEGATION_DOMAINS if cls.DYN else None}
-        if cls.DYN:
+        domain_kwargs = {"suffix": self.AUTO_DELEGATION_DOMAINS if self.DYN else None}
+        if self.DYN:
             domain_kwargs["minimum_ttl"] = 60
-        cls.my_domains = [
-            cls.create_domain(owner=cls.owner, **domain_kwargs)
-            for _ in range(cls.NUM_OWNED_DOMAINS)
+        self.my_domains = [
+            self.create_domain(owner=self.owner, **domain_kwargs)
+            for _ in range(self.NUM_OWNED_DOMAINS)
         ]
-        cls.other_domains = [
-            cls.create_domain(**domain_kwargs) for _ in range(cls.NUM_OTHER_DOMAINS)
+        self.other_domains = [
+            self.create_domain(**domain_kwargs) for _ in range(self.NUM_OTHER_DOMAINS)
         ]
 
-        if cls.DYN:
-            for domain in cls.my_domains + cls.other_domains:
+        if self.DYN:
+            for domain in self.my_domains + self.other_domains:
                 parent_domain = Domain.objects.get(name=domain.parent_domain_name)
                 parent_domain.update_delegation(domain)
 
-        cls.my_domain = cls.my_domains[0]
-        cls.other_domain = cls.other_domains[0]
+        self.my_domain = self.my_domains[0]
+        self.other_domain = self.other_domains[0]
 
-        cls.create_rr_set(cls.my_domain, ["127.0.0.1", "3.2.2.3"], type="A", ttl=123)
-        cls.create_rr_set(cls.other_domain, ["40.1.1.1"], type="A", ttl=456)
+        self.create_rr_set(self.my_domain, ["127.0.0.1", "3.2.2.3"], type="A", ttl=123)
+        self.create_rr_set(self.other_domain, ["40.1.1.1"], type="A", ttl=456)
 
-        cls.token = cls.create_token(
-            owner=cls.owner, perm_create_domain=True, perm_delete_domain=True
+        self.token = self.create_token(
+            owner=self.owner, perm_create_domain=True, perm_delete_domain=True
         )
 
     def setUp(self):
         super().setUp()
+        self.setUpPdns()
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
         self.setUpMockPatch()
 
@@ -1427,15 +1335,14 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
             ]
         return rr_sets
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
+    def setUp(self):
+        super().setUp()
         # TODO this test does not cover "dyn" / auto delegation domains
-        cls.my_empty_domain = cls.create_domain(suffix="", owner=cls.owner)
-        cls.my_rr_set_domain = cls.create_domain(suffix="", owner=cls.owner)
-        cls.other_rr_set_domain = cls.create_domain(suffix="")
-        for domain in [cls.my_rr_set_domain, cls.other_rr_set_domain]:
-            for subname, type_, records, ttl in cls._test_rr_sets():
-                cls.create_rr_set(
+        self.my_empty_domain = self.create_domain(suffix="", owner=self.owner)
+        self.my_rr_set_domain = self.create_domain(suffix="", owner=self.owner)
+        self.other_rr_set_domain = self.create_domain(suffix="")
+        for domain in [self.my_rr_set_domain, self.other_rr_set_domain]:
+            for subname, type_, records, ttl in self._test_rr_sets():
+                self.create_rr_set(
                     domain, subname=subname, type=type_, records=records, ttl=ttl
                 )

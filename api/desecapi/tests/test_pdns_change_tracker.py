@@ -10,17 +10,16 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
     simple_domain = None
     full_domain = None
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
-        cls.empty_domain = Domain.objects.create(
-            owner=cls.user, name=cls.random_domain_name()
+    def setUp(self):
+        super().setUp()
+        self.empty_domain = Domain.objects.create(
+            owner=self.user, name=self.random_domain_name()
         )
-        cls.simple_domain = Domain.objects.create(
-            owner=cls.user, name=cls.random_domain_name()
+        self.simple_domain = Domain.objects.create(
+            owner=self.user, name=self.random_domain_name()
         )
-        cls.full_domain = Domain.objects.create(
-            owner=cls.user, name=cls.random_domain_name()
+        self.full_domain = Domain.objects.create(
+            owner=self.user, name=self.random_domain_name()
         )
 
     def assertPdnsZoneUpdate(self, name, rr_sets):
@@ -52,20 +51,21 @@ class RRTestCase(PdnsChangeTrackerTestCase):
     CONTENT_VALUES = ["2.130.250.238", "170.95.95.252", "128.238.1.5"]
     ALT_CONTENT_VALUES = ["190.169.34.46", "216.228.24.25", "151.138.61.173"]
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
+    def setUp(self):
+        super().setUp()
 
-        rr_set_data = dict(subname=cls.SUBNAME, type=cls.TYPE, ttl=cls.TTL)
-        cls.empty_rr_set = RRset.objects.create(domain=cls.empty_domain, **rr_set_data)
-        cls.simple_rr_set = RRset.objects.create(
-            domain=cls.simple_domain, **rr_set_data
+        rr_set_data = dict(subname=self.SUBNAME, type=self.TYPE, ttl=self.TTL)
+        self.empty_rr_set = RRset.objects.create(
+            domain=self.empty_domain, **rr_set_data
         )
-        cls.full_rr_set = RRset.objects.create(domain=cls.full_domain, **rr_set_data)
+        self.simple_rr_set = RRset.objects.create(
+            domain=self.simple_domain, **rr_set_data
+        )
+        self.full_rr_set = RRset.objects.create(domain=self.full_domain, **rr_set_data)
 
-        RR.objects.create(rrset=cls.simple_rr_set, content=cls.CONTENT_VALUES[0])
-        for content in cls.CONTENT_VALUES:
-            RR.objects.create(rrset=cls.full_rr_set, content=content)
+        RR.objects.create(rrset=self.simple_rr_set, content=self.CONTENT_VALUES[0])
+        for content in self.CONTENT_VALUES:
+            RR.objects.create(rrset=self.full_rr_set, content=content)
 
     def assertPdnsEmptyRRSetUpdate(self):
         return self.assertPdnsZoneUpdate(self.empty_domain.name, [self.empty_rr_set])
@@ -371,10 +371,9 @@ class RRSetTestCase(PdnsChangeTrackerTestCase):
                 rr.save()
         return rr_sets, rrs
 
-    @classmethod
-    def setUpTestDataWithPdns(cls):
-        super().setUpTestDataWithPdns()
-        cls.rr_sets, cls.rrs = cls._create_rr_sets(cls.TEST_DATA, cls.full_domain)
+    def setUp(self):
+        super().setUp()
+        self.rr_sets, self.rrs = self._create_rr_sets(self.TEST_DATA, self.full_domain)
 
     def test_empty_domain_create_single_empty(self):
         with PDNSChangeTracker():
