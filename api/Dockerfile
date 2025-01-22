@@ -1,5 +1,4 @@
-# wait for https://github.com/gabrielfalcao/HTTPretty/issues/474 before bumping
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
 COPY --from=trajano/alpine-libfaketime /faketime.so /lib/libfaketime.so
 RUN mkdir -p /etc/faketime
