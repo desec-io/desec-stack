@@ -1,7 +1,6 @@
 # python virtualenv and test files
 .env
 api/venv
-api/desecapi.sqlite
 
 # IDE files
 .idea

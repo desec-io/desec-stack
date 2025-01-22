@@ -4,7 +4,7 @@ FROM python:3.11-alpine
 COPY --from=trajano/alpine-libfaketime /faketime.so /lib/libfaketime.so
 RUN mkdir -p /etc/faketime
 
-RUN apk add --no-cache bash dcron postgresql-client sqlite
+RUN apk add --no-cache bash dcron postgresql-client
 
 RUN mkdir /usr/src/app
 WORKDIR /usr/src/app

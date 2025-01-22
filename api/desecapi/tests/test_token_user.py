@@ -461,8 +461,3 @@ class TokenDomainTestCase(DomainOwnerTestCase):
         with self.assertRequests(self.requests_desec_domain_deletion(domain2)):
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
-
-    def test_domain_lifecycle(self):
-        self.client.credentials(
-            HTTP_AUTHORIZATION="Token " + self.owner.token_with_override.plain
-        )

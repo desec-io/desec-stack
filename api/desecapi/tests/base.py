@@ -13,7 +13,6 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core import mail
-from django.db import connection
 from httpretty import httpretty, core as hr_core
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -125,27 +124,6 @@ class DesecAPIClient(APIClient):
     # TODO add and use {post,get,delete,...}_domain
 
 
-class SQLiteReadUncommitted:
-    def __init__(self):
-        self.read_uncommitted = None
-
-    def __enter__(self):
-        with connection.cursor() as cursor:
-            cursor.execute("PRAGMA read_uncommitted;")
-            self.read_uncommitted = True if cursor.fetchone()[0] else False
-            cursor.execute("PRAGMA read_uncommitted = true;")
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.read_uncommitted is None:
-            return
-
-        with connection.cursor() as cursor:
-            if self.read_uncommitted:
-                cursor.execute("PRAGMA read_uncommitted = true;")
-            else:
-                cursor.execute("PRAGMA read_uncommitted = false;")
-
-
 class AssertRequestsContextManager:
     """
     Checks that in its context, certain expected requests are made.
@@ -165,7 +143,6 @@ class AssertRequestsContextManager:
         expected_requests,
         single_expectation_single_request=True,
         expect_order=True,
-        exit_hook=None,
     ):
         """
         Initialize a context that checks for made HTTP requests.
@@ -184,7 +161,6 @@ class AssertRequestsContextManager:
         self.single_expectation_single_request = single_expectation_single_request
         self.expect_order = expect_order
         self.old_httpretty_entries = None
-        self.exit_hook = exit_hook
 
     def __enter__(self):
         hr_core.POTENTIAL_HTTP_PORTS.add(
@@ -207,10 +183,6 @@ class AssertRequestsContextManager:
         return None
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # call exit hook
-        if callable(self.exit_hook):
-            self.exit_hook()
-
         # organize seen requests in a primitive data structure
         seen_requests = [
             (r.command, "http://%s%s" % (r.headers["Host"], r.path), r.parsed_body)
@@ -383,30 +355,6 @@ class MockPDNSTestCase(APITestCase):
             **kwargs,
         }
 
-    def request_pdns_zone_create_assert_name(self, ns, name):
-        def request_callback(r, _, response_headers):
-            body = json.loads(r.parsed_body)
-            self.failIf(
-                "name" not in body.keys(),
-                "pdns domain creation request malformed: did not contain a domain name.",
-            )
-
-            try:  # if an assertion fails, an exception is raised. We want to send a reply anyway!
-                self.assertEqual(
-                    name,
-                    body["name"],
-                    "Expected to see a domain creation request with name %s, "
-                    "but name %s was sent." % (name, body["name"]),
-                )
-            finally:
-                return [201, response_headers, ""]
-
-        request = self.request_pdns_zone_create(ns)
-        request.pop("status")
-        # noinspection PyTypeChecker
-        request["body"] = request_callback
-        return request
-
     @classmethod
     def request_pdns_zone_create_422(cls):
         request = cls.request_pdns_zone_create(ns="LORD")
@@ -453,67 +401,62 @@ class MockPDNSTestCase(APITestCase):
             )
 
             try:  # if an assertion fails, an exception is raised. We want to send a reply anyway!
-                with SQLiteReadUncommitted():  # tests are wrapped in uncommitted transactions, so we need to see inside
-                    # convert updated_rr_sets into a plain data type, if Django models were given
-                    if isinstance(updated_rr_sets, list):
-                        updated_rr_sets_dict = {}
-                        for rr_set in updated_rr_sets:
-                            updated_rr_sets_dict[
-                                (rr_set.type, rr_set.subname, rr_set.ttl)
-                            ] = rrs = []
-                            for rr in rr_set.records.all():
-                                rrs.append(rr.content)
-                    elif isinstance(updated_rr_sets, dict):
-                        updated_rr_sets_dict = updated_rr_sets
-                    else:
-                        raise ValueError(
-                            "updated_rr_sets must be a list of RRSets or a dict."
-                        )
-
-                    # check expectations
-                    self.assertEqual(
-                        len(updated_rr_sets_dict),
-                        len(body["rrsets"]),
-                        "Saw an unexpected number of RR set updates: expected %i, intercepted %i."
-                        % (len(updated_rr_sets_dict), len(body["rrsets"])),
+                # convert updated_rr_sets into a plain data type, if Django models were given
+                if isinstance(updated_rr_sets, list):
+                    updated_rr_sets_dict = {}
+                    for rr_set in updated_rr_sets:
+                        updated_rr_sets_dict[
+                            (rr_set.type, rr_set.subname, rr_set.ttl)
+                        ] = rrs = []
+                        for rr in rr_set.records.all():
+                            rrs.append(rr.content)
+                elif isinstance(updated_rr_sets, dict):
+                    updated_rr_sets_dict = updated_rr_sets
+                else:
+                    raise ValueError(
+                        "updated_rr_sets must be a list of RRSets or a dict."
                     )
-                    for (
-                        exp_type,
-                        exp_subname,
-                        exp_ttl,
-                    ), exp_records in updated_rr_sets_dict.items():
-                        expected_name = (
-                            ".".join(filter(None, [exp_subname, name])) + "."
-                        )
-                        for seen_rr_set in body["rrsets"]:
-                            if (
-                                expected_name == seen_rr_set["name"]
-                                and exp_type == seen_rr_set["type"]
-                            ):
-                                # TODO replace the following asserts by assertTTL, assertRecords, ... or similar
-                                if len(exp_records):
-                                    self.assertEqual(exp_ttl, seen_rr_set["ttl"])
-                                self.assertEqual(
-                                    set(exp_records),
-                                    set(
-                                        [rr["content"] for rr in seen_rr_set["records"]]
-                                    ),
-                                )
-                                break
-                        else:
-                            # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
-                            self.fail(
-                                "Expected to see an pdns zone update request for RR set of domain `%s` with name "
-                                "`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:"
-                                "\n\n%s"
-                                % (
-                                    name,
-                                    expected_name,
-                                    exp_type,
-                                    request["uri"],
-                                    json.dumps(body["rrsets"], indent=4),
-                                )
+
+                # check expectations
+                self.assertEqual(
+                    len(updated_rr_sets_dict),
+                    len(body["rrsets"]),
+                    "Saw an unexpected number of RR set updates: expected %i, intercepted %i."
+                    % (len(updated_rr_sets_dict), len(body["rrsets"])),
+                )
+                for (
+                    exp_type,
+                    exp_subname,
+                    exp_ttl,
+                ), exp_records in updated_rr_sets_dict.items():
+                    expected_name = ".".join(filter(None, [exp_subname, name])) + "."
+                    for seen_rr_set in body["rrsets"]:
+                        if (
+                            expected_name == seen_rr_set["name"]
+                            and exp_type == seen_rr_set["type"]
+                        ):
+                            # TODO replace the following asserts by assertTTL, assertRecords, ... or similar
+                            if len(exp_records):
+                                self.assertEqual(exp_ttl, seen_rr_set["ttl"])
+                            self.assertEqual(
+                                set(exp_records),
+                                set([rr["content"] for rr in seen_rr_set["records"]]),
                             )
+                            break
+                    else:
+                        # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
+                        self.fail(
+                            "Expected to see an pdns zone update request for RR set of domain `%s` with name "
+                            "`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:"
+                            "\n\n%s"
+                            % (
+                                name,
+                                expected_name,
+                                exp_type,
+                                request["uri"],
+                                json.dumps(body["rrsets"], indent=4),
+                            )
+                        )
             finally:
                 return [200, response_headers, ""]
 
@@ -683,20 +626,18 @@ class MockPDNSTestCase(APITestCase):
             **kwargs,
         }
 
-    def assertRequests(self, *expected_requests, expect_order=True, exit_hook=None):
+    def assertRequests(self, *expected_requests, expect_order=True):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
         Unmet expectations will fail the test.
         Args:
             *expected_requests: List of expected requests.
             expect_order: If True (default), the order of observed requests is checked.
-            exit_hook: If given a callable, it is called when the context manager exits.
         """
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=expected_requests,
             expect_order=expect_order,
-            exit_hook=exit_hook,
         )
 
     def assertNoRequestsBut(self, *expected_requests):
