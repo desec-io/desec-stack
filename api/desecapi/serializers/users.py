@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from desecapi.models import User, validate_domain_name
+from desecapi.models import TokenDomainPolicy, User, validate_domain_name
 
 from .captcha import CaptchaSolutionSerializer
 from .domains import DomainSerializer
@@ -30,10 +30,13 @@ class ResetPasswordSerializer(EmailSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    domains_under_management = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
             "created",
+            "domains_under_management",
             "email",
             "id",
             "limit_domains",
@@ -41,9 +44,20 @@ class UserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "created",
+            "domains_under_management",
             "email",
             "id",
             "limit_domains",
+        )
+
+    def get_domains_under_management(self, obj):
+        return obj.domains.count() + (
+            TokenDomainPolicy.objects.filter(token__owner=obj)
+            .exclude(token__user_override=None)
+            .exclude(domain=None)
+            .values("domain")
+            .distinct()
+            .count()
         )
 
     def validate_password(self, value):

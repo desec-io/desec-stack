@@ -873,7 +873,14 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data.keys(),
-            {"created", "email", "id", "limit_domains", "outreach_preference"},
+            {
+                "created",
+                "domains_under_management",
+                "email",
+                "id",
+                "limit_domains",
+                "outreach_preference",
+            },
         )
         self.assertEqual(response.data["email"], self.email)
         self.assertEqual(

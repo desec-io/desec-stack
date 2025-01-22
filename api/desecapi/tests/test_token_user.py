@@ -370,9 +370,27 @@ class TokenDomainTestCase(DomainOwnerTestCase):
         )
 
     def test_domain_permissions(self):
+        def assertDomainsUnderManagement(n):
+            url = self.reverse("v1:account")
+            _credentials = self.client._credentials
+            self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
+            response = self.client.get(url)
+            if n is None:
+                self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertEqual(response.data["domains_under_management"], n)
+            self.client.credentials(**_credentials)
+
         # self.owner has two domains
+        assertDomainsUnderManagement(None)
+        self.token.perm_manage_tokens = True
+        self.token.save()
+        assertDomainsUnderManagement(2)
+
         # Create one regular domain in self.user, and one through the override token
         domain1 = self.create_domain(owner=self.user)
+        assertDomainsUnderManagement(2)
 
         self.client.credentials(
             HTTP_AUTHORIZATION="Token " + self.owner.token_with_override.plain
@@ -387,6 +405,7 @@ class TokenDomainTestCase(DomainOwnerTestCase):
             {domain1.name, name},
         )
         domain2 = Domain.objects.get(name=name)
+        assertDomainsUnderManagement(3)
 
         # Cannot see/delete other domain because token has policies
         response = self.client.get(url)
@@ -443,6 +462,7 @@ class TokenDomainTestCase(DomainOwnerTestCase):
             set(domain["name"] for domain in response.data),
             {domain1.name, name},
         )
+        assertDomainsUnderManagement(4)
 
         # Can see other domain when policies are removed
         self.owner.token_with_override.auto_policy = False
@@ -455,9 +475,11 @@ class TokenDomainTestCase(DomainOwnerTestCase):
             set(domain["name"] for domain in response.data),
             {domain1.name, name},
         )
+        assertDomainsUnderManagement(2)
 
         # Delete domain
         url = self.reverse("v1:domain-detail", name=name)
         with self.assertRequests(self.requests_desec_domain_deletion(domain2)):
             response = self.client.delete(url)
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+        assertDomainsUnderManagement(2)
