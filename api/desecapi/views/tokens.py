@@ -1,4 +1,5 @@
 import django.core.exceptions
+from django.conf import settings
 from django.db.models import Q
 from django.http import Http404
 from rest_framework import status, viewsets
@@ -56,12 +57,13 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
         if user_override:
             http_status = status.HTTP_202_ACCEPTED
             if user_override._state.adding:  # user does not exist
-                user_override = User.objects.create_user(
-                    email=user_override.email,
-                    password=None,
-                    is_active=None,
+                account_serializer = serializers.RegisterAccountSerializer(
+                    data={"email": user_override.email, "password": None}
+                )
+                account_serializer.is_valid(raise_exception=True)
+                user_override = account_serializer.save(
+                    is_active=None if settings.USER_ACTIVATION_REQUIRED else True,
                     limit_domains=15,
-                    needs_captcha=True,
                     outreach_preference=False,
                 )
                 serializers.AuthenticatedActivateUserWithOverrideTokenActionSerializer.build_and_save(

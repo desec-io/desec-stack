@@ -741,6 +741,12 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         token = self.create_token(owner=self.create_user(), perm_manage_tokens=True)
         self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
 
+        response = self.client.post(
+            reverse("v1:token-list"), {"user_override": "invalid.email"}
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["email"][0], "Enter a valid email address.")
+
         for outreach_preference in [True, False]:
             data = {"outreach_preference": outreach_preference}
             email = self.random_username()
