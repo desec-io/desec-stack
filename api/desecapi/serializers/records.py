@@ -508,13 +508,27 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return attrs
 
     def validate(self, attrs):
-        if "records" in attrs:
-            # on the RRsetDetail endpoint, the type is not in attrs
-            type_ = attrs.get("type") or self.instance.type
+        # on the RRsetDetail endpoint, the type is not in attrs
+        type_ = attrs.get("type") or self.instance.type
 
+        if "records" in attrs:
             attrs = self._validate_canonical_presentation(attrs, type_)
             attrs = self._validate_length(attrs)
             attrs = self._validate_blocked_content(attrs, type_)
+
+        # Disallow modification of NS RRsets for locally registrable domains
+        # Deletion using records=[] is allowed, except at the apex
+        if (
+            type_ == "NS"
+            and self.domain.is_locally_registrable
+            and (
+                attrs.get("records", True)
+                or not attrs.get("subname", self.instance.subname)
+            )
+        ):
+            raise serializers.ValidationError(
+                {"type": ["Cannot modify NS records for this domain."]}
+            )
 
         return attrs
 

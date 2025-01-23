@@ -959,6 +959,12 @@ class DesecTestCase(MockPDNSTestCase):
             cls.request_pdns_zone_axfr(name=name),
         ]
 
+    def assertBadRequest(self, response, message, path=()):
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            reduce(lambda obj, key: obj.__getitem__(key), path, response.data), message
+        )
+
     def assertRRSet(
         self, response_rr, domain=None, subname=None, records=None, type_=None, **kwargs
     ):
@@ -1337,9 +1343,9 @@ class AuthenticatedRRSetBaseTestCase(DomainOwnerTestCase):
 
     def setUp(self):
         super().setUp()
-        # TODO this test does not cover "dyn" / auto delegation domains
-        self.my_empty_domain = self.create_domain(suffix="", owner=self.owner)
-        self.my_rr_set_domain = self.create_domain(suffix="", owner=self.owner)
+        suffix = self.AUTO_DELEGATION_DOMAINS if self.DYN else None
+        self.my_empty_domain = self.create_domain(owner=self.owner, suffix=suffix)
+        self.my_rr_set_domain = self.create_domain(owner=self.owner, suffix=suffix)
         self.other_rr_set_domain = self.create_domain(suffix="")
         for domain in [self.my_rr_set_domain, self.other_rr_set_domain]:
             for subname, type_, records, ttl in self._test_rr_sets():

@@ -1,6 +1,6 @@
 from django.http import Http404
 from rest_framework import generics
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 
 from desecapi import models, permissions
@@ -99,6 +99,10 @@ class RRsetDetail(
         return response
 
     def perform_destroy(self, instance):
+        # Disallow modification of apex NS RRset for locally registrable domains
+        if instance.type == "NS" and self.domain.is_locally_registrable:
+            if instance.subname == "":
+                raise ValidationError("Cannot modify NS records for this domain.")
         with PDNSChangeTracker():
             super().perform_destroy(instance)
 

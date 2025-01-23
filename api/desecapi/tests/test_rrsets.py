@@ -1,6 +1,6 @@
+import re
 from contextlib import nullcontext
 from ipaddress import IPv4Network
-import re
 from itertools import product
 from math import ceil, floor
 
@@ -1625,6 +1625,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
     DYN = True
 
+    ns_data = {"type": "NS", "records": ["ns.example."], "ttl": 3600}
+
     def test_create_my_rr_sets_ip_block(self):
         BlockedSubnet.from_ip("3.2.2.3").save()
         response = self.client.post_rr_set(
@@ -1636,3 +1638,131 @@ class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
         )
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertIn("IP address 3.2.2.5 not allowed.", str(response.data))
+
+    def test_create_ns_rrset(self):
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            with self.assertNoRequestsBut():
+                self.assertBadRequest(
+                    self.client.post_rr_set(
+                        domain_name=self.my_empty_domain.name, **data
+                    ),
+                    "Cannot modify NS records for this domain.",
+                    ("type", 0),
+                )
+
+    def test_update_ns_rrset(self):
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            self.create_rr_set(
+                self.my_domain,
+                settings.DEFAULT_NS,
+                subname=subname,
+                type="NS",
+                ttl=3600,
+            )
+            for method in (self.client.patch_rr_set, self.client.put_rr_set):
+                with self.assertNoRequestsBut():
+                    self.assertBadRequest(
+                        method(self.my_domain.name, subname, "NS", data),
+                        "Cannot modify NS records for this domain.",
+                        ("type", 0),
+                    )
+
+    def test_delete_ns_rrset_apex(self):
+        data = dict(self.ns_data, records=[], subname="")
+        self.create_rr_set(
+            self.my_domain, settings.DEFAULT_NS, subname="", type="NS", ttl=3600
+        )
+        for method in (self.client.patch_rr_set, self.client.put_rr_set):
+            with self.assertNoRequestsBut():
+                self.assertBadRequest(
+                    method(self.my_domain.name, "", "NS", data),
+                    "Cannot modify NS records for this domain.",
+                    ("type", 0),
+                )
+        with self.assertNoRequestsBut():
+            response = self.client.delete_rr_set(self.my_domain.name, "", "NS")
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_ns_rrset_nonapex(self):
+        data = dict(self.ns_data, subname="sub", records=[])
+        for method in (self.client.patch_rr_set, self.client.put_rr_set):
+            self.create_rr_set(
+                self.my_domain, settings.DEFAULT_NS, subname="sub", type="NS", ttl=3600
+            )
+            with self.assertRequests(
+                self.requests_desec_rr_sets_update(name=self.my_domain.name)
+            ):
+                response = method(self.my_domain.name, "sub", "NS", data)
+                self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+        self.create_rr_set(
+            self.my_domain, settings.DEFAULT_NS, subname="sub", type="NS", ttl=3600
+        )
+        with self.assertRequests(
+            self.requests_desec_rr_sets_update(name=self.my_domain.name)
+        ):
+            response = self.client.delete_rr_set(self.my_domain.name, "sub", "NS")
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+
+    def test_bulk_create_ns_rrset(self):
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            for method in (
+                self.client.bulk_post_rr_sets,
+                self.client.bulk_patch_rr_sets,
+                self.client.bulk_put_rr_sets,
+            ):
+                with self.assertNoRequestsBut():
+                    self.assertBadRequest(
+                        method(self.my_empty_domain.name, [data]),
+                        "Cannot modify NS records for this domain.",
+                        (0, "type", 0),
+                    )
+
+    def test_bulk_update_ns_rrset(self):
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            self.create_rr_set(
+                self.my_domain,
+                settings.DEFAULT_NS,
+                subname=subname,
+                type="NS",
+                ttl=3600,
+            )
+            for method in (
+                self.client.bulk_patch_rr_sets,
+                self.client.bulk_put_rr_sets,
+            ):
+                with self.assertNoRequestsBut():
+                    self.assertBadRequest(
+                        method(self.my_domain.name, [data]),
+                        "Cannot modify NS records for this domain.",
+                        (0, "type", 0),
+                    )
+
+    def test_bulk_delete_ns_rrset_apex(self):
+        data = dict(self.ns_data, subname="", records=[])
+        self.create_rr_set(
+            self.my_domain, settings.DEFAULT_NS, subname="", type="NS", ttl=3600
+        )
+        for method in (self.client.bulk_patch_rr_sets, self.client.bulk_put_rr_sets):
+            with self.assertNoRequestsBut():
+                self.assertBadRequest(
+                    method(self.my_domain.name, [data]),
+                    "Cannot modify NS records for this domain.",
+                    (0, "type", 0),
+                )
+
+    def test_bulk_delete_ns_rrset_nonapex(self):
+        data = dict(self.ns_data, subname="sub", records=[])
+        for method in (self.client.bulk_patch_rr_sets, self.client.bulk_put_rr_sets):
+            self.create_rr_set(
+                self.my_domain, settings.DEFAULT_NS, subname="sub", type="NS", ttl=3600
+            )
+            with self.assertRequests(
+                self.requests_desec_rr_sets_update(name=self.my_domain.name)
+            ):
+                response = method(self.my_domain.name, [data])
+                self.assertStatus(response, status.HTTP_200_OK)
+                self.assertEqual(response.data, [])
