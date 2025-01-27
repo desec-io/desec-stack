@@ -50,13 +50,8 @@
                       persistent-hint
                       :prepend-icon="mdiDns"
               >
-                <v-alert type="info">
-                  dynDNS registrations are suspended at this time.
-                  <strong>We do <i>not</i> process requests for exceptions.</strong><br/>
-                  <small>Please do not contact support about this. You will have to register a domain elsewhere.</small>
-                </v-alert>
-                <v-radio label="Configure your own domain (Managed DNS)." value="custom" tabindex="2"></v-radio>
-                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" disabled="disabled" value="dynDNS" tabindex="2"></v-radio>
+                <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
+                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
                 <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
               </v-radio-group>
 

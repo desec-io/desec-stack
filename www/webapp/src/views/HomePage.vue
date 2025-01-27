@@ -28,7 +28,7 @@
                             @change="$router.push({query: {domainType: domainType}})"
                     >
                       <v-radio class="pb-2" label="Managed DNS account" value="custom"></v-radio>
-                      <v-radio class="pb-2" disabled="disabled" label="dynDNS account" value="dynDNS"></v-radio>
+                      <v-radio class="pb-2" label="dynDNS account" value="dynDNS"></v-radio>
                     </v-radio-group>
                   </div>
                   <v-text-field
