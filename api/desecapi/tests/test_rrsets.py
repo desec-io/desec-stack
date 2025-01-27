@@ -1236,6 +1236,22 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
+    def test_update_my_rr_sets_missing_subname(self):
+        for subname in ["", "test"]:
+            with self.assertNoRequestsBut():
+                data = {
+                    "records": ["127.0.0.1"],
+                    "ttl": 3630,
+                    "type": "A",
+                }
+                self.assertBadRequest(
+                    self.client.put_rr_set(
+                        self.my_rr_set_domain.name, subname, "A", data
+                    ),
+                    "This field is required.",
+                    ("subname", 0),
+                )
+
     def test_update_my_rr_sets_wrong_subname(self):
         for s1, s2 in [("", "test"), ("test", "")]:
             with self.assertNoRequestsBut():

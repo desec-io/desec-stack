@@ -81,7 +81,8 @@ class NonBulkOnlyDefault:
 
     def __call__(self, serializer_field):
         is_many = getattr(serializer_field.root, "many", False)
-        if is_many:
+        partial = getattr(serializer_field.root, "partial", False)
+        if is_many or (serializer_field.root.instance and not partial):
             serializer_field.fail("required")
         if callable(self.default):
             if getattr(self.default, "requires_context", False):
