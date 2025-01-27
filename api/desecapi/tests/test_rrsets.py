@@ -1236,6 +1236,21 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
+    def test_update_my_rr_sets_wrong_subname(self):
+        for s1, s2 in [("", "test"), ("test", "")]:
+            with self.assertNoRequestsBut():
+                data = {
+                    "records": ["127.0.0.1"],
+                    "ttl": 3630,
+                    "type": "A",
+                    "subname": s1,
+                }
+                self.assertBadRequest(
+                    self.client.put_rr_set(self.my_rr_set_domain.name, s2, "A", data),
+                    "Can only be written on create.",
+                    ("subname", 0),
+                )
+
     def test_update_my_rr_set_with_invalid_payload_type(self):
         for subname in self.SUBNAMES:
             data = [

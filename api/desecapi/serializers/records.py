@@ -392,7 +392,6 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def get_fields(self):
         fields = super().get_fields()
-        fields["subname"].validators.append(validators.ReadOnlyOnUpdateValidator())
         fields["type"].validators.append(validators.ReadOnlyOnUpdateValidator())
         fields["ttl"].validators.append(MinValueValidator(limit_value=self.minimum_ttl))
         return fields
@@ -447,6 +446,13 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         return value
 
     def validate_subname(self, value):
+        # Needs to live here (instead of .subname.validators) because `allow_blank`
+        # prevents validators from running on subname="" (but this method here runs!)
+        if self.instance and value != self.instance.subname:
+            raise serializers.ValidationError(
+                validators.ReadOnlyOnUpdateValidator.message, code="read-only-on-update"
+            )
+
         try:
             dns.name.from_text(value, dns.name.from_text(self.domain.name))
         except dns.name.NameTooLong:
