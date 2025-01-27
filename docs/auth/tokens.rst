@@ -503,6 +503,8 @@ During deletion of tokens, users, or domains, policies are cleaned up
 automatically.
 
 
+.. _`user-override`:
+
 User Override
 `````````````
 One user can authorize another such that the latter can use their token to

@@ -206,6 +206,7 @@ A JSON object representing your user account will be returned::
 
     {
         "created": "2019-10-16T18:09:17.715702Z",
+        "domains_under_management": 3,
         "email": "youremailaddress@example.com",
         "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
         "limit_domains": 15,
@@ -218,6 +219,13 @@ Field details:
     :Access mode: read-only
 
     Registration timestamp.
+
+``domains_under_management``
+    :Access mode: read-only
+
+    Number of domains this user can manage, including domains listed in
+    :ref:`token scoping policies` of :ref:`user-override` tokens owned by this
+    account.
 
 ``email``
     :Access mode: read-only
