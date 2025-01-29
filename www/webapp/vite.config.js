@@ -10,6 +10,15 @@ export default defineConfig({
     define: {
         'process.env.BUILD': '"web"' // fix for vuelidate@0.7.7
     },
+    css: {
+        preprocessorOptions: {
+            sass: {
+                api: 'modern-compiler',
+                /** @type {import('sass').Options.silenceDeprecations } */
+                silenceDeprecations: ['global-builtin', 'import', 'slash-div'],
+            },
+        },
+    },
     plugins: [
         vue({
             template: {
