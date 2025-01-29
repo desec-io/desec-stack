@@ -9,6 +9,7 @@ location /api/ {
     etag off;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     include uwsgi_params;
+    uwsgi_param HTTP_HOST $host;
     uwsgi_pass desecapi;
 
     location /api/v1/serials/ {
