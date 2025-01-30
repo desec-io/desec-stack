@@ -6,7 +6,7 @@ then
     export PROD_ONLY='#'
 fi
 
-for file in /etc/nginx/sites-available/*.var /etc/nginx/conf.d/*.var; do
+for file in /etc/nginx/sites-available/*.var; do
     # we only replace occurrences of the variables specified below as first argument
     (envsubst '$DESECSTACK_IPV4_REAR_PREFIX16' |
     envsubst '$DESECSTACK_DOMAIN' |
