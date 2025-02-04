@@ -281,6 +281,7 @@ export default {
         host: 'scl-1.c.desec.io',
         left: '22%',
         top: '85%',
+        adopted_by: 'Klaus Alexander Seistrup',
       },
       {
         name: 'London (ns2.desec.org)',
@@ -314,6 +315,7 @@ export default {
         host: 'tyo-1.c.desec.io',
         left: '90.4%',
         top: '32.2%',
+        adopted_by: 'Klaus Alexander Seistrup',
       },
       {
         name: 'Frankfurt (ns2.desec.org)',
@@ -349,6 +351,7 @@ export default {
         host: 'jnb-1.a.desec.io',
         left: '54%',
         top: '81%',
+        adopted_by: 'Klaus Alexander Seistrup',
       },
       {
         name: 'São Paulo (ns1.desec.io)',
