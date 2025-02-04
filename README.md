@@ -291,11 +291,17 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     A convenient way to create a test user account is via
 
-       docker compose exec api python3 manage.py shell -c 'from desecapi.models import User; User.objects.create_user(email="test@example.com", password="test1234");'
+       docker compose exec api python3 manage.py shell -c 'from desecapi.models import User; User.objects.create_user(email="test@example.com", password="test1234", limit_domains=None);'
 
     but users can also be created by signing up via the web GUI.
     The latter, however, requires that you can read email that is sent from your local setup.
     This can be achieved, e.g., by using mailtrap.io.
+
+    desec-stack marks `dedyn.$DESECSTACK_DOMAIN` as a locally registerable public suffix.
+    To facilitate the registration process, `$DESECSTACK_DOMAIN` needs to be created via the API.
+    A convenient way to do that using the user created above is
+
+      (source .env && docker compose exec api python3 manage.py shell -c "from desecapi.models import User, Domain; from desecapi.pdns_change_tracker import PDNSChangeTracker; PDNSChangeTracker.track(lambda: Domain.objects.create(name='dedyn.$DESECSTACK_DOMAIN', owner=User.objects.get(email='test@example.com')));")
 
     Of course, as this setup is only on your local machine, DNS information will not be published into the public DNS.
     However, the desec-stack nameserver is available on localhost port 5321.
