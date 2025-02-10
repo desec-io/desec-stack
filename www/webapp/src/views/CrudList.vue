@@ -28,9 +28,10 @@
                   :footer-props="{
                     'items-per-page-options': [10, 20, 30, 50, 100, -1]
                   }"
-                  :items-per-page="30"
+                  :items-per-page="itemsPerPage"
                   class="elevation-1"
                   @click:row="rowClick"
+                  @pagination="updatePagination"
           >
             <template #top>
               <!-- Headline & Toolbar, Including New Form -->
@@ -492,6 +493,9 @@ export default {
       });
       return cols; // data table expects an array
     },
+    itemsPerPage() {
+      return this.user.component_arg(`${this.$options.name}/itemsPerPage`) || 30;
+    },
     writeableStandardColumns() {
       return this.filterWriteableColumns(col => !(col.advanced || false));
     },
@@ -540,6 +544,9 @@ export default {
     },
     getActions(actions) {
       return Object.entries({...actions, ...this.defaultActions}).filter(([, action]) => action.if ?? true);
+    },
+    updatePagination(pagination) {
+      this.user.updateComponentArg(`${this.$options.name}/itemsPerPage`, pagination.itemsPerPage);
     },
     /** *
      * Ask the user to delete the given item.
