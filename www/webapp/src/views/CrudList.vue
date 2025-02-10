@@ -501,7 +501,7 @@ export default {
   },
   watch: {
     search: function() {
-      this.user.updateComponentArg(this.$options.name, this.search);
+      this.user.updateComponentArg(`${this.$options.name}/search`, this.search);
     },
   },
   async created() {
@@ -512,7 +512,7 @@ export default {
             .then(r => self.rows = r.data)
     );
     this.createDialogItem = Object.assign({}, this.itemDefaults());
-    this.search = this.user.component_arg(this.$options.name) || '';
+    this.search = this.user.component_arg(`${this.$options.name}/search`) || '';
   },
   methods: {
     itemClass(item) {
