@@ -168,11 +168,9 @@ If email address and password match our records, the server will reply with
 
 As indicated in the response, login tokens expire 7 days after creation or
 when not used for 1 hour, whichever comes first (see :ref:`token object`).
+Expired login tokens are purged on each new login.
 
 In case of credential mismatch, the server returns ``403 Permission Denied``.
-
-**Note:** Every time you send a ``POST`` request to this endpoint, an
-additional token will be created. Existing tokens will *remain valid*.
 
 To authorize subsequent requests with the new token, set the HTTP ``Authorization``
 header to the token's secret value, prefixed with ``Token``::

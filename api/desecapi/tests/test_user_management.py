@@ -512,12 +512,12 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         self.assertTrue(Domain.objects.filter(name=domain, owner__email=email).exists())
         return email, password, domain
 
-    def _test_login(self):
+    def _test_login(self, return_field="token"):
         response = self.login_user(self.email, self.password)
         self.assertLoginSuccessResponse(response)
         self.assertEqual(response.data["max_age"], "7 00:00:00")
         self.assertEqual(response.data["max_unused_period"], "01:00:00")
-        return response.data["token"]
+        return response.data[return_field]
 
     def _test_logout(self):
         response = self.logout(self.token)
@@ -873,6 +873,34 @@ class HasUserAccountTestCase(UserManagementTestCase):
             self.client.verify(confirmation_link)
         )
         self.assertUserDoesNotExist(self.email)
+
+    def test_purge_login_tokens(self):
+        user = User.objects.get(email=self.email)
+        user.token_set.all().delete()  # default test tokens
+
+        token1 = Token.objects.get(pk=self._test_login("id"))
+        self.assertEqual(Token.objects.filter(owner=user).count(), 1)
+
+        with mock.patch(
+            "django.utils.timezone.now",
+            return_value=timezone.now() + timedelta(minutes=30),
+        ):
+            self.assertTrue(token1.is_valid)
+            token2 = Token.objects.get(pk=self._test_login("id"))
+            self.assertEqual(Token.objects.filter(owner=user).count(), 2)
+
+        with mock.patch(
+            "django.utils.timezone.now",
+            return_value=timezone.now() + timedelta(minutes=75),
+        ):
+            self.assertFalse(token1.is_valid)
+            self.assertTrue(token2.is_valid)
+            token3 = Token.objects.get(pk=self._test_login("id"))
+            token_set = Token.objects.filter(owner=user)
+            self.assertNotIn(token1, token_set)
+            self.assertIn(token2, token_set)
+            self.assertIn(token3, token_set)
+            self.assertEqual(Token.objects.filter(owner=token1.user).count(), 2)
 
     def test_view_account(self):
         response = self.client.view_account(self.token)

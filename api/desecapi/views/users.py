@@ -99,6 +99,17 @@ class AccountLoginView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
+
+        # Clean up expired login tokens
+        for token in (
+            Token.objects.filter(owner=self.request.user, user_override=None)
+            .exclude(mfa=None)  # exclude API tokens
+            .all()
+        ):
+            if not token.is_valid:
+                token.delete()
+
+        # Create new login token
         token = Token.objects.create(
             owner=user,
             perm_create_domain=True,
