@@ -26,6 +26,8 @@ ALLOWED_HOSTS = [
     "update6.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
 ]
 
+DEFAULT_EXCEPTION_REPORTER = "desecapi.debug.PayloadExceptionReporter"
+
 
 # Application definition
 
