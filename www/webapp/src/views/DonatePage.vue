@@ -120,7 +120,7 @@
               <v-expansion-panel>
                 <v-expansion-panel-header class="text-subtitle-1">
                   <v-layout>
-                    <v-icon class="mr-2">{{ mdiBitcoin }}</v-icon> Crypto Currency (BTC, ETH)
+                    <v-icon class="mr-2">{{ mdiBitcoin }}</v-icon> Crypto Currency (BTC, ETH, LTC)
                   </v-layout>
                 </v-expansion-panel-header>
                 <v-expansion-panel-content class="pt-4">
@@ -133,6 +133,10 @@
                     <tr>
                       <th>Ethereum (ETH)</th>
                       <td><span class="fixed-width">0xb9594A8d1BF512eAC59069d9d5cbA457E0d35998</span></td>
+                    </tr>
+                    <tr>
+                      <th>Litecoin (LTC)</th>
+                      <td><strong>(No MWEB!)</strong> <span class="fixed-width">LeFYoRRcrMPiruRGQQknQBdjGdmsEpHzno</span></td>
                     </tr>
                   </table>
                   <p class="mt-4">Note that we cannot provide you a donation receipt for crypto donations.</p>

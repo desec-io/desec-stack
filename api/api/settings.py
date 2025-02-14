@@ -1,11 +1,5 @@
 """
 Django settings for desecapi project.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.7/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -16,9 +10,6 @@ from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HAS
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DESECSTACK_API_SECRETKEY"]
@@ -34,6 +25,8 @@ ALLOWED_HOSTS = [
     "update.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
     "update6.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
 ]
+
+DEFAULT_EXCEPTION_REPORTER = "desecapi.debug.PayloadExceptionReporter"
 
 
 # Application definition

@@ -3,16 +3,33 @@
     <div class="text-center" v-if="captcha_required && !success">
         <generic-captcha
             @update="(id, solution) => {setCaptchaPayload(id, solution)}"
-            tabindex="3"
+            tabindex="1"
             ref="captchaField"
         />
+        <v-layout class="justify-center">
+          <v-checkbox
+                v-model="terms"
+                hide-details="auto"
+                type="checkbox"
+                :rules="terms_rules"
+                tabindex="2"
+          >
+            <template #label>
+              <v-flex>
+                Yes, I agree to the <span @click.stop><router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link></span> and
+                <span @click.stop><router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link></span>.
+              </v-flex>
+            </template>
+          </v-checkbox>
+        </v-layout>
         <v-btn
                 depressed
+                class="mt-4"
                 color="primary"
                 type="submit"
                 :disabled="working || !valid"
                 :loading="working"
-                tabindex="2"
+                tabindex="3"
         >Submit</v-btn>
     </div>
     <v-alert type="success" v-if="success">
@@ -33,11 +50,11 @@
       auto_submit: true,
       LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
 
-      /* captcha field */
       captcha_required: false,
+      terms: false,
+      terms_rules: [v => !!v || 'You can only use our service if you agree with the terms'],
     }),
     methods: {
-      /* captcha field */
       setCaptchaPayload(id, solution) {
         this.payload.captcha = {
           id: id,
