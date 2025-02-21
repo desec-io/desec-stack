@@ -184,9 +184,34 @@ header to the token's secret value, prefixed with ``Token``::
 
 2-Factor Authentication can be set up through the web interface.
 
+The functionality is governed by the internal ``mfa`` property of each token.
+If it is not set at all, the token is non-interactive (i.e., an API token), and
+what it can access is not affected by 2FA.
+
+Otherwise, the token is a log-in token. If ``mfa`` is ``false``, then the token
+has not yet been promoted to full access. This is the default after logging in,
+and has no consequence if the account does not have 2FA enabled.
+
+However, if 2FA is enabled, then tokens with ``mfa=false`` have limited
+capabilities, excluding endpoints for domains, RRset, tokens, and token
+policies. Only after performing 2FA authentication, ``mfa`` is set to ``true``,
+and the token has full access.
+
+This mechanism is called step-up authentication. It has various advantages,
+most importantly being able to give the user a "weaker" type of session that
+can be used for non-critical activities, or to perform 2FA authentication as
+needed. In other words, 2FA-enabled accounts that only have done password
+authentication are not "fully disabled", but that's OK and intended.
+
+Some step-up requirements may be unexpected. For example, "Change email" does
+not require 2FA; this is because it only allows replacing one factor with
+another one of the same type. "Delete account" does not require 2FA, but
+generally can only be done when the account has no domains. (Domain deletion
+again does require 2FA if enabled.)
+
 The underlying API keeps evolving as more factors like FIDO2 are
 getting added, and endpoints are subject to change without notice.
-A description will be added once the interface is final.
+The description will be updated once the interface is final.
 
 
 .. _retrieve-account-information:
