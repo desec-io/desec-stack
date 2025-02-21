@@ -184,9 +184,34 @@ header to the token's secret value, prefixed with ``Token``::
 
 2-Factor Authentication can be set up through the web interface.
 
-The underlying API keeps evolving as more factors like FIDO2 are
+As for the impact of 2FA on the usage of tokens, it is helpful to distinguish
+between two types of tokens:
+
+- API tokens, created using the :ref:`token management endpoint <manage-tokens>`,
+  intended for use by machines (e.g., automated jobs),
+- Login tokens, created using the login endpoint :ref:`login endpoint <log-in>`,
+  intended for use by humans (e.g., via the web interface).
+
+Enabling 2FA does not affect API tokens. Login tokens, however, will now have
+limited capabilities, and be unable to use endpoints for domains, RRset,
+tokens, and token policies. Only after performing 2FA authentication, the token
+is promoted to full access.
+
+This mechanism is called step-up authentication. It has various advantages,
+most importantly being able to give the user a "weaker" type of session that
+can be used for non-critical activities, or to perform 2FA authentication as
+needed. In other words, 2FA-enabled accounts that only have done password
+authentication are not "fully disabled", but that's OK and intended.
+
+Some step-up requirements may seem unexpected. For example, "Change email" does
+not require 2FA; this is because it only allows replacing one factor with
+another one of the same type. "Delete account" does not require 2FA, but
+generally can only be done when the account has no domains. (Domain deletion
+again does require 2FA if enabled.)
+
+The underlying API keeps evolving as more factor types like FIDO2 are
 getting added, and endpoints are subject to change without notice.
-A description will be added once the interface is final.
+The description will be updated once the interface is final.
 
 
 .. _retrieve-account-information:
