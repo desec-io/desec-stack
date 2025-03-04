@@ -50,10 +50,8 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 continue
             if len(params) > 1 and params & {"", "preserve"}:
                 raise ValidationError(
-                    detail={
-                        "detail": f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
-                        "code": "inconsistent-parameter",
-                    }
+                    detail=f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
+                    code="inconsistent-parameter",
                 )
             if params:
                 return [] if "" in params else list(params)

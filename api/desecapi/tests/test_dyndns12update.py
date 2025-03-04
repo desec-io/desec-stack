@@ -221,7 +221,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
                 myip=myip,
             )
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-            self.assertEqual(response.data["code"], "inconsistent-parameter")
+            self.assertEqual(response.data[0].code, "inconsistent-parameter")
 
     def test_fritz_box(self):
         # /
