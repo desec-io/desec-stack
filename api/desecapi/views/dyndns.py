@@ -15,7 +15,7 @@ from desecapi.authentication import (
     URLParamAuthentication,
 )
 from desecapi.exceptions import ConcurrencyException
-from desecapi.models import Domain
+from desecapi.models import Domain, replace_ip_subnet
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.permissions import IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
@@ -48,13 +48,28 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 }
             except KeyError:
                 continue
-            if len(params) > 1 and params & {"", "preserve"}:
-                raise ValidationError(
-                    detail=f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
-                    code="inconsistent-parameter",
-                )
+            if len(params) > 1:
+                if params & {"", "preserve"}:
+                    raise ValidationError(
+                        detail=f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
+                        code="inconsistent-parameter",
+                    )
+                if any("/" in param for param in params):
+                    raise ValidationError(
+                        detail=f'IP parameter "{param_key}" cannot use subnet notation with multiple addresses.',
+                        code="multiple-subnet",
+                    )
             if params:
-                return [] if "" in params else list(params)
+                params = list(params)
+                if len(params) == 1 and "/" in params[0]:
+                    try:
+                        params = replace_ip_subnet(self.get_queryset(), params[0])
+                    except ValueError as e:
+                        raise ValidationError(
+                            detail=f'IP parameter "{param_key}": {e}',
+                            code="invalid-subnet",
+                        )
+                return [] if "" in params else params
 
         # Check remote IP address
         client_ip = self.request.META.get("REMOTE_ADDR")

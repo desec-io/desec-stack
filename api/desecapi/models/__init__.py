@@ -12,6 +12,7 @@ from .records import (
     RR_SET_TYPES_MANAGEABLE,
     RR_SET_TYPES_UNSUPPORTED,
     RR_SET_TYPES_UNSUPPORTED,
+    replace_ip_subnet,
 )
 from .tokens import Token, TokenDomainPolicy
 from .users import User

@@ -135,6 +135,10 @@ deleted.
 When using the ``myip`` parameter, a mixed-type list of both IPv4 and IPv6
 addresses may be given.
 
+In some cases, it is useful to only update the network prefix of existing A
+or AAAA records. To achieve this, append the prefix length to the IP address
+query parameter, such as ``ipv6=2a01:a:b:c::1/64``.
+
 .. warning::
     **It is recommended to always specify query string parameters for both IP
     address types.** If your device does not have both types, use ``preserve``

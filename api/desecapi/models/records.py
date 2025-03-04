@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import binascii
 import uuid
+from ipaddress import ip_address, ip_network, IPv4Network, IPv6Network
 
 import dns
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import RangeOperators
 from django.core import validators
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.db.models import Manager
 from django.db.models.expressions import RawSQL
@@ -53,6 +54,23 @@ RR_SET_TYPES_MANAGEABLE = (
     - RR_SET_TYPES_UNSUPPORTED
     - RR_SET_TYPES_AUTOMATIC
 )
+
+
+def replace_ip_subnet(queryset, subnet):
+    subnet = ip_network(subnet, strict=False)
+    try:
+        records = queryset.get(
+            type={IPv4Network: "A", IPv6Network: "AAAA"}[type(subnet)]
+        ).records.all()
+    except ObjectDoesNotExist:
+        records = []
+    return [
+        str(
+            ip_address(int(ip_address(record.content)) & int(subnet.hostmask))  # suffix
+            + int(subnet.network_address)  # prefix
+        )
+        for record in records
+    ]
 
 
 class RRsetManager(Manager):

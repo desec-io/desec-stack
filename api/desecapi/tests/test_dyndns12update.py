@@ -258,6 +258,44 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             current_v6 = current_v6 if v6 == "preserve" else v6
             self.assertIP(ipv4=current_v4, ipv6=current_v6)
 
+    def test_subnet(self):
+        subnet_v4 = "6.7.3.4/16"
+        subnet_v6 = "2a01::3303:72dc:f412:7233/64"
+
+        # Can't provide other addresses during subnet update
+        response = self.assertDynDNS12Update(
+            myip=f"{subnet_v4},127.0.0.1", expect_update=False
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0].code, "multiple-subnet")
+
+        # Can't provide other addresses during subnet update
+        response = self.assertDynDNS12Update(myip=f"127.0.0.1//", expect_update=False)
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data[0].code, "invalid-subnet")
+
+        # Update all IPv4 addresses and all (none) IPv6 addresses
+        response = self.assertDynDNS12Update(
+            hostname=self.my_domain.name, myip=subnet_v4, myipv6=subnet_v6
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv4={"6.7.0.1", "6.7.2.3"}, ipv6=set())
+
+        # Try for IPv6
+        self.create_rr_set(
+            self.my_domain,
+            ["2a02:8109:9283:8800:3303:72dc:f412:7233"],
+            type="AAAA",
+            subname="foo",
+            ttl=123,
+        )
+
+        response = self.assertDynDNS12Update(
+            hostname=f"foo.{self.my_domain.name}", myipv4="", myipv6=subnet_v6
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="2a01::3303:72dc:f412:7233", subname="foo")
+
 
 class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
     NUM_OWNED_DOMAINS = 1
