@@ -55,13 +55,49 @@
                 <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
               </v-radio-group>
 
+              <v-expand-transition>
+                <div v-if="domainType === 'dynDNS'">
+                  <v-alert
+                      class="mb-2 ml-8 mt-0"
+                      type="info"
+                      outlined
+                  >
+                    <p class="text-h6">Limitations of Domains Registered under {{ LOCAL_PUBLIC_SUFFIXES[0] }}</p>
+                    <p>
+                      deSEC provides dynDNS service with DNSSEC protection for residential Internet users.
+                      These domains are subject to the following limitations:
+                    </p>
+                    <ul class="mb-4">
+                      <li>Only <strong>one {{ LOCAL_PUBLIC_SUFFIXES[0] }} domain</strong> is provided per user. (You can set up subdomains under it.)</li>
+                      <li><strong>You cannot change NS records.</strong> External delegation is not supported.</li>
+                      <li>Based on historical abuse, <strong>certain IP addresses cannot be used in A/AAAA records</strong>.</li>
+                      <li>It is required to <strong>update your IP address regularly</strong>, as is typical in residential networks.</li>
+                    </ul>
+                    <p class="mb-2">
+                      If these limitations don't work for you or your use case is different, please register a domain name elsewhere.
+                    </p>
+                      <v-checkbox
+                            v-model="limitationsAccepted"
+                            hide-details="auto"
+                            type="checkbox"
+                            :rules="limitationsAccepted_rules"
+                            tabindex="6"
+                      >
+                        <template #label>
+                          I am OK with these limitations.
+                        </template>
+                      </v-checkbox>
+                  </v-alert>
+                </div>
+              </v-expand-transition>
+
               <v-text-field
                       v-model="domain"
                       :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
                       prepend-icon="mdi-blank"
                       outlined
                       required
-                      :disabled="domainType === 'none' || domainType === undefined"
+                      :disabled="domainType === 'none' || domainType === undefined || (domainType === 'dynDNS' && !limitationsAccepted)"
                       :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
                       :error-messages="domain_errors"
                       :suffix="domainType === 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
@@ -155,38 +191,45 @@
       GenericCaptcha,
       ErrorAlert,
     },
-    data: () => ({
-      valid: false,
-      working: false,
-      errors: [],
-      LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
+    data: function () {
+      const self = this;
+      return {
+        valid: false,
+        working: false,
+        errors: [],
+        LOCAL_PUBLIC_SUFFIXES: LOCAL_PUBLIC_SUFFIXES,
 
-      mdiDns: mdiDns,
-      mdiEmail: mdiEmail,
+        mdiDns: mdiDns,
+        mdiEmail: mdiEmail,
 
-      /* email field */
-      email: '',
-      email_rules: [v => !!email_pattern.test(v || '') || 'We need an email address for account recovery and technical support.'],
-      email_errors: [],
+        /* email field */
+        email: '',
+        email_rules: [v => !!email_pattern.test(v || '') || 'We need an email address for account recovery and technical support.'],
+        email_errors: [],
 
-      /* captcha field */
-      captchaID: null,
-      captchaSolution: '',
+        /* captcha field */
+        captchaID: null,
+        captchaSolution: '',
 
-      /* outreach preference */
-      outreach_preference: true,
+        /* outreach preference */
+        outreach_preference: true,
 
-      /* terms field */
-      terms: false,
-      terms_rules: [v => !!v || 'You can only use our service if you agree with the terms'],
+        /* terms field */
+        terms: false,
+        terms_rules: [v => !!v || 'You can only use our service if you agree with the terms'],
 
-      /* domain field */
-      domain: '',
-      domainType: null,
-      domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Domain names can only contain letters, numbers, dots (.), and dashes (-), and must end with a top-level domain.'],
-      dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, and dashes (-).'],
-      domain_errors: [],
-    }),
+        /* domain field */
+        domain: '',
+        domainType: null,
+        domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Domain names can only contain letters, numbers, dots (.), and dashes (-), and must end with a top-level domain.'],
+        dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, and dashes (-).'],
+        domain_errors: [],
+
+        /* dynDNS limitations */
+        limitationsAccepted: false,
+        limitationsAccepted_rules: [v => (self.domainType !== 'dynDNS' || !!v)],
+      }
+    },
     async mounted() {
       if ('email' in this.$route.params && this.$route.params.email !== undefined) {
         this.email = this.$route.params.email;
