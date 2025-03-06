@@ -58,11 +58,11 @@
               <v-alert class="ml-8 mt-2" v-if="domainType == 'dynDNS'" type="info" outlined>
                 <p class="text-h6">Limitations of Domains Registered under {{ LOCAL_PUBLIC_SUFFIXES[0] }}</p>
                 <p>
-                  deSEC offers free subdomains for the purpose of enabling people to use dynDNS with DNSSEC protection on residential Internet connections, even if they don’t own a registered domain name.
-                  Compared to other domains, they are subject to the following limitations:
+                  deSEC offers free subdomains to enable the use of dynDNS with DNSSEC protection on residential Internet connections, even without a commercially registered domain name.
+                  Compared to other domains, {{ LOCAL_PUBLIC_SUFFIXES[0] }} subdomains are subject to the following limitations:
                 </p>
                 <ul class="mb-4">
-                  <li><strong>You cannot change the NS records</strong> of {{ LOCAL_PUBLIC_SUFFIXES[0] }} domains. Delegation to external nameservers is not supported.</li>
+                  <li><strong>You cannot change NS records.</strong>. Delegation to external nameservers is not supported.</li>
                   <li><strong>Certain IP addresses can not be used in A/AAAA records.</strong> deSEC maintains a blocklist based on abusive content seen in the past. IP addresses from residential networks are generally not blocked.</li>
                   <li>It is required to <strong>update your IP address regularly</strong>, as is typical in residential networks.</li>
                 </ul>
