@@ -57,6 +57,10 @@ RR_SET_TYPES_MANAGEABLE = (
 
 
 def replace_ip_subnet(queryset, subnet):
+    """
+    Fetches A or AAAA record contents from an RRset queryset (depending on the subnet's
+    address family) and returns them with their subnet bits replaced accordingly.
+    """
     subnet = ip_network(subnet, strict=False)
     try:
         records = queryset.get(
