@@ -6,8 +6,9 @@
     :value="value"
     :type="type || ''"
     :placeholder="placeholder || (required ? '' : '(optional)')"
-    :hint="hint"
-    persistent-hint
+    :hint="hintWarning(value) !== false && hint"
+    :persistent-hint="hintWarning(value) !== false"
+    :class="hintClass"
     :required="required"
     :rules="[v => !required || !!v || 'Required.'].concat(rules)"
     @input="changed('input', $event)"
@@ -31,6 +32,10 @@ export default {
     hint: {
       type: String,
       default: '',
+    },
+    hintWarning: {
+      type: Function,
+      default: () => null,
     },
     label: {
       type: String,
@@ -61,10 +66,18 @@ export default {
       required: false,
     },
   },
+  data() { return {
+    hintClass: '',
+  }},
   methods: {
     changed(event, e) {
       this.$emit(event, e);
       this.$emit('dirty');
+    },
+  },
+  watch: {
+    value: function() {
+      this.hintClass = this.hintWarning(this.value) ? 'hint-warning' : '';
     },
   },
 };
@@ -90,5 +103,8 @@ export default {
 */
 .v-input--is-disabled {
   pointer-events: none;  /* thanks to https://stackoverflow.com/a/66029445/6867099 */
+}
+.hint-warning .v-messages__message {
+  color: #fb8c00;
 }
 </style>
