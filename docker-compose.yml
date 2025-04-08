@@ -72,7 +72,7 @@ services:
     - POSTGRES_NON_ROOT_USER_PASSWORD=${DESECSTACK_DBAPI_PASSWORD_desec}
     networks:
     - rearapi_dbapi
-    command: ["postgres", "-c", "hba_file=/usr/local/src/pg_hba.conf"]
+    command: ["postgres", "-c", "max_connections=192", "-c", "hba_file=/usr/local/src/pg_hba.conf"]
     logging:
       driver: "syslog"
       options:
