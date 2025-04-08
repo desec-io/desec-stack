@@ -14,16 +14,18 @@
       Dr. Peter Thomassen<br>
       Wolfgang Studier
     </p>
-    <h3>Registergericht / Registration court</h3>
-    <p>AG Berlin (Charlottenburg)<br>VR 37525<br></p>
-    <h3>Gemeinnützigkeit / Charitable status</h3>
+    <h3>Registration and Tax Information (Gemeinnützigkeit / Charitable Status)</h3>
+    <p>
+      Registergericht / Registration court: AG Berlin (Charlottenburg), VR 37525<br>
+      Steuernummer / Tax number: 27/663/65101, UStID-Nr.: DE363934139
+    </p>
     <p>
       Der Verein wurde vom Finanzamt für Körperschaften I, Berlin, als gemeinnützig anerkannt
-      (Freistellungsbescheid vom 01.11.2019, Steuernummer 27/663/65101).
+      (Freistellungsbescheid vom 01.11.2019, seitdem aktualisiert).
     </p>
     <p>
       The organization has been recognized as charitable by the competent tax office
-      (Finanzamt für Körperschaften I, Berlin; exemption notice dated November 1, 2019, tax number 27/663/65101).
+      (Finanzamt für Körperschaften I, Berlin; exemption notice dated November 1, 2019, since renewed).
     </p>
   </v-container>
 </template>
