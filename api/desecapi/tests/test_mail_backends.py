@@ -18,7 +18,7 @@ from desecapi import mail_backends
     },
 )
 class MultiLaneEmailBackendTestCase(TestCase):
-    test_backend = settings.EMAIL_BACKEND
+    test_backend = "django.core.mail.backends.locmem.EmailBackend"
 
     def test_lanes(self):
         debug_params = {"foo": "bar"}
