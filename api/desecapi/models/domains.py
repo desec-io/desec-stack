@@ -88,13 +88,15 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     delegation_status = models.IntegerField(
         choices=DelegationStatus.choices,
         default=None,
+        null=True,
     )
-    delegation_status_touched = models.DateTimeField(default=None)
+    delegation_status_touched = models.DateTimeField(default=None, null=True)
     security_status = models.IntegerField(
         choices=SecurityStatus.choices,
         default=None,
+        null=True,
     )
-    security_status_touched = models.DateTimeField(default=None)
+    security_status_touched = models.DateTimeField(default=None, null=True)
 
     _keys = None
     objects = DomainManager()
