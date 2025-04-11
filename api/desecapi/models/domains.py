@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.functions import Concat, Length
+from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from dns.exception import Timeout
 from dns.resolver import NoNameservers
@@ -265,7 +266,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             # empty
             self.delegation_status = self.DelegationStatus.NOT_DELEGATED
 
-        self.delegation_status_touched = ...
+        self.delegation_status_touched = timezone.now()
         return self.delegation_status
 
     def update_dns_security_status(self) -> SecurityStatus:
@@ -296,7 +297,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         else:
             self.security_status = self.SecurityStatus.INSECURE
 
-        self.security_status_touched = ...
+        self.security_status_touched = timezone.now()
         return self.security_status
 
     @property
