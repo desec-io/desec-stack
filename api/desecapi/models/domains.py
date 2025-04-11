@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from functools import cached_property
+from functools import cache, cached_property
+from socket import getaddrinfo
 
-import dns
+import dns.name
+import dns.rdataclass
+import dns.rdatatype
+import dns.rdtypes
+import dns.resolver
 import psl_dns
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -10,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, F, Manager, Q, Value
 from django.db.models.functions import Concat, Length
+from django.utils import timezone
 from django_prometheus.models import ExportModelOperationsMixin
 from dns.exception import Timeout
 from dns.resolver import NoNameservers
@@ -22,6 +28,11 @@ from .records import RRset
 
 
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
+
+# CHECKING DISABLED general-purpose resolver for queries to the public DNS
+resolver_CD = dns.resolver.Resolver(configure=False)
+resolver_CD.nameservers = settings.RESOLVERS
+resolver_CD.flags = (resolver_CD.flags or 0) | dns.flags.CD | dns.flags.AD | dns.flags.RD
 
 
 class DomainManager(Manager):
@@ -52,6 +63,25 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         NOTIFIED = 2
         WARNED = 3
 
+    class DelegationStatus(models.IntegerChoices):
+        NOT_DELEGATED = 0
+        ELSEWHERE = 1
+        PARTIAL = 2
+        EXCLUSIVE = 3
+        MULTI = 4
+        ERROR_NXDOMAIN = 128
+        ERROR_NO_NAMESERVERS = 129
+        ERROR_TIMEOUT = 130
+
+    class SecurityStatus(models.IntegerChoices):
+        INSECURE = 0
+        FOREIGN_KEYS = 1
+        SECURE_EXCLUSIVE = 2
+        SECURE = 3
+        ERROR_NXDOMAIN = 128
+        ERROR_NO_NAMESERVERS = 130
+        ERROR_TIMEOUT = 131
+
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(
         max_length=191, unique=True, validators=validate_domain_name
@@ -63,6 +93,26 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    delegation_status = models.IntegerField(
+        choices=DelegationStatus.choices,
+        default=None,
+        null=True,
+        blank=True,
+    )
+    delegation_status_touched = models.DateTimeField(
+        default=None, null=True, blank=True
+    )
+    delegation_status_changed = models.DateTimeField(
+        default=None, null=True, blank=True
+    )
+    security_status = models.IntegerField(
+        choices=SecurityStatus.choices,
+        default=None,
+        null=True,
+        blank=True,
+    )
+    security_status_touched = models.DateTimeField(default=None, null=True, blank=True)
+    security_status_changed = models.DateTimeField(default=None, null=True, blank=True)
 
     _keys = None
     objects = DomainManager()
@@ -176,6 +226,105 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             return False
 
         return True
+
+    @staticmethod
+    @cache  # located at object-level to start with clear cache for new objects
+    def _lookup(target) -> set[str]:
+        try:
+            addrinfo = getaddrinfo(str(target), None)
+        except OSError:
+            return set()
+        return {v[-1][0] for v in addrinfo}
+
+    def update_dns_delegation_status(self) -> DelegationStatus:
+        """Queries the DNS to determine the delegation status of this domian and
+        update the delegation status on record."""
+        old_delegation_status = self.delegation_status
+        our_ns_names = {dns.name.from_text(ns) for ns in settings.DEFAULT_NS}
+
+        try:
+            auth_ns_names = {
+                rr.target for rr in resolver_CD.resolve(self.name, dns.rdatatype.NS, raise_on_no_answer=False)
+            }
+        except dns.resolver.NXDOMAIN:
+            self.delegation_status = self.DelegationStatus.ERROR_NXDOMAIN
+        except dns.resolver.NoNameservers:
+            self.delegation_status = self.DelegationStatus.ERROR_NO_NAMESERVERS
+        except dns.resolver.LifetimeTimeout:
+            self.delegation_status = self.DelegationStatus.ERROR_TIMEOUT
+        else:
+
+            if our_ns_names == auth_ns_names:
+                # just ours
+                self.delegation_status = self.DelegationStatus.EXCLUSIVE
+            elif our_ns_names < auth_ns_names:
+                # all of ours, and others
+                self.delegation_status = self.DelegationStatus.MULTI
+            elif our_ns_names & auth_ns_names:
+                # some of ours, and others
+                self.delegation_status = self.DelegationStatus.PARTIAL
+            elif auth_ns_names:
+                # none of ours, but not empty
+                self.delegation_status = self.DelegationStatus.ELSEWHERE
+            elif auth_ns_names == set():
+                # empty
+                self.delegation_status = self.DelegationStatus.NOT_DELEGATED
+            elif auth_ns_names is None:
+                # error
+                self.delegation_status = self.DelegationStatus
+
+        now = timezone.now()
+        self.delegation_status_touched = now
+        if old_delegation_status != self.delegation_status:
+            self.delegation_status_changed = now
+        return self.delegation_status
+
+    def update_dns_security_status(self) -> SecurityStatus:
+        """Queries the DNS to determine the security status of this domain and
+        updates the security status on record."""
+        old_security_status = self.security_status
+
+        if self.delegation_status not in [
+            self.DelegationStatus.MULTI,
+            self.DelegationStatus.EXCLUSIVE,
+        ]:
+            self.security_status = None
+            return None
+
+        try:
+            auth_ds = set(resolver_CD.resolve(self.name, dns.rdatatype.DS, raise_on_no_answer=False))
+        except dns.resolver.NXDOMAIN:
+            self.security_status = self.SecurityStatus.ERROR_NXDOMAIN
+        except dns.resolver.NoNameservers:
+            self.delegation_status = self.SecurityStatus.ERROR_NO_NAMESERVERS
+        except dns.resolver.LifetimeTimeout:
+            self.delegation_status = self.SecurityStatus.ERROR_TIMEOUT
+        else:
+            auth_ds = {ds for ds in auth_ds if ds.digest_type == 2}
+
+            # Compute overlap of delegation DS records with ours
+            our_ds_set = {
+                dns.rdata.from_text(rdclass="IN", rdtype="DS", tok=ds)
+                for key in self.keys
+                for ds in key.get("ds", [])
+                if dns.rdata.from_text(rdclass="IN", rdtype="DS", tok=ds).digest_type
+                == 2  # only digest type 2 is mandatory
+            }
+
+            if our_ds_set == auth_ds:
+                self.security_status = self.SecurityStatus.SECURE_EXCLUSIVE
+            elif our_ds_set < auth_ds:
+                self.security_status = self.SecurityStatus.SECURE
+            elif auth_ds != set():
+                self.security_status = self.SecurityStatus.FOREIGN_KEYS
+            else:
+                self.security_status = self.SecurityStatus.INSECURE
+
+        now = timezone.now()
+        self.security_status_touched = now
+        if old_security_status != self.security_status:
+            self.security_status_changed = now
+        return self.security_status
 
     @property
     def keys(self):
