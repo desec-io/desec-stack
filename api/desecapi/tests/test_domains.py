@@ -4,9 +4,13 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import override_settings
+import dns.name
+import dns.rdtypes
+import dns.rdtypes.ANY
+import pytest
 from rest_framework import status
 
-from desecapi.models import Domain
+from desecapi.models import Domain, User
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import (
     DesecTestCase,
@@ -1011,3 +1015,205 @@ class DomainManagerTestCase(DesecTestCase):
             "a_B_example",
         ]:
             self.assertFalse(Domain.objects.filter_qname(qname))
+
+
+class TestDnsAuthNs:
+    """Tests Domain.dns_auth_ns."""
+
+    def test_apex(self, user):
+        assert Domain(name="desec.io").dns_auth_ns == {
+            dns.name.from_text("ns1.desec.io"),
+            dns.name.from_text("ns2.desec.org"),
+        }
+
+    def test_non_apex(self):
+        assert Domain(name="foobar.desec.io").dns_auth_ns == set()
+
+    def test_non_existant(self):
+        assert Domain(name="something.example").dns_auth_ns == set()
+
+
+class TestDnsAuthDs:
+    """Tests Domain.dns_auth_ds."""
+
+    def test_apex(self):
+        assert Domain(name="desec.io").dns_auth_ds == {
+            dns.rdata.from_text(
+                rdclass="IN",
+                rdtype="DS",
+                tok="53307 13 2 3f6a815a28593ba6ff5a3e5da9b9af695d8f1022b7e0bda02793c53596da0944",
+            ),
+            dns.rdata.from_text(
+                rdclass="IN",
+                rdtype="DS",
+                tok="53307 13 4 156e3dfcceb69a9b2c4f1c769d9fe8558bfbcf5f0475aba5da5924a5f613c1be287529d8da5df773e573a2a08c69ab99",
+            ),
+        }
+
+    def test_non_apex(self):
+        assert Domain(name="foobar.desec.io").dns_auth_ns == set()
+
+    def test_non_existant(self):
+        assert Domain(name="something.example").dns_auth_ns == set()
+
+
+class TestDnsDelegationStatus:
+    """Tests Domain.update_dns_delegation_status."""
+
+    OUR_NS_NAMES = {dns.name.from_text(ns) for ns in settings.DEFAULT_NS}
+    OUR_NS_NAMES_PARTIAL = set(list(OUR_NS_NAMES)[:1])
+    OTHER_NS_NAMES = {
+        dns.name.from_text("ns1.example"),
+        dns.name.from_text("ns2.example"),
+        dns.name.from_text("ns3.example"),
+    }
+
+    @pytest.fixture
+    def domain(self) -> Domain:
+        return Domain(name="foobar.example")
+
+    def test_our_ns_names(self):
+        assert len(self.OUR_NS_NAMES) >= 2
+
+    def test_updates_db(self, domain: Domain, mocker):
+        assert domain.delegation_status is None
+        assert domain.delegation_status_touched is None
+        mocker.patch.object(domain, "dns_auth_ns", return_value=self.OUR_NS_NAMES)
+        domain.update_dns_delegation_status()
+        assert domain.delegation_status is not None
+        assert domain.delegation_status_touched is not None
+
+    def test_exclusive(self, domain: Domain, mocker):
+        mocker.patch.object(domain, "dns_auth_ns", return_value=self.OUR_NS_NAMES)
+        assert (
+            domain.update_dns_delegation_status() == Domain.DelegationStatus.EXCLUSIVE
+        )
+        domain.dns_auth_ns.assert_called_once()
+
+    def test_multi(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain, "dns_auth_ns", return_value=self.OUR_NS_NAMES | self.OTHER_NS_NAMES
+        )
+        assert domain.update_dns_delegation_status() == Domain.DelegationStatus.MULTI
+        domain.dns_auth_ns.assert_called_once()
+
+    def test_partial_with_others(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain,
+            "dns_auth_ns",
+            return_value=self.OUR_NS_NAMES_PARTIAL | self.OTHER_NS_NAMES,
+        )
+        assert domain.update_dns_delegation_status() == Domain.DelegationStatus.PARTIAL
+        domain.dns_auth_ns.assert_called_once()
+
+    def test_partial(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain, "dns_auth_ns", return_value=self.OUR_NS_NAMES_PARTIAL
+        )
+        assert domain.update_dns_delegation_status() == Domain.DelegationStatus.PARTIAL
+        domain.dns_auth_ns.assert_called_once()
+
+    def test_elsewhere(self, domain: Domain, mocker):
+        mocker.patch.object(domain, "dns_auth_ns", return_value=self.OTHER_NS_NAMES)
+        assert (
+            domain.update_dns_delegation_status() == Domain.DelegationStatus.ELSEWHERE
+        )
+        domain.dns_auth_ns.assert_called_once()
+
+    def test_elsewhere(self, domain: Domain, mocker):
+        mocker.patch.object(domain, "dns_auth_ns", return_value=set())
+        assert (
+            domain.update_dns_delegation_status()
+            == Domain.DelegationStatus.NOT_DELEGATED
+        )
+        domain.dns_auth_ns.assert_called_once()
+
+
+class TestDnsSecurityStatus:
+    """Tests Domain.update_dns_security_status."""
+
+    @staticmethod
+    def ds_text2rdata(text: set[str]) -> set[dns.rdtypes.ANY.DS.DS]:
+        return {dns.rdata.from_text(rdclass="IN", rdtype="DS", tok=tok) for tok in text}
+
+    @staticmethod
+    def ds_rdata2text(rdata: set[dns.rdtypes.ANY.DS.DS]) -> set[str]:
+        return {rr.to_text() for rr in rdata}
+
+    OUR_DS = ds_text2rdata(
+        {
+            "53307 13 2 3f6a815a28593ba6ff5a3e5da9b9af695d8f1022b7e0bda02793c53596da0944",
+            "53307 13 4 156e3dfcceb69a9b2c4f1c769d9fe8558bfbcf5f0475aba5da5924a5f613c1be287529d8da5df773e573a2a08c69ab99",
+        }
+    )
+    SOME_DS = ds_text2rdata(
+        {
+            "53307 13 2 6AA22DA11FAEF00937061E39A2D6C174EA300A8B9A78D6199CF8DAAB41F4332E",
+            "53307 13 4 CE807E76229D64AAE886B2732355BDD68E2C9D1039609085DFE15933FE031C71981A7FA77F45B22192F76724A9B29FB9",
+        }
+    )
+
+    @pytest.fixture
+    def domain(self):
+        d = Domain(name="example.example")
+        d.delegation_status = Domain.DelegationStatus.EXCLUSIVE
+        d._keys = [{"ds": list(self.ds_rdata2text(self.OUR_DS))}]
+        return d
+
+    def test_updates_db(self, domain: Domain, mocker):
+        assert domain.security_status is None
+        assert domain.security_status_touched is None
+        mocker.patch.object(domain, "dns_auth_ds", return_value=self.OUR_DS)
+        domain.update_dns_security_status()
+        assert domain.security_status is not None
+        assert domain.security_status_touched is not None
+
+    def test_match_2_and_4(self, domain: Domain, mocker):
+        mocker.patch.object(domain, "dns_auth_ds", return_value=self.OUR_DS)
+        assert (
+            domain.update_dns_security_status()
+            == Domain.SecurityStatus.SECURE_EXCLUSIVE
+        )
+        domain.dns_auth_ds.assert_called_once()
+
+    def test_match_2(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain,
+            "dns_auth_ds",
+            return_value={rr for rr in self.OUR_DS if rr.digest_type == 2},
+        )
+        assert (
+            domain.update_dns_security_status()
+            == Domain.SecurityStatus.SECURE_EXCLUSIVE
+        )
+        domain.dns_auth_ds.assert_called_once()
+
+    def test_superset(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain, "dns_auth_ds", return_value=self.OUR_DS | self.SOME_DS
+        )
+        assert domain.update_dns_security_status() == Domain.SecurityStatus.SECURE
+        domain.dns_auth_ds.assert_called_once()
+
+    def test_no_ds(self, domain: Domain, mocker):
+        mocker.patch.object(domain, "dns_auth_ds", return_value=set())
+        assert domain.update_dns_security_status() == Domain.SecurityStatus.INSECURE
+        domain.dns_auth_ds.assert_called_once()
+
+    def test_only_digest_type_4_ours(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain,
+            "dns_auth_ds",
+            return_value={rr for rr in self.OUR_DS if rr.digest_type == 4},
+        )
+        assert domain.update_dns_security_status() == Domain.SecurityStatus.INSECURE
+        domain.dns_auth_ds.assert_called_once()
+
+    def test_only_digest_type_4_some(self, domain: Domain, mocker):
+        mocker.patch.object(
+            domain,
+            "dns_auth_ds",
+            return_value={rr for rr in self.SOME_DS if rr.digest_type == 4},
+        )
+        assert domain.update_dns_security_status() == Domain.SecurityStatus.INSECURE
+        domain.dns_auth_ds.assert_called_once()

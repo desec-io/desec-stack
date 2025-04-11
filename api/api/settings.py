@@ -160,6 +160,14 @@ ADMINS = [
 ]
 
 DESECSTACK_DOMAIN = os.environ["DESECSTACK_DOMAIN"]
+RESOLVERS = [
+    "9.9.9.9",
+    "2620:fe::fe",  # Quad9
+    "1.1.1.1",
+    "2606:4700:4700::1111",  # Cloudflare
+    "8.8.8.8",
+    "2001:4860:4860::8888",  # Google
+]
 
 # default NS records
 DEFAULT_NS = [name + "." for name in os.environ["DESECSTACK_NS"].strip().split()]
