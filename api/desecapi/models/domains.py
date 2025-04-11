@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from functools import cached_property
+from functools import cache, cached_property
+from socket import getaddrinfo
 
-import dns
+import dns.name
+import dns.rdataclass
+import dns.rdatatype
+import dns.rdtypes
+import dns.resolver
 import psl_dns
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -22,6 +27,10 @@ from .records import RRset
 
 
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
+
+# general-purpose resolver for queries to the public DNS
+resolver = dns.resolver.Resolver(configure=False)
+resolver.nameservers = settings.RESOLVERS
 
 
 class DomainManager(Manager):
@@ -52,6 +61,19 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         NOTIFIED = 2
         WARNED = 3
 
+    class DelegationStatus(models.IntegerChoices):
+        NOT_DELEGATED = 0
+        ELSEWHERE = 1
+        PARTIAL = 2
+        EXCLUSIVE = 3
+        MULTI = 4
+
+    class SecurityStatus(models.IntegerChoices):
+        INSECURE = 0
+        BOGUS = 1
+        SECURE_EXCLUSIVE = 2
+        SECURE = 3
+
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(
         max_length=191, unique=True, validators=validate_domain_name
@@ -63,6 +85,16 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    delegation_status = models.IntegerField(
+        choices=DelegationStatus.choices,
+        default=None,
+    )
+    delegation_status_touched = models.DateTimeField(default=None)
+    security_status = models.IntegerField(
+        choices=SecurityStatus.choices,
+        default=None,
+    )
+    security_status_touched = models.DateTimeField(default=None)
 
     _keys = None
     objects = DomainManager()
@@ -176,6 +208,90 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             return False
 
         return True
+
+    @cached_property
+    def dns_auth_ns(self) -> set[dns.name.Name]:
+        """Queries the DNS to determine the names of authoritative NS
+        servers for this domain."""
+        try:
+            return {rr.target for rr in resolver.resolve(self.name, dns.rdatatype.NS)}
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+            return set()
+
+    @staticmethod
+    @cache  # located at object-level to start with clear cache for new objects
+    def _lookup(target) -> set[str]:
+        try:
+            addrinfo = getaddrinfo(str(target), None)
+        except OSError:
+            return set()
+        return {v[-1][0] for v in addrinfo}
+
+    @cached_property
+    def dns_auth_ds(self) -> set[dns.rdtypes.ANY.DS.DS]:
+        """Queries the DNS to determine the authoritative DS records
+        of this domain."""
+        try:
+            return set(resolver.resolve(self.name, dns.rdatatype.DS))
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer):
+            return set()
+
+    def update_dns_delegation_status(self) -> DelegationStatus:
+        """Queries the DNS to determine the delegation status of this domian and
+        update the delegation status on record."""
+        auth_ns_names = self.dns_auth_ns()
+        print(auth_ns_names)
+        our_ns_names = {dns.name.from_text(ns) for ns in settings.DEFAULT_NS}
+
+        if our_ns_names == auth_ns_names:
+            # just ours
+            self.delegation_status = self.DelegationStatus.EXCLUSIVE
+        elif our_ns_names < auth_ns_names:
+            # all of ours, and others
+            self.delegation_status = self.DelegationStatus.MULTI
+        elif our_ns_names & auth_ns_names:
+            # some of ours, and others
+            self.delegation_status = self.DelegationStatus.PARTIAL
+        elif auth_ns_names:
+            # none of ours, but not empty
+            self.delegation_status = self.DelegationStatus.ELSEWHERE
+        else:
+            # empty
+            self.delegation_status = self.DelegationStatus.NOT_DELEGATED
+
+        self.delegation_status_touched = ...
+        return self.delegation_status
+
+    def update_dns_security_status(self) -> SecurityStatus:
+        """Queries the DNS to determine the security status of this domain and
+        updates the security status on record."""
+        if self.delegation_status not in [
+            self.DelegationStatus.MULTI,
+            self.DelegationStatus.EXCLUSIVE,
+        ]:
+            self.security_status = None
+            return None
+
+        auth_ds_set = {ds for ds in self.dns_auth_ds() if ds.digest_type == 2}
+
+        # Compute overlap of delegation DS records with ours
+        our_ds_set = {
+            dns.rdata.from_text(rdclass="IN", rdtype="DS", tok=ds)
+            for key in self.keys
+            for ds in key.get("ds", [])
+            if dns.rdata.from_text(rdclass="IN", rdtype="DS", tok=ds).digest_type
+            == 2  # only digest type 2 is mandatory
+        }
+
+        if our_ds_set == auth_ds_set:
+            self.security_status = self.SecurityStatus.SECURE_EXCLUSIVE
+        elif our_ds_set < auth_ds_set:
+            self.security_status = self.SecurityStatus.SECURE
+        else:
+            self.security_status = self.SecurityStatus.INSECURE
+
+        self.security_status_touched = ...
+        return self.security_status
 
     @property
     def keys(self):
