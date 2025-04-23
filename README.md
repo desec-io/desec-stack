@@ -334,6 +334,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
            source venv/bin/activate
            pip install wheel
            pip install -r requirements.txt
+           pip install -r requirements-test.txt
 
     1. At this point, Django is ready to run in the virtual environment created above.
         There are two things to consider when running Django outside the container.
@@ -359,10 +360,9 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
            docker compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
 
-        Finally, you can manage Django using the `manage.py` CLI.
-        As an example, to run the tests, use
+        To run the tests, in `/api` use
 
-           python3 manage.py test
+           pytest
 
     1. Open the project root directory `desec-stack` in PyCharm and select File › Settings.
         1. In Project: desec-stack › Project Structure, mark the `api/` folder as a source folder.
