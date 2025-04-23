@@ -6,6 +6,7 @@ from hashlib import sha256
 from django.db import models
 from django.utils import timezone
 
+from desecapi.exceptions import AuthenticatedActionInvalidState
 from .domains import Domain
 from .mfa import TOTPFactor
 
@@ -45,7 +46,7 @@ class AuthenticatedAction(models.Model):
         if state is not None:
             self._validated = self.validate_state(state)
             if not self._validated:
-                raise ValueError
+                raise AuthenticatedActionInvalidState
 
     @property
     def _state_fields(self) -> list:
