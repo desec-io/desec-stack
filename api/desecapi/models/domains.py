@@ -32,7 +32,9 @@ psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
 # CHECKING DISABLED general-purpose resolver for queries to the public DNS
 resolver_CD = dns.resolver.Resolver(configure=False)
 resolver_CD.nameservers = settings.RESOLVERS
-resolver_CD.flags = (resolver_CD.flags or 0) | dns.flags.CD | dns.flags.AD | dns.flags.RD
+resolver_CD.flags = (
+    (resolver_CD.flags or 0) | dns.flags.CD | dns.flags.AD | dns.flags.RD
+)
 
 
 class DomainManager(Manager):
@@ -237,15 +239,73 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         return {v[-1][0] for v in addrinfo}
 
     def update_dns_delegation_status(self) -> DelegationStatus:
-        """Queries the DNS to determine the delegation status of this domian and
-        update the delegation status on record."""
+        """
+        Queries the DNS to determine the delegation status of this domian and
+        update the delegation status on record.
+
+        The delegation status is evaluated by trying to determine the NS records
+        as defined in the parent zone to the this `Domain`.
+
+        The parent zone's apex is determined by walking up the DNS tree, querying
+        NS records until an answer is provided. Once the apex and nameservers are
+        found, they are queried for the nameservers of `self.name`.
+        """
         old_delegation_status = self.delegation_status
-        our_ns_names = {dns.name.from_text(ns) for ns in settings.DEFAULT_NS}
+
+        our_ns_addrs = {
+            rr.address
+            for name in settings.DEFAULT_NS
+            for rrtype in {"A", "AAAA"}
+            for rr in list(resolver_CD.resolve(name, rrtype))
+        }
 
         try:
+            # Determine the parent zone nameservers
+            ## names
+            parent_apex_candidate = dns.name.from_text(self.name).parent()
+            parent_nameservers = []
+            while len(parent_apex_candidate) > 1:
+                parent_nameservers = resolver_CD.resolve(
+                    parent_apex_candidate, dns.rdatatype.NS, raise_on_no_answer=False
+                )
+                if parent_nameservers:
+                    break
+                else:
+                    parent_apex_candidate = parent_apex_candidate.parent()
+
+            # TODO what if no parnet_nameservers? what if len(parent_apex_candidate) == 0?
+
+            ## addresses
+            parent_nameservers_addrs = [
+                rr.address
+                for ns in parent_nameservers
+                for rrtype in {"A", "AAAA"}
+                for rr in list(
+                    resolver_CD.resolve(ns.target, rrtype, raise_on_no_answer=False)
+                )
+            ]  # TODO duplicate with above
+
+            # Determine this zone's nameservers as defined at parent zone nameservers
+            ## names
+            resolver = dns.resolver.Resolver(configure=False)
+            resolver.nameservers = parent_nameservers_addrs
+            resolver.flags = dns.flags.AD
             auth_ns_names = {
-                rr.target for rr in resolver_CD.resolve(self.name, dns.rdatatype.NS, raise_on_no_answer=False)
-            }
+                rr.target
+                for rr in resolver.resolve(
+                    self.name, dns.rdatatype.NS, raise_on_no_answer=False
+                )
+            }  # FIXME does not work because NS records are located in the AUTHORITY section instead of ANSWER section
+
+            ## addresses
+            auth_ns_addrs = {
+                rr.address
+                for name in auth_ns_names
+                for rrtype in {"A", "AAAA"}
+                for rr in list(
+                    resolver_CD.resolve(name, rrtype, raise_on_no_answer=False)
+                )
+            }  # TODO duplicate with above
         except dns.resolver.NXDOMAIN:
             self.delegation_status = self.DelegationStatus.ERROR_NXDOMAIN
         except dns.resolver.NoNameservers:
@@ -254,24 +314,33 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             self.delegation_status = self.DelegationStatus.ERROR_TIMEOUT
         else:
 
-            if our_ns_names == auth_ns_names:
+            if our_ns_addrs == auth_ns_addrs:
                 # just ours
                 self.delegation_status = self.DelegationStatus.EXCLUSIVE
-            elif our_ns_names < auth_ns_names:
+            elif our_ns_addrs < auth_ns_addrs:
                 # all of ours, and others
                 self.delegation_status = self.DelegationStatus.MULTI
-            elif our_ns_names & auth_ns_names:
+            elif our_ns_addrs & auth_ns_addrs:
+                # intersection is non-empty, but not all of our's are included
                 # some of ours, and others
                 self.delegation_status = self.DelegationStatus.PARTIAL
-            elif auth_ns_names:
+            elif auth_ns_addrs:
                 # none of ours, but not empty
                 self.delegation_status = self.DelegationStatus.ELSEWHERE
-            elif auth_ns_names == set():
+            elif auth_ns_addrs == set():
                 # empty
                 self.delegation_status = self.DelegationStatus.NOT_DELEGATED
-            elif auth_ns_names is None:
+            elif auth_ns_addrs is None:
                 # error
                 self.delegation_status = self.DelegationStatus
+
+            print(
+                self.name,
+                list(parent_nameservers),
+                list(parent_nameservers_addrs),
+                auth_ns_names,
+                auth_ns_addrs,
+            )
 
         now = timezone.now()
         self.delegation_status_touched = now
@@ -292,7 +361,11 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             return None
 
         try:
-            auth_ds = set(resolver_CD.resolve(self.name, dns.rdatatype.DS, raise_on_no_answer=False))
+            auth_ds = set(
+                resolver_CD.resolve(
+                    self.name, dns.rdatatype.DS, raise_on_no_answer=False
+                )
+            )
         except dns.resolver.NXDOMAIN:
             self.security_status = self.SecurityStatus.ERROR_NXDOMAIN
         except dns.resolver.NoNameservers:
