@@ -30,8 +30,18 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ["get", "post"]  # GET is for redirect only
-    renderer_classes = [JSONRenderer, StaticHTMLRenderer]
     _authenticated_action = None
+
+    @property
+    def renderer_classes(self):
+        ret = [JSONRenderer]
+
+        # GET requests usually have Accept: text/html, so we need StaticHTMLRenderer for the
+        # GUI redirect. For POST, skip StaticHTMLRenderer as it can't handle exceptions.
+        # see: https://github.com/encode/django-rest-framework/issues/9209
+        if self.request.method in SAFE_METHODS:
+            ret.append(StaticHTMLRenderer)
+        return ret
 
     @property
     def authenticated_action(self):

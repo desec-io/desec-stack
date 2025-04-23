@@ -33,6 +33,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from desecapi.models import Captcha, Domain, Token, User
+from desecapi.exceptions import AuthenticatedActionInvalidState
 from desecapi.tests.base import (
     DesecTestCase,
     DomainOwnerTestCase,
@@ -577,6 +578,29 @@ class UserLifeCycleTestCase(UserManagementTestCase):
         email = self._test_change_email()
         self._test_logout()
         self._test_delete_account(email, self.password)
+
+    def test_exception_during_post(self):
+        email, password, response = self.register_user(
+            self.random_username(), self.random_password()
+        )
+        self.assertRegistrationSuccessResponse(response)
+        confirmation_link = self.assertRegistrationEmail(email)
+
+        # invalidate link by using it
+        self.client.verify(confirmation_link)
+
+        # "Not Acceptable" unless application/json or */*
+        response = self.client.verify(confirmation_link, HTTP_ACCEPT="text/html")
+        self.assertStatus(response, status.HTTP_406_NOT_ACCEPTABLE)
+
+        # If acceptable, return "Conflict"
+        for http_accept in ("application/json", "*/*"):
+            response = self.client.verify(confirmation_link, HTTP_ACCEPT=http_accept)
+            self.assertContains(
+                response=response,
+                text=AuthenticatedActionInvalidState.message,
+                status_code=status.HTTP_409_CONFLICT,
+            )
 
 
 class NoUserAccountTestCase(UserLifeCycleTestCase):
