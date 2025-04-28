@@ -2,7 +2,7 @@ FROM alpine AS oqs-provider
 
 RUN apk add --no-cache cmake git g++ make ninja openssl openssl-dev
 
-ARG LIBOQS_VERSION="0.12.0"
+ARG LIBOQS_VERSION="0.13.0"
 ARG OQSPROVIDER_VERSION="0.8.0"
 
 RUN if [ -z ${LIBOQS_VERSION} ]; then exit 1; fi;
