@@ -3,9 +3,9 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :value="value"
+    :value="value_override ? '' : value"
     :type="type || ''"
-    :placeholder="placeholder || (required ? '' : '(optional)')"
+    :placeholder="value_override || placeholder || (required ? '' : '(optional)')"
     :hint="hintWarning(value) !== false && hint"
     :persistent-hint="hintWarning(value) !== false"
     :class="hintClass"
@@ -54,6 +54,10 @@ export default {
       default: () => [],
     },
     value: {
+      type: [String, Number],
+      required: false,
+    },
+    value_override: {
       type: [String, Number],
       required: false,
     },
