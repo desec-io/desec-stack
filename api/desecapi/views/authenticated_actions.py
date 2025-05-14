@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from desecapi import permissions, serializers
 from desecapi.authentication import AuthenticatedBasicUserActionAuthentication
+from desecapi.exceptions import AuthenticatedActionInvalidState
 from desecapi.models import Token
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
@@ -29,8 +30,18 @@ class AuthenticatedActionView(generics.GenericAPIView):
 
     html_url = None  # Redirect GET requests to this webapp GUI URL
     http_method_names = ["get", "post"]  # GET is for redirect only
-    renderer_classes = [JSONRenderer, StaticHTMLRenderer]
     _authenticated_action = None
+
+    @property
+    def renderer_classes(self):
+        ret = [JSONRenderer]
+
+        # GET requests usually have Accept: text/html, so we need StaticHTMLRenderer for the
+        # GUI redirect. For POST, skip StaticHTMLRenderer as it can't handle exceptions.
+        # see: https://github.com/encode/django-rest-framework/issues/9209
+        if self.request.method in SAFE_METHODS:
+            ret.append(StaticHTMLRenderer)
+        return ret
 
     @property
     def authenticated_action(self):
@@ -41,11 +52,8 @@ class AuthenticatedActionView(generics.GenericAPIView):
                 self._authenticated_action = serializer.Meta.model(
                     **serializer.validated_data
                 )
-            except ValueError:  # this happens when state cannot be verified
-                ex = ValidationError(
-                    "This action cannot be carried out because another operation has been performed, "
-                    "invalidating this one. (Are you trying to perform this action twice?)"
-                )
+            except AuthenticatedActionInvalidState as e:
+                ex = ValidationError(e.message)
                 ex.status_code = status.HTTP_409_CONFLICT
                 raise ex
         return self._authenticated_action

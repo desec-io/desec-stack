@@ -41,6 +41,7 @@ export default {
             writeOnCreate: true,
             datatype: GenericText.name,
             searchable: true,
+            fieldProps: (item) => (item.id == useUserStore().token.id ? { value_override: 'current log-in token' } : {}),
           },
           perm_create_domain: {
             name: 'item.perm_create_domain',

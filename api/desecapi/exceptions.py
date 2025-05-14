@@ -2,6 +2,13 @@ from rest_framework import status
 from rest_framework.exceptions import APIException
 
 
+class AuthenticatedActionInvalidState(Exception):
+    message = (
+        "This action cannot be carried out because another operation has been performed, "
+        "invalidating this one. (Are you trying to perform this action twice?)"
+    )
+
+
 class RequestEntityTooLarge(APIException):
     status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
     default_detail = "Payload too large."
