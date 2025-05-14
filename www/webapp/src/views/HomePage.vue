@@ -96,7 +96,7 @@
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          deSEC receives funding through <a class="primary--text text--darken-2" href="https://nlnet.nl/">NLnet
+          deSEC received funding through <a class="primary--text text--darken-2" href="https://nlnet.nl/">NLnet
           Foundation</a> for its work on the automation and future viability of DNSSEC. The <strong>NGI Assure</strong>
           fund, established with financial support from the European Commission's <strong>Next Generation
           Internet</strong> programme, is dedicated to technologies providing strong assurances about the Internet's
