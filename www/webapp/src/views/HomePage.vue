@@ -154,6 +154,7 @@
         <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
         <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" style="height: 100%; max-height: 80px; min-width: 50px; vertical-align: middle"/></a></v-col>
         <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
+        <v-col><a href="https://laburity.com/"><img loading="lazy" src="../assets/non-free/laburity.logo.svg" alt="Laburity Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
       </v-row>
     </v-container>
   </v-container>
