@@ -55,9 +55,11 @@ class CERT(dns.rdtypes.ANY.CERT.CERT):
 
 @dns.immutable.immutable
 class AAAA(dns.rdtypes.IN.AAAA.AAAA):
+    # Convert to hex-only format (don't use "convenient format" for IPv4-mapped addresses)
+    # (Workaround for https://github.com/PowerDNS/pdns/issues/15569)
     def to_text(self, origin=None, relativize=True, **kw):
         address = super().to_text(origin, relativize, **kw)
-        return IPv6Address(address).compressed
+        return IPv6Address._string_from_ip_int(IPv6Address(address)._ip)
 
 
 @dns.immutable.immutable
