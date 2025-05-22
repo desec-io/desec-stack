@@ -696,12 +696,6 @@ export default {
       }
       return p;
     },
-    filterRows(items, search, filter) {
-      search = search.toString().toLowerCase();
-      return items.filter(row => (
-        Object.keys(this.columns).some(c => (this.columns[c].searchable && filter(row[c], search)))
-      ));
-    },
     filterSearchableCols (value, search) {
       // TODO only search searchable columns
       return value != null &&
