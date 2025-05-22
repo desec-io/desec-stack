@@ -151,18 +151,23 @@ If email address and password match our records, the server will reply with
 ``200 OK`` and return the token secret in the ``token`` field of the response body::
 
     {
+        "id": "f7ab039b-07b8-493d-ac61-4ddcf903d4de",
+        "created": "2022-09-06T16:23:24.585329Z",
+        "last_used": null,
+        "owner": "youremailaddress@example.com",
+        "user_override": null,
+        "max_age": "7 00:00:00",
+        "max_unused_period": "01:00:00",
+        "name": "",
+        "perm_create_domain": true,
+        "perm_delete_domain": true,
+        "perm_manage_tokens": true,
         "allowed_subnets": [
             "0.0.0.0/0",
             "::/0"
         ],
-        "created": "2022-09-06T16:23:24.585329Z",
-        "id": "f7ab039b-07b8-493d-ac61-4ddcf903d4de",
+        "auto_policy": false,
         "is_valid": true,
-        "last_used": null,
-        "max_age": "7 00:00:00",
-        "max_unused_period": "01:00:00",
-        "name": "",
-        "perm_manage_tokens": true,
         "token": "i-T3b1h_OI-H9ab8tRS98stGtURe"
     }
 
