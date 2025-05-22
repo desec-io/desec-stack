@@ -102,6 +102,28 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 for k, v in data.items():
                     self.assertEqual(response.data[k], v)
 
+            datas = [
+                {"last_used": "2018-09-06T09:08:43.762697Z"},
+                {"last_used": None},
+            ]
+            for data in datas:
+                response = method(url, data=data)
+                self.assertStatus(response, status.HTTP_200_OK)
+                for k, v in data.items():
+                    self.assertNotEqual(response.data[k], v)
+
+            orig_data = response.data
+            datas = [
+                {"id": "af9e29c8-f4d4-4f9c-b36a-37f2aa44b7e2"},
+                {"created": "2018-09-06T09:08:43.762697Z"},
+                {"owner": self.user.email},
+            ]
+            for data in datas:
+                response = method(url, data=data)
+                self.assertStatus(response, status.HTTP_200_OK)
+                for k, v in data.items():
+                    self.assertEqual(response.data[k], orig_data[k])
+
         # Revoke token management permission
         response = self.client.patch(url, data={"perm_manage_tokens": False})
         self.assertStatus(response, status.HTTP_200_OK)
