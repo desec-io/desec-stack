@@ -58,6 +58,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                 "last_used",
                 "owner",
                 "user_override",
+                "mfa",
                 "max_age",
                 "max_unused_period",
                 "name",
@@ -116,6 +117,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
             datas = [
                 {"id": "af9e29c8-f4d4-4f9c-b36a-37f2aa44b7e2"},
                 {"created": "2018-09-06T09:08:43.762697Z"},
+                {"mfa": True},
                 {"owner": self.user.email},
             ]
             for data in datas:
@@ -154,6 +156,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
                     "last_used",
                     "owner",
                     "user_override",
+                    "mfa",
                     "max_age",
                     "max_unused_period",
                     "name",
