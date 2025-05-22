@@ -40,6 +40,7 @@ A JSON object representing a token has the following structure::
             "::/0"
         ],
         "auto_policy": false,
+        "is_valid": true,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -192,11 +193,13 @@ Note that the name and other fields are optional.  The server will reply with
 ``201 Created`` and the created token in the response body::
 
     {
-        "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
+        "created": "2018-09-06T09:08:43.762697Z",
         "last_used": null,
         "owner": "youremailaddress@example.com"",
         "user_override": null,
+        "max_age": null,
+        "max_unused_period": null,
         "name": "my new token",
         "perm_create_domain": false,
         "perm_delete_domain": false,
@@ -206,6 +209,7 @@ Note that the name and other fields are optional.  The server will reply with
             "::/0"
         ],
         "auto_policy": false,
+        "is_valid": true,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
