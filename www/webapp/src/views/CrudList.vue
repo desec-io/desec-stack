@@ -224,7 +224,7 @@
                       <v-btn
                               v-bind="attrs"
                               v-on="on"
-                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
+                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item, key)"
                               :class="'button-' + key"
                               color="grey"
                               icon
