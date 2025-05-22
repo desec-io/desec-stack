@@ -29,6 +29,7 @@ A JSON object representing a token has the following structure::
         "last_used": null,
         "owner": "youremailaddress@example.com"",
         "user_override": null,
+        "mfa": false,
         "max_age": "365 00:00:00",
         "max_unused_period": null,
         "name": "my new token",
@@ -122,6 +123,14 @@ Field details:
     If ``null``, the token is valid regardless of prior usage (setting
     disabled).
 
+``mfa``
+    :Access mode: read
+    :Type: boolean or ``null``
+
+    If ``null``, this token is an API token, else it is a log-in token. For
+    log-in tokens, the initial value is ``false``, and after successful
+    multi-factor authentication, it is ``true``.
+
 ``name``
     :Access mode: read, write
     :Type: string
@@ -198,6 +207,7 @@ Note that the name and other fields are optional.  The server will reply with
         "last_used": null,
         "owner": "youremailaddress@example.com"",
         "user_override": null,
+        "mfa": null,
         "max_age": null,
         "max_unused_period": null,
         "name": "my new token",

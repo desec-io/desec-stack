@@ -156,6 +156,7 @@ If email address and password match our records, the server will reply with
         "last_used": null,
         "owner": "youremailaddress@example.com",
         "user_override": null,
+        "mfa": false,
         "max_age": "7 00:00:00",
         "max_unused_period": "01:00:00",
         "name": "",

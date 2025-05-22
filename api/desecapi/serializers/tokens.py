@@ -37,6 +37,7 @@ class TokenSerializer(serializers.ModelSerializer):
             "last_used",
             "owner",
             "user_override",
+            "mfa",
             "max_age",
             "max_unused_period",
             "name",
@@ -52,6 +53,7 @@ class TokenSerializer(serializers.ModelSerializer):
             "id",
             "created",
             "last_used",
+            "mfa",
             "owner",
             "token",
         )
