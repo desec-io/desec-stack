@@ -82,6 +82,9 @@ class ThrottlingTestCase(TestCase):
     def test_requests_are_throttled_4min(self):
         self._test_requests_are_throttled(["4/min"], [(0, 4, 60)])
 
+    def test_requests_are_throttled_2per2min(self):
+        self._test_requests_are_throttled(["2/2min"], [(0, 2, 120)])
+
     def test_requests_are_throttled_multiple(self):
         self._test_requests_are_throttled(["5/s", "4/day"], [(0, 4, 86400)])
         self._test_requests_are_throttled(["4/s", "5/day"], [(0, 4, 1)])

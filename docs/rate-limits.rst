@@ -34,7 +34,7 @@ the API.  When several rates are given, all are enforced at the same time.
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``account_management_passive``          | 10/min   | Account activities with internal effects (e.g. viewing account details, creating a token) |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``dyndns``                              | 1/min    | dynDNS updates (per domain).                                                              |
+| ``dyndns``                              | 2/2min   | dynDNS updates (per domain)                                                               |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``dns_api_cheap``                       | 10/s     | DNS read operations (e.g. fetching an RRset), except zonefile export                      |
 |                                         |          |                                                                                           |

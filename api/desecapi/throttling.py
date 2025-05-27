@@ -11,8 +11,20 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
     Like DRF's ScopedRateThrottle, but supports several rates per scope, e.g. for burst vs. sustained limit.
     """
 
+    durations = {"s": 1, "m": 60, "2m": 120, "h": 3600, "d": 86400}
+
+    def _parse_rate(self, rate):
+        if rate is None:
+            return (None, None)
+        num, period = rate.split("/")
+        num_requests = int(num)
+        duration = self.durations[
+            "".join(filter(str.isdigit, period)) + next(filter(str.isalpha, period))
+        ]
+        return (num_requests, duration)
+
     def parse_rate(self, rates):
-        return [super(ScopedRatesThrottle, self).parse_rate(rate) for rate in rates]
+        return [self._parse_rate(rate) for rate in rates]
 
     def allow_request(self, request, view):
         # We can only determine the scope once we're called by the view.  Always allow request if scope not set.
