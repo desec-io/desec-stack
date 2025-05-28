@@ -100,8 +100,8 @@ REST_FRAMEWORK = {
             "10/min"
         ],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         "dyndns": [
-            "1/min"
-        ],  # dynDNS updates, domain-scoped; anything above 1/min is a client misconfiguration
+            "2/2min"  # allow two for separate IPv4/IPv6 updates
+        ],  # dynDNS updates, domain-scoped; anything above 1/min (on avg) is a client misconfiguration
         "dns_api_cheap": [
             "10/s",
             "50/min",

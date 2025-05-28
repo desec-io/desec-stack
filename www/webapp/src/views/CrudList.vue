@@ -224,7 +224,7 @@
                       <v-btn
                               v-bind="attrs"
                               v-on="on"
-                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
+                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item, key)"
                               :class="'button-' + key"
                               color="grey"
                               icon
@@ -695,12 +695,6 @@ export default {
         }
       }
       return p;
-    },
-    filterRows(items, search, filter) {
-      search = search.toString().toLowerCase();
-      return items.filter(row => (
-        Object.keys(this.columns).some(c => (this.columns[c].searchable && filter(row[c], search)))
-      ));
     },
     filterSearchableCols (value, search) {
       // TODO only search searchable columns

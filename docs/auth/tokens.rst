@@ -29,6 +29,7 @@ A JSON object representing a token has the following structure::
         "last_used": null,
         "owner": "youremailaddress@example.com"",
         "user_override": null,
+        "mfa": false,
         "max_age": "365 00:00:00",
         "max_unused_period": null,
         "name": "my new token",
@@ -40,6 +41,7 @@ A JSON object representing a token has the following structure::
             "::/0"
         ],
         "auto_policy": false,
+        "is_valid": true,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 
@@ -121,6 +123,14 @@ Field details:
     If ``null``, the token is valid regardless of prior usage (setting
     disabled).
 
+``mfa``
+    :Access mode: read
+    :Type: boolean or ``null``
+
+    If ``null``, this token is an API token, else it is a log-in token. For
+    log-in tokens, the initial value is ``false``, and after successful
+    multi-factor authentication, it is ``true``.
+
 ``name``
     :Access mode: read, write
     :Type: string
@@ -192,11 +202,14 @@ Note that the name and other fields are optional.  The server will reply with
 ``201 Created`` and the created token in the response body::
 
     {
-        "created": "2018-09-06T09:08:43.762697Z",
         "id": "3a6b94b5-d20e-40bd-a7cc-521f5c79fab3",
+        "created": "2018-09-06T09:08:43.762697Z",
         "last_used": null,
         "owner": "youremailaddress@example.com"",
         "user_override": null,
+        "mfa": null,
+        "max_age": null,
+        "max_unused_period": null,
         "name": "my new token",
         "perm_create_domain": false,
         "perm_delete_domain": false,
@@ -206,6 +219,7 @@ Note that the name and other fields are optional.  The server will reply with
             "::/0"
         ],
         "auto_policy": false,
+        "is_valid": true,
         "token": "4pnk7u-NHvrEkFzrhFDRTjGFyX_S"
     }
 

@@ -108,11 +108,11 @@ export default {
           })
           .catch((e) => {
             if(e.response) {
-              this.errors = ['Captcha request: Server error(' + e.response.status.toString() + '): ' + e.response.data.detail];
+              this.errors = [e.response.data.detail];
             } else if(e.request) {
-              this.errors = ['Captcha request: Could not request from server.'];
+              this.errors = ['Could not request captcha from server.'];
             } else {
-              this.errors = ['Captcha request: Unknown error.'];
+              this.errors = ['Unknown captcha error.'];
             }
           })
       ;
