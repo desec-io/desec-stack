@@ -41,7 +41,11 @@ export default {
             writeOnCreate: true,
             datatype: GenericText.name,
             searchable: true,
-            fieldProps: (item) => (item.id == useUserStore().token.id ? { value_override: 'current log-in token' } : {}),
+            fieldProps: (item) => (
+                item.mfa !== null
+                    ? { value_override: item.id == useUserStore().token.id ? 'current log-in token' : 'previous log-in token' }
+                    : {}
+            ),
           },
           perm_create_domain: {
             name: 'item.perm_create_domain',
@@ -169,7 +173,11 @@ export default {
         itemDefaults: () => ({
           name: '', allowed_subnets: [''], 'perm_manage_tokens': false,
         }),
-        itemIsReadOnly: (item) => item.id == useUserStore().token.id,
+        itemIsReadOnly: (item, action=null) => (
+            item.id == useUserStore().token.id
+                ? true
+                : (item.mfa !== null && action !== "delete")
+        ),
         postcreate: () => false,  // do not close dialog
         precreate() {
           this.createDialogItem.allowed_subnets = this.createDialogItem.allowed_subnets.filter(subnet => subnet.length);
