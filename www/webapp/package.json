@@ -22,7 +22,7 @@
     "vue": "~2.7.14",
     "vue-router": "~3.6.5",
     "vuelidate": "^0.7.7",
-    "vuetify": "^2.7.0"
+    "vuetify": "^3.8.8"
   },
   "devDependencies": {
     "@vitejs/plugin-legacy": "^6.0.0",
