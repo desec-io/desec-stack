@@ -144,7 +144,7 @@ Creating a Domain
 To create a new domain, issue a ``POST`` request to the ``/api/v1/domains/``
 endpoint, like this::
 
-    curl -X POST https://desec.io/api/v1/domains/ \
+    curl https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'
@@ -183,7 +183,7 @@ Listing Domains
 The ``/api/v1/domains/`` endpoint responds to ``GET`` requests with an array of
 `domain object`_\ s. For example, you may issue the following command::
 
-    curl -X GET https://desec.io/api/v1/domains/ \
+    curl https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {secret}"
 
 to retrieve an overview of the domains you own.  Domains are returned in
@@ -203,7 +203,7 @@ Retrieving a Specific Domain
 To retrieve a domain with a specific name, issue a ``GET`` request with the
 ``name`` appended to the ``domains/`` endpoint, like this::
 
-    curl -X GET https://desec.io/api/v1/domains/{name}/ \
+    curl https://desec.io/api/v1/domains/{name}/ \
         --header "Authorization: Token {secret}"
 
 This will return only one domain (i.e., the response is not a JSON array).
@@ -224,7 +224,7 @@ is also called the "authoritative zone".)
 The responsible domain for a given DNS query name (``qname``) can be retrieved
 by applying a filter on the endpoint used for `Listing Domains`_, like so::
 
-    curl -X GET https://desec.io/api/v1/domains/?owns_qname={qname} \
+    curl https://desec.io/api/v1/domains/?owns_qname={qname} \
         --header "Authorization: Token {secret}"
 
 If your account has a domain that is responsible for the name ``qname``, the
@@ -266,7 +266,7 @@ Exporting a Domain as Zonefile
 To export domain data in zonefile format, send a ``GET`` request to the
 ``zonefile`` endpoint of this domain, i.e. to ``/domains/{name}/zonefile/``::
 
-    curl -X GET https://desec.io/api/v1/domains/{name}/zonefile/ \
+    curl https://desec.io/api/v1/domains/{name}/zonefile/ \
         --header "Authorization: Token {secret}"
 
 Note that this will return a plain-text zonefile format without JSON formatting

@@ -16,7 +16,7 @@ Here's a quick intro how to get started:
 
 #. :ref:`register-account`::
 
-    curl -X POST https://desec.io/api/v1/auth/ \
+    curl https://desec.io/api/v1/auth/ \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "email": "youremailaddress@example.com",
@@ -36,7 +36,7 @@ Here's a quick intro how to get started:
 
 #. :ref:`log-in`::
 
-    curl -X POST https://desec.io/api/v1/auth/login/ \
+    curl https://desec.io/api/v1/auth/login/ \
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
@@ -50,7 +50,7 @@ Here's a quick intro how to get started:
 
 #. Create a DNS zone::
 
-    curl -X POST https://desec.io/api/v1/domains/ \
+    curl https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "example.com"}'

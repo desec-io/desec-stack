@@ -153,7 +153,7 @@ Creating an RRset
 To create a new RRset, simply issue a ``POST`` request to the
 ``/api/v1/domains/{name}/rrsets/`` endpoint, like this::
 
-    curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
+    curl https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"subname": "www", "type": "A", "ttl": 3600, "records": ["127.0.0.1", "127.0.0.2"]}'
@@ -191,7 +191,7 @@ A common use case is the creation of a ``TLSA`` RRset which carries information
 about the TLS certificate used by the server that the domain points to.  For
 example, to create a ``TLSA`` RRset for ``www.example.com``, you can run::
 
-    curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
+    curl https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         {
@@ -220,7 +220,7 @@ It is often desirable to create several RRsets at once.  This is achieved by
 sending an array of RRset objects to the ``rrsets/`` endpoint (instead of just
 one), like this::
 
-    curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
+    curl https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}" \
         --header "Content-Type: application/json" --data @- <<EOF
         [
@@ -243,7 +243,7 @@ The ``/api/v1/domains/{name}/rrsets/`` endpoint responds to ``GET`` requests
 with an array of `RRset object`_\ s. For example, you may issue the following
 command::
 
-    curl -X GET https://desec.io/api/v1/domains/{name}/rrsets/ \
+    curl https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}"
 
 to retrieve the contents of a zone that you own.  RRsets are returned in
@@ -668,7 +668,7 @@ Record types with priority field
       etc. as required by the client you are using.  Here's an example of how
       to create a ``TXT`` RRset::
 
-          curl -X POST https://desec.io/api/v1/domains/{name}/rrsets/ \
+          curl https://desec.io/api/v1/domains/{name}/rrsets/ \
               --header "Authorization: Token {secret}" \
               --header "Content-Type: application/json" --data @- <<< \
               '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'

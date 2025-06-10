@@ -41,7 +41,7 @@ You can register an account by sending a ``POST`` request containing your
 email address, a password, and a captcha ID and solution (see `Obtain a
 Captcha`_), like this::
 
-    curl -X POST https://desec.io/api/v1/auth/ \
+    curl https://desec.io/api/v1/auth/ \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "email": "youremailaddress@example.com",
@@ -108,7 +108,7 @@ Domain Creation during Account Registration
 Along with your account creation request, you can provide a domain name as
 follows::
 
-    curl -X POST https://desec.io/api/v1/auth/ \
+    curl https://desec.io/api/v1/auth/ \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "email": "youremailaddress@example.com",
@@ -143,7 +143,7 @@ you can ask the API for a token that can be used to authorize subsequent DNS
 management requests. To obtain such a token, send a ``POST`` request with your
 email address and password to the ``/auth/login/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/login/ \
+    curl https://desec.io/api/v1/auth/login/ \
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
@@ -175,7 +175,7 @@ In case of credential mismatch, the server returns ``403 Permission Denied``.
 To authorize subsequent requests with the new token, set the HTTP ``Authorization``
 header to the token's secret value, prefixed with ``Token``::
 
-    curl -X GET https://desec.io/api/v1/ \
+    curl https://desec.io/api/v1/ \
         --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 
@@ -222,7 +222,7 @@ Retrieve Account Information
 To request information about your account, send a ``GET`` request to the
 ``/auth/account/`` endpoint::
 
-    curl -X GET https://desec.io/api/v1/auth/account/ \
+    curl https://desec.io/api/v1/auth/account/ \
         --header "Authorization: Token i-T3b1h_OI-H9ab8tRS98stGtURe"
 
 A JSON object representing your user account will be returned::
@@ -292,7 +292,7 @@ In case you forget your password, you can reset it. To do so, send a
 ``POST`` request with your email address and a captcha ID and solution (see
 `Obtain a Captcha`_) to the ``/auth/account/reset-password/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/account/reset-password/ \
+    curl https://desec.io/api/v1/auth/account/reset-password/ \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "email": "youremailaddress@example.com",
@@ -311,7 +311,7 @@ password reset, click on that link (which will direct you to our frontend) or
 send a ``POST`` request to this URL, with the new password in
 the payload::
 
-    curl -X POST https://desec.io/api/v1/v/reset-password/<code>/ \
+    curl https://desec.io/api/v1/v/reset-password/<code>/ \
         --header "Content-Type: application/json" --data @- <<< \
         '{"new_password": "yournewpassword"}'
 
@@ -334,7 +334,7 @@ To change the email address associated with your account, send a ``POST``
 request with your email address, your password, and your new email address to
 the ``/auth/account/change-email/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/account/change-email/ \
+    curl https://desec.io/api/v1/auth/account/change-email/ \
         --header "Content-Type: application/json" --data @- <<EOF
         {
           "email": "youremailaddress@example.com",
@@ -367,7 +367,7 @@ domains from deSEC (see :ref:`deleting-a-domain`).
 To delete your (empty) account, send a ``POST`` request with your email
 address and password to the ``/auth/account/delete/`` endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/account/delete/ \
+    curl https://desec.io/api/v1/auth/account/delete/ \
         --header "Content-Type: application/json" --data @- <<< \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 

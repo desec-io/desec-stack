@@ -183,7 +183,7 @@ Creating a Token
 
 To create a new token, issue a ``POST`` request to the tokens endpoint::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/ \
+    curl https://desec.io/api/v1/auth/tokens/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"name": "my new token"}'
@@ -283,7 +283,7 @@ Listing Tokens
 
 To retrieve a list of all known tokens, issue a ``GET`` request as follows::
 
-    curl -X GET https://desec.io/api/v1/auth/tokens/ \
+    curl https://desec.io/api/v1/auth/tokens/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will respond with a list of token objects.  Up to 500 items are
@@ -297,7 +297,7 @@ Retrieving a Specific Token
 To retrieve information about a specific token, issue a ``GET`` request to the
 token's endpoint::
 
-    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/ \
+    curl https://desec.io/api/v1/auth/tokens/{id}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The response will contain a token object as described under `Token Field
@@ -462,14 +462,14 @@ rest of the API, so is not documented in detail here.
 For example, to retrieve a list of policies for a given token, issue a ``GET``
 request as follows::
 
-    curl -X GET https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
+    curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond"
 
 The server will respond with a list of token policy objects.
 
 To create the default policy, send a request like::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
+    curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"domain": null, "subname": null, "type": null}'
@@ -480,7 +480,7 @@ not given, it is assumed to be ``false``.
 As an example, let's create a policy that only allows manipulating all A
 records for a specific domain::
 
-    curl -X POST https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
+    curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
         --header "Content-Type: application/json" --data @- <<< \
         '{"domain": "example.dedyn.io", "subname": null, "type": "A", "perm_write": true}'
