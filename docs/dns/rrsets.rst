@@ -208,10 +208,22 @@ For a HTTPS server, this will usually be ``_443._tcp`` (for an otherwise empty
 other use cases, the values have to be adapted accordingly (e.g. ``_993._tcp``
 for an IMAPS server).
 
-To generate the ``TLSA`` from your certificate, you can use a tool like
-https://www.huque.com/bin/gen_tlsa.  We are planning to provide a tool that is
-connected directly to our API in the future.  For full detail on how ``TLSA``
-records work, please refer to RFC 6698.
+To generate ``TLSA`` value from your certificate, you can use the following
+command::
+
+    openssl x509 -in /path/to/fullchain.pem -noout -pubkey \
+    | openssl pkey -pubin -outform DER \
+    | openssl sha256
+
+**Pro tip:** To put only the hash into an environment variable, use::
+
+    TLSA_HASH=$(openssl x509 -in /path/to/fullchain.pem -noout -pubkey \
+    | openssl pkey -pubin -outform DER \
+    | openssl sha256 2>&1 \
+    | cut -f2 -d ' ')
+
+Alternatively, you can use a tool like https://www.huque.com/bin/gen_tlsa.
+For full detail on how ``TLSA`` records work, please refer to RFC 6698.
 
 Bulk Creation of RRsets
 ```````````````````````
