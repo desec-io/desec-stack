@@ -213,6 +213,20 @@ https://www.huque.com/bin/gen_tlsa.  We are planning to provide a tool that is
 connected directly to our API in the future.  For full detail on how ``TLSA``
 records work, please refer to RFC 6698.
 
+The ``TLSA`` sha256 hash can also be generated with that command::
+
+    openssl x509 -in /etc/letsencrypt/live/${name}/fullchain.pem -noout -pubkey \
+    | openssl pkey -pubin -outform DER \
+    | openssl sha256
+
+**Pro tip:** To put only the hash into an environment variable can this comand
+be used::
+
+    TLSA_SHA=$(openssl x509 -in /etc/letsencrypt/live/${DOMAIN}/fullchain.pem -noout -pubkey \
+    | openssl pkey -pubin -outform DER \
+    | openssl sha256 2>&1 \
+    |cut -f2 -d ' ')
+
 Bulk Creation of RRsets
 ```````````````````````
 
