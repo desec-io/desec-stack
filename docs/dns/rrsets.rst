@@ -219,8 +219,8 @@ The ``TLSA`` sha256 hash can also be generated with the following command::
     | openssl pkey -pubin -outform DER \
     | openssl sha256
 
-**Pro tip:** To put only the hash into an environment variable can this command
-be used::
+**Pro tip:** To put only the hash into an environment variable this command
+can be used::
 
     TLSA_SHA=$(openssl x509 -in </path/to/fullchain.pem> -noout -pubkey \
     | openssl pkey -pubin -outform DER \
