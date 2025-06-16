@@ -106,6 +106,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
             datas = [
                 {"last_used": "2018-09-06T09:08:43.762697Z"},
                 {"last_used": None},
+                {"mfa": True},
             ]
             for data in datas:
                 response = method(url, data=data)
