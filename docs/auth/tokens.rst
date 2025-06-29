@@ -481,7 +481,7 @@ request as follows::
 
 The server will respond with a list of token policy objects.
 
-To create the default policy, send a request like::
+To create the default policy, send a ``POST`` request like::
 
     curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
