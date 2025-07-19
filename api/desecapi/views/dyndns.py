@@ -62,6 +62,9 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     serializer_class = RRsetSerializer
     throttle_scope = "dyndns"
 
+    IPV4_PARAMS = ["myip", "myipv4", "ip"]
+    IPV6_PARAMS = ["myipv6", "ipv6", "myip", "ip"]
+
     @property
     def throttle_scope_bucket(self):
         return self.domain.name
@@ -70,10 +73,16 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         """
         Parses the request for IP parameters and determines the appropriate update action.
 
-        This method checks a given list of parameter keys in the request URL. It handles
-        plain IP addresses, comma-separated lists of IPs, the "preserve" keyword, and
-        subnet notation (e.g., "10.0.0.0/24"). It also uses the client's remote IP
+        This method checks a given list of parameter keys in the request URL. The keys can
+        be global (e.g. ['myip']) or scoped to a specific hostname (e.g. ['example.com.myip']).
+
+        It handles plain IP addresses, comma-separated lists of IPs, the "preserve" keyword,
+        and subnet notation (e.g., "10.0.0.0/24"). It also uses the client's remote IP
         as a fallback.
+
+        Args:
+            param_keys (list): A list of parameter keys to check for in the request.
+            separator (str): The IP address separator ("." for IPv4, ":" for IPv6).
 
         Returns:
             UpdateAction: A dataclass instance (`SetIPs`, `UpdateWithSubnet`, or `PreserveIPs`)
@@ -257,10 +266,17 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         for rrset in instances:
             subname_records[rrset.subname].extend(rrset.records.all())
 
-        actions = {
-            "A": self._find_action(["myip", "myipv4", "ip"], separator="."),
-            "AAAA": self._find_action(["myipv6", "ipv6", "myip", "ip"], separator=":"),
-        }
+        actions = {}
+        for subname in self.subnames:
+            fqdn = ".".join(filter(None, (subname, self.domain.name)))
+            actions[("A", subname)] = self._find_action(
+                [f"{fqdn}.{p}" for p in self.IPV4_PARAMS] + self.IPV4_PARAMS,
+                separator=".",
+            )
+            actions[("AAAA", subname)] = self._find_action(
+                [f"{fqdn}.{p}" for p in self.IPV6_PARAMS] + self.IPV6_PARAMS,
+                separator=":",
+            )
 
         data = [
             {
@@ -269,8 +285,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
                 "ttl": 60,
                 "records": records,
             }
-            for subname in self.subnames
-            for type_, action in actions.items()
+            for (type_, subname), action in actions.items()
             if (records := self._get_records(subname_records[subname], action))
             is not None
         ]
