@@ -174,10 +174,15 @@ expected.
 
 Updating Multiple Domains
 `````````````````````````
-To update multiple domain or subdomains, it is best to designate one of them
-as the main domain, and create CNAME records for the others, so that they act
-as DNS aliases for the main domain.
-You can use do that either via the web interface or the API.
+To have multiple domain names point to the same dynamic IP address, it is best
+to designate one of them as the main domain for updates and create CNAME records
+for the others. This way, the other domains will automatically resolve to the same
+IP address as the main domain.
 
-If you try to update several subdomains directly (by issuing multiple update
-requests), your update requests may be refused (see :ref:`rate-limits`).
+Alternatively, for cases where a CNAME is not suitable (e.g. at the zone apex),
+it is possible to update multiple hostnames (such as ``example.com`` and ``sub.example.com``)
+in a single API call, as long as they all belong to the same domain. It is not
+possible to update hostnames belonging to different domains (e.g. ``example.com``
+and ``example.org``) in the same request.
+
+For technical details, please see the :ref:`update-api` documentation.
