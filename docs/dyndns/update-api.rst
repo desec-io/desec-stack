@@ -159,6 +159,31 @@ query parameter, such as ``ipv6=2a01:a:b:c::1/64``.
     Note that using an encrypted connection (TLS) does *not* protect against
     this attack, as TLS does not protect the IP address.
 
+Per-Hostname IP Addresses
+-------------------------
+When updating multiple hostnames at once, it is possible to specify different
+IP information for each hostname. This is done by prefixing the IP parameter
+with the hostname it applies to.
+
+For example, to set a global IPv4 address for all hostnames but a specific
+IPv6 address for ``host2.example.com``, you would send a request like this::
+
+  ?hostname=host1.example.com,host2.example.com
+  &myip=1.2.3.4
+  &host2.example.com.myipv6=2001:db8::1
+
+This would set the IPv4 address of ``host1.example.com`` and ``host2.example.com``
+to ``1.2.3.4``. Additionally, there would be an IPv6 address with the value
+``2001:db8::1`` set for ``host2.example.com``.
+
+For each hostname, the server will look for IP parameters in the following order:
+
+1. A parameter prefixed with that specific hostname (e.g., ``host2.example.com.myipv6``).
+2. A global, non-prefixed parameter (e.g., ``myip``).
+3. The remote IP address of the client making the request (if applicable).
+
+This allows for flexible and powerful combinations of updates in a single API call.
+
 Update Response
 ```````````````
 If successful, the server will return a response with status ``200 OK`` and
