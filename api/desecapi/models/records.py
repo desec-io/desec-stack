@@ -56,24 +56,17 @@ RR_SET_TYPES_MANAGEABLE = (
 )
 
 
-def replace_ip_subnet(queryset, subnet):
+def replace_ip_subnet(records, subnet):
     """
-    Fetches A or AAAA record contents from an RRset queryset (depending on the subnet's
-    address family) and returns them with their subnet bits replaced accordingly.
+    Takes a list of A or AAAA records and returns them with their subnet bits replaced accordingly.
     """
-    subnet = ip_network(subnet, strict=False)
-    try:
-        records = queryset.get(
-            type={IPv4Network: "A", IPv6Network: "AAAA"}[type(subnet)]
-        ).records.all()
-    except ObjectDoesNotExist:
-        records = []
     return [
         str(
             ip_address(int(ip_address(record.content)) & int(subnet.hostmask))  # suffix
             + int(subnet.network_address)  # prefix
         )
         for record in records
+        if isinstance(subnet.network_address, type(ip_address(record.content)))
     ]
 
 

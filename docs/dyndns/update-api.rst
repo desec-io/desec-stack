@@ -73,7 +73,7 @@ the case, we suggest looking for another client.
 Determine Hostname
 ******************
 To update your IP address in the DNS, our servers need to determine the
-hostname you want to update.  To determine the hostname, we try the following
+hostname(s) you want to update.  To determine them, we try the following
 steps until there is a match:
 
 - ``hostname`` query string parameter, unless it is set to ``YES`` (this
@@ -87,6 +87,12 @@ steps until there is a match:
 
 - After successful authentication (no matter how), the only hostname that is
   associated with your user account (if not ambiguous).
+
+You can either specify a single hostname, or a comma-separated list of hostnames
+in order to update multiple subdomains in a single request. This works with any
+of the above parameters; however, all hostnames must belong to the same domain.
+The resulting updates are performed atomically (that is, they are either all
+applied or they all fail).
 
 If we cannot determine a hostname to update, the API returns a status code of
 ``400 Bad Request`` (if no hostname was given but multiple domains exist in
@@ -102,9 +108,6 @@ Example: Your domain is ``yourdomain.dedyn.io``, and you're using HTTP Basic
 Authentication.  In this case, replace your authentication username with
 ``sub.yourdomain.dedyn.io``.  Similarly, if you use the ``hostname`` query
 parameter, it needs to be set to the full domain name (including subdomain).
-
-To update more than one domain name, please see
-:ref:`updating-multiple-dyn-domains`.
 
 .. _determine-ip-addresses:
 
@@ -218,4 +221,9 @@ Basic authentication with simultaneous update of IPv4 and IPv6, option 1::
 or option 2::
 
   curl "https://update.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv6=fd08::1234" \
+    --header "Authorization: Token <your token secret>"
+
+Update multiple domains simultaneously::
+
+  curl "https://update.dedyn.io/?hostname=<your domain>,<your subdomain>&myip=1.2.3.4" \
     --header "Authorization: Token <your token secret>"
