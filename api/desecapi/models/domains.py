@@ -8,8 +8,8 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import CharField, F, Manager, Q, Value
-from django.db.models.functions import Concat, Length
+from django.db.models import CharField, F, Manager, Q, Value, Window
+from django.db.models.functions import Concat, Length, RowNumber
 from django_prometheus.models import ExportModelOperationsMixin
 from dns.exception import Timeout
 from dns.resolver import NoNameservers
@@ -39,6 +39,23 @@ class DomainManager(Manager):
             dotted_name=Concat(Value("."), "name", output_field=CharField()),
             dotted_qname=Value(f".{qname}", output_field=CharField()),
         ).filter(dotted_qname__endswith=F("dotted_name"), **kwargs)
+
+    def filter_qnames(self, qnames: list[str], **kwargs) -> models.query.QuerySet:
+        if not qnames:
+            return self.none()
+
+        window = Window(
+            expression=RowNumber(),
+            order_by=F("name_length").desc(),
+        )
+        qsets = [
+            self.filter_qname(qname, **kwargs)
+            .annotate(distance=window)
+            .filter(distance=1)
+            for qname in qnames
+        ]
+
+        return qsets[0].union(*qsets[1:])
 
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
