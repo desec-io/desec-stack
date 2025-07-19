@@ -40,6 +40,17 @@ class DomainManager(Manager):
             dotted_qname=Value(f".{qname}", output_field=CharField()),
         ).filter(dotted_qname__endswith=F("dotted_name"), **kwargs)
 
+    def filter_qnames(self, qnames: list[str], **kwargs) -> models.query.QuerySet:
+        if not qnames:
+            return self.none()
+
+        qsets = [
+            self.filter_qname(qname, **kwargs).order_by("-name_length")[:1]
+            for qname in qnames
+        ]
+
+        return qsets[0].union(*qsets[1:], all=True)
+
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @staticmethod
