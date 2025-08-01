@@ -77,13 +77,19 @@ hostname you want to update.  To determine the hostname, we try the following
 steps until there is a match:
 
 - ``hostname`` query string parameter, unless it is set to ``YES`` (this
-  sometimes happens with dynDNS update clients).
+  sometimes happens with dynDNS update clients). This parameter can also be a
+  comma-separated list of hostnames to update multiple domains in a single
+  request. All updates are performed in a single, atomic transaction.
 
-- ``host_id`` query string parameter.
+- ``host_id`` query string parameter. This can also be a comma-separated list of
+  hostnames.
 
-- The username as provided in the HTTP Basic Authorization header.
+- The username as provided in the HTTP Basic Authorization header. This can also
+  be a comma-separated list of hostnames.
 
-- The username as provided in the ``username`` query string parameter.
+- The username as provided in the ``username`` query string parameter. This can
+  also be a comma-separated list of hostnames. All hostnames must belong to the
+  same domain.
 
 - After successful authentication (no matter how), the only hostname that is
   associated with your user account (if not ambiguous).
@@ -102,9 +108,6 @@ Example: Your domain is ``yourdomain.dedyn.io``, and you're using HTTP Basic
 Authentication.  In this case, replace your authentication username with
 ``sub.yourdomain.dedyn.io``.  Similarly, if you use the ``hostname`` query
 parameter, it needs to be set to the full domain name (including subdomain).
-
-To update more than one domain name, please see
-:ref:`updating-multiple-dyn-domains`.
 
 .. _determine-ip-addresses:
 
@@ -155,6 +158,31 @@ query parameter, such as ``ipv6=2a01:a:b:c::1/64``.
 
     Note that using an encrypted connection (TLS) does *not* protect against
     this attack, as TLS does not protect the IP address.
+
+Per-Hostname IP Addresses
+-------------------------
+When updating multiple hostnames at once, it is possible to specify different
+IP information for each hostname. This is done by prefixing the IP parameter
+with the hostname it applies to.
+
+For example, to set a global IPv4 address for all hostnames but a specific
+IPv6 address for ``host2.example.com``, you would send a request like this::
+
+  ?hostname=host1.example.com,host2.example.com
+  &myip=1.2.3.4
+  &host2.example.com.myipv6=2001:db8::1
+
+This would set the IPv4 address of ``host1.example.com`` and ``host2.example.com``
+to ``1.2.3.4``. Additionally, there would be an IPv6 address with the value
+``2001:db8::1`` set for ``host2.example.com``.
+
+For each hostname, the server will look for IP parameters in the following order:
+
+1. A parameter prefixed with that specific hostname (e.g., ``host2.example.com.myipv6``).
+2. A global, non-prefixed parameter (e.g., ``myip``).
+3. The remote IP address of the client making the request (if applicable).
+
+This allows for flexible and powerful combinations of updates in a single API call.
 
 Update Response
 ```````````````
@@ -218,4 +246,9 @@ Basic authentication with simultaneous update of IPv4 and IPv6, option 1::
 or option 2::
 
   curl "https://update.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv6=fd08::1234" \
+    --header "Authorization: Token <your token secret>"
+
+Update multiple domains simultaneously::
+
+  curl "https://update.dedyn.io/?hostname=<your domain>,<your sub domain>&myip=1.2.3.4" \
     --header "Authorization: Token <your token secret>"
