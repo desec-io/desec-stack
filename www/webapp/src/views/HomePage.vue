@@ -80,6 +80,19 @@
       <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
+            <img loading="lazy" src="../assets/non-free/icann.logo.svg" alt="ICANN Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
+          </v-layout>
+        </v-col>
+        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+          In our project "Closing the DNSSEC Maturity Gap through Automation", we develop technical solutions that
+          enable automatic deployment of DNSSEC, and work with DNS and domain industry players to facilitate real-world
+          introduction of these automation standards. This project is supported by the
+          <a class="primary--text text--darken-2" href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
+        </v-col>
+      </v-row>
+      <v-row align="center" class="py-2" justify="center">
+        <v-col class="col-12 col-lg-3 py-4">
+          <v-layout class="justify-center">
             <img loading="lazy" src="../assets/non-free/nlnet.logo.svg" alt="NLnet Foundation Logo" class="mr-6" style="max-width: 180px; width: 100%"/>
           </v-layout>
         </v-col>
