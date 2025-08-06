@@ -80,13 +80,14 @@
       <v-row align="center" class="py-2" justify="center">
         <v-col class="col-12 col-lg-3 py-4">
           <v-layout class="justify-center">
-            <img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
+            <img loading="lazy" src="../assets/non-free/icann.logo.svg" alt="ICANN Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
           </v-layout>
         </v-col>
         <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          <a class="primary--text text--darken-2" href="https://securesystems.de/">SSE</a> supports us with staff for
-          software development and our standardization activities within the IETF and ICANN.
-          We trust them because creating and auditing security solutions is their daily business.
+          In our project "Closing the DNSSEC Maturity Gap through Automation", we develop technical solutions that
+          enable automatic deployment of DNSSEC, and work with DNS and domain industry players to facilitate real-world
+          introduction of these automation standards. This project is supported by the
+          <a class="primary--text text--darken-2" href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
@@ -152,9 +153,9 @@
       </v-row>
       <v-row align="center" class="mt-6" justify="center" style="text-align: center">
         <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
+        <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" style="max-width: 160px; width: 100%"/></a></v-col>
         <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" style="height: 100%; max-height: 80px; min-width: 50px; vertical-align: middle"/></a></v-col>
         <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
-        <v-col><a href="https://laburity.com/"><img loading="lazy" src="../assets/non-free/laburity.logo.svg" alt="Laburity Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
       </v-row>
     </v-container>
   </v-container>

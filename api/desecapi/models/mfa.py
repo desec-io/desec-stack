@@ -56,7 +56,7 @@ class TOTPFactor(BaseFactor):
     @property
     def uri(self):
         return self._totp.provisioning_uri(
-            name=self.name,
+            name=self.user.email,
             issuer_name=f"desec.{settings.DESECSTACK_DOMAIN}",
         )
 
