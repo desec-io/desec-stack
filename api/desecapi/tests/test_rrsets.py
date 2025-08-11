@@ -326,24 +326,32 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
 
     def test_create_my_rr_sets_cname_multiple_records(self):
-        for records in (["foobar.com.", "foobar.com."], ["foobar.com.", "foobar.org."]):
-            data = {"subname": "asdf", "ttl": 3600, "type": "CNAME", "records": records}
-            response = self.client.post_rr_set(self.my_empty_domain.name, **data)
-            self.assertContains(
-                response,
-                "CNAME RRset cannot have multiple records",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        data = {
+            "subname": "asdf",
+            "ttl": 3600,
+            "type": "CNAME",
+            "records": ["foobar.com.", "foobar.org."],
+        }
+        response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertContains(
+            response,
+            "CNAME RRset cannot have multiple records",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     def test_create_my_rr_sets_dname_multiple_records(self):
-        for records in (["foobar.com.", "foobar.com."], ["foobar.com.", "foobar.org."]):
-            data = {"subname": "asdf", "ttl": 3600, "type": "DNAME", "records": records}
-            response = self.client.post_rr_set(self.my_empty_domain.name, **data)
-            self.assertContains(
-                response,
-                "DNAME RRset cannot have multiple records",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        data = {
+            "subname": "asdf",
+            "ttl": 3600,
+            "type": "DNAME",
+            "records": ["foobar.com.", "foobar.org."],
+        }
+        response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertContains(
+            response,
+            "DNAME RRset cannot have multiple records",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     def test_create_my_rr_sets_cname_exclusivity(self):
         self.create_rr_set(self.my_domain, ["1.2.3.4"], type="A", ttl=3600, subname="a")
@@ -487,11 +495,16 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_create_my_rr_sets_duplicate_content(self):
-        for records in [
-            ["::1", "0::1"],
-            # TODO add more examples
-        ]:
-            data = {"records": records, "ttl": 3660, "type": "AAAA"}
+        for type_, records in {
+            "AAAA": ["::1", "0::1"],
+            # Hostname case equivalency affects only types listed in RFC 4034 Section 6.2,
+            # and in particular not the ones assigned afterwards (e.g., SVCB).
+            # Limiting ourselves to the relevant cases here.
+            "MX": ["10 mail.example.net.", "10 mail.example.NET."],
+            "NS": ["ns1.desec.io.", "NS1.DESEC.IO."],
+            "PTR": ["mail.example.org.", "MAIL.EXAMPLE.ORG."],
+        }.items():
+            data = {"records": records, "ttl": 3660, "type": type_}
             response = self.client.post_rr_set(self.my_empty_domain.name, **data)
             self.assertContains(
                 response, "Duplicate", status_code=status.HTTP_400_BAD_REQUEST
@@ -559,7 +572,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ("AAAA", ("0000::0000:0001", "::1")),
             ("AAAA", ("::ffff:127.0.0.1", "::ffff:7f00:1")),
             ("AAAA", ("2001:db8::128.2.129.4", "2001:db8::8002:8104")),
-            ("AFSDB", ("02 turquoise.FEMTO.edu.", "2 turquoise.femto.edu.")),
+            ("AFSDB", ("02 turquoise.FEMTO.edu.", "2 turquoise.FEMTO.edu.")),
             (
                 "APL",
                 (
@@ -599,7 +612,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ),
             ("CDS", ("0 0 0 00", "0 0 0 00")),
             ("CERT", ("04 257 RSASHA256 sadfdd==", "4 257 8 sadfdQ==")),
-            ("CNAME", ("EXAMPLE.COM.", "example.com.")),
+            ("CNAME", ("EXAMPLE.com.", "EXAMPLE.com.")),
             ("CSYNC", ("066 03  NS  AAAA A", "66 3 A NS AAAA")),
             ("DHCID", ("xxxx", "xxxx")),
             (
@@ -616,7 +629,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     "6454 8 2 5CBA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA10DF1F520".lower(),
                 ),
             ),
-            ("DNAME", ("EXAMPLE.COM.", "example.com.")),
+            ("DNAME", ("EXAMPLE.com.", "EXAMPLE.com.")),
             (
                 "DNSKEY",
                 (
@@ -691,7 +704,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 ),
             ),
             ("NID", ("010 0014:4fff:ff20:Ee64", "10 0014:4fff:ff20:ee64")),
-            ("NS", ("EXaMPLE.COM.", "example.com.")),
+            ("NS", ("EXaMPLE.cOm.", "EXaMPLE.cOm.")),
             (
                 "OPENPGPKEY",
                 (
@@ -699,8 +712,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     "mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82",
                 ),
             ),
-            ("PTR", ("EXAMPLE.COM.", "example.com.")),
-            ("RP", ("hostmaster.EXAMPLE.com. .", "hostmaster.example.com. .")),
+            ("PTR", ("EXAMPLE.com.", "EXAMPLE.com.")),
+            ("RP", ("hostmaster.EXAMPLE.com. .", "hostmaster.EXAMPLE.com. .")),
             ("SMIMEA", ("3 01 0 aaBBccddeeff", "3 1 0 aabbccddeeff")),
             (
                 "SPF",
@@ -712,8 +725,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ("SPF", ('"foo" "bar"', '"foo" "bar"')),
             ("SPF", ('"foobar"', '"foobar"')),
             ("SRV", ("0 000 0 .", "0 0 0 .")),
-            ("SRV", ("100 1 5061 EXAMPLE.com.", "100 1 5061 example.com.")),
-            ("SRV", ("100 1 5061 example.com.", "100 1 5061 example.com.")),
+            ("SRV", ("100 1 5061 EXAMPLE.com.", "100 1 5061 EXAMPLE.com.")),
             ("SSHFP", ("2 2 aabbccEEddff", "2 2 aabbcceeddff")),
             (
                 "SVCB",
