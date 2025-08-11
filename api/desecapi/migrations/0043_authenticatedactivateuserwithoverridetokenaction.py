@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0042_rename_user_token_owner_token_user_override_and_more"),
     ]

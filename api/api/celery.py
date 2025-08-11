@@ -13,10 +13,10 @@ app.autodiscover_tasks()
 class CeleryFormatter(logging.Formatter):
     def format(self, record):
         return (
-            f"Task: { record.sender }\n"
-            f"Task arguments: { record.task_args }\n"
-            f"Task keyword arguments: { record.task_kwargs }\n"
-            f"Task ID: { record.task_id }\n"
+            f"Task: {record.sender}\n"
+            f"Task arguments: {record.task_args}\n"
+            f"Task keyword arguments: {record.task_kwargs}\n"
+            f"Task ID: {record.task_id}\n"
             f"Exception Information:\n{pprint.pformat(record.exception.__dict__)}"
         )
 

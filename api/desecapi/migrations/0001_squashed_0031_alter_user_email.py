@@ -66,7 +66,6 @@ def user_credentials_changed_forward(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []

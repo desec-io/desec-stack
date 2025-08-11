@@ -105,10 +105,9 @@ def _NameMixin(name_field, *, allow_root, hostname=True):
         # https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L419
         re.compile(r"^(([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)\.)+$")
         if hostname
-        else
         # https://github.com/PowerDNS/pdns/blob/4646277d05f293777a3d2423a3b188ccdf42c6bc/pdns/dnsname.cc#L473
         # with the exception of [/@ :\\]
-        re.compile(r"^(([A-Za-z0-9_*-]+)\.)+$")
+        else re.compile(r"^(([A-Za-z0-9_*-]+)\.)+$")
     )
 
     class Mixin:

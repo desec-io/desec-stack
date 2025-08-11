@@ -6,7 +6,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0040_token_auto_policy_token_token_auto_policy_and_more"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0037_remove_tokendomainpolicy_perm_dyndns"),
     ]

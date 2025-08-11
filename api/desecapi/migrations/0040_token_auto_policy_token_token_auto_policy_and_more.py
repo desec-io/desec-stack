@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0039_token_perm_create_domain_token_perm_delete_domain"),
     ]

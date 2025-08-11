@@ -389,7 +389,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     1. For PyCharm's Python Console, the environment variables of your `.env` file and `DJANGO_SETTINGS_MODULE=api.settings_quick_test` need to be configured in Settings › Build, Execution, Deployment › Console › Django Console. (Note that if you need to work with the database, you need to initialize it first by running all migrations; otherwise, the model tables will be missing from the database.)
 
-1. **Code quality.** We use [Black](https://pypi.org/project/black/) to ensure formatting consistency and minimal diffs. Before you commit Python code into the `api/` directory, please run `black api/desecapi/`.
+1. **Code quality.** We use [Ruff](https://docs.astral.sh/ruff/) to ensure formatting consistency and minimal diffs. Before you commit Python code into the `api/` directory, please run `ruff format api/desecapi/`.
 
 
 ## Debugging
