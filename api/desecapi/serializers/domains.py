@@ -99,11 +99,6 @@ class DomainSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # save domain
-        if (
-            "minimum_ttl" not in validated_data
-            and Domain(name=validated_data["name"]).is_locally_registrable
-        ):
-            validated_data.update(minimum_ttl=60)
         domain: Domain = super().create(validated_data)
 
         # save RRsets if zonefile was given

@@ -2,7 +2,7 @@
 import { helpers } from 'vuelidate/lib/validators';
 import RecordItem from './RecordItem.vue';
 
-const hostname = helpers.regex('hostname', /^(([a-zA-Z0-9_-]+\.)+[a-zA-Z]{2,})[.]?$/);
+const domain = helpers.regex('domain', /^(([a-zA-Z0-9_\\-]+\.)+[a-zA-Z]{2,})[.]?$/);
 const trailingDot = helpers.regex('trailingDot', /[.]$/);
 
 export default {
@@ -10,11 +10,11 @@ export default {
   extends: RecordItem,
   data: () => ({
     errors: {
-      hostname: 'Please enter a valid hostname.',
-      trailingDot: 'Hostname must end with a dot.',
+      domain: 'Please enter a valid domain name.',
+      trailingDot: 'Domain name must end with a dot.',
     },
     fields: [
-      { label: 'Target hostname', validations: { hostname, trailingDot } },
+      { label: 'Target domain name', validations: { domain, trailingDot } },
     ],
   }),
 };

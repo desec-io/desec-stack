@@ -477,6 +477,18 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             raise serializers.ValidationError(str(ex))
         return attrs
 
+    def _validate_ci_uniqueness(self, attrs, type_):
+        if len(attrs["records"]) > 1 and len(attrs["records"]) != len(
+            set(
+                models.RR.to_wire(type_, rr["content"], digestable=True)
+                for rr in attrs["records"]
+            )
+        ):
+            raise serializers.ValidationError(
+                "Duplicate: records must be semantically unique"
+            )
+        return attrs
+
     def _validate_length(self, attrs):
         # There is a 12 byte baseline requirement per record, c.f.
         # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
@@ -485,8 +497,9 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
         qname = models.RRset.construct_name(attrs.get("subname", ""), self.domain.name)
         conservative_total_length = (
-            32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"])
-        ) + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+            (32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"]))
+            + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+        )
 
         excess_length = conservative_total_length - 65535  # max response size
         if excess_length > 0:
@@ -520,6 +533,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
         if "records" in attrs:
             attrs = self._validate_canonical_presentation(attrs, type_)
+            attrs = self._validate_ci_uniqueness(attrs, type_)
             attrs = self._validate_length(attrs)
             attrs = self._validate_blocked_content(attrs, type_)
 

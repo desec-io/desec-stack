@@ -179,9 +179,7 @@ CATALOG_ZONE = "catalog.internal"
 # Celery
 # see https://docs.celeryproject.org/en/stable/history/whatsnew-4.0.html#latentcall-django-admonition
 CELERY_BROKER_URL = "amqp://rabbitmq"
-CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = (
-    []
-)  # required because djcelery_email.utils accesses it
+CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = []  # required because djcelery_email.utils accesses it
 CELERY_TASK_TIME_LIMIT = (
     300  # as zones become larger, AXFR takes longer, this needs to be increased
 )

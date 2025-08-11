@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
+from django.conf import settings
 from pyotp import TOTP
 from rest_framework import status
 
@@ -21,8 +23,9 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         self.assertEqual(totp["name"], name)
         self.assertIsNone(totp["last_used"])
         self.assertRegex(totp["secret"], r"^[A-Z0-9]{52}$")  # 32 bytes make 52 chars
-        self.assertRegex(
-            totp["uri"], r"^otpauth://totp/.*:.*[?]secret=[A-Z0-9]{52}&issuer=.*$"
+        self.assertEqual(
+            totp["uri"],
+            f"otpauth://totp/desec.{settings.DESECSTACK_DOMAIN}:{quote(self.owner.email)}?secret={totp['secret']}&issuer=desec.{settings.DESECSTACK_DOMAIN}",
         )
 
     def _decrement_timestep(self, offset):

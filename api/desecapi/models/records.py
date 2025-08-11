@@ -273,22 +273,29 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
     }
 
     @staticmethod
+    def to_wire(type_, any_presentation_format, *, digestable):
+        rdtype = rdatatype.from_text(type_)
+        cls = RR._type_map.get(rdtype, dns.rdata)
+        rdata = cls.from_text(
+            rdclass=rdataclass.IN,
+            rdtype=rdtype,
+            tok=dns.tokenizer.Tokenizer(any_presentation_format),
+            relativize=False,
+        )
+        wire = rdata.to_digestable() if digestable else rdata.to_wire()
+        return (rdtype, cls), wire
+
+    @staticmethod
     def canonical_presentation_format(any_presentation_format, type_):
         """
         Converts any valid presentation format for a RR into it's canonical presentation format.
         Raises if provided presentation format is invalid.
         """
-        rdtype = rdatatype.from_text(type_)
-
         try:
             # Convert to wire format, ensuring input validation.
-            cls = RR._type_map.get(rdtype, dns.rdata)
-            wire = cls.from_text(
-                rdclass=rdataclass.IN,
-                rdtype=rdtype,
-                tok=dns.tokenizer.Tokenizer(any_presentation_format),
-                relativize=False,
-            ).to_digestable()
+            (rdtype, cls), wire = RR.to_wire(
+                type_, any_presentation_format, digestable=False
+            )
 
             if len(wire) > 64000:
                 raise ValidationError(
@@ -323,7 +330,7 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
                 )
             else:
                 raise ValueError(
-                    f'Record content for type {type_} malformed: {",".join(e.args)}'
+                    f"Record content for type {type_} malformed: {','.join(e.args)}"
                 )
         except dns.name.NameTooLong:
             raise ValueError("Hostname must be no longer than 255 characters")
