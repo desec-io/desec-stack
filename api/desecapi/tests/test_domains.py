@@ -954,7 +954,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         ):
             response = self.client.post(url, {"name": name})
         self.assertStatus(response, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["minimum_ttl"], 60)
+        self.assertEqual(response.data["minimum_ttl"], settings.MINIMUM_TTL_DEFAULT)
 
 
 class DomainManagerTestCase(DesecTestCase):
