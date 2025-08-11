@@ -95,7 +95,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.data["detail"],
-            f'Pagination required. You can query up to {settings.REST_FRAMEWORK["PAGE_SIZE"]} items at a time ({n+1} total). '
+            f"Pagination required. You can query up to {settings.REST_FRAMEWORK['PAGE_SIZE']} items at a time ({n + 1} total). "
             "Please use the `first` page link (see Link header).",
         )
         links = convert_links(response["Link"])
@@ -420,7 +420,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 self.requests_desec_rr_sets_update(self.my_empty_domain.name)
             ):
                 self.client.delete_rr_set(
-                    self.my_empty_domain.name, type_=t, subname=f"name{l+2}"
+                    self.my_empty_domain.name, type_=t, subname=f"name{l + 2}"
                 )
 
     def test_create_my_rr_sets_too_long_content(self):
@@ -804,7 +804,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     canonical_record,
                     response.data["records"][0],
                     f"For RR set type {t}, expected '{canonical_record}' to be the canonical form of "
-                    f'\'{record}\', but saw \'{response.data["records"][0]}\'.',
+                    f"'{record}', but saw '{response.data['records'][0]}'.",
                 )
             with self.assertRequests(
                 self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
@@ -1030,7 +1030,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ],
             "EUI48": ["aa-bb-ccdd-ee-ff", "AA-BB-CC-DD-EE-GG"],
             "EUI64": ["aa-bb-cc-dd-ee-ff-gg-11", "AA-BB-C C-DD-EE-FF-00-11"],
-            "HINFO": ['"ARMv8-A"', f'"a" "{"b"*256}"'],
+            "HINFO": ['"ARMv8-A"', f'"a" "{"b" * 256}"'],
             "HTTPS": [
                 # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with ech base64'd
                 '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',
@@ -1124,7 +1124,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         for t in ["TXT", "SPF"]:
             for l in [200, 255, 256, 300, 400]:
                 data = {
-                    "records": [f'"{"a"*l}"'],
+                    "records": [f'"{"a" * l}"'],
                     "ttl": 3660,
                     "type": t,
                     "subname": f"x{l}",

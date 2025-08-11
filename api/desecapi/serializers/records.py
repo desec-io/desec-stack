@@ -497,8 +497,9 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
         qname = models.RRset.construct_name(attrs.get("subname", ""), self.domain.name)
         conservative_total_length = (
-            32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"])
-        ) + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+            (32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"]))
+            + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of
+        )
 
         excess_length = conservative_total_length - 65535  # max response size
         if excess_length > 0:

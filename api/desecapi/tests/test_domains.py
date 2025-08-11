@@ -52,14 +52,14 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
         """Raises if the given user (fresh if None) cannot register the given domain name."""
         self.assertTrue(
             Domain(name=domain_name, owner=user or self.create_user()).is_registrable(),
-            f'{domain_name} was expected to be registrable for {user or "a new user"}, but wasn\'t.',
+            f"{domain_name} was expected to be registrable for {user or 'a new user'}, but wasn't.",
         )
 
     def assertNotRegistrable(self, domain_name, user=None):
         """Raises if the given user (fresh if None) can register the given domain name."""
         self.assertFalse(
             Domain(name=domain_name, owner=user or self.create_user()).is_registrable(),
-            f'{domain_name} was expected to be not registrable for {user or "a new user"}, but was.',
+            f"{domain_name} was expected to be not registrable for {user or 'a new user'}, but was.",
         )
 
     def test_cant_register_global_non_local_public_suffix(self):
@@ -221,11 +221,14 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             "hyphen-.example.com",
             "max.length.x01234567890123456789012345678901234567890123456789012345678901.com",
         ]:
-            with self.assertRequests(
-                self.requests_desec_domain_creation(
-                    name=name, keys=False
-                )  # no serializer, no cryptokeys API call
-            ), PDNSChangeTracker():
+            with (
+                self.assertRequests(
+                    self.requests_desec_domain_creation(
+                        name=name, keys=False
+                    )  # no serializer, no cryptokeys API call
+                ),
+                PDNSChangeTracker(),
+            ):
                 Domain(owner=self.owner, name=name).save()
 
     def test_list_domains(self):
@@ -790,9 +793,10 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
 
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = "amazonaws.com"
-        with self.assertRequests(
-            self.requests_desec_domain_creation(name, keys=False)
-        ), PDNSChangeTracker():
+        with (
+            self.assertRequests(self.requests_desec_domain_creation(name, keys=False)),
+            PDNSChangeTracker(),
+        ):
             Domain(owner=self.create_user(), name=name).save()
             self.assertTrue(Domain.objects.filter(name=name).exists())
 

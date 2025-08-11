@@ -139,9 +139,7 @@ class DomainViewSet(
 
 class SerialListView(APIView):
     permission_classes = (permissions.IsVPNClient,)
-    throttle_classes = (
-        []
-    )  # don't break secondaries when they ask too often (our cached responses are cheap)
+    throttle_classes = []  # don't break secondaries when they ask too often (our cached responses are cheap)
 
     def get(self, request, *args, **kwargs):
         key = "desecapi.views.serials"

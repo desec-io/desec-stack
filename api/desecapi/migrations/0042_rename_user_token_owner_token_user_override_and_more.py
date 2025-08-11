@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("desecapi", "0041_remove_token_token_auto_policy_and_more"),
     ]
