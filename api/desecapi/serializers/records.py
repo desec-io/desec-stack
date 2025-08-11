@@ -477,6 +477,18 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             raise serializers.ValidationError(str(ex))
         return attrs
 
+    def _validate_ci_uniqueness(self, attrs, type_):
+        if len(attrs["records"]) > 1 and len(attrs["records"]) != len(
+            set(
+                models.RR.to_wire(type_, rr["content"], digestable=True)
+                for rr in attrs["records"]
+            )
+        ):
+            raise serializers.ValidationError(
+                "Duplicate: records must be semantically unique"
+            )
+        return attrs
+
     def _validate_length(self, attrs):
         # There is a 12 byte baseline requirement per record, c.f.
         # https://lists.isc.org/pipermail/bind-users/2008-April/070137.html
@@ -520,6 +532,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
         if "records" in attrs:
             attrs = self._validate_canonical_presentation(attrs, type_)
+            attrs = self._validate_ci_uniqueness(attrs, type_)
             attrs = self._validate_length(attrs)
             attrs = self._validate_blocked_content(attrs, type_)
 

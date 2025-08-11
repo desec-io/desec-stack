@@ -14,7 +14,7 @@ def generate_params(dict_value_lists_by_type: dict) -> list[tuple[str, str]]:
 VALID_RECORDS_CANONICAL = {
     'A': ['127.0.0.1', '127.0.0.2'],
     'AAAA': ['::1', '::2'],
-    'AFSDB': ['2 turquoise.femto.edu.'],
+    'AFSDB': ['2 turquoise.FEMTO.edu.'],
     'APL': [
         # from RFC 3123 Sec. 4
         '1:192.168.32.0/21 !1:192.168.38.0/28',
@@ -39,11 +39,11 @@ VALID_RECORDS_CANONICAL = {
         '0 0 0 00',
     ],
     'CERT': [],  # handled in non-canonical, because apply presentation format conversion on the stack (but not here)
-    'CNAME': ['example.com.'],
+    'CNAME': ['example.com.', 'EXAMPLE.INTERNAL.', '*._under-score.-foo_bar.example.net.'],
     'CSYNC': ['0 0', '66 1 A', '66 2 AAAA', '66 3 A NS AAAA', '66 15 NSEC'],
     'DHCID': ['aaaaaaaaaaaa', 'xxxx'],
     'DLV': ['6454 8 1 24396e17e36d031f71c354b06a979a67a01f503e'],
-    'DNAME': ['example.com.'],
+    'DNAME': ['example.com.', 'EXAMPLE.INTERNAL.'],
     'DNSKEY': [
         None,
         '256 3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5O fv4akjQGN2zY5AgB/2jmdR/+1PvXFqzK CAGJv4wjABEBNWLLFm7ew1hHMDZEKVL1 7aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKax T4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0 P+2F+TLKl3D0L/cD',
@@ -64,10 +64,10 @@ VALID_RECORDS_CANONICAL = {
     'L64': ['10 2001:0db8:2140:2000'],
     'LOC': ['23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m'],
     'LP': ['10 l64-subnet1.example.com.'],
-    'MX': ['10 example.com.', '20 1.1.1.1.'],
+    'MX': ['10 example.com.', '20 1.1.1.1.', '10 010.1.1.1.', '0 mail.example.NET.'],
     'NAPTR': ['100 50 "s" "z3950+I2L+I2C" "" _z3950._tcp.gatech.edu.'],
     'NID': ['10 0014:4fff:ff20:ee64'],
-    'NS': ['ns1.example.com.'],
+    'NS': ['ns1.example.com.', 'TeStInG.INTERNAL.'],
     'OPENPGPKEY': [
         'mQINBF3yev8BEADR9GxB6OJ5AJlXBWc3nWyWZ+yNNVBiy73XjgOs0uowbxph'
         'dIw6l75M6xw3i9xAlcjAGG2710FJaye7EZHot3RTIgHpn4FrErQSpNPuJKjD'
@@ -120,8 +120,8 @@ VALID_RECORDS_CANONICAL = {
         'NZ3nuZqQ9VjVLYiPURbdkYxWfUvFdVawfqUZ4PGKbVWrFfod8WwHa+gsP4UJ'
         'hLN/nxCalBbc3HnyYo0Inlytu4fumElS7kuUVNielOsJlyUr8kfxU3c6MPk=',
     ],
-    'PTR': ['example.com.', '*.example.com.'],
-    'RP': ['hostmaster.example.com. .'],
+    'PTR': ['example.com.', '*.example.com.', r'EXAMPLE\000foo.INTERNAL.'],
+    'RP': ['hostmaster.example.com. .', 'hostmaster.EXAMPLE.com. .'],
     'SMIMEA': ['3 1 0 aabbccddeeff'],
     'SPF': [
         '"v=spf1 ip4:10.1" ".1.1 ip4:127" ".0.0.0/16 ip4:192.168.0.0/27 include:example.com -all"',
@@ -129,7 +129,7 @@ VALID_RECORDS_CANONICAL = {
         '"v=spf1 ip4:10.1.1.1 ip4:127.0.0.0/16 ip4:192.168.0.0/27 include:example.com -all"',
         '"spf2.0/pra,mfrom ip6:2001:558:fe14:76:68:87:28:0/120 -all"',
     ],
-    'SRV': ['0 0 0 .', '100 1 5061 example.com.'],
+    'SRV': ['0 0 0 .', '100 1 5061 exaMPLe.com.'],
     'SSHFP': ['2 2 aabbcceeddff'],
     'SVCB': [
         '2 sVc2.example.NET. port=1234 ipv6hint=2001:db8::2',
@@ -154,7 +154,7 @@ VALID_RECORDS_CANONICAL = {
 VALID_RECORDS_NON_CANONICAL = {
     'A': ['127.0.0.3'],
     'AAAA': ['0000::0000:0003', '2001:db8::128.2.129.4'],
-    'AFSDB': ['03 turquoise.FEMTO.edu.'],
+    'AFSDB': ['03 turquoise.femto.edu.'],
     'APL': ['2:FF00:0:0:0:0::/8 !1:192.168.38.0/28'],
     'CAA': ['0128 "issue" "letsencrypt.org"'],
     'CDNSKEY': [
@@ -167,14 +167,14 @@ VALID_RECORDS_NON_CANONICAL = {
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
     'CERT': ['6 0 0 sadfdQ==', '06 00 00 sadfee==', 'IPGP 00 00 sadfee=='],
-    'CNAME': ['EXAMPLE.TEST.', '*._under-score.-foo_bar.example.net.'],
+    'CNAME': [r'\084\069\083\084.'],
     'CSYNC': ['066 03  NS  AAAA A'],
     'DHCID': ['aa aaa  aaaa a a a', 'xxxx'],
     'DLV': [
         '06454  08   01    24396e17e36d031f71c354b06a979a67a01f503e',
         '6454 8 2 5C BA665A006F6487625C6218522F09BD3673C25FA10F25CB18459AA1 0DF1F520',
     ],
-    'DNAME': ['EXAMPLE.TEST.'],
+    'DNAME': [r'\084\069\083\084.'],
     'DNSKEY': [
         '0256  3 8 AwEAAday3UX323uVzQqtOMQ7EHQYfD5Ofv4akjQGN2zY5AgB/2jmdR/+1PvXFqzKCAGJv4wjABEBNWLLFm7ew1hHMDZEKVL17aml0EBKI6Dsz6Mxt6n7ScvLtHaFRKaxT4i2JxiuVhKdQR9XGMiWAPQKrRM5SLG0P+2F+TLKl3D0L/cD',
         '257 03  8 AwEAAcw5QLr0IjC0wKbGoBPQv4qmeqHy9mvL5qGQTuaG5TSrNqEAR6b/qvxDx6my4JmEmjUPA1JeEI9YfTUieMr2UZflu7aIbZFLw0vqiYrywCGrCHXLalOrEOmrvAxLvq4vHtuTlH7JIszzYBSes8g1vle6KG7xXiP3U5Ll96Qiu6bZ31rlMQSPB20xbqJJh6psNSrQs41QvdcXAej+K2Hl1Wd8kPriec4AgiBEh8sk5Pp8W9ROLQ7PcbqqttFaW2m7N/Wy4qcFU13roWKDEAstbxH5CHPoBfZSbIwK4KM6BK/uDHpSPIbiOvOCW+lvu9TAiZPc0oysY6aslO7jXv16Gws=',
@@ -198,15 +198,15 @@ VALID_RECORDS_NON_CANONICAL = {
         '2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech',  # see #section-7
     ],
     # 'IPSECKEY': ['12 0 2 . asdfdf==', '03 1 1 127.0.00.1 asdfdf==', '12 3 1 example.com. asdfdf==',],
-    'KX': ['012 example.TEST.'],
+    'KX': ['012 example.INTERNAL.'],
     'L32': ['010  10.1.2.0', '65535 1.2.3.4'],
     'L64': ['010   2001:0Db8:2140:2000', '10 2001:0DB8:1140:1000'],
     'LOC': ['023 012 59 N 042 022 48.500 W 65.00m 20.00m 10.00m 10.00m'],
     'LP': ['010   l64-subnet1.example.com.', '65535 .'],
-    'MX': ['10 010.1.1.1.'],
+    'MX': ['01 example.org.'],
     'NAPTR': ['100  50  "s"  "z3950+I2L+I2C"     ""  _z3950._tcp.gatech.edu.'],
     'NID': ['010 0014:4fff:ff20:Ee64', '65535   0014:4fff:ff20:ee64'],
-    'NS': ['EXaMPLE.COM.'],
+    'NS': [r'\084\069\083\084.'],
     'OPENPGPKEY': [
         'mG8EXtVIsRMFK4EEAC==',
         'mQINBF3yev8BEADR9GxB6OJ5AJlXBWc3nWyWZ+yNNVBiy73XjgOs0uowbxph '
@@ -260,8 +260,8 @@ VALID_RECORDS_NON_CANONICAL = {
         'NZ3nuZqQ9VjVLYiPURbdkYxWfUvFdVawfqUZ4PGKbVWrFfod8WwHa+gsP4UJ '
         'hLN/nxCalBbc3HnyYo0Inlytu4fumElS7kuUVNielOsJlyUr8kfxU3c6MPk=',
     ],
-    'PTR': ['EXAMPLE.TEST.'],
-    'RP': ['hostmaster.EXAMPLE.com. .'],
+    'PTR': [r'\084\069\083\084.'],
+    'RP': [r'hostmaster.\084\069\083\084. .'],
     'SMIMEA': ['3 01 0 aabbccDDeeff'],
     'SPF': [],
     'SRV': ['100 01 5061 example.com.'],

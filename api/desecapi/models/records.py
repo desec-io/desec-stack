@@ -272,23 +272,34 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
         dns.rdatatype.SPF: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
     }
 
-    @staticmethod
-    def canonical_presentation_format(any_presentation_format, type_):
+    @classmethod
+    def to_wire(cls, type_, any_presentation_format, *, digestable):
+        """
+        Converts any valid presentation format to wire format, either in digestable form
+        (RFC 4034 Section 6.2) or in "literal" form (preserving uppercase/lowecase).
+        """
+        rdtype = rdatatype.from_text(type_)
+        rdclass = cls._type_map.get(rdtype, dns.rdata)
+        rdata = rdclass.from_text(
+            rdclass=rdataclass.IN,
+            rdtype=rdtype,
+            tok=dns.tokenizer.Tokenizer(any_presentation_format),
+            relativize=False,
+        )
+        wire = rdata.to_digestable() if digestable else rdata.to_wire()
+        return (rdtype, rdclass), wire
+
+    @classmethod
+    def canonical_presentation_format(cls, any_presentation_format, type_):
         """
         Converts any valid presentation format for a RR into it's canonical presentation format.
         Raises if provided presentation format is invalid.
         """
-        rdtype = rdatatype.from_text(type_)
-
         try:
             # Convert to wire format, ensuring input validation.
-            cls = RR._type_map.get(rdtype, dns.rdata)
-            wire = cls.from_text(
-                rdclass=rdataclass.IN,
-                rdtype=rdtype,
-                tok=dns.tokenizer.Tokenizer(any_presentation_format),
-                relativize=False,
-            ).to_digestable()
+            (rdtype, rdclass), wire = cls.to_wire(
+                type_, any_presentation_format, digestable=False
+            )
 
             if len(wire) > 64000:
                 raise ValidationError(
@@ -297,7 +308,7 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
 
             parser = dns.wire.Parser(wire, current=0)
             with parser.restrict_to(len(wire)):
-                rdata = cls.from_wire_parser(
+                rdata = rdclass.from_wire_parser(
                     rdclass=rdataclass.IN, rdtype=rdtype, parser=parser
                 )
 
