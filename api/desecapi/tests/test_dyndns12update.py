@@ -162,7 +162,6 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertIn("malformed", str(response.data))
 
     def test_ddclient_dyndns2_v4_valid_priority(self):
-        # /nic/update?system=dyndns&hostname=foobar.dedyn.io&myip=10.2.3.4asdf
         params = {
             "domain_name": self.my_domain.name,
             "system": "dyndns",
@@ -283,7 +282,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0].code, "multiple-subnet")
 
-        # Can't provide other addresses during subnet update
+        # Only allow syntactically valid subnets
         response = self.assertDynDNS12Update(myip=f"127.0.0.1//", expect_update=False)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0].code, "invalid-subnet")
@@ -298,7 +297,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         # Try for IPv6
         self.create_rr_set(
             self.my_domain,
-            ["2a02:8109:9283:8800:3303:72dc:f412:7233"],
+            ["2a02:8109:9283:8800::f12:7233"],
             type="AAAA",
             subname="foo",
             ttl=123,
@@ -308,7 +307,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
             hostname=f"foo.{self.my_domain.name}", myipv4="", myipv6=subnet_v6
         )
         self.assertEqual(response.data, "good")
-        self.assertIP(ipv6="2a01::3303:72dc:f412:7233", subname="foo")
+        self.assertIP(ipv6="2a01::f12:7233", subname="foo")
 
     def test_update_multiple_v4(self):
         # /nic/update?hostname=a.io,sub.a.io&myip=1.2.3.4
