@@ -17,4 +17,4 @@ pylibmc~=1.6.3
 pyyaml~=6.0.3
 requests~=2.32.5
 responses~=0.25.8
-uwsgi~=2.0.30
+uwsgi~=2.0.31
