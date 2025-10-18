@@ -1,7 +1,7 @@
 <template>
   <div v-if="hasAutomaticDelegationMaintenance">
     <p class="mt-4">
-      You're domain is fully configured.
+      Your domain is fully configured.
     </p>
   </div>
   <div v-else>
