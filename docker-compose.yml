@@ -372,6 +372,8 @@ networks:
   front:
     enable_ipv6: true
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv6: 'routed'
     ipam:
       driver: default
       config:
