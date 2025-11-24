@@ -97,7 +97,8 @@ REST_FRAMEWORK = {
             "3/min"
         ],  # things with side effect, e.g. sending mail or zone creation on signup
         "account_management_passive": [
-            "10/min"
+            "50/min",
+            "600/h",
         ],  # things like GET'ing v/* or auth/* URLs, or creating/deleting tokens
         "dyndns": [
             "2/2min"  # allow two for separate IPv4/IPv6 updates
