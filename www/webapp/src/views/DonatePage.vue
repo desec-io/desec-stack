@@ -169,7 +169,7 @@
             <p>
               deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
               tax-deductible, and we're happy to provide you with a donation receipt for that purpose. Note that for
-              donations below 200 €, no receipt is needed to claim tax deduction.
+              donations below 300 €, no receipt is needed to claim tax deduction.
             </p>
           </v-card-text>
         </v-card>
