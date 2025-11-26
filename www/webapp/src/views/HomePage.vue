@@ -15,39 +15,42 @@
               deSEC is free for everyone to use.
             </p>
           </div>
-          <div class="pa-2" v-if="!user.authenticated">
+          <div class="pa-2" style="width: 84%" v-if="!user.authenticated">
             <v-form @submit.prevent="signup" :value="valid" ref="form">
               <v-row>
-                <v-col md="9" cols="12">
-                  <div class="d-flex align-center flex-column">
-                    <v-radio-group
-                            v-model="domainType"
-                            class="pb-2"
-                            hide-details
-                            row
-                            @change="$router.push({query: {domainType: domainType}})"
-                    >
-                      <v-radio class="pb-2" label="Managed DNS account" value="custom"></v-radio>
-                      <v-radio class="pb-2" label="dynDNS account" value="dynDNS"></v-radio>
-                    </v-radio-group>
-                  </div>
+                <v-col class="pb-0">
+                  <v-radio-group
+                          v-model="domainType"
+                          class="pb-2"
+                          hide-details
+                          row
+                          @change="$router.push({query: {domainType: domainType}})"
+                  >
+                    <span class="pb-2 pr-4">Start with ...</span>
+                    <v-radio class="pb-2" label="dynDNS domain" value="dynDNS"></v-radio>
+                    <v-radio class="pb-2" label="Managed domain" value="custom"></v-radio>
+                  </v-radio-group>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col class="py-0">
                   <v-text-field
                     outlined
-                    solo
                     flat
                     v-model="email"
                     :prepend-inner-icon="mdiEmail"
                     type="email"
-                    placeholder="Account Email Address"
+                    placeholder="Account email address"
                     :rules="email_rules"
                     validate-on-blur
                     ></v-text-field>
+                </v-col>
+                <v-col style="padding-top: 2px">
                   <v-btn
                     color="primary"
                     type="submit"
                     depressed
                     x-large
-                    block
                   >
                     Create Account
                   </v-btn>
