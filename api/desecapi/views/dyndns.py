@@ -98,7 +98,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
             except ValueError:  # more than one element
                 if params & {"", "preserve"}:
                     raise ValidationError(
-                        detail=f'IP parameter "{param_key}" cannot have addresses and "preserve" at the same time.',
+                        detail=f'IP parameter "{param_key}" cannot have addresses and "preserve" or an empty value at the same time.',
                         code="inconsistent-parameter",
                     )
                 if any("/" in param for param in params):
