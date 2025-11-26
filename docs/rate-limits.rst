@@ -32,7 +32,9 @@ the API.  When several rates are given, all are enforced at the same time.
 +=========================================+==========+===========================================================================================+
 | ``account_management_active``           | 3/min    | Account activities with external effects (e.g. sending email)                             |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
-| ``account_management_passive``          | 10/min   | Account activities with internal effects (e.g. viewing account details, creating a token) |
+| ``account_management_passive``          | 50/min   | Account activities with internal effects (e.g. viewing account details, creating a token) |
+|                                         |          |                                                                                           |
+|                                         | 600/h    |                                                                                           |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
 | ``dyndns``                              | 2/2min   | dynDNS updates (per domain)                                                               |
 +-----------------------------------------+----------+-------------------------------------------------------------------------------------------+
