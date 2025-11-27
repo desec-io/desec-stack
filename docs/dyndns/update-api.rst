@@ -141,7 +141,7 @@ and IPv6 addresses may be given.
 In some cases, it is useful to only update the network prefix of existing A
 or AAAA records. To achieve this, append the prefix length to the IP address
 query parameter, such as ``ipv6=2a01:a:b:c::/64``, ``myipv4=1.2.3.0/24``, etc.
-The host part of the prefix is ignored.
+The host part of the value is ignored.
 
 .. warning::
     **It is recommended to always specify query string parameters for both IP
