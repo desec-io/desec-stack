@@ -1,0 +1,19 @@
+server:
+  cache-max-ttl: 600
+  ede: yes
+  interface: 0.0.0.0@53
+  access-control: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.0/16 allow
+
+  log-queries: no
+  log-replies: no
+  log-servfail: yes
+  verbosity: 1
+
+  do-daemonize: no
+
+  neg-cache-size: 4M
+  qname-minimisation: yes
+
+  deny-any: yes
+  logfile: /tmp/log
+  use-syslog: no

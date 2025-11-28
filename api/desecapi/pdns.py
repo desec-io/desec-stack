@@ -1,7 +1,5 @@
 import json
 import re
-import socket
-from functools import cache
 from hashlib import sha1
 
 import requests
@@ -10,6 +8,7 @@ from django.core.exceptions import SuspiciousOperation
 
 from desecapi import metrics
 from desecapi.exceptions import PDNSException, RequestEntityTooLarge
+from desecapi.utils import gethostbyname_cached
 
 SUPPORTED_RRSET_TYPES = {
     # https://doc.powerdns.com/authoritative/appendices/types.html
@@ -82,11 +81,6 @@ _config = {
         "apikey": settings.NSMASTER_PDNS_API_TOKEN,
     },
 }
-
-
-@cache
-def gethostbyname_cached(host):
-    return socket.gethostbyname(host)
 
 
 def _pdns_request(

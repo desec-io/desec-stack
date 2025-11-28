@@ -131,6 +131,7 @@ services:
     - nsmaster
     - celery-email
     - memcached
+    - resolver
     tmpfs:
     - /var/local/django_metrics:size=500m
     environment:
@@ -163,6 +164,7 @@ services:
       rearapi_dbapi:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
+      rearapi_resolver:
       rearwww:
       rearmonitoring_api:
     logging:
@@ -358,6 +360,23 @@ services:
         tag: "desec/prometheus"
     restart: unless-stopped
 
+  resolver:
+    build: resolver
+    image: desec/dedyn-resolver:latest
+    init: true
+    cap_add:
+    - NET_ADMIN
+    environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    networks:
+      rearapi_resolver:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.2
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/resolver"
+    restart: unless-stopped
+
 volumes:
   dbapi_postgres:
   dblord_mysql:
@@ -401,6 +420,13 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.1
+  rearapi_resolver:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.1
   rearwww:
     driver: bridge
     ipam:
