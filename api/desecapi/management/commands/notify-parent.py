@@ -8,6 +8,10 @@ from desecapi.utils import gethostbyname_cached
 class Command(BaseCommand):
     debug = False
     help = "Notify parent to update the DS RRset."
+    report_agent = dns.name.from_text(  # Must be below one parent-side NS
+        # TODO Make a Domain property?
+        "notify-agent.ns.desec.cz."
+    )
     resolver: dns.resolver.Resolver
 
     def add_arguments(self, parser):
@@ -50,12 +54,19 @@ class Command(BaseCommand):
                 print("unsupported")
             else:
                 notifies = 0
+                targets = 0
                 for dsync in answer:
                     result = self._notify_domain(domain_name, dsync)
-                    if result is not None:
-                        notifies += result
+                    try:
+                        result, response = result
+                    except TypeError:  # None: DSYNC was not for NOTIFY(SOA)
+                        continue
+                    targets += 1
+                    notifies += result
+                    if not result and self.debug:
+                        print(response)
                 print(
-                    f"notified, {notifies} targets confirmed (from {answer.qname}/DSYNC)"
+                    f"notified, {notifies}/{targets} NOTIFY(SOA) targets confirmed (from {len(answer)} {answer.qname}/DSYNC total)"
                 )
 
     def _resolve_securely(self, qname, rdtype):
@@ -85,7 +96,7 @@ class Command(BaseCommand):
         notify = dns.message.make_query(domain_name, dns.rdatatype.CDS)
         notify.set_opcode(dns.opcode.NOTIFY)
         notify.flags += dns.flags.AA - dns.flags.RD
-        opt = dns.edns.ReportChannelOption(dns.name.from_text("ns1.desec.io."))
+        opt = dns.edns.ReportChannelOption(self.report_agent)
         notify.use_edns(edns=True, options=[opt])
 
         response = dns.query.udp(
@@ -94,7 +105,7 @@ class Command(BaseCommand):
 
         notify.flags += dns.flags.QR
         # TODO why does this work despite of the EDNS0 option not being in the response?
-        return notify == response
+        return notify == response, response
 
     def _get_dsync(self, domain_name):
         # This implements the discovery algorithm from RFC 9859 Section 4.1
