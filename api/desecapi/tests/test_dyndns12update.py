@@ -330,6 +330,70 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertIP(ipv4=new_ip)
         self.assertIP(subname="sub", ipv4=new_ip)
 
+    def test_update_multiple_with_overwrite(self):
+        # /nic/update?hostname=sub1.a.io,sub2.a.io,sub3.a.io&myip=1.2.3.4&ipv6=::1&sub2.a.io.ipv6=::2
+        new_ip4 = "1.2.3.4"
+        new_ip6 = "::1"
+        new_ip6_overwrite = "::2"
+        domain1 = "sub1." + self.my_domain.name
+        domain2 = "sub2." + self.my_domain.name
+        domain3 = "sub3." + self.my_domain.name
+
+        with self.assertRequests(
+            self.request_pdns_zone_update(self.my_domain.name),
+            self.request_pdns_zone_axfr(self.my_domain.name),
+        ):
+            response = self.client.get(
+                self.reverse("v1:dyndns12update"),
+                {
+                    "hostname": f"{domain1},{domain2},{domain3}",
+                    "myip": new_ip4,
+                    "ipv6": new_ip6,
+                    f"myipv6:{domain2}": new_ip6_overwrite,
+                },
+            )
+
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, "good")
+
+        self.assertIP(subname="sub1", ipv4=new_ip4, ipv6=new_ip6)
+        self.assertIP(subname="sub2", ipv4=new_ip4, ipv6=new_ip6_overwrite)
+        self.assertIP(subname="sub3", ipv4=new_ip4, ipv6=new_ip6)
+
+    def test_update_multiple_with_extra(self):
+        # /nic/update?hostname=sub1.a.io,sub3.a.io&myip=1.2.3.4&ipv6=::1&sub2.a.io.ipv6=::2
+        old_ip4 = "10.0.0.2"
+        new_ip4 = "1.2.3.4"
+        new_ip6 = "::1"
+        new_ip6_extra = "::2"
+        domain1 = "sub1." + self.my_domain.name
+        domain2 = "sub2." + self.my_domain.name
+        domain3 = "sub3." + self.my_domain.name
+        self.create_rr_set(
+            self.my_domain, [old_ip4], subname="sub2", type="A", ttl=60
+        )
+
+        with self.assertRequests(
+            self.request_pdns_zone_update(self.my_domain.name),
+            self.request_pdns_zone_axfr(self.my_domain.name),
+        ):
+            response = self.client.get(
+                self.reverse("v1:dyndns12update"),
+                {
+                    "hostname": f"{domain1},{domain3}",
+                    "myip": new_ip4,
+                    "ipv6": new_ip6,
+                    f"myipv6:{domain2}": new_ip6_extra,
+                },
+            )
+
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, "good")
+
+        self.assertIP(subname="sub1", ipv4=new_ip4, ipv6=new_ip6)
+        self.assertIP(subname="sub2", ipv4=old_ip4, ipv6=new_ip6_extra)
+        self.assertIP(subname="sub3", ipv4=new_ip4, ipv6=new_ip6)
+
     def test_update_multiple_username_param(self):
         # /nic/update?username=a.io,sub.a.io&myip=1.2.3.4
         new_ip = "1.2.3.4"
@@ -403,6 +467,36 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertIP(subname="sub1", ipv4="10.1.0.1")
         self.assertIP(subname="sub2", ipv4="10.1.0.2")
 
+    def test_update_multiple_with_subnet_and_ip_override(self):
+        # /nic/update?hostname=a.io,b.io&myip=10.1.0.0/16&a.io=192.168.1.1
+        domain1 = "sub1." + self.my_domain.name
+        domain2 = "sub2." + self.my_domain.name
+        self.create_rr_set(
+            self.my_domain, ["10.0.0.1"], subname="sub1", type="A", ttl=60
+        )
+        self.create_rr_set(
+            self.my_domain, ["10.0.0.2"], subname="sub2", type="A", ttl=60
+        )
+
+        with self.assertRequests(
+            self.request_pdns_zone_update(self.my_domain.name),
+            self.request_pdns_zone_axfr(self.my_domain.name),
+        ):
+            response = self.client.get(
+                self.reverse("v1:dyndns12update"),
+                {
+                    "hostname": f"{domain1},{domain2}",
+                    "myip": "10.1.0.0/16",
+                    f"myipv4:{domain1}": "192.168.1.1",
+                },
+            )
+
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, "good")
+
+        self.assertIP(subname="sub1", ipv4="192.168.1.1")
+        self.assertIP(subname="sub2", ipv4="10.1.0.2")
+
     def test_update_multiple_with_one_being_already_up_to_date(self):
         # /nic/update?hostname=a.io,sub.a.io&myip=1.2.3.4
         new_ip = "1.2.3.4"
@@ -445,6 +539,20 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertEqual(response.data, "good")
 
         self.assertIP(ipv4=new_ip)
+
+    def test_update_overwrite_with_invalid_subnet(self):
+        # /nic/update?hostname=a.io&a.io.myip=1.2.3.4/64
+        domain1 = self.create_domain(owner=self.owner).name
+
+        with self.assertRequests():
+            response = self.client.get(
+                self.reverse("v1:dyndns12update"),
+                {"hostname": f"{domain1}", f"myipv4:{domain1}": "1.2.3.4/64"},
+            )
+
+        self.assertContains(
+            response, "invalid subnet", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def test_update_multiple_with_invalid_subnet(self):
         # /nic/update?hostname=sub1.a.io,sub2.a.io&myip=1.2.3.4/64

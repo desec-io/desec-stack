@@ -193,5 +193,11 @@ syntax.) For example, when using ddclient, you can edit ``ddclient.conf`` and se
 case the IPv4 address of both ``domain.org`` and ``sub.domain.org`` will be
 updated while preserving any (different) IPv6 addresses.
 
+For Fritz!Box devices, an update URL could look like this:
+``https://update.dedyn.io/?myipv4=<ipaddr>&myipv6=<ip6addr>&myipv6:host.<domain>=<ip6lanprefix>``
+This example updates the main domain with the router's global IPv4 and IPv6
+addresses, and additionally updates the subdomain `host.<domain name>` with
+an IPv6 LAN prefix.
+
 If you try to update several subdomains by issuing multiple update requests,
 your update requests may be refused (see :ref:`rate-limits`).
