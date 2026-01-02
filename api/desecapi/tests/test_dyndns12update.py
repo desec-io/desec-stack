@@ -369,9 +369,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         domain1 = "sub1." + self.my_domain.name
         domain2 = "sub2." + self.my_domain.name
         domain3 = "sub3." + self.my_domain.name
-        self.create_rr_set(
-            self.my_domain, [old_ip4], subname="sub2", type="A", ttl=60
-        )
+        self.create_rr_set(self.my_domain, [old_ip4], subname="sub2", type="A", ttl=60)
 
         with self.assertRequests(
             self.request_pdns_zone_update(self.my_domain.name),

@@ -50,6 +50,7 @@ class PreserveIPs:
 
 UpdateAction = SetIPs | UpdateWithSubnet | PreserveIPs
 
+
 class DynDNS12UpdateView(generics.GenericAPIView):
     authentication_classes = (
         TokenAuthentication,
@@ -98,7 +99,9 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         return SetIPs(ips=[])
 
     @staticmethod
-    def _get_action_from_param(param_key: str, param_value: str, separator: str) -> UpdateAction | None:
+    def _get_action_from_param(
+        param_key: str, param_value: str, separator: str
+    ) -> UpdateAction | None:
         """
         Parses a single query parameter value to determine the DynDNS update action.
 
@@ -125,7 +128,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         params = set(
             filter(
                 lambda param: separator in param or param in ("", "preserve"),
-                map(str.strip, param_value.split(","))
+                map(str.strip, param_value.split(",")),
             )
         )
         if not params:
@@ -291,10 +294,11 @@ class DynDNS12UpdateView(generics.GenericAPIView):
             and values are `UpdateAction` instances (SetIPs, UpdateWithSubnet, PreserveIPs).
         """
         return {
-            (type_, qname.rpartition(f".{self.domain.name}")[0]): self._get_action_from_param(
-                qname,
-                argument,
-                "." if type_ == "A" else ":"
+            (
+                type_,
+                qname.rpartition(f".{self.domain.name}")[0],
+            ): self._get_action_from_param(
+                qname, argument, "." if type_ == "A" else ":"
             )
             for qname, arguments in self.extra_qnames.items()
             for type_, argument in arguments.items()
@@ -310,7 +314,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
     def get_queryset(self):
         subnames = [
             *self.subnames,
-            *[subname for (type_, subname) in self.extra_actions.keys()]
+            *[subname for (type_, subname) in self.extra_actions.keys()],
         ]
         return self.domain.rrset_set.filter(
             subname__in=subnames, type__in=["A", "AAAA"]
