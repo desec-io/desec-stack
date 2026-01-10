@@ -42,7 +42,7 @@ export default {
             datatype: GenericText.name,
             searchable: true,
             fieldProps: (item) => (
-                item.mfa !== null
+                item?.id && item.mfa != null
                     ? { value_override: item.id == useUserStore().token.id ? 'current log-in token' : 'previous log-in token' }
                     : {}
             ),

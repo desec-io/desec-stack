@@ -10,11 +10,8 @@
     watch: {
       success(value) {
         if(value) {
-          let params = {
-            data: this.response.data,
-            name: this.response.data.name,
-          };
-          this.$router.push({ name: 'TOTPVerify', params: params});
+          sessionStorage.setItem('totpVerifyData', JSON.stringify(this.response.data));
+          this.$router.push({ name: 'TOTPVerify', query: { name: this.response.data.name }});
         }
       }
     }

@@ -1,15 +1,12 @@
 /* eslint-env node */
 import {defineConfig} from 'vite'
 import {resolve} from 'node:path';
-import Components from 'unplugin-vue-components/vite'
-import {VuetifyResolver} from 'unplugin-vue-components/resolvers'
 import legacy from '@vitejs/plugin-legacy'
-import vue from '@vitejs/plugin-vue2'
+import vue from '@vitejs/plugin-vue'
+import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig({
-    define: {
-        'process.env.BUILD': '"web"' // fix for vuelidate@0.7.7
-    },
+    cacheDir: '.vite',
     css: {
         preprocessorOptions: {
             sass: {
@@ -23,13 +20,18 @@ export default defineConfig({
         vue({
             template: {
                 transformAssetUrls: {
+                    img: ['src'],
+                    image: ['xlink:href', 'href'],
+                    source: ['src', 'srcset'],
+                    video: ['src', 'poster'],
+                    audio: ['src'],
+                    use: ['xlink:href', 'href'],
                     'v-img': ['src'],
+                    'v-video': ['src', 'poster'],
                 },
             },
         }),
-        Components({
-            resolvers: [VuetifyResolver()],
-        }),
+        vuetify({ autoImport: true }),
         legacy(), // Build for old browser.
     ],
     server: {

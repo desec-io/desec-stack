@@ -1,7 +1,7 @@
 <template>
   <div
       class="my-1 py-5"
-      :title="value"
+      :title="inputValue"
   >
     <span v-text="formattedValue"></span>
   </div>
@@ -13,6 +13,10 @@ import {formatDistanceToNow} from 'date-fns/formatDistanceToNow';
 export default {
   name: 'TimeAgo',
   props: {
+    modelValue: {
+      default: '',
+      type: String,
+    },
     value: {
       default: '',
       type: String,
@@ -23,8 +27,11 @@ export default {
     },
   },
   computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
     formattedValue() {
-      const inputTime = this.value;
+      const inputTime = this.inputValue;
       if(!inputTime)
         return this.defaultText
 

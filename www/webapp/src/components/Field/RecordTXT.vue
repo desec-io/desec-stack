@@ -1,15 +1,19 @@
 <script>
-import { helpers } from 'vuelidate/lib/validators';
+import { helpers } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
-const txtToken = helpers.regex('txtToken', /^".*"$/);
+const txtToken = helpers.withMessage(
+  'TXT records must either be fully quoted or contain no quotes.',
+  value => !helpers.req(value) || /^".*"$/.test(value) || !value.includes('"'),
+);
 
 export default {
   name: 'RecordTXT',
   extends: RecordItem,
+  setup: RecordItem.setup,
   data: () => ({
     errors: {
-      txtToken: 'This record must begin and end with quotes (").',
+      txtToken: 'TXT records must either be fully quoted or contain no quotes.',
     },
     fields: [
       { label: 'Content', validations: { txtToken } },

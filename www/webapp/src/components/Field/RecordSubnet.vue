@@ -1,5 +1,5 @@
 <script>
-import { helpers, or } from 'vuelidate/lib/validators';
+import { helpers, or } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
 // from https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch08s16.html, adding subnet
@@ -13,6 +13,7 @@ const ipAddressOrSubnet = or(ip4AddressOrSubnet, ip6AddressOrSubnet);
 export default {
   name: 'RecordSubnet',
   extends: RecordItem,
+  setup: RecordItem.setup,
   data: () => ({
     errors: {
       ipAddressOrSubnet: 'This field must contain an IP address or subnet.'
