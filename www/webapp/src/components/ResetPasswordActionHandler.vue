@@ -3,19 +3,20 @@
     <div class="text-center" v-if="!success">
         <v-text-field
                 v-model="payload.new_password"
-                :append-icon="show ? mdiEyeOff : mdiEye"
+                :append-inner-icon="show ? mdiEyeOff : mdiEye"
                 label="New password"
+                variant="outlined"
                 required
                 :disabled="working"
                 :rules="[rules.required, rules.min]"
                 :type="show ? 'text' : 'password'"
                 hint="At least 8 characters"
                 autocomplete="new-password"
-                @click:append="show = !show"
+                @click:append-inner="show = !show"
                 tabindex="1"
         ></v-text-field>
         <v-btn
-                depressed
+                variant="flat"
                 color="primary"
                 type="submit"
                 :disabled="working || !valid"

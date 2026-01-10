@@ -7,20 +7,18 @@
     @keydown.esc="close"
   >
     <v-card>
-      <v-card-title>
+      <v-card-title class="domain-setup-title">
         <div class="text-h6">
           Setup Instructions for <b>{{ domain }}</b>
         </div>
         <v-spacer/>
-        <v-icon @click.stop="close">
-          {{ mdiClose }}
-        </v-icon>
+        <v-icon :icon="mdiClose" @click.stop="close" />
       </v-card-title>
       <v-divider/>
 
       <v-alert
           class="mb-0"
-          :value="isNew"
+          :model-value="isNew"
           type="success"
       >
         Your domain <b>{{ domain }}</b> has been successfully created!
@@ -49,20 +47,21 @@ export default {
       type: Boolean,
       default: false,
     },
-  },
-  data: () => ({
-    mdiClose,
-    value: {
+    modelValue: {
       type: Boolean,
       default: true,
     },
+  },
+  data: () => ({
+    mdiClose,
   }),
   computed: {
     show: {
       get() {
-        return this.value
+        return this.modelValue
       },
       set(value) {
+         this.$emit('update:modelValue', value)
          this.$emit('input', value)
       }
     }
@@ -74,3 +73,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.domain-setup-title {
+  flex-wrap: nowrap;
+}
+</style>

@@ -4,7 +4,7 @@
     <div class="d-none d-md-block triangle-bg">§§</div>
     <v-container class="pa-0">
       <v-row align="center">
-        <v-col class="col-md-6 col-12 py-8 triangle-fg">
+        <v-col cols="12" md="6" class="py-8 triangle-fg">
           <h1 class="text-h4 font-weight-bold">Terms of Use</h1>
           <div class="text-subtitle-1 mt-2 py-8 font-weight-regular">
             <p>
@@ -21,7 +21,7 @@
       </v-row>
     </v-container>
   </v-card>
-  <v-container fluid class="grey lighten-4">
+  <v-container fluid class="bg-grey-lighten-4">
     <v-container>
       <v-row class="pt-8">
         <v-col class="text-center">
@@ -29,7 +29,7 @@
         </v-col>
       </v-row>
       <v-row class="pb-8">
-        <v-col class="col-12 col-sm-6 d-flex" v-for="(t, idx) in terms_of_use" :key="t.title">
+        <v-col cols="12" sm="6" class="d-flex" v-for="(t, idx) in terms_of_use" :key="t.title">
           <v-card>
             <v-card-title>§{{ idx+1 }} {{ t.title }}</v-card-title>
             <v-card-text><span v-html="t.text"></span></v-card-text>

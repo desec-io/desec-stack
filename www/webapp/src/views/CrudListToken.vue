@@ -27,7 +27,7 @@ export default {
           createSuccess: (item) => `Your new token's secret value is: <code>${item.token}</code><br />It is only displayed once.`,
           destroy: d => (d.name ? `Delete token with name "${d.name}" and ID ${d.id}?` : `Delete unnamed token with ID ${d.id}?`),
           destroyInfo: () => ('This operation is permanent. Any devices using this token will no longer be able to authenticate.'),
-          destroyWarning: d => (d.id == useUserStore().token.id ? 'This is your current session token. Deleting it will invalidate the session.' : (!!d.user_override ? `This token is owned by ${d.owner}. Deleting it will revoke their authorization to manage your DNS.` : '')),
+          destroyWarning: d => (d.id == useUserStore().token.id ? 'This is your current session token. Deleting it will invalidate the session.' : (d.user_override ? `This token is owned by ${d.owner}. Deleting it will revoke their authorization to manage your DNS.` : '')),
         },
         columns: {
           name: {
@@ -42,7 +42,7 @@ export default {
             datatype: GenericText.name,
             searchable: true,
             fieldProps: (item) => (
-                item.mfa !== null
+                item?.id && item.mfa != null
                     ? { value_override: item.id == useUserStore().token.id ? 'current log-in token' : 'previous log-in token' }
                     : {}
             ),
@@ -174,9 +174,7 @@ export default {
           name: '', allowed_subnets: [''], 'perm_manage_tokens': false,
         }),
         itemIsReadOnly: (item, action=null) => (
-            item.id == useUserStore().token.id
-                ? true
-                : (item.mfa !== null && action !== "delete")
+            item.id == useUserStore().token.id || (item.mfa !== null && action !== "delete")
         ),
         postcreate: () => false,  // do not close dialog
         precreate() {

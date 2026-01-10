@@ -1,24 +1,24 @@
 <template>
-  <v-row dense align="center" class="text-center">
-    <v-col cols="12" sm="">
+  <v-row dense align="start" class="captcha-row">
+    <v-col cols="12" sm="7">
       <v-text-field
           v-model="inputSolution"
           :label="l.inputSolution"
           :hint="kind === 'image' ? l.hintProblemWithImage : l.hintProblemWithAudio"
-          :prepend-icon="mdiAccountCheck"
+          :prepend-inner-icon="showPrependIcon ? mdiAccountCheck : undefined"
           :rules="rules"
           :error-messages="errors"
           :tabindex="tabindex"
-          @input="emitChange()"
+          @update:modelValue="emitChange()"
           @change="errors=[]"
           @keydown="errors=[]"
-          outlined
+          variant="outlined"
           required
           class="uppercase"
           ref="captchaField"
       ></v-text-field>
     </v-col>
-    <v-col cols="12" sm="auto">
+    <v-col cols="12" sm="auto" class="text-center">
       <v-progress-circular
           v-if="working"
           indeterminate
@@ -39,17 +39,17 @@
       </audio>
       <br>
       <v-btn-toggle>
-        <v-btn text outlined @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
-          <v-icon>{{ mdiRefresh }}</v-icon>
+        <v-btn variant="outlined" @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
+          <v-icon :icon="mdiRefresh" />
         </v-btn>
       </v-btn-toggle>
       &nbsp;
       <v-btn-toggle v-model="kind">
-        <v-btn text outlined value="image" :aria-label="l.switchImage" :disabled="working">
-          <v-icon>{{ mdiEye }}</v-icon>
+        <v-btn variant="outlined" value="image" :aria-label="l.switchImage" :disabled="working">
+          <v-icon :icon="mdiEye" />
         </v-btn>
-        <v-btn text outlined value="audio" :aria-label="l.switchAudio" :disabled="working">
-          <v-icon>{{ mdiEarHearing }}</v-icon>
+        <v-btn variant="outlined" value="audio" :aria-label="l.switchAudio" :disabled="working">
+          <v-icon :icon="mdiEarHearing" />
         </v-btn>
       </v-btn-toggle>
     </v-col>
@@ -72,6 +72,10 @@ export default {
     tabindex: {
       type: String,
       required: true,
+    },
+    showPrependIcon: {
+      type: Boolean,
+      default: true,
     },
   },
   data: () => ({
@@ -104,11 +108,18 @@ export default {
       await HTTP
           .post('captcha/', {kind: this.kind})
           .then((res) => {
-            this.captcha = res.data;
+            if (res.data?.id && res.data?.challenge) {
+              this.captcha = res.data;
+              this.errors = [];
+            } else {
+              this.captcha = null;
+              this.errors = ['Could not request captcha from server.'];
+            }
           })
           .catch((e) => {
+            this.captcha = null;
             if(e.response) {
-              this.errors = [e.response.data.detail];
+              this.errors = [e.response.data?.detail || 'Could not request captcha from server.'];
             } else if(e.request) {
               this.errors = ['Could not request captcha from server.'];
             } else {
@@ -126,7 +137,7 @@ export default {
       this.errors.push(...values);
     },
     captchaID() {
-      return this.captcha.id;
+      return this.captcha?.id || null;
     },
     captchaSolution() {
       return this.inputSolution.toUpperCase();
@@ -147,3 +158,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.captcha-row img {
+  max-width: 100%;
+}
+</style>

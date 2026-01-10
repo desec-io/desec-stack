@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row align="center">
-      <v-col class="col-md-6 col-12 py-8">
+      <v-col cols="12" md="6" class="py-8">
         <h1 class="text-h4 font-weight-bold">Donate to Support our Mission</h1>
         <div class="text-subtitle-1 mt-6 font-weight-regular">
           <p>
@@ -16,38 +16,34 @@
         <v-card>
           <v-toolbar
                   color="primary"
-                  dark
                   flat
           >
             <v-toolbar-title>Donate</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <v-expansion-panels class="mb-4" focusable>
+            <v-expansion-panels class="mb-4">
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiBankTransferIn }}</v-icon> Direct Debit – Let us Take your Money (Europe)
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiBankTransferIn" /> Direct Debit – Let us Take your Money (Europe)
+                </v-expansion-panel-title>
+                <v-expansion-panel-text class="pt-4">
                   <p>
                     With your permission, we debit your donation directly from your European bank account.
                     To give us permission, use this form:
                   </p>
                   <DonateDirectDebitForm/>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiBankTransferOut }}</v-icon> Bank Transfer – Send us Money (Europe)
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiBankTransferOut" /> Bank Transfer – Send us Money (Europe)
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     We're happy to accept donations via bank transfer. Please use the following account details:
                   </p>
-                  <v-simple-table>
+                  <v-table>
                     <tbody>
                     <tr>
                       <td>Recipient</td>
@@ -62,19 +58,18 @@
                       <td>GENODEF1SLR</td>
                     </tr>
                     </tbody>
-                  </v-simple-table>
+                  </v-table>
                   <div class="text-center">
                     <qrcode-vue :value="bank_transfer_epc" size="300"/>
                   </div>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiCreditCardOutline }}</v-icon> Credit Card
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiCreditCardOutline" /> Credit Card
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     To donate by credit card, <strong>please use <a href="https://liberapay.com/deSEC/donate"
                     target="_blank">our account at Liberapay</a></strong>.
@@ -84,71 +79,69 @@
                     the automatic payment plan right after your first donation. However, as our costs are recurring, we
                     actually do appreciate recurring donations.
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiGithub }}</v-icon> GitHub Sponsors
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiGithub" /> GitHub Sponsors
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     <strong><a href="https://github.com/sponsors/desec-io" target="_blank">Click here</a> to donate via
                     GitHub.</strong>
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiGiftOutline }}</v-icon> PayPal
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiGiftOutline" /> PayPal
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     <strong><a href="https://www.paypal.com/donate?hosted_button_id=GPGXGLA4SU78W" target="_blank">Click
                     here</a> or use the below QR code to donate via PayPal.</strong>
                     Note that PayPal charges us the highest fees of all, so if
                     you can use one of the other methods, that would be appreciated!
                   </p>
-                  <v-layout class="justify-center">
-                    <v-img src="../assets/paypal-qrcode.png" alt="PayPal QR Code" style="max-width: 256px"></v-img>
-                  </v-layout>
-                </v-expansion-panel-content>
+                  <v-row class="justify-center">
+                    <img src="../assets/paypal-qrcode.png" alt="PayPal QR Code" class="donation-qr-code"/>
+                  </v-row>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiBitcoin }}</v-icon> Crypto Currency (BTC, ETH, LTC)
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC)
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>If you prefer to donate in a crypto currency, you can use the following wallets:</p>
-                  <table>
+                  <table class="crypto-wallets">
+                    <tbody>
                     <tr>
                       <th>Bitcoin (BTC)</th>
-                      <td><span class="fixed-width">1NMsTB3ML9t7QiEyiyXaU2oi72i2aDhVEK</span></td>
+                      <td><span class="fixed-width crypto-address">1NMsTB3ML9t7QiEyiyXaU2oi72i2aDhVEK</span></td>
                     </tr>
                     <tr>
                       <th>Ethereum (ETH)</th>
-                      <td><span class="fixed-width">0xb9594A8d1BF512eAC59069d9d5cbA457E0d35998</span></td>
+                      <td><span class="fixed-width crypto-address">0xb9594A8d1BF512eAC59069d9d5cbA457E0d35998</span></td>
                     </tr>
                     <tr>
                       <th>Litecoin (LTC)</th>
-                      <td><strong>(No MWEB!)</strong> <span class="fixed-width">LeFYoRRcrMPiruRGQQknQBdjGdmsEpHzno</span></td>
+                      <td><strong>(No MWEB!)</strong> <span class="fixed-width crypto-address">LeFYoRRcrMPiruRGQQknQBdjGdmsEpHzno</span></td>
                     </tr>
+                    </tbody>
                   </table>
                   <p class="mt-4">Note that we cannot provide you a donation receipt for crypto donations.</p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
+
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">
-                  <v-layout>
-                    <v-icon class="mr-2">{{ mdiHeartMultipleOutline }}</v-icon> Double-up with Your Employer
-                  </v-layout>
-                </v-expansion-panel-header>
-                <v-expansion-panel-content class="pt-4">
+                <v-expansion-panel-title class="text-subtitle-1">
+                  <v-icon class="mr-2" :icon="mdiHeartMultipleOutline" /> Double-up with Your Employer
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     Many employers <b>double donations</b> initiated by their employees. Donations often happen through
                     dedicated facilitation platforms such as
@@ -158,7 +151,7 @@
                     Make sure to <b>check with your company</b> if you're eligible for a co-donation, and double the
                     impact!
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
             <p>
@@ -174,11 +167,10 @@
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col col="12" md="6">
+      <v-col cols="12" md="6">
         <v-card>
           <v-toolbar
                   color="primary"
-                  dark
                   flat
           >
             <v-toolbar-title>Support our Quest</v-toolbar-title>
@@ -212,8 +204,8 @@
 
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
-  import QrcodeVue from '../modules/qrcode.vue/dist/qrcode.vue.esm';
   import {mdiBankTransferIn, mdiBankTransferOut, mdiBitcoin, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
+  import QrcodeVue from '@/components/QrcodeVue.vue';
 
   export default {
     name: 'DonatePage',
@@ -250,5 +242,21 @@
   }
   .fixed-width {
     font-family: monospace;
+  }
+  .donation-qr-code {
+    max-width: 256px;
+    width: 100%;
+  }
+  .crypto-wallets {
+    width: 100%;
+  }
+  .crypto-wallets th {
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  .crypto-address {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: break-word;
   }
 </style>

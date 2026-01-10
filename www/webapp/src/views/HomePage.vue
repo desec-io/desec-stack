@@ -1,10 +1,10 @@
 <template>
   <div>
-  <v-card outline tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+  <v-card variant="outlined" tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
     <div class="d-none d-md-block triangle-bg"></div>
     <v-container class="pa-0">
       <v-row align="center">
-        <v-col class="col-md-6 col-12 py-8 triangle-fg">
+        <v-col cols="12" md="6" class="py-8 triangle-fg">
           <h1 class="text-h4 font-weight-bold">Modern DNS Hosting for Everyone</h1>
           <div class="text-subtitle-1 mt-2 pt-8 font-weight-regular">
             <p>
@@ -16,41 +16,42 @@
             </p>
           </div>
           <div class="pa-2" style="width: 84%" v-if="!user.authenticated">
-            <v-form @submit.prevent="signup" :value="valid" ref="form">
+            <v-form @submit.prevent="signup" v-model="valid" ref="form">
               <v-row>
                 <v-col class="pb-0">
-                  <v-radio-group
-                          v-model="domainType"
-                          class="pb-2"
-                          hide-details
-                          row
-                          @change="$router.push({query: {domainType: domainType}})"
-                  >
-                    <span class="pb-2 pr-4">Start with ...</span>
-                    <v-radio class="pb-2" label="dynDNS domain" value="dynDNS"></v-radio>
-                    <v-radio class="pb-2" label="Managed domain" value="custom"></v-radio>
-                  </v-radio-group>
+                  <div class="domain-type-selector pb-2">
+                    <span class="domain-type-label">Start with ...</span>
+                    <v-radio-group
+                            v-model="domainType"
+                            class="domain-type-options"
+                            hide-details
+                            inline
+                            @update:modelValue="$router.push({query: {domainType}})"
+                    >
+                      <v-radio label="dynDNS domain" value="dynDNS"></v-radio>
+                      <v-radio label="Managed domain" value="custom"></v-radio>
+                    </v-radio-group>
+                  </div>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col class="py-0">
                   <v-text-field
-                    outlined
-                    flat
+                    variant="outlined"
                     v-model="email"
                     :prepend-inner-icon="mdiEmail"
                     type="email"
                     placeholder="Account email address"
                     :rules="email_rules"
-                    validate-on-blur
+                    validate-on="blur"
                     ></v-text-field>
                 </v-col>
                 <v-col style="padding-top: 2px">
                   <v-btn
                     color="primary"
                     type="submit"
-                    depressed
-                    x-large
+                    variant="flat"
+                    size="x-large"
                   >
                     Create Account
                   </v-btn>
@@ -65,15 +66,15 @@
   <v-container fluid>
     <v-container>
       <v-row justify="center" class="py-8">
-        <v-col class="col-12 col-sm-4 text-center" v-for="f in features" :key="f.title">
-          <v-icon x-large>{{ f.icon }}</v-icon>
-          <h1 class="grey--text text--darken-2"><span>{{ f.title }}</span></h1>
+        <v-col cols="12" sm="4" class="text-center" v-for="f in features" :key="f.title">
+          <v-icon size="x-large" :icon="f.icon" />
+          <h1 class="text-grey-darken-2"><span>{{ f.title }}</span></h1>
           <p v-html="f.text"></p>
         </v-col>
       </v-row>
     </v-container>
   </v-container>
-  <v-container fluid class="grey lighten-4">
+  <v-container fluid class="bg-grey-lighten-4">
     <v-container class="py-8">
       <v-row align="center">
         <v-col class="text-center">
@@ -81,26 +82,26 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/icann.logo.svg" alt="ICANN Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
-          </v-layout>
+          </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           In our project "Closing the DNSSEC Maturity Gap through Automation", we develop technical solutions that
           enable automatic deployment of DNSSEC, and work with DNS and domain industry players to facilitate real-world
           introduction of these automation standards. This project is supported by the
-          <a class="primary--text text--darken-2" href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
+          <a class="text-primary" href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/nlnet.logo.svg" alt="NLnet Foundation Logo" class="mr-6" style="max-width: 180px; width: 100%"/>
-          </v-layout>
+          </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          deSEC received funding through <a class="primary--text text--darken-2" href="https://nlnet.nl/">NLnet
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
+          deSEC received funding through <a class="text-primary" href="https://nlnet.nl/">NLnet
           Foundation</a> for its work on the automation and future viability of DNSSEC. The <strong>NGI Assure</strong>
           fund, established with financial support from the European Commission's <strong>Next Generation
           Internet</strong> programme, is dedicated to technologies providing strong assurances about the Internet's
@@ -108,25 +109,25 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/ripe-ncc.logo.svg" alt="RIPE NCC Logo" class="mr-6" style="margin-bottom: -7%; margin-top: -7%; max-width: 240px; width: 100%"/>
-          </v-layout>
+          </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          Through their Community Projects Fund, <a class="primary--text text--darken-2" href="https://ripe.net/">RIPE NCC</a>
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
+          Through their Community Projects Fund, <a class="text-primary" href="https://ripe.net/">RIPE NCC</a>
           in 2023 supported the ongoing operation of our DNS platform and covers global Anycast network expenses in
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/eu.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
-          </v-layout>
+          </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
-          As a <a class="primary--text text--darken-2" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
+          As a <a class="text-primary" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
           deSEC works to ensure implementation of robust and modern DNS security and privacy features.
           This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.<br />
           The project is co-funded by the European Union (project number: 101095329 21-EU-DIG-EU-DNS, project name:
@@ -143,37 +144,37 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
-          <v-layout class="justify-center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
             <a href="https://www.joindns4.eu/"><img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/></a>
-          </v-layout>
+          </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           DNS4EU is an initiative of the European Commission to provide an EU-based alternative public DNS resolver.
           The purpose of DNS4EU is to provide EU citizens, companies, and institutions with a secure, privacy-compliant,
           and powerful recursive DNS to protect European digital independence.
         </v-col>
       </v-row>
       <v-row align="center" class="mt-6" justify="center" style="text-align: center">
-        <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
-        <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" style="max-width: 160px; width: 100%"/></a></v-col>
-        <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" style="height: 100%; max-height: 80px; min-width: 50px; vertical-align: middle"/></a></v-col>
-        <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
+        <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" class="partner-logo"/></a></v-col>
+        <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" class="partner-logo partner-logo--sse"/></a></v-col>
+        <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" class="partner-logo partner-logo--sav"/></a></v-col>
+        <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" class="partner-logo"/></a></v-col>
       </v-row>
     </v-container>
   </v-container>
-  <v-container fluid class="grey lighten-4">
+  <v-container fluid class="bg-grey-lighten-4">
     <v-container>
       <v-row align="center" justify="center">
         <v-card
-          class="mx-auto col-12"
-          color="grey lighten-5"
+          class="mx-auto w-100"
+          color="grey-lighten-5"
         >
           <v-card-text
                   class="pt-6"
                   style="position: relative;"
           >
-            <h3 class="text-h4 mb-2 text--darken-2 grey--text text-center">
+            <h3 class="text-h4 mb-2 text-grey-darken-2 text-center">
               deSEC Global Anycast Networks
             </h3>
             <div class="font-weight-light text-h6 mb-2">
@@ -186,24 +187,26 @@
             </div>
           </v-card-text>
           <v-img
-            src="../assets/anycast.worldmap.svg" alt="World Map of Anycast POPs" contain
+            src="../assets/anycast.worldmap.svg" alt="World Map of Anycast POPs"
             class="justify-center"
             style="display: block; width: 100%; aspect-ratio: 2/1"
           >
-            <v-tooltip bottom v-for="f in frontends" :key="f.host">
-              <template #activator="{ on }">
-                <v-icon
-                  v-on="on"
-                  large
-                  style="transform: translate(-50%, -100%); position: absolute"
-                  :style="{color: f.adopted_by ? 'black' : 'rgba(0, 0, 0, 0.60)', left: f.left, top: f.top}"
-                >{{ f.adopted_by ? mdiMapMarkerStar : mdiMapMarker }}</v-icon>
+            <v-tooltip location="bottom" v-for="f in frontends" :key="f.host">
+              <template #activator="{ props }">
                 <v-icon
                   v-if="!!f.adopted_by"
-                  large
+                  size="36"
                   style="color: gold; transform: translate(-50%, -100%); position: absolute"
                   :style="{left: f.left, top: f.top}"
-                >{{ mdiMapMarkerStarOutline }}</v-icon>
+                  :icon="mdiMapMarkerStarOutline"
+                />
+                <v-icon
+                  v-bind="props"
+                  size="36"
+                  style="transform: translate(-50%, -100%); position: absolute"
+                  :style="{color: f.adopted_by ? 'black' : 'rgba(0, 0, 0, 0.60)', left: f.left, top: f.top}"
+                  :icon="f.adopted_by ? mdiMapMarkerStar : mdiMapMarker"
+                />
               </template>
               <span>
                 {{ f.name }}<span v-if="f.adopted_by">, sponsored by {{ f.adopted_by }}</span>
@@ -231,6 +234,39 @@
   .triangle-fg {
     z-index: 2;
   }
+  .domain-type-selector {
+    align-items: center;
+    column-gap: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .domain-type-label {
+    line-height: 40px;
+    white-space: nowrap;
+  }
+  .domain-type-options {
+    flex: 1 1 280px;
+  }
+  .domain-type-options :deep(.v-selection-control-group) {
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 8px;
+  }
+  .domain-type-options :deep(.v-selection-control) {
+    min-height: 40px;
+  }
+  .partner-logo {
+    max-height: 113px;
+    min-width: 50px;
+    vertical-align: middle;
+  }
+  .partner-logo--sse {
+    max-width: 160px;
+  }
+  .partner-logo--sav {
+    max-height: 80px;
+  }
 </style>
 
 <script>
@@ -255,7 +291,8 @@ export default {
   },
   methods: {
     async signup() {
-      if (this.$refs.form.validate()) {
+      const { valid } = await this.$refs.form.validate();
+      if (valid) {
         this.$router.push({name: 'signup', params: this.email ? {email: this.email} : {}, query: {domainType: this.domainType}});
       }
     },

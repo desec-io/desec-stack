@@ -1,19 +1,20 @@
 <template>
   <v-text-field
     :label="label"
-    :disabled="disabled || readonly"
+    :disabled="disabled"
+    :readonly="readonly || !!value_override"
     :error-messages="errorMessages"
-    :value="value_override ? '' : value"
+    :model-value="value_override ? '' : inputValue"
     :type="type || ''"
     :placeholder="value_override || placeholder || (required ? '' : '(optional)')"
-    :hint="hintWarning(value) !== false && hint"
-    :persistent-hint="hintWarning(value) !== false"
+    :hint="resolvedHint"
+    :persistent-hint="!!resolvedHint"
     :class="hintClass"
+    :variant="disabled || readonly ? 'plain' : 'underlined'"
     :required="required"
-    :rules="[v => !required || !!v || 'Required.'].concat(rules)"
-    @input="changed('input', $event)"
-    @input.native="$emit('dirty', $event)"
-    @keyup="changed('keyup', $event)"
+    :rules="readonly || disabled ? [] : [v => !required || !!v || 'Required.'].concat(rules)"
+    @update:modelValue="updateValue"
+    @keyup="handleKeyup"
   />
 </template>
 
@@ -53,6 +54,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    modelValue: {
+      type: [String, Number],
+      required: false,
+    },
     value: {
       type: [String, Number],
       required: false,
@@ -73,31 +78,39 @@ export default {
   data() { return {
     hintClass: '',
   }},
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+    resolvedHint() {
+      return this.hintWarning(this.inputValue) !== false ? (this.hint || '') : '';
+    },
+  },
   methods: {
-    changed(event, e) {
-      this.$emit(event, e);
+    updateValue(value) {
+      this.$emit('update:modelValue', value);
+      this.$emit('input', value);
+      this.$emit('dirty');
+    },
+    handleKeyup(event) {
+      this.$emit('keyup', event);
       this.$emit('dirty');
     },
   },
   watch: {
-    value: function() {
-      this.hintClass = this.hintWarning(this.value) ? 'hint-warning' : '';
+    inputValue: function() {
+      this.hintClass = this.hintWarning(this.inputValue) ? 'hint-warning' : '';
     },
   },
 };
 </script>
 
 <style>
-/* Removes dropdown icon from read-only select */
-.v-application--is-ltr .v-text-field.v-input--is-disabled .v-input__append-inner {
-  display: none;
+.v-field--disabled {
+  opacity: 1;
 }
-/* remove underline from disabled text fields so they look like regular text */
-:not(v-select).theme--light.v-text-field.v-input--is-disabled .v-input__slot::before {
-  content: none;
-}
-/* display disabled text fields in normal color */
-.theme--light.v-input--is-disabled input {
+.v-field--disabled input,
+.v-field--disabled textarea {
   color: rgba(0, 0, 0, 0.87);
 }
 /* Work around Firefox not propagating click events to parent element, see

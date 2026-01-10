@@ -1,90 +1,90 @@
 <template>
   <v-app id="inspire">
     <v-navigation-drawer
-            v-model="drawer"
-            app
-            right
-            disable-resize-watcher
+      v-model="drawer"
+      location="right"
+      disable-resize-watcher
     >
-      <v-list dense>
+      <v-list density="compact" class="main-menu-drawer">
         <v-list-item
-                v-for="(item, key) in menu"
-                :key="key"
-                link
-                :to="{name: item.name}"
-                :exact="true">
-          <v-list-item-action>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-action>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ item.text }}
-              <v-icon :color="item.post_icon_color" class="text--darken-2" small v-if="item.post_icon">{{ item.post_icon }}</v-icon>
-            </v-list-item-title>
-          </v-list-item-content>
+          v-for="(item, key) in menu"
+          :key="key"
+          :to="{name: item.name}"
+          :exact="true"
+        >
+          <template #prepend>
+            <v-icon :icon="item.icon" />
+          </template>
+          <v-list-item-title>
+            {{ item.text }}
+            <v-icon v-if="item.post_icon" :icon="item.post_icon" :color="item.post_icon_color" size="small" />
+          </v-list-item-title>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar app class="white">
-      <v-toolbar-title><router-link :to="{name: 'home'}">
+    <v-app-bar color="white" :extended="authenticated">
+      <v-app-bar-title><router-link :to="{name: 'home'}">
         <v-img
-                src="./assets/logo.svg"
-                alt="deSEC Logo"
-                eager
-                contain
+          src="./assets/logo.svg"
+          alt="deSEC Logo"
+          class="app-logo"
+          height="32"
+          width="147"
+          eager
         ></v-img>
-      </router-link></v-toolbar-title>
+      </router-link></v-app-bar-title>
       <v-spacer/>
-      <div class="d-none d-md-block">
+      <div class="d-none d-md-block mr-4">
         <span class="mx-2" v-for="(item, key) in menu" :key="key">
           <router-link
-                  class="primary--text text--darken-2"
-                  :to="{name: item.name}"
+            class="main-menu-link"
+            :to="{name: item.name}"
           >{{ item.text }}</router-link>
-          <v-icon :color="item.post_icon_color" class="ml-1 text--darken-1" small v-if="item.post_icon">{{ item.post_icon }}</v-icon>
+          <v-icon v-if="item.post_icon" :icon="item.post_icon" :color="item.post_icon_color" class="ml-1" size="small" />
         </span>
       </div>
-      <v-btn class="mx-4" color="primary" depressed :to="{name: 'signup', query: $route.query}" v-if="!user.authenticated">Create Account</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed :to="{name: 'login'}" v-if="!user.authenticated">Log In</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" depressed outlined @click="logout" v-if="user.authenticated">Log Out</v-btn>
+      <v-btn class="mx-4" color="primary" variant="flat" :to="{name: 'signup', query: $route.query}" v-if="!authenticated">Create Account</v-btn>
+      <v-btn class="mx-4 ml-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!authenticated">Log In</v-btn>
+      <v-btn class="mx-4 ml-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
-      <template #extension v-if="user.authenticated">
-        <v-tabs background-color="primary darken-1" fixed-tabs>
-          <v-tab
-            v-for="(item, key) in tabmenu"
-            :key="key"
-            :to="{name: item.name}"
-          >
-            {{ item.text }}
-          </v-tab>
-          <v-spacer></v-spacer>
-          <v-menu
-                  bottom
-                  left
-          >
-            <template #activator="{ on }">
+      <template #extension v-if="authenticated">
+        <div class="authenticated-tabs d-flex align-center w-100 bg-primary text-white">
+          <v-tabs v-model="activeTab" class="flex-grow-1 text-white" bg-color="primary" color="white" slider-color="white" grow>
+            <v-tab
+              v-for="(item, key) in tabmenu"
+              :key="key"
+              :value="item.name"
+              :to="{name: item.name}"
+              class="text-white"
+            >
+              {{ item.text }}
+            </v-tab>
+          </v-tabs>
+          <v-menu location="bottom">
+            <template #activator="{ props }">
               <v-btn
-                      text
-                      class="align-self-center mr-4"
-                      v-on="on"
+                variant="text"
+                color="white"
+                class="align-self-center mr-4"
+                v-bind="props"
               >
                 more
-                <v-icon right>{{ mdiMenuDown }}</v-icon>
+                <v-icon :icon="mdiMenuDown" end />
               </v-btn>
             </template>
 
-            <v-list class="grey lighten-3">
+            <v-list>
               <v-list-item
-                      v-for="(item, key) in tabmenumore"
-                      :key="key"
-                      :to="{name: item.name}"
+                v-for="(item, key) in tabmenumore"
+                :key="key"
+                :to="{name: item.name}"
               >
                 {{ item.text }}
               </v-list-item>
             </v-list>
           </v-menu>
-        </v-tabs>
+        </div>
       </template>
     </v-app-bar>
 
@@ -94,15 +94,14 @@
           <v-icon
             color="warning"
             size="36"
-          >
-            {{ alert.icon }}
-          </v-icon>
+            :icon="alert.icon"
+          />
         </template>
         {{ alert.teaser }}
         <template #actions>
           <v-btn
             color="primary"
-            depressed
+            variant="flat"
             :href="alert.href"
             v-if="alert.href"
           >
@@ -110,7 +109,7 @@
           </v-btn>
           <v-btn
             color="primary"
-            text
+            variant="text"
             @click="user.unalert(alert.id)"
           >
             Hide
@@ -120,16 +119,15 @@
       <v-progress-linear
               :active="user.working"
               :indeterminate="user.working"
-              fixed
               color="secondary"
               style="z-index: 3"
       ></v-progress-linear>
       <router-view/>
     </v-main>
     <v-footer
-      class="d-flex flex-column align-stretch pa-0 white--text text--darken-1 elevation-12"
+      class="d-flex flex-column align-stretch pa-0 text-white elevation-12"
     >
-      <div class="grey darken-3 d-sm-flex flex-row justify-space-between pa-4">
+      <div class="bg-grey-darken-3 d-sm-flex flex-row justify-space-between pa-4">
         <div class="pa-2">
           <b>deSEC e.V.</b>
         </div>
@@ -141,7 +139,7 @@
           <div class="px-2"><router-link :to="{name: 'impressum'}">Legal Notice (Impressum)</router-link></div>
         </div>
       </div>
-      <div class="grey darken-4 d-md-flex flex-row justify-space-between pa-6">
+      <div class="bg-grey-darken-4 d-md-flex flex-row justify-space-between pa-6 footer-details">
         <div>
           <p>{{ email }}</p>
           <p>
@@ -153,7 +151,7 @@
         <div>
           <p>
             Please <router-link :to="{name: 'donate'}">donate</router-link>!
-            <v-icon color="red" class="text--darken-2" dense>{{ mdiHeart }}</v-icon>
+            <v-icon :icon="mdiHeart" color="red" />
           </p>
           <p>
             European Bank Account:<br>
@@ -167,7 +165,7 @@
         </div>
         <div>
           <p>Vorstand</p>
-          <p class="white--text text--darken-2">
+          <p class="text-white">
             Nils Wisiol<br/>
             Peter Thomassen<br/>
             Wolfgang Studier<br/>
@@ -196,38 +194,10 @@ import {
 
 export default {
   name: 'App',
-  data: () => ({
-    user: useUserStore(),
-    drawer: false,
-    email: import.meta.env.VITE_APP_EMAIL,
-    mdiHeart,
-    mdiMenuDown,
-    tabmenu: {
-      'domains': {
-        'name': 'domains',
-        'text': 'Domain Management',
-      },
-      'tokens': {
-        'name': 'tokens',
-        'text': 'Token Management',
-      },
-    },
-    tabmenumore: {
-      'totp': {
-        'name': 'totp',
-        'text': 'Manage 2-Factor Authentication',
-      },
-      'change-email': {
-        'name': 'change-email',
-        'text': 'Change Email Address',
-      },
-      'delete-account': {
-        'name': 'delete-account',
-        'text': 'Delete Account',
-      },
-    },
-  }),
   computed: {
+    authenticated() {
+      return this.user?.authenticated;
+    },
     menu: () => {
       const user = useUserStore();
       const menu_perma = {
@@ -277,6 +247,46 @@ export default {
       return {...menu_perma, ...menu_opt};
     },
   },
+  data: () => ({
+    user: useUserStore(),
+    drawer: false,
+    email: import.meta.env.VITE_APP_EMAIL,
+    activeTab: null,
+    mdiHeart,
+    mdiMenuDown,
+    tabmenu: {
+      'domains': {
+        'name': 'domains',
+        'text': 'Domain Management',
+      },
+      'tokens': {
+        'name': 'tokens',
+        'text': 'Token Management',
+      },
+    },
+    tabmenumore: {
+      'totp': {
+        'name': 'totp',
+        'text': 'Manage 2-Factor Authentication',
+      },
+      'change-email': {
+        'name': 'change-email',
+        'text': 'Change Email Address',
+      },
+      'delete-account': {
+        'name': 'delete-account',
+        'text': 'Delete Account',
+      },
+    },
+  }),
+  watch: {
+    $route: {
+      immediate: true,
+      handler(to) {
+        this.activeTab = to?.name ?? null;
+      },
+    },
+  },
   methods: {
     async logout() {
       await logout();
@@ -285,3 +295,126 @@ export default {
   }
 }
 </script>
+
+<style>
+.v-application {
+  color: rgba(0, 0, 0, 0.87);
+}
+.v-application p {
+  margin-bottom: 16px;
+}
+.v-application ul,
+.v-application ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+.v-application li > ul,
+.v-application li > ol {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.v-application a,
+.v-overlay-container a {
+  color: #ffc107 !important;
+  text-decoration: underline;
+}
+.v-application a:hover,
+.v-application a:focus,
+.v-overlay-container a:hover,
+.v-overlay-container a:focus {
+  text-decoration: underline;
+}
+.v-application .main-menu-link {
+  color: #ffa000 !important;
+  text-decoration: none;
+}
+.v-application .main-menu-link:hover,
+.v-application .main-menu-link:focus {
+  color: #ffa000 !important;
+}
+.v-application .main-menu-drawer .v-list-item {
+  color: rgba(0, 0, 0, 0.87) !important;
+  text-decoration: none;
+}
+.v-application .main-menu-drawer .v-list-item--active {
+  background-color: #e0e0e0;
+}
+.v-application .main-menu-drawer .v-list-item .v-icon {
+  color: rgba(0, 0, 0, 0.54);
+}
+.v-application .v-btn.bg-primary {
+  color: #fff !important;
+  text-decoration: none;
+}
+.v-application .authenticated-tabs a {
+  color: #fff !important;
+}
+.v-application .bg-grey-darken-3 a,
+.v-application .bg-grey-darken-4 a {
+  color: #ffa000 !important;
+  text-decoration: underline;
+}
+.app-logo {
+  width: auto;
+}
+.footer-details {
+  row-gap: 24px;
+}
+.v-card-title {
+  display: flex;
+  align-items: center;
+}
+.v-card-text {
+  letter-spacing: 0;
+}
+.v-alert .v-alert__content > :last-child,
+.v-card-text > :last-child,
+.v-expansion-panel-text__wrapper > :last-child {
+  margin-bottom: 0;
+}
+.v-application .text-primary {
+  color: #ffa000 !important;
+}
+.v-application .v-field {
+  background-color: #FFFFFF;
+}
+.v-application .v-field__overlay {
+  background-color: transparent;
+  opacity: 0;
+}
+.v-input--disabled {
+  opacity: 1;
+}
+.v-application .v-field--variant-plain {
+  background-color: #FFFFFF;
+}
+.v-application .v-field--variant-plain .v-field__outline,
+.v-application .v-field--variant-plain .v-field__underlay {
+  display: none;
+}
+.v-application .v-field--variant-plain input,
+.v-application .v-field--variant-plain textarea {
+  color: rgba(0, 0, 0, 0.87);
+}
+.v-application .v-input--disabled .v-field,
+.v-application .v-field--disabled {
+  background-color: #f5f5f5;
+}
+.v-application .v-input--disabled .v-field__outline,
+.v-application .v-input--disabled .v-field__underlay,
+.v-application .v-field--disabled .v-field__outline,
+.v-application .v-field--disabled .v-field__underlay {
+  display: none;
+}
+.v-application .v-input--disabled input,
+.v-application .v-input--disabled textarea,
+.v-application .v-field--disabled input,
+.v-application .v-field--disabled textarea {
+  color: rgba(0, 0, 0, 0.54);
+}
+.v-btn--disabled.v-btn--variant-flat {
+  background-color: #e0e0e0 !important;
+  color: rgba(0, 0, 0, 0.54) !important;
+  opacity: 1;
+}
+</style>

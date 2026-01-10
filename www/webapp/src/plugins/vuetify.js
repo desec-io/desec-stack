@@ -1,21 +1,32 @@
-import Vue from 'vue';
-import Vuetify from 'vuetify/lib';
-import colors from 'vuetify/lib/util/colors'
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { VDataTable, VOtpInput } from 'vuetify/components'
+import { amber, lightBlue } from 'vuetify/util/colors'
 
-
-Vue.use(Vuetify);
-
-
-export default new Vuetify({
+export default createVuetify({
+  components: {
+    VDataTable,
+    VOtpInput,
+  },
   icons: {
-    iconfont: 'mdiSvg', // 'mdi' || 'mdiSvg' || 'md' || 'fa' || 'fa4' || 'faSvg'
+    defaultSet: 'mdi',
+    aliases,
+    sets: {
+      mdi,
+    },
   },
   theme: {
+    defaultTheme: 'light',
     themes: {
       light: {
-        primary: colors.amber,
-        secondary: colors.lightBlue.darken1,
-        accent: colors.amber.accent4,
+        colors: {
+          primary: amber.base,
+          primaryLight4: amber.lighten4,
+          secondary: lightBlue.darken1,
+          accent: amber.accent4,
+          'on-primary': '#fff',
+        },
       },
     },
   },

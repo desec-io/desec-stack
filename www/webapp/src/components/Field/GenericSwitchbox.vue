@@ -3,10 +3,10 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :input-value="value"
+    :model-value="inputValue"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @change="change"
+    @update:modelValue="change"
   />
 </template>
 
@@ -34,14 +34,24 @@ export default {
       type: Boolean,
       default: false,
     },
+    modelValue: {
+      type: Boolean,
+      required: false,
+    },
     value: {
       type: Boolean,
-      required: true,
+      required: false,
+    },
+  },
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
     },
   },
   methods: {
-    change(event) {
-      this.$emit('input', event);
+    change(value) {
+      this.$emit('update:modelValue', value);
+      this.$emit('input', value);
       this.$emit('dirty', {target: this.$el});
     },
   },

@@ -11,7 +11,7 @@
 
     <div v-if="!user.authenticated">
       <div class="my-2 text-h6">
-        <v-icon class="primary--text">{{ mdiNumeric0Circle }}</v-icon>
+        <v-icon class="text-primary" :icon="mdiNumeric0Circle" />
         Configure your DNS records
       </div>
       <p>Before delegating your domain, you might want to take the following steps:</p>
@@ -22,25 +22,25 @@
       </ul>
     </div>
 
-    <div class="my-2 text-h6">
-      <v-icon class="primary--text">{{ mdiNumeric1Circle }}</v-icon>
+    <div class="mb-2 mt-5 text-h6">
+      <v-icon class="text-primary" :icon="mdiNumeric1Circle" />
       Delegate your domain
     </div>
     <p>
       Forward the following information to the organization/person where you bought the domain
       <strong>{{ domain }}</strong> (usually your provider or technical administrator).
     </p>
-    <v-expansion-panels class="mb-4">
+    <v-expansion-panels class="my-4">
       <v-expansion-panel>
-        <v-expansion-panel-header class="primary lighten-4">
-          <span><v-icon>{{ mdiAlert }}</v-icon> Moving a domain that had DNSSEC enabled before? Read this!</span>
-        </v-expansion-panel-header>
-        <v-expansion-panel-content>
+        <v-expansion-panel-title class="bg-primaryLight4">
+          <span><v-icon :icon="mdiAlert" /> Moving a domain that had DNSSEC enabled before? Read this!</span>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
           <div class="mt-4">
             <strong>Be careful!</strong>
             Simply replacing records can cause errors, because resolvers may have old NS or DNSSEC settings cached.
             To prevent this, choose one of the following:
-            <ul>
+            <ul class="dnssec-move-options">
               <li>
                 Keep DNSSEC enabled throughout: please contact support to configure a temporary "multi-signer" setup (RFC 8901).
               </li>
@@ -49,17 +49,17 @@
               </li>
             </ul>
           </div>
-        </v-expansion-panel-content>
+        </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
     <v-card class="mb-4" v-if="ns">
-      <v-card-title class="grey lighten-2">
+      <v-card-title class="bg-grey-lighten-2">
         <v-row>
           <v-col cols="auto">Nameservers</v-col>
           <v-spacer></v-spacer>
           <v-col class="text-right">
-            <v-btn @click="copyToClipboard(ns.join('\n'))" text small>
-              <v-icon>{{ mdiContentCopy }}</v-icon>
+            <v-btn @click="copyToClipboard(ns.join('\n'))" variant="text" size="small">
+              <v-icon :icon="mdiContentCopy" />
               Copy
             </v-btn>
           </v-col>
@@ -73,8 +73,8 @@
     </v-card>
     <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <div class="my-2 text-h6">
-      <v-icon class="primary--text">{{ mdiNumeric2Circle }}</v-icon>
+    <div class="mb-2 mt-5 text-h6">
+      <v-icon class="text-primary" :icon="mdiNumeric2Circle" />
       Enable DNSSEC
     </div>
     <div v-if="user.authenticated">
@@ -86,18 +86,18 @@
       </p>
       <p class="small">
         Notes: When using block format, some providers require you to add the domain name in the beginning. (Also,
-        <a class="grey--text text--darken-1" href="https://github.com/oskar456/cds-updates" target="_blank">depending on
+        <a class="text-grey-darken-1" href="https://github.com/oskar456/cds-updates" target="_blank">depending on
         your domain's suffix</a>, we will perform this step automatically.)
       </p>
 
-      <v-card class="mb-4">
-        <v-card-title class="grey lighten-2">
+      <v-card class="my-4">
+        <v-card-title class="bg-grey-lighten-2">
           <v-row>
             <v-col cols="auto">DS Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(ds.join('\n'))" text small>
-                <v-icon>{{ mdiContentCopy }}</v-icon>
+              <v-btn @click="copyToClipboard(ds.join('\n'))" variant="text" size="small">
+                <v-icon :icon="mdiContentCopy" />
                 Copy
               </v-btn>
             </v-col>
@@ -111,13 +111,13 @@
       </v-card>
 
       <v-card>
-        <v-card-title class="grey lighten-2">
+        <v-card-title class="bg-grey-lighten-2">
           <v-row>
             <v-col cols="auto">DNSKEY Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(dnskey.join('\n'))" text small>
-                <v-icon>{{ mdiContentCopy }}</v-icon>
+              <v-btn @click="copyToClipboard(dnskey.join('\n'))" variant="text" size="small">
+                <v-icon :icon="mdiContentCopy" />
                 Copy
               </v-btn>
             </v-col>
@@ -130,8 +130,8 @@
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
       </v-card>
 
-      <div class="my-2 text-h6">
-        <v-icon class="primary--text">{{ mdiNumeric3Circle }}</v-icon>
+      <div class="mb-2 mt-5 text-h6">
+        <v-icon class="text-primary" :icon="mdiNumeric3Circle" />
         Check Setup
       </div>
       <p>
@@ -142,20 +142,20 @@
     <div v-else>
       <p>
         To enable DNSSEC, you will also need to forward some information to your domain provider.
-        You can retrieve this information by logging in, and then clicking on the <v-icon>{{ mdiInformation }}</v-icon> button next to your domain name.
+        You can retrieve this information by logging in, and then clicking on the <v-icon :icon="mdiInformation" /> button next to your domain name.
       </p>
     </div>
 
     <!-- copy snackbar -->
     <v-snackbar v-model="snackbar">
-      <v-icon v-if="snackbar_icon">{{ snackbar_icon }}</v-icon>
+      <v-icon v-if="snackbar_icon" :icon="snackbar_icon" />
       {{ snackbar_text }}
 
-      <template #action="{ attrs }">
+      <template #actions="{ props }">
         <v-btn
             color="pink"
-            text
-            v-bind="attrs"
+            variant="text"
+            v-bind="props"
             @click="snackbar = false"
         >
           Close
@@ -242,3 +242,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.dnssec-move-options {
+  list-style-position: outside;
+  margin-top: 8px;
+  padding-left: 24px;
+}
+</style>

@@ -12,11 +12,9 @@
               sm="8"
               md="6"
       >
-        <v-form @submit.prevent="signup" ref="form">
         <v-card class="elevation-12">
           <v-toolbar
                   color="primary"
-                  dark
                   flat
           >
             <v-toolbar-title>Welcome to deSEC</v-toolbar-title>
@@ -31,10 +29,9 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer/>
-            <v-btn outlined text depressed :to="{name: 'home'}">Home</v-btn>
+            <v-btn variant="outlined" :to="{name: 'home'}">Home</v-btn>
           </v-card-actions>
         </v-card>
-        </v-form>
       </v-col>
     </v-row>
   </v-container>

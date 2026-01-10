@@ -19,6 +19,7 @@ export default {
         creatable: true,
         updatable: false,
         destroyable: true,
+        rowsClickable: true,
         limit_domains: 0,
         headlines: {
           table: 'Domains',
