@@ -264,6 +264,10 @@ If you need details about a domain's current status, request the domain via
 ``GET /api/v1/domains/{name}/`` or list domains via ``GET /api/v1/domains/`` and
 inspect the delegation fields.
 
+To trigger a manual refresh for a single domain, issue a ``POST`` request to
+``/api/v1/domains/{name}/delegation-check/``. The response contains the updated
+domain object, including the delegation fields. This endpoint is rate-limited.
+
 
 Retrieving a Specific Domain
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -2,17 +2,19 @@
 import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList.vue';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog.vue';
-import {mdiDownload, mdiInformation} from "@mdi/js";
+import {mdiDownload, mdiInformation, mdiRefresh} from "@mdi/js";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
 import DelegationStatus from "@/components/Field/DelegationStatus.vue";
+import DelegationCheckDialog from "@/views/Console/DelegationCheckDialog.vue";
 
 export default {
   name: 'CrudListDomain',
   extends: CrudList,
   components: {
     DomainSetupDialog,
+    DelegationCheckDialog,
   },
   data() {
     const self = this;
@@ -118,6 +120,7 @@ export default {
           create: 'domains/',
           delete: 'domains/:{name}/',
           export: 'domains/:{name}/zonefile/',
+          delegationCheck: 'domains/:{name}/delegation-check/',
         },
         itemDefaults: () => ({ name: '' }),
         postcreate: d => {
@@ -157,18 +160,34 @@ export default {
           this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
           this.extraComponentName = 'DomainSetupDialog';
         },
+        async runDelegationCheck(domain) {
+          const url = this.resourcePath(this.paths.delegationCheck, domain, ':');
+          await withWorking(this.error, () => HTTP
+              .post(url)
+              .then(r => {
+                Object.assign(domain, r.data);
+                this.extraComponentBind = { domain };
+                this.extraComponentName = 'DelegationCheckDialog';
+              })
+          );
+        },
         handleRowClick: (value) => {
           this.$router.push({name: 'domain', params: {domain: value.name}});
         },
     }
   },
   computed: {
-    actions() {
+        actions() {
       return {
         'info': {
           go: d => this.showDomainInfo(d),
           icon: mdiInformation,
           tooltip: 'Setup instructions',
+        },
+        'delegation_check': {
+          go: d => this.runDelegationCheck(d),
+          icon: mdiRefresh,
+          tooltip: 'Check delegation status',
         },
         'export': {
           go: d => this.exportDomain(d),

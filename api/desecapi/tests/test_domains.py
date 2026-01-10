@@ -1,9 +1,11 @@
 from contextlib import nullcontext
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 
 from desecapi.models import Domain
@@ -270,6 +272,33 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertTrue(my_domain_data["is_delegated"])
         self.assertTrue(my_domain_data["has_all_nameservers"])
         self.assertFalse(my_domain_data["is_secured"])
+
+    def test_delegation_check_endpoint(self):
+        url = (
+            self.reverse("v1:domain-detail", name=self.my_domain.name)
+            + "delegation-check/"
+        )
+        now = timezone.now()
+        update = {
+            "id": self.my_domain.id,
+            "delegation_checked": now,
+            "is_registered": True,
+            "has_all_nameservers": True,
+            "is_delegated": True,
+            "is_secured": True,
+        }
+        checker = Mock()
+        checker.check_domain.return_value = update
+        with patch("desecapi.views.domains.DelegationChecker", return_value=checker):
+            response = self.client.post(url)
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.my_domain.refresh_from_db()
+        self.assertTrue(self.my_domain.is_registered)
+        self.assertTrue(self.my_domain.has_all_nameservers)
+        self.assertTrue(self.my_domain.is_delegated)
+        self.assertTrue(self.my_domain.is_secured)
+        self.assertIsNotNone(self.my_domain.delegation_checked)
+        self.assertEqual(response.data["is_registered"], True)
 
     def test_list_domains_owns_qname(self):
         # Domains outside this account or non-existent

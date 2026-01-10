@@ -118,6 +118,9 @@ REST_FRAMEWORK = {
             "100/h",
             "300/d",
         ],  # DNS API requests affecting RRset(s) of a single domain
+        "delegation_check": [
+            "10/h",
+        ],  # Manual delegation check per domain
         # UserRateThrottle
         "user": "2000/d",  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },
