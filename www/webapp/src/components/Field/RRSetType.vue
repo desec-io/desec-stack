@@ -5,11 +5,11 @@
     :error-messages="errorMessages"
     hint="You can also enter other types. For a full list, check the documentation."
     :persistent-hint="!readonly"
-    :value="value"
+    :model-value="inputValue"
     :items="types"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
-    @input="input($event)"
+    @update:modelValue="input"
   />
 </template>
 
@@ -37,9 +37,13 @@ export default {
       type: Boolean,
       default: false,
     },
+    modelValue: {
+      type: String,
+      required: false,
+    },
     value: {
       type: String,
-      required: true,
+      required: false,
     },
   },
   data: () => ({
@@ -60,8 +64,14 @@ export default {
       'DS',
     ],
   }),
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+  },
   methods: {
     input(event) {
+      this.$emit('update:modelValue', event);
       this.$emit('input', event);
     },
   },

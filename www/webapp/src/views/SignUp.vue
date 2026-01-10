@@ -21,7 +21,6 @@
           <v-card class="elevation-12 pb-4">
             <v-toolbar
                     color="primary"
-                    dark
                     flat
             >
               <v-toolbar-title>Create new Account</v-toolbar-title>
@@ -32,8 +31,8 @@
               <v-text-field
                       v-model="email"
                       label="Email"
-                      :prepend-icon="mdiEmail"
-                      outlined
+                      :prepend-inner-icon="mdiEmail"
+                      variant="outlined"
                       required
                       :rules="email_rules"
                       :error-messages="email_errors"
@@ -60,7 +59,7 @@
                   <v-alert
                       class="mb-2 ml-8 mt-0"
                       type="info"
-                      outlined
+                      variant="outlined"
                   >
                     <p class="text-h6">Limitations of Domains Registered under {{ LOCAL_PUBLIC_SUFFIXES[0] }}</p>
                     <p>
@@ -79,7 +78,6 @@
                       <v-checkbox
                             v-model="limitationsAccepted"
                             hide-details="auto"
-                            type="checkbox"
                             :rules="limitationsAccepted_rules"
                             tabindex="6"
                       >
@@ -94,8 +92,7 @@
               <v-text-field
                       v-model="domain"
                       :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
-                      prepend-icon="mdi-blank"
-                      outlined
+                      variant="outlined"
                       required
                       :disabled="domainType === 'none' || domainType === undefined || (domainType === 'dynDNS' && !limitationsAccepted)"
                       :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
@@ -120,41 +117,39 @@
                 />
               </v-container>
 
-              <v-layout class="justify-center">
+              <v-row class="justify-center">
                 <v-checkbox
                       v-model="outreach_preference"
                       hide-details
-                      type="checkbox"
                       tabindex="5"
                 >
                   <template #label>
-                    <v-flex>
+                    <v-col>
                       Tell me about deSEC developments. No ads. <small>(recommended)</small>
-                    </v-flex>
+                    </v-col>
                   </template>
                 </v-checkbox>
-              </v-layout>
+              </v-row>
 
-              <v-layout class="justify-center">
+              <v-row class="justify-center">
                 <v-checkbox
                       v-model="terms"
                       hide-details="auto"
-                      type="checkbox"
                       :rules="terms_rules"
                       tabindex="6"
                 >
                   <template #label>
-                    <v-flex>
+                    <v-col>
                       Yes, I agree to the <span @click.stop><router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link></span> and
                       <span @click.stop><router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link></span>.
-                    </v-flex>
+                    </v-col>
                   </template>
                 </v-checkbox>
-              </v-layout>
+              </v-row>
             </v-card-text>
             <v-card-actions class="justify-center">
               <v-btn
-                      depressed
+                      variant="flat"
                       class="px-4"
                       color="primary"
                       type="submit"
@@ -247,7 +242,8 @@
         return this.email ? this.$refs.domainField.focus() : this.$refs.emailField.focus();
       },
       async signup() {
-        if (!this.$refs.form.validate()) {
+        const { valid } = await this.$refs.form.validate();
+        if (!valid) {
           return;
         }
         this.working = true;

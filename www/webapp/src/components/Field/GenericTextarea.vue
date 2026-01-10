@@ -3,17 +3,16 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :value="value"
+    :model-value="inputValue"
     :type="type || ''"
     :placeholder="required ? '' : '(optional)'"
     :hint="hint"
     persistent-hint
     :required="required"
     :rules="[v => !required || !!v || 'Required.'].concat(rules)"
-    @input="changed('input', $event)"
-    @input.native="$emit('dirty', $event)"
-    @keyup="changed('keyup', $event)"
-    dense
+    @update:modelValue="updateValue"
+    @keyup="handleKeyup"
+    density="compact"
     rows="8"
   />
 </template>
@@ -50,6 +49,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    modelValue: {
+      type: [String, Number],
+      required: false,
+    },
     value: {
       type: [String, Number],
       required: false,
@@ -59,9 +62,19 @@ export default {
       required: false,
     },
   },
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+  },
   methods: {
-    changed(event, e) {
-      this.$emit(event, e);
+    updateValue(value) {
+      this.$emit('update:modelValue', value);
+      this.$emit('input', value);
+      this.$emit('dirty');
+    },
+    handleKeyup(event) {
+      this.$emit('keyup', event);
       this.$emit('dirty');
     },
   },

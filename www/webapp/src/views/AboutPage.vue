@@ -26,7 +26,7 @@
         </v-row>
       </v-container>
     </v-card>
-    <v-container fluid class="grey lighten-4">
+    <v-container fluid class="bg-grey-lighten-4">
       <v-container>
         <v-row class="pt-8">
           <v-col class="text-center">

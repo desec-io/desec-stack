@@ -20,7 +20,7 @@
         <v-card-text class="text-center">
           <div>
             <p class="mt-2">
-              <v-icon>{{ mdiNumeric1Circle }}</v-icon>
+              <v-icon :icon="mdiNumeric1Circle" />
               Please select a TOTP token:
             </p>
             <v-container class="pa-0">
@@ -28,7 +28,7 @@
                 <v-col cols="12" sm="6">
                   <v-select
                     :items="factors"
-                    item-text="name"
+                    item-title="name"
                     item-value="id"
                     v-model="id"
                     label="Token"
@@ -39,7 +39,7 @@
             </v-container>
 
             <p class="mt-6">
-              <v-icon>{{ mdiNumeric2Circle }}</v-icon>
+              <v-icon :icon="mdiNumeric2Circle" />
               Enter the code displayed in the authenticator app to continue:
             </p>
             <v-container class="pa-0">
@@ -59,7 +59,7 @@
               <v-row dense align="center" class="justify-center">
                 <v-col cols="auto">
                   <v-btn
-                          depressed
+                          variant="flat"
                           color="primary"
                           type="submit"
                           :disabled="working || code.length != 6"
@@ -111,7 +111,8 @@ export default {
   },
   methods: {
     async verify() {
-      if (!this.$refs.form.validate()) {
+      const { valid } = await this.$refs.form.validate();
+      if (!valid) {
         return;
       }
       this.working = true;

@@ -1,18 +1,18 @@
 <template>
   <v-row dense align="center" class="text-center">
-    <v-col cols="12" sm="">
+    <v-col cols="12">
       <v-text-field
           v-model="inputSolution"
           :label="l.inputSolution"
           :hint="kind === 'image' ? l.hintProblemWithImage : l.hintProblemWithAudio"
-          :prepend-icon="mdiAccountCheck"
+          :prepend-inner-icon="mdiAccountCheck"
           :rules="rules"
           :error-messages="errors"
           :tabindex="tabindex"
-          @input="emitChange()"
+          @update:modelValue="emitChange()"
           @change="errors=[]"
           @keydown="errors=[]"
-          outlined
+          variant="outlined"
           required
           class="uppercase"
           ref="captchaField"
@@ -39,17 +39,17 @@
       </audio>
       <br>
       <v-btn-toggle>
-        <v-btn text outlined @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
-          <v-icon>{{ mdiRefresh }}</v-icon>
+        <v-btn variant="outlined" @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
+          <v-icon :icon="mdiRefresh" />
         </v-btn>
       </v-btn-toggle>
       &nbsp;
       <v-btn-toggle v-model="kind">
-        <v-btn text outlined value="image" :aria-label="l.switchImage" :disabled="working">
-          <v-icon>{{ mdiEye }}</v-icon>
+        <v-btn variant="outlined" value="image" :aria-label="l.switchImage" :disabled="working">
+          <v-icon :icon="mdiEye" />
         </v-btn>
-        <v-btn text outlined value="audio" :aria-label="l.switchAudio" :disabled="working">
-          <v-icon>{{ mdiEarHearing }}</v-icon>
+        <v-btn variant="outlined" value="audio" :aria-label="l.switchAudio" :disabled="working">
+          <v-icon :icon="mdiEarHearing" />
         </v-btn>
       </v-btn-toggle>
     </v-col>

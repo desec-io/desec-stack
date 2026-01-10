@@ -2,18 +2,18 @@
   <v-text-field
     :label="label"
     :disabled="disabled || readonly"
+    :readonly="!!value_override"
     :error-messages="errorMessages"
-    :value="value_override ? '' : value"
+    :model-value="value_override ? '' : inputValue"
     :type="type || ''"
     :placeholder="value_override || placeholder || (required ? '' : '(optional)')"
-    :hint="hintWarning(value) !== false && hint"
-    :persistent-hint="hintWarning(value) !== false"
+    :hint="resolvedHint"
+    :persistent-hint="!!resolvedHint"
     :class="hintClass"
     :required="required"
     :rules="[v => !required || !!v || 'Required.'].concat(rules)"
-    @input="changed('input', $event)"
-    @input.native="$emit('dirty', $event)"
-    @keyup="changed('keyup', $event)"
+    @update:modelValue="updateValue"
+    @keyup="handleKeyup"
   />
 </template>
 
@@ -53,6 +53,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    modelValue: {
+      type: [String, Number],
+      required: false,
+    },
     value: {
       type: [String, Number],
       required: false,
@@ -73,15 +77,28 @@ export default {
   data() { return {
     hintClass: '',
   }},
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+    resolvedHint() {
+      return this.hintWarning(this.inputValue) !== false ? (this.hint || '') : '';
+    },
+  },
   methods: {
-    changed(event, e) {
-      this.$emit(event, e);
+    updateValue(value) {
+      this.$emit('update:modelValue', value);
+      this.$emit('input', value);
+      this.$emit('dirty');
+    },
+    handleKeyup(event) {
+      this.$emit('keyup', event);
       this.$emit('dirty');
     },
   },
   watch: {
-    value: function() {
-      this.hintClass = this.hintWarning(this.value) ? 'hint-warning' : '';
+    inputValue: function() {
+      this.hintClass = this.hintWarning(this.inputValue) ? 'hint-warning' : '';
     },
   },
 };

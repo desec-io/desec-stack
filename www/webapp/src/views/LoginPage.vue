@@ -20,7 +20,6 @@
           <v-card class="elevation-12 pb-4">
             <v-toolbar
                     color="primary"
-                    dark
                     flat
             >
               <v-toolbar-title>Log In</v-toolbar-title>
@@ -30,7 +29,7 @@
               <v-text-field
                 v-model="email"
                 label="Email"
-                outlined
+                variant="outlined"
                 required
                 :rules="email_rules"
                 :error-messages="email_errors"
@@ -40,28 +39,28 @@
               <v-text-field
                 v-model="password"
                 label="Password"
-                :append-icon="hide_password ? mdiEyeOff : mdiEye"
+                :append-inner-icon="hide_password ? mdiEyeOff : mdiEye"
                 :type="hide_password ? 'password' : 'text'"
-                outlined
+                variant="outlined"
                 required
                 :rules="password_rules"
                 tabindex="2"
-                @click:append="() => (hide_password = !hide_password)"
+                @click:append-inner="() => (hide_password = !hide_password)"
               />
-              <v-layout class="justify-center">
+              <v-row class="justify-center">
                 <v-checkbox
                   v-model="useSessionStorage"
                   label="Remember me during this browser session"
                   tabindex="3"
                 />
-              </v-layout>
+              </v-row>
               <p class="text-center"><strong>Note:</strong> Login sessions expire after 1 hour of inactivity, or after 7 days at the latest.</p>
             </v-card-text>
             <v-card-actions class="justify-center">
               <v-btn
                 type="submit"
                 color="primary"
-                depressed
+                variant="flat"
                 :disabled="!valid"
                 :loading="working"
                 tabindex="4"
@@ -70,7 +69,7 @@
               </v-btn>
               <v-btn
                 id="forgotPassword"
-                text
+                variant="text"
                 color="primary"
                 :to="{name: 'reset-password', params: email ? {email: email} : {}}"
                 tabindex="5"

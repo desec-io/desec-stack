@@ -4,18 +4,18 @@
       <table style="border-spacing: 0; width: 100%" @keydown="keydownHandler($event)" @paste.prevent="pasteHandler($event)">
         <component
                 :is="getRecordComponentName(type)"
-                v-for="(item, index) in value"
+                v-for="(item, index) in inputValue"
                 :key="index"
                 :content="item"
                 :error-messages="errorMessages[index] ? errorMessages[index].content : []"
                 :hide-label="index > 0"
-                :append-icon="value.length > 1 ? mdiClose : ''"
+                :append-icon="inputValue.length > 1 ? mdiClose : ''"
                 :disabled="disabled"
                 :readonly="readonly"
                 :required="required"
                 ref="inputFields"
-                @update:content="$set(value, index, $event)"
-                @input.native="$emit('dirty', $event)"
+                @update:content="updateContent(index, $event)"
+                @dirty="$emit('dirty', $event)"
                 @remove="(e) => removeHandler(index, e)"
                 @keyup="(e) => $emit('keyup', e)"
         />
@@ -25,10 +25,10 @@
             @click="addHandler"
             class="px-0 text-none"
             color="grey"
-            small
-            text
+            size="small"
+            variant="text"
             v-if="!readonly && !disabled"
-    ><v-icon>{{ mdiPlus }}</v-icon> add another value</v-btn>
+    ><v-icon :icon="mdiPlus" /> add another value</v-btn>
   </div>
 </template>
 
@@ -96,6 +96,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    modelValue: {
+      type: Array,
+      default: undefined,
+    },
     value: {
       type: Array,
       default: () => [],
@@ -134,20 +138,33 @@ export default {
       ],
       addHandler: ($event) => {
         self.$emit('dirty', $event);
-        let value = [].concat(this.value);
+        let value = [].concat(this.inputValue);
         value.push('')
+        self.$emit('update:modelValue', value);
         self.$emit('input', value);
         self.$nextTick(() => self.$refs.inputFields[self.$refs.inputFields.length - 1].focus());
       },
       removeHandler: (index, $event) => {
         self.$emit('dirty', $event);
-        let value = [].concat(this.value);
+        let value = [].concat(this.inputValue);
         value.splice(index, 1);
+        self.$emit('update:modelValue', value);
         self.$emit('input', value);
       },
     }
   },
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+  },
   methods: {
+    updateContent(index, value) {
+      const updated = [].concat(this.inputValue);
+      updated.splice(index, 1, value);
+      this.$emit('update:modelValue', updated);
+      this.$emit('input', updated);
+    },
     keydownHandler(e) {
       let offset;
       switch (e.key) {
@@ -186,12 +203,13 @@ export default {
       const n = Math.min((lines[lines.length - 1].match(/ /g) || []).length, this.$refs.inputFields[0].fields.length - 1 - nBeforeCaret);
 
       let value = [].concat(
-          this.value.slice(0, index),
+          this.inputValue.slice(0, index),
           [index_value.slice(0, selectionStart) + lines[0]],
           lines.slice(1, -1),
           [lines[lines.length - 1] + index_value.slice(selectionEnd).replace(new RegExp(` {0,${n}}$`,'g'), '')],
-          this.value.slice(index + 1)
+          this.inputValue.slice(index + 1)
       );
+      this.$emit('update:modelValue', value);
       this.$emit('input', value);
       this.$nextTick(() => this.$refs.inputFields[index + lines.length - 1].setPosition(lines[lines.length - 1].length));
     },

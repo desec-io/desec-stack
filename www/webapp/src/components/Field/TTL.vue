@@ -3,16 +3,15 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    :value="value"
+    :model-value="inputValue"
     type="number"
     max="86400"
     :min="min"
     :placeholder="required ? '' : '(optional)'"
     :required="required"
     :rules="rules"
-    @input="changed('input', $event)"
-    @input.native="$emit('dirty', $event)"
-    @keyup="changed('keyup', $event)"
+    @update:modelValue="updateValue"
+    @keyup="handleKeyup"
   />
 </template>
 
@@ -44,9 +43,13 @@ export default {
       type: Boolean,
       default: false,
     },
+    modelValue: {
+      type: [String, Number],
+      required: false,
+    },
     value: {
       type: [String, Number],
-      required: true,
+      required: false,
     },
   },
   data() { return {
@@ -55,9 +58,19 @@ export default {
       v => v >= this.min && v <= 86400 || `${this.min} ≤ … ≤ 86400`,
     ],
   }},
+  computed: {
+    inputValue() {
+      return this.modelValue ?? this.value;
+    },
+  },
   methods: {
-    changed(event, e) {
-      this.$emit(event, e);
+    updateValue(value) {
+      this.$emit('update:modelValue', value);
+      this.$emit('input', value);
+      this.$emit('dirty');
+    },
+    handleKeyup(event) {
+      this.$emit('keyup', event);
       this.$emit('dirty');
     },
   },

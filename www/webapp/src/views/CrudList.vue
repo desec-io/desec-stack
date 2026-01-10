@@ -20,18 +20,16 @@
           <!-- The Actual Table -->
           <v-data-table
                   :headers="headers"
-                  :item-class="itemClass"
+                  :row-props="rowProps"
                   :items="rows"
                   :search="search"
                   :custom-filter="filterSearchableCols"
                   :loading="user.working || createDialogWorking || destroyDialogWorking"
-                  :footer-props="{
-                    'items-per-page-options': [10, 20, 30, 50, 100, -1]
-                  }"
                   :items-per-page="itemsPerPage"
+                  :items-per-page-options="[10, 20, 30, 50, 100, -1]"
                   class="elevation-1"
                   @click:row="rowClick"
-                  @pagination="updatePagination"
+                  @update:options="updatePagination"
           >
             <template #top>
               <!-- Headline & Toolbar, Including New Form -->
@@ -40,8 +38,8 @@
                 <v-spacer />
                 <v-text-field
                         v-model="search"
-                        v-if="$vuetify.breakpoint.smAndUp"
-                        :append-icon="mdiMagnify"
+                        v-if="display.smAndUp"
+                        :append-inner-icon="mdiMagnify"
                         label="Search"
                         single-line
                         hide-details
@@ -57,18 +55,17 @@
                 <v-btn
                         id="create"
                         color="primary"
-                        dark
-                        small
-                        fab
-                        depressed
+                        size="small"
+                        icon
+                        variant="flat"
                         :disabled="user.working"
                 >
-                  <v-icon>{{ mdiPlus }}</v-icon>
+                  <v-icon :icon="mdiPlus" />
                 </v-btn>
-                <template #extension v-if="$vuetify.breakpoint.xsOnly">
+                <template #extension v-if="display.xs">
                   <v-text-field
                           v-model="search"
-                          :append-icon="mdiMagnify"
+                          :append-inner-icon="mdiMagnify"
                           label="Search"
                           single-line
                           hide-details
@@ -83,13 +80,11 @@
                         @keydown.esc="close"
                 >
                   <v-card>
-                    <v-form v-model="valid" @submit.prevent="save()">
+                    <v-form ref="createForm" v-model="valid" @submit.prevent="save()">
                       <v-card-title>
                         <span class="text-h5">{{ headlines.create }}</span>
                         <v-spacer />
-                        <v-icon @click.stop="close">
-                          {{ mdiClose }}
-                        </v-icon>
+                        <v-icon :icon="mdiClose" @click.stop="close" />
                       </v-card-title>
                       <v-divider />
                       <v-progress-linear
@@ -101,23 +96,23 @@
                       <error-alert v-if="createDialogError" :errors="errors"></error-alert>
 
                       <v-alert
-                              :value="createDialogSuccess"
+                              :model-value="createDialogSuccess"
                               type="success"
                               style="overflow: auto"
                       >
-                        <span v-html="texts.createSuccess(createDialogItem)"></span>
+                        <span v-html="createSuccessText"></span>
                       </v-alert>
 
                       <v-alert
-                              :value="!!texts.createWarning(destroyDialogItem)"
+                              :model-value="!!createWarningText"
                               type="warning"
                       >
-                        {{ texts.createWarning(createDialogItem) }}
+                        {{ createWarningText }}
                       </v-alert>
 
                       <v-card-text v-if="createDialog">
                         <!-- v-if required here to make autofocus below working for the 2nd+ times, cf stackoverflow.com/a/51476992 -->
-                        <span v-html="texts.create()"></span>
+                        <span v-html="createText"></span>
                         <!-- New Form -->
                         <component
                                 :is="c.datatype"
@@ -131,7 +126,7 @@
                                 :disabled="createInhibited || createDialogSuccess"
                                 :hint="c.hint"
                                 autofocus
-                                @input="clearErrors(c)"
+                                @update:modelValue="clearErrors(c)"
                         />
 
                           <v-expansion-panels
@@ -139,10 +134,10 @@
                               v-if="Object.keys(writeableAdvancedColumns).length > 0"
                           >
                             <v-expansion-panel>
-                              <v-expansion-panel-header class="primary lighten-5">
+                              <v-expansion-panel-title class="bg-primary-lighten-5">
                                 <span>Advanced settings</span>
-                              </v-expansion-panel-header>
-                              <v-expansion-panel-content>
+                              </v-expansion-panel-title>
+                              <v-expansion-panel-text>
                                 <component
                                         :is="c.datatype"
                                         v-for="(c, id) in writeableAdvancedColumns"
@@ -154,13 +149,13 @@
                                         :required="c.required || false"
                                         :disabled="createInhibited || createDialogSuccess"
                                         autofocus
-                                        @input="clearErrors(c)"
+                                        @update:modelValue="clearErrors(c)"
                                 />
-                              </v-expansion-panel-content>
+                              </v-expansion-panel-text>
                             </v-expansion-panel>
                           </v-expansion-panels>
 
-                        <div class="mt-4" v-html="texts.createBottom()"></div>
+                        <div class="mt-4" v-html="createBottomText"></div>
                       </v-card-text>
 
                       <v-card-actions class="pb-4">
@@ -168,9 +163,9 @@
                         <v-btn
                                 color="primary"
                                 class="grow"
-                                :outlined="!createDialogSuccess"
+                                :variant="createDialogSuccess ? 'text' : 'outlined'"
                                 :disabled="createDialogWorking"
-                                @click.native="close"
+                                @click="close"
                         >
                           {{ createDialogSuccess ? 'Close' : 'Cancel' }}
                         </v-btn>
@@ -178,8 +173,8 @@
                                 type="submit"
                                 color="primary"
                                 class="grow"
-                                depressed
-                                :disabled="createInhibited || !valid || createDialogWorking || createDialogSuccess"
+                                variant="flat"
+                                :disabled="createInhibited || createFormInvalid || createDialogWorking || createDialogSuccess"
                                 :loading="createDialogWorking"
                                 v-if="!createDialogSuccess"
                         >
@@ -191,7 +186,7 @@
                   </v-card>
                 </v-dialog>
               </v-toolbar>
-              <v-alert text type="info" v-if="texts.banner"><span v-html="texts.banner()"></span></v-alert>
+              <v-alert variant="text" type="info" v-if="bannerText"><span v-html="bannerText"></span></v-alert>
             </template>
 
             <template
@@ -210,33 +205,32 @@
               />
             </template>
             <template #[`item.actions`]="itemFieldProps">
-              <v-layout
+              <v-row
                       class="my-1 py-3"
-                      justify-end
+                      justify="end"
               >
                 <div :key="key" v-for="[key, action] in getActions(actions)">
                   <v-tooltip
                       :disabled="!action.tooltip"
-                      top
+                      location="top"
                       transition="fade-transition"
                   >
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ props }">
                       <v-btn
-                              v-bind="attrs"
-                              v-on="on"
+                              v-bind="props"
                               :disabled="user.working || itemIsReadOnly(itemFieldProps.item, key)"
                               :class="'button-' + key"
                               color="grey"
                               icon
                               @click.stop="action.go(itemFieldProps.item, $event)"
                       >
-                        <v-icon>{{ action.icon }}</v-icon>
+                        <v-icon :icon="action.icon" />
                       </v-btn>
                     </template>
                     <span>{{ action.tooltip }}</span>
                   </v-tooltip>
                 </div>
-              </v-layout>
+              </v-row>
             </template>
             <template #no-data>
               <div v-if="!pagination_required">
@@ -249,7 +243,7 @@
                   v-else
                   border="top"
                   colored-border
-                  text
+                  variant="text"
                   prominent
                   type="warning"
               >
@@ -289,21 +283,21 @@
                 />
 
                 <v-alert
-                        :value="!!texts.destroyInfo(destroyDialogItem)"
+                        :model-value="!!destroyInfoText"
                         type="info"
                 >
-                  {{ texts.destroyInfo(destroyDialogItem) }}
+                  {{ destroyInfoText }}
                 </v-alert>
                 <v-alert
-                        :value="!!texts.destroyWarning(destroyDialogItem)"
+                        :model-value="!!destroyWarningText"
                         type="warning"
                 >
-                  {{ texts.destroyWarning(destroyDialogItem) }}
+                  {{ destroyWarningText }}
                 </v-alert>
                 <error-alert v-if="destroyDialogError" :errors="errors"></error-alert>
 
                 <v-card-text>
-                  {{ texts.destroy(destroyDialogItem) }}
+                  {{ destroyText }}
                 </v-card-text>
 
                 <v-card-actions>
@@ -311,16 +305,16 @@
                   <v-btn
                     color="primary"
                     class="grow"
-                    outlined
+                    variant="outlined"
                     :disabled="destroyDialogWorking"
-                    @click.native="destroyClose"
+                    @click="destroyClose"
                   >
                     Cancel
                   </v-btn>
                   <v-btn
                     color="primary"
                     class="grow"
-                    depressed
+                    variant="flat"
                     type="submit"
                     :loading="destroyDialogWorking"
                   >
@@ -334,7 +328,8 @@
           <component
                   :is="extraComponentName"
                   v-bind="extraComponentBind"
-                  @input="() => { this.extraComponentName = ''; }"
+                  @update:modelValue="() => { this.extraComponentName = ''; }"
+                  v-if="extraComponentName"
           ></component>
         </v-card>
       </v-col>
@@ -404,7 +399,7 @@ export default {
     showAdvanced: false,
     search: '',
     rows: [],
-    valid: false,
+    valid: null,
     dirty: new Set(),
     dirtyError: new Set(),
     /* to be overwritten */
@@ -460,6 +455,9 @@ export default {
     mdiPlus,
   }},
   computed: {
+    display() {
+      return this.$vuetify.display;
+    },
     actions: () => {},
     createInhibited: () => false,
     defaultActions() {
@@ -502,6 +500,57 @@ export default {
     writeableAdvancedColumns() {
       return this.filterWriteableColumns(col => (col.advanced || false));
     },
+    bannerText() {
+      if (typeof this.texts?.banner === 'function') {
+        return this.texts.banner();
+      }
+      return this.texts?.banner || '';
+    },
+    createText() {
+      if (typeof this.texts?.create !== 'function') {
+        return '';
+      }
+      return this.texts.create();
+    },
+    createSuccessText() {
+      if (typeof this.texts?.createSuccess !== 'function') {
+        return '';
+      }
+      return this.texts.createSuccess(this.createDialogItem);
+    },
+    createWarningText() {
+      if (typeof this.texts?.createWarning !== 'function') {
+        return '';
+      }
+      return this.texts.createWarning(this.createDialogItem);
+    },
+    createBottomText() {
+      if (typeof this.texts?.createBottom !== 'function') {
+        return '';
+      }
+      return this.texts.createBottom();
+    },
+    createFormInvalid() {
+      return this.valid === false;
+    },
+    destroyInfoText() {
+      if (typeof this.texts?.destroyInfo !== 'function') {
+        return '';
+      }
+      return this.texts.destroyInfo(this.destroyDialogItem);
+    },
+    destroyText() {
+      if (typeof this.texts?.destroy !== 'function') {
+        return '';
+      }
+      return this.texts.destroy(this.destroyDialogItem);
+    },
+    destroyWarningText() {
+      if (typeof this.texts?.destroyWarning !== 'function') {
+        return '';
+      }
+      return this.texts.destroyWarning(this.destroyDialogItem);
+    },
   },
   watch: {
     search: function() {
@@ -519,16 +568,20 @@ export default {
     this.search = this.user.component_arg(`${this.$options.name}/search`) || '';
   },
   methods: {
+    rowProps({ item }) {
+      const raw = item?.raw ?? item;
+      return { class: this.itemClass(raw) };
+    },
     itemClass(item) {
       const baseClass = 'crud-item';
       if (this.itemIsReadOnly(item)) {
-        return baseClass + ' grey text--disabled grey lighten-4';
+        return baseClass + ' text-disabled bg-grey-lighten-4';
       }
       if (this.dirtyError.has(item)) {
-        return baseClass + ' red lighten-5';
+        return baseClass + ' bg-red-lighten-5';
       }
       if (this.dirty.has(item)) {
-        return baseClass + ' orange lighten-5';
+        return baseClass + ' bg-orange-lighten-5';
       }
       return baseClass;
     },
@@ -539,14 +592,15 @@ export default {
     clearErrors(c) {
       c.createErrors = [];
     },
-    rowClick(value) {
-      this.handleRowClick(value);
+    rowClick(value, row) {
+      const raw = row?.item?.raw ?? row?.item ?? value?.raw ?? value?.item ?? value;
+      this.handleRowClick(raw);
     },
     getActions(actions) {
       return Object.entries({...actions, ...this.defaultActions}).filter(([, action]) => action.if ?? true);
     },
-    updatePagination(pagination) {
-      this.user.updateComponentArg(`${this.$options.name}/itemsPerPage`, pagination.itemsPerPage);
+    updatePagination(options) {
+      this.user.updateComponentArg(`${this.$options.name}/itemsPerPage`, options.itemsPerPage);
     },
     /** *
      * Ask the user to delete the given item.
@@ -623,6 +677,13 @@ export default {
                 })
         );
       } else {
+        const createForm = this.$refs.createForm;
+        if (createForm?.validate) {
+          const result = await createForm.validate();
+          if (!result.valid) {
+            return;
+          }
+        }
         // new item
         this.createDialogWorking = true;
         this.createDialogError = false;
@@ -722,7 +783,8 @@ export default {
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
-  ::v-deep tr.orange .button-save .v-icon, ::v-deep tr.red .button-save .v-icon {
+  ::v-deep tr.bg-orange-lighten-5 .button-save .v-icon,
+  ::v-deep tr.bg-red-lighten-5 .button-save .v-icon {
     color: forestgreen;
   }
   ::v-deep tr:focus-within :focus {
@@ -731,7 +793,7 @@ export default {
   ::v-deep tbody tr > :hover {
     cursor: pointer;
   }
-  ::v-deep tbody tr.text--disabled > :hover {
+  ::v-deep tbody tr.text-disabled > :hover {
     cursor: auto;
   }
 </style>

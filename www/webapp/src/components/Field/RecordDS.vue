@@ -1,5 +1,5 @@
 <script>
-import { and, helpers, integer, between } from 'vuelidate/lib/validators';
+import { and, helpers, integer, between } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 import { dnskey_algorithm_mnemonics } from './RecordDNSKEY.vue';
 
@@ -22,6 +22,7 @@ const digest_types_mnemonics = {
 export default {
   name: 'RecordDS',
   extends: RecordItem,
+  setup: RecordItem.setup,
   data: () => ({
     fields: [
       { label: 'Key Tag', validations: { integer, int16 } },

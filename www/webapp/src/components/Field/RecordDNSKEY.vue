@@ -1,5 +1,5 @@
 <script>
-import { helpers, integer, between } from 'vuelidate/lib/validators';
+import { helpers, integer, between } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
 const base64 = helpers.regex('base64', /^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
@@ -28,6 +28,7 @@ export const dnskey_algorithm_mnemonics = {
 export default {
   name: 'RecordDNSKEY',
   extends: RecordItem,
+  setup: RecordItem.setup,
   data: () => ({
     fields: [
       { label: 'Flags', validations: { integer, int16 }, mnemonics: dnskey_flag_mnemonics },

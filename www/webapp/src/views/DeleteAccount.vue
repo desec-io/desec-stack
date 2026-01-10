@@ -20,7 +20,6 @@
                     <v-card class="elevation-12 pb-4">
                         <v-toolbar
                                 color="primary"
-                                dark
                                 flat
                         >
                             <v-toolbar-title>Delete Account</v-toolbar-title>
@@ -36,31 +35,29 @@
                             <v-text-field
                                     v-model="email"
                                     label="Current Email"
-                                    prepend-icon="mdi-blank"
-                                    outlined
+                                    variant="outlined"
                                     required
                                     :disabled="true"
                                     validate-on-blur
                             />
                             <v-text-field
                                     v-model="password"
-                                    :append-icon="show ? mdiEyeOff : mdiEye"
-                                    prepend-icon="mdi-blank"
-                                    outlined
+                                    :append-inner-icon="show ? mdiEyeOff : mdiEye"
+                                    variant="outlined"
                                     label="Password"
                                     required
                                     :rules="[rules.required]"
                                     :type="show ? 'text' : 'password'"
                                     :error-messages="password_errors"
                                     @change="password_errors=[]"
-                                    @click:append="show = !show"
+                                    @click:append-inner="show = !show"
                                     ref="password"
                                     tabindex="1"
                             ></v-text-field>
                         </v-card-text>
                         <v-card-actions class="justify-center">
                             <v-btn
-                                    depressed
+                                    variant="flat"
                                     color="primary"
                                     type="submit"
                                     :loading="working"
@@ -115,7 +112,8 @@
         return this.$refs.password.focus();
       },
       async deleteAccount() {
-        if (!this.$refs.form.validate()) {
+        const { valid } = await this.$refs.form.validate();
+        if (!valid) {
           return;
         }
         this.working = true;
