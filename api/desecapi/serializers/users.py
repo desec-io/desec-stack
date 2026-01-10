@@ -31,6 +31,7 @@ class ResetPasswordSerializer(EmailSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     domains_under_management = serializers.SerializerMethodField()
+    insecure_delegated_domains = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -40,6 +41,8 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "id",
             "limit_domains",
+            "limit_insecure_domains",
+            "insecure_delegated_domains",
             "outreach_preference",
         )
         read_only_fields = (
@@ -48,6 +51,8 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "id",
             "limit_domains",
+            "limit_insecure_domains",
+            "insecure_delegated_domains",
         )
 
     def get_domains_under_management(self, obj):
@@ -59,6 +64,11 @@ class UserSerializer(serializers.ModelSerializer):
             .distinct()
             .count()
         )
+
+    def get_insecure_delegated_domains(self, obj):
+        return obj.domains.filter(is_registered=True, is_delegated=True).exclude(
+            is_secured=True
+        ).count()
 
     def validate_password(self, value):
         if value is not None:

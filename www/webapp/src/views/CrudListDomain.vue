@@ -6,6 +6,7 @@ import {mdiDownload, mdiInformation} from "@mdi/js";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
+import DelegationStatus from "@/components/Field/DelegationStatus.vue";
 
 export default {
   name: 'CrudListDomain',
@@ -20,6 +21,8 @@ export default {
         updatable: false,
         destroyable: true,
         limit_domains: 0,
+        limit_insecure_domains: null,
+        insecure_delegated_domains: 0,
         headlines: {
           table: 'Domains',
           create: 'Create New Domain',
@@ -27,8 +30,27 @@ export default {
         },
         texts: {
           banner: () => 'To edit your DNS records, click on one of your domains.',
-          create: () => self.limit_domains != null ? `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>Contact support to apply for a higher limit.</small>` : '',
-          createWarning: () => (self.availableCount <= 0 ? 'You have reached your maximum number of domains. Please contact support to apply for a higher limit.' : ''),
+          create: () => {
+            if (self.limit_domains != null) {
+              return `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>Contact support to apply for a higher limit.</small>`;
+            }
+            if (self.limit_insecure_domains == null) {
+              return 'You can create multiple domains.';
+            }
+            return `You can create multiple domains. You currently have ${self.insecure_delegated_domains} of ${self.limit_insecure_domains} domains without DNSSEC. Secure them before creating more.`;
+          },
+          createWarning: () => {
+            if (self.availableCount <= 0 && self.limit_domains != null) {
+              return 'You have reached your maximum number of domains. Please contact support to apply for a higher limit.';
+            }
+            if (self.limit_insecure_domains === 0) {
+              return 'Domain creation is disabled for your account. Please contact support if you need additional domains.';
+            }
+            if (self.limit_insecure_domains != null && self.insecure_delegated_domains >= self.limit_insecure_domains) {
+              return 'You have reached your limit of domains without DNSSEC. Secure an existing domain first, then you can create more.';
+            }
+            return '';
+          },
           destroy: d => (`Delete domain ${d.name}?`),
           destroyInfo: () => 'This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet.',
         },
@@ -52,6 +74,27 @@ export default {
             align: 'left',
             sortable: true,
             value: 'published',
+            readonly: true,
+            datatype: TimeAgo.name,
+            searchable: false,
+          },
+          delegation_status: {
+            name: 'item.delegation_status',
+            text: 'Delegation Status',
+            align: 'left',
+            sortable: false,
+            value: 'delegation_checked',
+            readonly: true,
+            datatype: DelegationStatus.name,
+            searchable: false,
+            fieldProps: item => ({ item }),
+          },
+          delegation_checked: {
+            name: 'item.delegation_checked',
+            text: 'Last Checked',
+            align: 'left',
+            sortable: true,
+            value: 'delegation_checked',
             readonly: true,
             datatype: TimeAgo.name,
             searchable: false,
@@ -139,14 +182,21 @@ export default {
       return this.limit_domains != null ? Math.max(this.limit_domains - this.rows.length, 0) : Infinity;
     },
     createInhibited: function () {
-      return this.availableCount <= 0;
+      return this.availableCount <= 0
+        || this.limit_insecure_domains === 0
+        || (this.limit_insecure_domains != null
+          && this.insecure_delegated_domains >= this.limit_insecure_domains);
     },
   },
   async created() {
     const self = this;
     await withWorking(this.error, () => HTTP
         .get('auth/account/')
-        .then(r => self.limit_domains = r.data.limit_domains)
+        .then(r => {
+          self.limit_domains = r.data.limit_domains;
+          self.limit_insecure_domains = r.data.limit_insecure_domains ?? null;
+          self.insecure_delegated_domains = r.data.insecure_delegated_domains ?? 0;
+        })
     );
   },
 };

@@ -1,5 +1,6 @@
 from ipaddress import IPv4Address, IPv4Network
 
+from django.conf import settings
 from rest_framework import permissions
 
 from desecapi.models import RRset
@@ -175,3 +176,24 @@ class WithinDomainLimit(permissions.BasePermission):
             request.user.limit_domains is None
             or request.user.domains.count() < request.user.limit_domains
         )
+
+
+class WithinInsecureDelegatedDomainLimit(permissions.BasePermission):
+    """
+    Permission that limits the number of domains delegated without DNSSEC.
+    """
+
+    message = (
+        "Insecure delegation limit exceeded. Please secure an existing domain with DNSSEC before creating more domains."
+    )
+
+    def has_permission(self, request, view):
+        limit = request.user.limit_insecure_domains
+        if limit is None:
+            return True
+        if limit == 0:
+            return False
+        insecure_count = request.user.domains.filter(
+            is_registered=True, is_delegated=True
+        ).exclude(is_secured=True).count()
+        return insecure_count < limit

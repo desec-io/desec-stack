@@ -1,3 +1,4 @@
 */5 * * * * /usr/local/bin/python3 -u /usr/src/app/manage.py chores >> /var/log/cron.log 2>&1
+*/30 * * * * /usr/local/bin/python3 -u /usr/src/app/manage.py check-delegation >> /var/log/cron.log 2>&1
 */15 * * * * /usr/local/bin/python3 -u /usr/src/app/manage.py check-secondaries >> /var/log/cron.log 2>&1
 7 11 * * * /usr/local/bin/python3 -u /usr/src/app/manage.py scavenge-unused >> /var/log/cron.log 2>&1

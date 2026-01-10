@@ -47,6 +47,7 @@ class DomainViewSet(
                 case "create":
                     ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.WithinDomainLimit)
+                    ret.append(permissions.WithinInsecureDelegatedDomainLimit)
                 case "destroy":
                     ret.append(permissions.HasDeleteDomainPermission)
                 case _:

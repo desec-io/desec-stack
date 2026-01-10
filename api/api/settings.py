@@ -210,14 +210,35 @@ AUTH_PASSWORD_VALIDATORS = [
 MINIMUM_TTL_DEFAULT = int(os.environ["DESECSTACK_MINIMUM_TTL_DEFAULT"])
 MAXIMUM_TTL = 86400
 AUTH_USER_MODEL = "desecapi.User"
-LIMIT_USER_DOMAIN_COUNT_DEFAULT = int(
-    os.environ.get("DESECSTACK_API_LIMIT_USER_DOMAIN_COUNT_DEFAULT", "1")
+_limit_domains_raw = os.environ.get(
+    "DESECSTACK_API_LIMIT_USER_DOMAIN_COUNT_DEFAULT", "none"
+).lower()
+LIMIT_USER_DOMAIN_COUNT_DEFAULT = (
+    None
+    if _limit_domains_raw in {"none", "null", "unlimited", "inf"}
+    else int(_limit_domains_raw)
+)
+_limit_insecure_raw = os.environ.get(
+    "DESECSTACK_API_LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT", "none"
+).lower()
+LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT = (
+    None
+    if _limit_insecure_raw in {"none", "null", "unlimited", "inf"}
+    else int(_limit_insecure_raw)
 )
 USER_ACTIVATION_REQUIRED = True
 VALIDITY_PERIOD_VERIFICATION_SIGNATURE = timedelta(
     hours=int(os.environ.get("DESECSTACK_API_AUTHACTION_VALIDITY", "0"))
 )
 REGISTER_LPS = bool(int(os.environ.get("DESECSTACK_API_REGISTER_LPS", "1")))
+_delegation_recheck_raw = os.environ.get(
+    "DESECSTACK_API_DELEGATION_SECURE_RECHECK_HOURS", "24"
+).lower()
+DELEGATION_SECURE_RECHECK_INTERVAL = (
+    None
+    if _delegation_recheck_raw in {"none", "null", "off", "disabled"}
+    else timedelta(hours=int(_delegation_recheck_raw))
+)
 
 # CAPTCHA
 CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
@@ -248,7 +269,8 @@ if DEBUG and not EMAIL_HOST:
 
 if os.environ.get("DESECSTACK_E2E_TEST", "").upper() == "TRUE":
     DEBUG = True
-    LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5000
+    LIMIT_USER_DOMAIN_COUNT_DEFAULT = None
+    LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT = None
     USER_ACTIVATION_REQUIRED = False
     EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
     REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
