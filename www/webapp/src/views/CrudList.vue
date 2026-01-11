@@ -482,13 +482,19 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
-      cols.push({
+      const normalizeHeader = (col) => ({
+        ...col,
+        title: col.title ?? col.text,
+        key: col.key ?? col.value,
+      });
+      cols = cols.map(normalizeHeader);
+      cols.push(normalizeHeader({
         text: 'Actions',
         sortable: false,
         align: 'right',
         value: 'actions',
         width: '130px',
-      });
+      }));
       return cols; // data table expects an array
     },
     itemsPerPage() {
