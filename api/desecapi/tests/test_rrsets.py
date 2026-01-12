@@ -7,6 +7,8 @@ from math import ceil, floor
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.db import IntegrityError
+from psycopg.errors import ExclusionViolation
 from rest_framework import status
 
 from desecapi.models import BlockedSubnet, Domain, RR, RRset
@@ -15,6 +17,18 @@ from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
 
 
 class UnauthenticatedRRSetTestCase(DesecTestCase):
+    def test_unique_record_in_rrset(self):
+        domain = self.create_domain()
+        with self.assertRaises(IntegrityError) as cm:
+            RRset.objects.create(
+                domain=domain,
+                subname="foo",
+                type="A",
+                ttl=3600,
+                contents=["1.2.3.4"] * 2,
+            )
+        self.assertIsInstance(cm.exception.__cause__, ExclusionViolation)
+
     def test_unauthorized_access(self):
         url = self.reverse("v1:rrsets", name="example.com")
         for method in [

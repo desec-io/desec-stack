@@ -265,6 +265,20 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
         dns.rdatatype.SPF: LongQuotedTXT,  # we slightly deviate from RFC 1035 and allow tokens longer than 255 bytes
     }
 
+    class Meta:
+        constraints = [
+            # not using UniqueConstraint as its btree's entry size is limited to 1/3 page size;
+            # however, some records (OPENPGPKEY, PQC keys/signatures?) may be larger
+            # Alternatively, could use a unique constraint on hash(content), but Django lacks API
+            ExclusionConstraint(
+                name="unique_record_in_rrset",
+                expressions=[
+                    ("rrset", RangeOperators.EQUAL),
+                    ("content", RangeOperators.EQUAL),
+                ],
+            ),
+        ]
+
     @classmethod
     def to_wire(cls, type_, any_presentation_format, *, digestable):
         """
