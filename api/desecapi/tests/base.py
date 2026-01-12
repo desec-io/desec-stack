@@ -488,17 +488,6 @@ class MockPDNSTestCase(APITestCase):
                 "keytype": "csk",
                 "cds": common_cds,
             },
-            {
-                **common_body,
-                "flags": 257,
-                "keytype": "ksk",
-                "cds": common_cds,
-            },
-            {
-                **common_body,
-                "flags": 256,
-                "keytype": "zsk",
-            },
         ]
 
     @classmethod
