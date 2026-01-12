@@ -286,7 +286,7 @@ export default {
         host: 'scl-1.c.desec.io',
         left: '22%',
         top: '85%',
-        adopted_by: 'Klaus Alexander Seistrup',
+        adopted_by: 'Klaus Alexander Seiﬆrup',
       },
       {
         name: 'London (ns2.desec.org)',
@@ -313,21 +313,20 @@ export default {
         host: 'lax-1.c.desec.io',
         left: '6%',
         top: '32%',
-        adopted_by: 'Brian Banerjee',
+        adopted_by: 'Brian Banerjee (50%)',
       },
       {
         name: 'Tokyo (ns2.desec.org)',
         host: 'tyo-1.c.desec.io',
         left: '90.4%',
         top: '32.2%',
-        adopted_by: 'Klaus Alexander Seistrup',
+        adopted_by: 'Klaus Alexander Seiﬆrup',
       },
       {
         name: 'Frankfurt (ns2.desec.org)',
         host: 'fra-1.c.desec.io',
         left: '49.0%',
         top: '23.0%',
-        adopted_by: 'Christian Hase',
       },
       {
         name: 'New York (ns2.desec.org)',
@@ -342,7 +341,7 @@ export default {
         host: 'ams-1.a.desec.io',
         left: '47%',
         top: '22%',
-        adopted_by: 'Jason Liquorish',
+        adopted_by: 'Jason Liquorish (20%)',
       },
       {
         name: 'Frankfurt (ns1.desec.io)',
@@ -356,13 +355,14 @@ export default {
         host: 'jnb-1.a.desec.io',
         left: '54%',
         top: '81%',
-        adopted_by: 'Klaus Alexander Seistrup',
+        adopted_by: 'Klaus Alexander Seiﬆrup',
       },
       {
         name: 'São Paulo (ns1.desec.io)',
         host: 'sao-1.a.desec.io',
         left: '29.3%',
         top: '78%',
+        adopted_by: 'Diego Toledo (20%)',
       },
       {
         name: 'Sydney (ns1.desec.io)',
