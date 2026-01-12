@@ -1,6 +1,6 @@
 captcha~=0.7.1
 celery~=5.5.3
-coverage~=7.11.0
+coverage~=7.13.1
 cryptography~=46.0.3
 Django~=5.2.7
 django-cors-headers~=4.9.0
@@ -11,7 +11,7 @@ django-pgtrigger~=4.15.4
 django-prometheus~=2.4.1
 dnspython~=2.8.0
 pyotp~=2.9.0
-psycopg[binary]~=3.2.10
+psycopg[binary]~=3.3.2
 psl-dns~=1.1.1
 pylibmc~=1.6.3
 pyyaml~=6.0.3
