@@ -202,6 +202,7 @@
                 v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
                 @keyup="keyupHandler"
                 @dirty="dirty.add(itemFieldProps.item); dirtyError.delete(itemFieldProps.item);"
+                @click="column.onClick ? column.onClick(itemFieldProps.item, $event) : null"
               />
             </template>
             <template #[`item.actions`]="itemFieldProps">
@@ -482,18 +483,25 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
-      const normalizeHeader = (col) => ({
-        ...col,
-        title: col.title ?? col.text,
-        key: col.key ?? col.value,
-      });
+      const normalizeHeader = (col) => {
+        let key = col.key;
+        if (!key && typeof col.name === 'string' && col.name.startsWith('item.')) {
+          key = col.name.slice(5);
+        }
+        key = key ?? col.value;
+        return {
+          ...col,
+          title: col.title ?? col.text,
+          key,
+        };
+      };
       cols = cols.map(normalizeHeader);
       cols.push(normalizeHeader({
         text: 'Actions',
         sortable: false,
         align: 'right',
         value: 'actions',
-        width: '130px',
+        minWidth: '130px',
       }));
       return cols; // data table expects an array
     },

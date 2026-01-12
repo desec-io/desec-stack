@@ -1,5 +1,5 @@
 <template>
-  <div class="delegation-status">
+  <div class="delegation-status" :class="{ 'is-clickable': clickable }" @click="handleClick">
     <v-chip
       :color="status.color"
       size="small"
@@ -8,7 +8,7 @@
     >
       {{ status.label }}
     </v-chip>
-    <div class="delegation-hint text-caption text-medium-emphasis">
+    <div v-if="showHint" class="delegation-hint text-caption text-medium-emphasis">
       {{ status.hint }}
     </div>
   </div>
@@ -22,6 +22,14 @@ export default {
     modelValue: {
       type: [String, Number, Date],
       default: null,
+    },
+    showHint: {
+      type: Boolean,
+      default: true,
+    },
+    clickable: {
+      type: Boolean,
+      default: false,
     },
     item: {
       type: Object,
@@ -80,6 +88,17 @@ export default {
       };
     },
   },
+  methods: {
+    handleClick(event) {
+      if (!this.clickable) {
+        return;
+      }
+      if (event?.stopPropagation) {
+        event.stopPropagation();
+      }
+      this.$emit('click', event);
+    },
+  },
 };
 </script>
 
@@ -88,6 +107,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.delegation-status.is-clickable {
+  cursor: pointer;
 }
 .delegation-hint {
   max-width: 320px;

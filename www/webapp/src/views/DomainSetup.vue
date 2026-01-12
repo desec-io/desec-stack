@@ -1,13 +1,10 @@
 <template>
-  <div v-if="hasAutomaticDelegationMaintenance">
+  <div v-if="showAllSet">
     <p class="mt-4">
-      Your domain is fully configured.
+      Your domain is securely delegated and DNSSEC is active.
     </p>
   </div>
   <div v-else>
-    <p class="mt-4">
-      The following steps need to be completed in order to use your domain with deSEC.
-    </p>
 
     <div v-if="!user.authenticated">
       <div class="my-2 text-h6">
@@ -22,15 +19,15 @@
       </ul>
     </div>
 
-    <div class="my-2 text-h6">
+    <div class="my-2 text-h6" v-if="showStep1">
       <v-icon class="text-primary" :icon="mdiNumeric1Circle" />
       Delegate your domain
     </div>
-    <p>
+    <p v-if="showStep1">
       Forward the following information to the organization/person where you bought the domain
       <strong>{{ domain }}</strong> (usually your provider or technical administrator).
     </p>
-    <v-expansion-panels class="mb-4">
+    <v-expansion-panels class="mb-4" v-if="showStep1">
       <v-expansion-panel>
         <v-expansion-panel-title class="bg-primary-lighten-4">
           <span><v-icon :icon="mdiAlert" /> Moving a domain that had DNSSEC enabled before? Read this!</span>
@@ -52,7 +49,7 @@
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
-    <v-card class="mb-4" v-if="ns">
+    <v-card class="mb-4" v-if="ns && showStep1">
       <v-card-title class="bg-grey-lighten-2">
         <v-row>
           <v-col cols="auto">Nameservers</v-col>
@@ -71,13 +68,13 @@
       </v-card-text>
       <v-alert type="error" v-else>Nameservers could not be retrieved.</v-alert>
     </v-card>
-    <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
+    <p v-if="showStep1">Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <div class="my-2 text-h6">
+    <div class="my-2 text-h6" v-if="showStep2">
       <v-icon class="text-primary" :icon="mdiNumeric2Circle" />
       Enable DNSSEC
     </div>
-    <div v-if="user.authenticated">
+    <div v-if="user.authenticated && showStep2">
       <p>
         You also need to forward the following DNSSEC information to your domain provider.
         The exact steps depend on your provider:
@@ -130,16 +127,16 @@
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
       </v-card>
 
-      <div class="my-2 text-h6">
+      <div class="my-2 text-h6" v-if="showStep2">
         <v-icon class="text-primary" :icon="mdiNumeric3Circle" />
         Check Setup
       </div>
-      <p>
+      <p v-if="showStep2">
         All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take a
         look at DNSSEC Analyzer</a> to check the status of your domain.
       </p>
     </div>
-    <div v-else>
+    <div v-else-if="showStep2">
       <p>
         To enable DNSSEC, you will also need to forward some information to your domain provider.
         You can retrieve this information by logging in, and then clicking on the <v-icon :icon="mdiInformation" /> button next to your domain name.
@@ -188,6 +185,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    delegation: {
+      type: Object,
+      default: null,
+    },
     ns: {
       type: Array,
       default: () => import.meta.env.VITE_APP_DESECSTACK_NS.split(' ').map(v => `${v}.`),
@@ -217,6 +218,29 @@ export default {
               && self.domain.endsWith('.' + suffix)
           )
       )
+    },
+    showAllSet() {
+      return this.delegation?.is_secured === true;
+    },
+    showStep1() {
+      const delegation = this.delegation || {};
+      if (!delegation.delegation_checked) {
+        return true;
+      }
+      if (delegation.is_registered === false) {
+        return true;
+      }
+      return delegation.is_delegated == null || delegation.is_delegated === false;
+    },
+    showStep2() {
+      const delegation = this.delegation || {};
+      if (!delegation.delegation_checked) {
+        return false;
+      }
+      if (delegation.is_delegated !== true) {
+        return false;
+      }
+      return delegation.is_secured !== true;
     },
   },
   methods: {

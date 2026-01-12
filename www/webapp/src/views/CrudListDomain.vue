@@ -7,14 +7,12 @@ import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
 import DelegationStatus from "@/components/Field/DelegationStatus.vue";
-import DelegationCheckDialog from "@/views/Console/DelegationCheckDialog.vue";
 
 export default {
   name: 'CrudListDomain',
   extends: CrudList,
   components: {
     DomainSetupDialog,
-    DelegationCheckDialog,
   },
   data() {
     const self = this;
@@ -64,6 +62,8 @@ export default {
             align: 'left',
             sortable: true,
             value: 'name',
+            minWidth: '260px',
+            class: 'domain-name-col',
             readonly: true,
             required: true,
             writeOnCreate: true,
@@ -87,9 +87,10 @@ export default {
             sortable: false,
             value: 'delegation_checked',
             readonly: true,
-            datatype: DelegationStatus.name,
+            datatype: DelegationStatus,
             searchable: false,
-            fieldProps: item => ({ item }),
+            fieldProps: item => ({ item, showHint: false, clickable: true }),
+            onClick: item => this.showDomainInfo(item),
           },
           delegation_checked: {
             name: 'item.delegation_checked',
@@ -157,7 +158,13 @@ export default {
           let ds = d.keys.map(key => key.ds);
           ds = ds.concat.apply([], ds).filter(v => v.split(" ")[2] == 2)
           let dnskey = d.keys.map(key => key.dnskey).filter(v => v.split(" ")[0] == 257);
-          this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
+          this.extraComponentBind = {
+            'domain': d.name,
+            'ds': ds,
+            'dnskey': dnskey,
+            'is-new': isNew,
+            'delegation': d,
+          };
           this.extraComponentName = 'DomainSetupDialog';
         },
         async runDelegationCheck(domain) {
@@ -166,8 +173,7 @@ export default {
               .post(url)
               .then(r => {
                 Object.assign(domain, r.data);
-                this.extraComponentBind = { domain };
-                this.extraComponentName = 'DelegationCheckDialog';
+                this.showDomainInfo(domain);
               })
           );
         },
@@ -220,3 +226,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.domain-name-col {
+  white-space: nowrap;
+}
+</style>
