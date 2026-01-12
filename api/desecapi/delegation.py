@@ -6,7 +6,7 @@ from django.utils import timezone
 import dns.exception, dns.flags, dns.message, dns.name, dns.query, dns.resolver
 
 
-SERVER = "8.8.8.8"
+SERVER = settings.DELEGATION_RESOLVER
 DNS_TIMEOUT = 5
 
 
