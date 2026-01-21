@@ -17,7 +17,7 @@
         may be the name appearing on your bank statement.
       </p>
       <p>Again, thank you so much.</p>
-      <v-btn depressed outlined block :to="{name: 'home'}">Done</v-btn>
+      <v-btn variant="outlined" block :to="{name: 'home'}">Done</v-btn>
     </v-alert>
     <v-form
         v-if="!done"
@@ -40,8 +40,8 @@
       <v-text-field
               v-model="name"
               label="Full Name of the Account Holder"
-              :prepend-icon="mdiAccount"
-              outlined
+              :prepend-inner-icon="mdiAccount"
+              variant="outlined"
               required
               :rules="name_rules"
               :error-messages="name_errors"
@@ -50,8 +50,8 @@
       <v-text-field
               v-model="iban"
               label="IBAN"
-              :prepend-icon="mdiBank"
-              outlined
+              :prepend-inner-icon="mdiBank"
+              variant="outlined"
               required
               :rules="iban_rules"
               :error-messages="iban_errors"
@@ -61,8 +61,8 @@
       <v-text-field
               v-model="amount"
               label="Amount in Euros"
-              :prepend-icon="mdiCash100"
-              outlined
+              :prepend-inner-icon="mdiCash100"
+              variant="outlined"
               required
               :rules="amount_rules"
               :error-messages="amount_errors"
@@ -71,23 +71,23 @@
       <v-text-field
               v-model="message"
               label="Message (optional)"
-              :prepend-icon="mdiMessageTextOutline"
-              outlined
+              :prepend-inner-icon="mdiMessageTextOutline"
+              variant="outlined"
               validate-on-blur
       />
 
       <v-text-field
               v-model="email"
               label="Email Address (optional)"
-              :prepend-icon="mdiEmail"
-              outlined
+              :prepend-inner-icon="mdiEmail"
+              variant="outlined"
               :rules="email_rules"
               :error-messages="email_errors"
               validate-on-blur
       />
 
       <v-btn
-              depressed
+              variant="flat"
               block
               color="primary"
               type="submit"
@@ -169,7 +169,8 @@
         this.$refs.form.reset();
       },
       async donate() {
-        if (!this.$refs.form.validate()) {
+        const { valid } = await this.$refs.form.validate();
+        if (!valid) {
           return;
         }
         this.working = true;

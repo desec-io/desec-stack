@@ -15,12 +15,12 @@
         :disabled="disabled"
         :readonly="readonly"
         :placeholder="required && !field.optional ? ' ' : '(optional)'"
-        :hide-details="!('mnemonics' in field) && (!content.length || !($v.fields.$each[index].$invalid || $v.fields[index].$invalid))"
-        :error="$v.fields.$each[index].$invalid || $v.fields[index].$invalid"
+        :hide-details="!('mnemonics' in field) && !fieldInvalid(index)"
+        :error="fieldInvalid(index)"
         :error-messages="fieldErrorMessages(index)"
-        :append-icon="index == fields.length-1 && !readonly && !disabled ? appendIcon : ''"
-        @click:append="$emit('remove', $event)"
-        @input="inputHandler()"
+        :append-inner-icon="index == fields.length-1 && !readonly && !disabled ? appendIcon : ''"
+        @click:append-inner="$emit('remove', $event)"
+        @update:modelValue="inputHandler()"
         @paste.prevent="pasteHandler($event)"
         @keydown="keydownHandler(index, $event)"
         @keyup="(e) => $emit('keyup', e)"
@@ -31,10 +31,14 @@
 </template>
 
 <script>
-import { requiredUnless } from 'vuelidate/lib/validators';
+import { useVuelidate } from '@vuelidate/core';
+import { helpers, requiredUnless } from '@vuelidate/validators';
 
 export default {
   name: 'RecordItem',
+  setup() {
+    return { v$: useVuelidate(null, null, { $autoDirty: true }) };
+  },
   props: {
     content: {
       type: String,
@@ -87,8 +91,8 @@ export default {
   beforeMount() {
     // Initialize per-field value storage
     this.fields.forEach((field, /*i*/) => {
-      this.$set(field, 'value', '');
-      this.$set(field, 'hint', '');
+      field.value = '';
+      field.hint = '';
     });
   },
   mounted() {
@@ -145,17 +149,28 @@ export default {
     this.update(this.content);
   },
   validations() {
+    const withMessages = (validators) => {
+      if (!validators) {
+        return {};
+      }
+      return Object.entries(validators).reduce((acc, [name, validator]) => {
+        const message = this.errors?.[name];
+        acc[name] = message ? helpers.withMessage(message, validator) : validator;
+        return acc;
+      }, {});
+    };
+
     const validations = {
       fields: {
         $each: {
-          value: this.required ? { required: requiredUnless('optional') } : {},
+          value: this.required ? withMessages({ required: requiredUnless('optional') }) : {},
         },
       },
     };
 
     validations.fields = this.fields.reduce(
       (acc, field, index) => {
-        acc[index] = { value: field.validations };
+        acc[index] = { value: withMessages(field.validations) };
         return acc;
       },
       validations.fields,
@@ -164,17 +179,36 @@ export default {
     return validations;
   },
   methods: {
+    fieldInvalid(index) {
+      const valueState = this.v$?.fields?.[index]?.value || this.v$?.fields?.$each?.[index]?.value;
+      return !!valueState?.$invalid;
+    },
     fieldErrorMessages(index) {
-      const fieldValidationStatus = (fields, index) => Object.keys(fields[index].value.$params).map(
-        name => ({ passed: fields[index].value[name], message: this.errors[name] }),
-      );
-
-      const validationStatus = [
-        ...fieldValidationStatus(this.$v.fields, index),
-        ...fieldValidationStatus(this.$v.fields.$each, index),
-      ];
-
-      return validationStatus.filter(val => !val.passed).map(val => val.message || 'Invalid input.');
+      const valueState = this.v$?.fields?.[index]?.value || this.v$?.fields?.$each?.[index]?.value;
+      if (!valueState) {
+        return [];
+      }
+      if (Array.isArray(valueState.$errors) && valueState.$errors.length) {
+        const resolveMessage = (err) => {
+          const message = err.$message;
+          if (typeof message === 'function') {
+            return message();
+          }
+          if (message && typeof message === 'object' && 'value' in message) {
+            return message.value;
+          }
+          if (message) {
+            return message;
+          }
+          const key = err.$validator || err.$params?.type || err.$params?.name;
+          return this.errors?.[key] || 'Invalid input.';
+        };
+        return valueState.$errors.map(resolveMessage);
+      }
+      if (valueState.$invalid) {
+        return ['Invalid input.'];
+      }
+      return [];
     },
     focus() {
       this.$refs.input[0].focus();
@@ -207,12 +241,15 @@ export default {
       }
     },
     positionAfterDelimiter(index) {
-      const ref = this.$refs.input[index].$refs.input;
+      const ref = this.getInputEl(index);
+      if (!ref) {
+        return false;
+      }
       return index > 0 && ref.selectionStart === 0 && ref.selectionEnd === 0;
     },
     positionBeforeDelimiter(index) {
-      return index < this.fields.length - 1
-        && this.$refs.input[index].$refs.input.selectionStart === this.fields[index].value.length;
+      const ref = this.getInputEl(index);
+      return index < this.fields.length - 1 && ref && ref.selectionStart === this.fields[index].value.length;
     },
     keydownHandler(index, event) {
       switch (event.key) {
@@ -301,6 +338,8 @@ export default {
       this.setPosition(0);
     },
     inputHandler() {
+      this.$emit('dirty');
+      this.v$?.$touch();
       const pos = this.getPosition();
       const value = this.fields.map(field => field.value).join(' ');
       this.update(value, pos);
@@ -335,31 +374,50 @@ export default {
         i++;
       }
 
-      this.$refs.input[i].$refs.input.focus();
+      const input = this.getInputEl(i);
+      if (!input) {
+        return;
+      }
+      input.focus();
       await this.$nextTick();
-      this.$refs.input[i].$refs.input.setSelectionRange(pos, pos);
+      input.setSelectionRange(pos, pos);
     },
     async select(i) {
       await this.$nextTick();
-      this.$refs.input[i].$refs.input.focus();
+      const input = this.getInputEl(i);
+      if (!input) {
+        return;
+      }
+      input.focus();
       await this.$nextTick();
-      this.$refs.input[i].$refs.input.select();  // for some reason this doesn't seem to work
+      input.select();  // for some reason this doesn't seem to work
       //console.log(this.$refs.input[i].$refs.input.selectionStart, this.$refs.input[i].$refs.input.selectionEnd);
       //window.setTimeout(() => console.log(this.$refs.input[i].$refs.input.selectionStart, this.$refs.input[i].$refs.input.selectionEnd), 1000);
     },
     getPosition() {
       const refs = this.$refs.input;
-      const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement);
-      let selectionStart = refs[dirty].$refs.input.selectionStart;
+      const dirty = refs.findIndex((ref, index) => this.getInputEl(index) === document.activeElement);
+      let selectionStart = this.getInputEl(dirty).selectionStart;
       for (let i = 0; i < dirty; i++) {
-        selectionStart += refs[i].$refs.input.value.length + 1;
+        selectionStart += this.getInputEl(i).value.length + 1;
       }
       return selectionStart;
     },
     getSelectionWidth() {
       const refs = this.$refs.input;
-      const dirty = refs.findIndex(ref => ref.$refs.input === document.activeElement);
-      return refs[dirty].$refs.input.selectionEnd - refs[dirty].$refs.input.selectionStart;
+      const dirty = refs.findIndex((ref, index) => this.getInputEl(index) === document.activeElement);
+      const input = this.getInputEl(dirty);
+      return input.selectionEnd - input.selectionStart;
+    },
+    getInputEl(index) {
+      const field = this.$refs.input[index];
+      if (!field) {
+        return null;
+      }
+      if (field.$refs && field.$refs.input) {
+        return field.$refs.input;
+      }
+      return field.$el.querySelector('input');
     },
     updateFields() {
       let values = this.value.split(' ');
@@ -368,7 +426,7 @@ export default {
       values = values.concat([last]);
       // Make sure to reset trailing fields if value does not have enough spaces
       this.fields.forEach((foo, i) => {
-        this.$set(this.fields[i], 'value', values[i] || '');
+        this.fields[i].value = values[i] || '';
         const el = this.$refs.input[i].$el.parentNode;
         let mirror;
         mirror = el.getElementsByClassName("mirror-label")[0];

@@ -15,7 +15,6 @@
         <v-card class="elevation-12">
           <v-toolbar
                   color="primary"
-                  dark
                   flat
           >
             <v-toolbar-title class="capitalize">{{ actionName }} Confirmation</v-toolbar-title>
@@ -41,7 +40,7 @@
               If you like our service, please consider donating.
             </p>
             <p class="text-center">
-              <v-btn outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn variant="outlined" :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
         </v-card>
@@ -125,11 +124,6 @@
       },
       clearErrors() {
         this.errors.splice(0, this.errors.length);
-      }
-    },
-    filters: {
-      replace: function (value, a, b) {
-        return value.replace(a, b)
       }
     },
   };
