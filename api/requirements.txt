@@ -1,5 +1,5 @@
 captcha~=0.7.1
-celery~=5.5.3
+celery~=5.6.2
 coverage~=7.13.1
 cryptography~=46.0.3
 Django~=5.2.7
