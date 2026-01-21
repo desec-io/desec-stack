@@ -143,6 +143,27 @@ or AAAA records. To achieve this, append the prefix length to the IP address
 query parameter, such as ``ipv6=2a01:a:b:c::/64``, ``myipv4=1.2.3.0/24``, etc.
 The host part of the value is ignored.
 
+Per-hostname IP Address Specification
+-------------------------------------
+For updates involving multiple hostnames (see `Determine Hostname`_ above), it is
+possible to specify IP addresses on a per-hostname basis. This is done by
+appending the hostname to the IP parameter, separated by a colon.
+
+For example, to set the IPv4 address for ``sub.example.com`` to ``1.2.3.4``,
+you would add ``myipv4:sub.example.com=1.2.3.4`` to the query string.
+The ``myipv6`` parameter can be used analogously.
+
+This allows updating multiple hostnames with different IP addresses in a single
+request. If a per-hostname IP parameter is given, it takes precedence over the
+general IP parameters (like ``myip``, ``myipv4``, ``myipv6``) for that specific
+hostname. All other hostnames in the request will be updated with the IP
+addresses from the general parameters.
+
+All hostnames must belong to the same domain. The ``preserve`` keyword and
+comma-separated lists of IP addresses are also supported for per-hostname IP
+parameters.
+
+
 .. warning::
     **It is recommended to always specify query string parameters for both IP
     address types.** If your device does not have both types, use ``preserve``
@@ -227,4 +248,9 @@ or option 2::
 Update multiple domains simultaneously::
 
   curl "https://update.dedyn.io/?hostname=<your domain>,<your subdomain>&myip=1.2.3.4" \
+    --header "Authorization: Token <your token secret>"
+
+Update multiple domains with different IP addresses (preserves IPv6 address of subdomain)::
+
+  curl "https://update.dedyn.io/?hostname=<your domain>&myipv4=1.2.3.4&myipv4:<your subdomain>=5.6.7.8" \
     --header "Authorization: Token <your token secret>"
