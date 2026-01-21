@@ -17,7 +17,7 @@
     <h3>Registration and Tax Information (Gemeinnützigkeit / Charitable Status)</h3>
     <p>
       Registergericht / Registration court: AG Berlin (Charlottenburg), VR 37525<br>
-      Steuernummer / Tax number: 27/663/65101, UStID-Nr.: DE363934139
+      Steuernummer / Tax number: 27/663/65101, UStID-Nr.: DE348777352
     </p>
     <p>
       Der Verein wurde vom Finanzamt für Körperschaften I, Berlin, als gemeinnützig anerkannt
