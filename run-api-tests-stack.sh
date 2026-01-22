@@ -8,25 +8,99 @@ BUILD_IMAGES_DB=(dbapi)
 KEEP=0
 BUILD=1
 MODE="host"
+PROD_DB=0
+PROD_USER="root"
+PROD_HOST="digga.desec.io"
+PROD_REFRESH=0
+CACHE_DIR="${ROOT_DIR}/.cache/prod-db"
+CACHE_FILE="${CACHE_DIR}/dbapi.sql.gz"
 
 usage() {
   cat <<'EOF'
-Usage: ./run-api-tests-stack.sh [--no-build] [--keep] [--docker]
+Usage: ./run-api-tests-stack.sh [--no-build] [--keep] [--docker] [--prod-db] [--prod-user USER] [--prod-host HOST] [--refresh-prod-db]
   --no-build  Skip docker image build step
   --keep      Do not tear down containers/volumes after tests
   --docker    Run API tests inside the api container (CI-style)
+  --prod-db   Download a logical dbapi dump from production and load it locally
+  --prod-user SSH username for prod (default: root)
+  --prod-host SSH hostname for prod (default: desec.io)
+  --refresh-prod-db  Re-download prod db dump even if cache exists
 EOF
 }
 
-for arg in "$@"; do
-  case "$arg" in
+while [[ $# -gt 0 ]]; do
+  case "$1" in
     --no-build) BUILD=0 ;;
     --keep) KEEP=1 ;;
     --docker) MODE="docker" ;;
+    --prod-db) PROD_DB=1 ;;
+    --prod-user)
+      shift
+      PROD_USER="${1:-}"
+      [[ -n "$PROD_USER" ]] || { echo "Missing value for --prod-user" >&2; exit 1; }
+      ;;
+    --prod-host)
+      shift
+      PROD_HOST="${1:-}"
+      [[ -n "$PROD_HOST" ]] || { echo "Missing value for --prod-host" >&2; exit 1; }
+      ;;
+    --refresh-prod-db) PROD_REFRESH=1 ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown option: $arg" >&2; usage; exit 1 ;;
+    *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
+  shift
 done
+
+prod_remote_script() {
+  cat <<'EOF'
+set -euo pipefail
+cd /root/desec-stack
+docker compose -f docker-compose.yml exec -T dbapi pg_dump -Fc -U desec desec | gzip -c
+EOF
+}
+
+download_prod_dbapi() {
+  mkdir -p "$CACHE_DIR"
+  if [[ "$PROD_REFRESH" -eq 0 && -f "$CACHE_FILE" ]]; then
+    echo "Using cached prod db dump at ${CACHE_FILE}"
+    return
+  fi
+
+  local prod_ssh="${PROD_USER}@${PROD_HOST}"
+  echo "About to run the following read-only commands on ${prod_ssh}:"
+  prod_remote_script
+  read -r -p "Continue? [y/N] " reply
+  case "$reply" in
+    y|Y|yes|YES) ;;
+    *) echo "Aborted." >&2; exit 1 ;;
+  esac
+
+  local tmp_file
+  local old_umask
+  old_umask="$(umask)"
+  umask 077
+  tmp_file="$(mktemp "${CACHE_FILE}.tmp.XXXXXX")"
+  umask "$old_umask"
+  if prod_remote_script | ssh -4 "$prod_ssh" "bash -s" > "$tmp_file"; then
+    mv "$tmp_file" "$CACHE_FILE"
+    echo "Saved prod db dump to ${CACHE_FILE}"
+  else
+    rm -f "$tmp_file"
+    echo "Failed to download prod db dump; cache not updated." >&2
+    exit 1
+  fi
+}
+
+restore_dbapi_from_cache() {
+  if [[ ! -f "$CACHE_FILE" ]]; then
+    echo "Missing cache file: ${CACHE_FILE}" >&2
+    exit 1
+  fi
+  $COMPOSE exec -T dbapi sh -c "psql -U postgres -d postgres -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='desec' AND pid <> pg_backend_pid();\""
+  $COMPOSE exec -T dbapi sh -c "psql -U postgres -d postgres -c \"DROP DATABASE IF EXISTS desec;\""
+  $COMPOSE exec -T dbapi sh -c "psql -U postgres -d postgres -c \"CREATE DATABASE desec OWNER desec;\""
+  gunzip -c "$CACHE_FILE" | $COMPOSE exec -T dbapi sh -c "pg_restore -U desec -d desec --no-owner --no-acl --role=desec"
+}
 
 cleanup() {
   $COMPOSE ps || true
@@ -38,6 +112,10 @@ if [[ "$KEEP" -eq 0 ]]; then
 fi
 
 if [[ "$MODE" == "docker" ]]; then
+  if [[ "$PROD_DB" -eq 1 ]]; then
+    echo "--prod-db is only supported for host-mode tests." >&2
+    exit 1
+  fi
   if [[ "$BUILD" -eq 1 ]]; then
     $COMPOSE build "${BUILD_IMAGES_STACK[@]}"
   fi
@@ -62,7 +140,7 @@ else
       exit 1
     fi
     # Avoid local psql dependency by checking readiness inside the DB container.
-    wait_seconds=10
+    wait_seconds=120
     start_ts=$(date +%s)
     while true; do
       if $COMPOSE exec -T dbapi sh -c "command -v pg_isready >/dev/null 2>&1" >/dev/null 2>&1; then
@@ -85,6 +163,13 @@ else
       echo "Postgres is unavailable - sleeping"
       sleep 2
     done
-    python3 manage.py test
+    test_args=()
+    if [[ "$PROD_DB" -eq 1 ]]; then
+      download_prod_dbapi
+      restore_dbapi_from_cache
+      export DESECSTACK_DJANGO_TEST_DB_NAME=desec
+      test_args+=(--keepdb)
+    fi
+    python3 manage.py test "${test_args[@]}"
   )
 fi
