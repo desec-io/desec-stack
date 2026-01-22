@@ -8,6 +8,7 @@ api/venv
 
 # development helper scripts
 /*.sh
+/.cache/
 
 # local certificates
 /certs/
