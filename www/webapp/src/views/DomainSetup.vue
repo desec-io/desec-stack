@@ -1,17 +1,14 @@
 <template>
-  <div v-if="hasAutomaticDelegationMaintenance">
+  <div v-if="showAllSet">
     <p class="mt-4">
-      Your domain is fully configured.
+      Your domain is securely delegated and DNSSEC is active.
     </p>
   </div>
   <div v-else>
-    <p class="mt-4">
-      The following steps need to be completed in order to use your domain with deSEC.
-    </p>
 
     <div v-if="!user.authenticated">
       <div class="my-2 text-h6">
-        <v-icon class="primary--text">{{ mdiNumeric0Circle }}</v-icon>
+        <v-icon class="text-primary" :icon="mdiNumeric0Circle" />
         Configure your DNS records
       </div>
       <p>Before delegating your domain, you might want to take the following steps:</p>
@@ -22,20 +19,20 @@
       </ul>
     </div>
 
-    <div class="my-2 text-h6">
-      <v-icon class="primary--text">{{ mdiNumeric1Circle }}</v-icon>
+    <div class="my-2 text-h6" v-if="showStep1">
+      <v-icon class="text-primary" :icon="mdiNumeric1Circle" />
       Delegate your domain
     </div>
-    <p>
+    <p v-if="showStep1">
       Forward the following information to the organization/person where you bought the domain
       <strong>{{ domain }}</strong> (usually your provider or technical administrator).
     </p>
-    <v-expansion-panels class="mb-4">
+    <v-expansion-panels class="mb-4" v-if="showStep1">
       <v-expansion-panel>
-        <v-expansion-panel-header class="primary lighten-4">
-          <span><v-icon>{{ mdiAlert }}</v-icon> Moving a domain that had DNSSEC enabled before? Read this!</span>
-        </v-expansion-panel-header>
-        <v-expansion-panel-content>
+        <v-expansion-panel-title class="bg-primary-lighten-4">
+          <span><v-icon :icon="mdiAlert" /> Moving a domain that had DNSSEC enabled before? Read this!</span>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
           <div class="mt-4">
             <strong>Be careful!</strong>
             Simply replacing records can cause errors, because resolvers may have old NS or DNSSEC settings cached.
@@ -49,17 +46,17 @@
               </li>
             </ul>
           </div>
-        </v-expansion-panel-content>
+        </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
-    <v-card class="mb-4" v-if="ns">
-      <v-card-title class="grey lighten-2">
+    <v-card class="mb-4" v-if="ns && showStep1">
+      <v-card-title class="bg-grey-lighten-2">
         <v-row>
           <v-col cols="auto">Nameservers</v-col>
           <v-spacer></v-spacer>
           <v-col class="text-right">
-            <v-btn @click="copyToClipboard(ns.join('\n'))" text small>
-              <v-icon>{{ mdiContentCopy }}</v-icon>
+            <v-btn @click="copyToClipboard(ns.join('\n'))" variant="text" size="small">
+              <v-icon :icon="mdiContentCopy" />
               Copy
             </v-btn>
           </v-col>
@@ -71,13 +68,13 @@
       </v-card-text>
       <v-alert type="error" v-else>Nameservers could not be retrieved.</v-alert>
     </v-card>
-    <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
+    <p v-if="showStep1">Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <div class="my-2 text-h6">
-      <v-icon class="primary--text">{{ mdiNumeric2Circle }}</v-icon>
+    <div class="my-2 text-h6" v-if="showStep2">
+      <v-icon class="text-primary" :icon="mdiNumeric2Circle" />
       Enable DNSSEC
     </div>
-    <div v-if="user.authenticated">
+    <div v-if="user.authenticated && showStep2">
       <p>
         You also need to forward the following DNSSEC information to your domain provider.
         The exact steps depend on your provider:
@@ -86,18 +83,18 @@
       </p>
       <p class="small">
         Notes: When using block format, some providers require you to add the domain name in the beginning. (Also,
-        <a class="grey--text text--darken-1" href="https://github.com/oskar456/cds-updates" target="_blank">depending on
+        <a class="text-grey-darken-1" href="https://github.com/oskar456/cds-updates" target="_blank">depending on
         your domain's suffix</a>, we will perform this step automatically.)
       </p>
 
       <v-card class="mb-4">
-        <v-card-title class="grey lighten-2">
+        <v-card-title class="bg-grey-lighten-2">
           <v-row>
             <v-col cols="auto">DS Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(ds.join('\n'))" text small>
-                <v-icon>{{ mdiContentCopy }}</v-icon>
+              <v-btn @click="copyToClipboard(ds.join('\n'))" variant="text" size="small">
+                <v-icon :icon="mdiContentCopy" />
                 Copy
               </v-btn>
             </v-col>
@@ -111,13 +108,13 @@
       </v-card>
 
       <v-card>
-        <v-card-title class="grey lighten-2">
+        <v-card-title class="bg-grey-lighten-2">
           <v-row>
             <v-col cols="auto">DNSKEY Format</v-col>
             <v-spacer></v-spacer>
             <v-col class="text-right">
-              <v-btn @click="copyToClipboard(dnskey.join('\n'))" text small>
-                <v-icon>{{ mdiContentCopy }}</v-icon>
+              <v-btn @click="copyToClipboard(dnskey.join('\n'))" variant="text" size="small">
+                <v-icon :icon="mdiContentCopy" />
                 Copy
               </v-btn>
             </v-col>
@@ -130,32 +127,32 @@
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
       </v-card>
 
-      <div class="my-2 text-h6">
-        <v-icon class="primary--text">{{ mdiNumeric3Circle }}</v-icon>
+      <div class="my-2 text-h6" v-if="showStep2">
+        <v-icon class="text-primary" :icon="mdiNumeric3Circle" />
         Check Setup
       </div>
-      <p>
+      <p v-if="showStep2">
         All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take a
         look at DNSSEC Analyzer</a> to check the status of your domain.
       </p>
     </div>
-    <div v-else>
+    <div v-else-if="showStep2">
       <p>
         To enable DNSSEC, you will also need to forward some information to your domain provider.
-        You can retrieve this information by logging in, and then clicking on the <v-icon>{{ mdiInformation }}</v-icon> button next to your domain name.
+        You can retrieve this information by logging in, and then clicking on the <v-icon :icon="mdiInformation" /> button next to your domain name.
       </p>
     </div>
 
     <!-- copy snackbar -->
     <v-snackbar v-model="snackbar">
-      <v-icon v-if="snackbar_icon">{{ snackbar_icon }}</v-icon>
+      <v-icon v-if="snackbar_icon" :icon="snackbar_icon" />
       {{ snackbar_text }}
 
-      <template #action="{ attrs }">
+      <template #actions="{ props }">
         <v-btn
             color="pink"
-            text
-            v-bind="attrs"
+            variant="text"
+            v-bind="props"
             @click="snackbar = false"
         >
           Close
@@ -188,6 +185,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    delegation: {
+      type: Object,
+      default: null,
+    },
     ns: {
       type: Array,
       default: () => import.meta.env.VITE_APP_DESECSTACK_NS.split(' ').map(v => `${v}.`),
@@ -217,6 +218,29 @@ export default {
               && self.domain.endsWith('.' + suffix)
           )
       )
+    },
+    showAllSet() {
+      return this.delegation?.is_secured === true;
+    },
+    showStep1() {
+      const delegation = this.delegation || {};
+      if (!delegation.delegation_checked) {
+        return true;
+      }
+      if (delegation.is_registered === false) {
+        return true;
+      }
+      return delegation.is_delegated == null || delegation.is_delegated === false;
+    },
+    showStep2() {
+      const delegation = this.delegation || {};
+      if (!delegation.delegation_checked) {
+        return false;
+      }
+      if (delegation.is_delegated !== true) {
+        return false;
+      }
+      return delegation.is_secured !== true;
     },
   },
   methods: {

@@ -762,6 +762,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
 
     def test_registration_with_override_token(self):
         limit_domains = 15
+        limit_insecure_domains = settings.LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT
         token = self.create_token(owner=self.create_user(), perm_manage_tokens=True)
         self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
 
@@ -789,6 +790,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             self.assertTrue(user.needs_captcha)
             self.assertFalse(user.outreach_preference)
             self.assertEqual(user.limit_domains, limit_domains)
+            self.assertEqual(user.limit_insecure_domains, limit_insecure_domains)
             self.assertPassword(email, None)
 
             # Check confirmation email
@@ -818,6 +820,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             user.refresh_from_db()
             self.assertTrue(user.is_active)
             self.assertEqual(user.limit_domains, limit_domains)
+            self.assertEqual(user.limit_insecure_domains, limit_insecure_domains)
             self.assertFalse(user.needs_captcha)
             self.assertEqual(user.outreach_preference, outreach_preference)
             self.assertPassword(email, None)
@@ -937,6 +940,8 @@ class HasUserAccountTestCase(UserManagementTestCase):
                 "email",
                 "id",
                 "limit_domains",
+                "limit_insecure_domains",
+                "insecure_delegated_domains",
                 "outreach_preference",
             },
         )
@@ -947,6 +952,11 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self.assertEqual(
             response.data["limit_domains"], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
         )
+        self.assertEqual(
+            response.data["limit_insecure_domains"],
+            settings.LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT,
+        )
+        self.assertEqual(response.data["insecure_delegated_domains"], 0)
         self.assertTrue(response.data["outreach_preference"])
 
     def test_view_account_forbidden_methods(self):
@@ -965,6 +975,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
             "email",
             "id",
             "limit_domains",
+            "limit_insecure_domains",
             "password",
         )
         immutable_values = [getattr(user, key) for key in immutable_fields]
@@ -979,6 +990,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
                     "email": "youremailaddress@example.com",
                     "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
                     "limit_domains": 42,
+                    "limit_insecure_domains": 0,
                     "password": self.random_password(),
                     "outreach_preference": outreach_preference,
                 },

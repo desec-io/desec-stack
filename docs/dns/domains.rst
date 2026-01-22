@@ -20,6 +20,11 @@ A JSON object representing a domain has the following structure::
 
     {
         "created": "2018-09-18T16:36:16.510368Z",
+        "delegation_checked": "2018-09-18T17:30:00.000000Z",
+        "has_all_nameservers": true,
+        "is_delegated": true,
+        "is_registered": true,
+        "is_secured": false,
         "keys": [
             {
                 "dnskey": "257 3 13 WFRl60...",
@@ -47,6 +52,38 @@ Field details:
 
     Timestamp of domain creation, in ISO 8601 format (e.g.
     ``2013-01-29T12:34:56.000000Z``).
+
+``delegation_checked``
+    :Access mode: read-only
+
+    Timestamp of the last delegation check. If no check has happened yet, this
+    field is ``null``.
+
+``has_all_nameservers``
+    :Access mode: read-only
+
+    ``true`` if the domain is delegated and all authoritative nameservers at the
+    parent match deSEC. ``false`` indicates a partial delegation. ``null`` if no
+    delegation information is available.
+
+``is_delegated``
+    :Access mode: read-only
+
+    ``true`` if the domain is delegated to deSEC, ``false`` if only partially,
+    ``null`` if delegation does not point to deSEC at all.
+
+``is_registered``
+    :Access mode: read-only
+
+    ``true`` if the domain exists in the public DNS, ``false`` if it is not
+    visible (yet), ``null`` if no check has been performed.
+
+``is_secured``
+    :Access mode: read-only
+
+    ``true`` if DNSSEC is correctly configured and matches deSEC's keys,
+    ``false`` if the DS records do not match, ``null`` if no DNSSEC data was
+    found.
 
 ``keys``
     :Access mode: read-only
@@ -163,6 +200,14 @@ If you have reached the maximum number of domains for your account, the API
 responds with ``403 Forbidden``.  If you find yourself affected by this limit
 although you have a legitimate use case, please contact our support.
 
+If you have reached the per-account limit for domains delegated without DNSSEC,
+the API responds with ``403 Forbidden`` when creating additional domains.
+Secure an existing domain by adding the DS records shown in the UI or API, then
+try again.
+
+If the per-account limit is set to ``0``, domain creation is disabled.
+If the limit is ``null``, there is no restriction based on DNSSEC status.
+
 Restrictions on what is a valid domain name apply.  In particular, domains
 listed on the `Public Suffix List`_ such as ``co.uk`` cannot be registered.
 (If you operate a public suffix and would like to host it with deSEC, that's
@@ -195,6 +240,33 @@ JSON array.
 
 Up to 500 items are returned at a time.  If you have a larger number of
 domains configured, the use of :ref:`pagination` is required.
+
+
+Delegation Status Checks
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+deSEC periodically checks how your domain is published in the public DNS.
+The results are stored in the delegation status fields described above
+(``delegation_checked``, ``is_registered``, ``is_delegated``,
+``has_all_nameservers``, ``is_secured``).
+
+The checks use public resolvers to determine:
+
+- whether the domain exists in the public DNS (registered),
+- whether the delegation points to deSEC name servers,
+- whether DNSSEC is correctly configured for your domain.
+
+The API does not change or delete domains based on these checks. However, if
+you have at least one domain delegated to deSEC without DNSSEC, you cannot
+create additional domains until that domain is secured.
+
+If you need details about a domain's current status, request the domain via
+``GET /api/v1/domains/{name}/`` or list domains via ``GET /api/v1/domains/`` and
+inspect the delegation fields.
+
+To trigger a manual refresh for a single domain, issue a ``POST`` request to
+``/api/v1/domains/{name}/delegation-check/``. The response contains the updated
+domain object, including the delegation fields. This endpoint is rate-limited.
 
 
 Retrieving a Specific Domain

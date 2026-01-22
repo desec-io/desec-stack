@@ -1,5 +1,5 @@
 <script>
-import { helpers } from 'vuelidate/lib/validators';
+import { helpers } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
 // from https://stackoverflow.com/a/17871737/6867099, without the '%' and '.' parts
@@ -8,6 +8,7 @@ const ip6Address = helpers.regex('ip6Address', /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-
 export default {
   name: 'RecordAAAA',
   extends: RecordItem,
+  setup: RecordItem.setup,
   data: () => ({
     errors: {
       ip6Address: 'This field must contain an IPv6 address.',

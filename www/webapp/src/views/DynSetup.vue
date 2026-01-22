@@ -15,7 +15,6 @@
         <v-card class="elevation-12">
           <v-toolbar
                   color="primary"
-                  dark
                   flat
           >
             <v-toolbar-title>Domain Registration Completed</v-toolbar-title>
@@ -42,14 +41,14 @@
             </p>
             <v-expansion-panels class="mb-4" focusable>
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">Configure Your Router</v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-title class="text-subtitle-1">Configure Your Router</v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     To continuously update your domain to point to your home router, configure your
                     router or any other dynamic DNS client in your network with the following parameters:
                   </p>
 
-                  <v-simple-table>
+                  <v-table>
                     <tbody>
                     <tr>
                       <td>URL</td>
@@ -64,7 +63,7 @@
                       <td class="fixed-width">{{ token }}</td>
                     </tr>
                     </tbody>
-                  </v-simple-table>
+                  </v-table>
 
                   <p>
                     Please only update your IP address when it has changed. If your client is
@@ -72,11 +71,11 @@
                     <a href="https://desec.readthedocs.io/en/latest/dyndns/configure.html">documentation</a>
                     for alternative IP update approaches.
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">One-Off Manual Update</v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-title class="text-subtitle-1">One-Off Manual Update</v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     Your domain can be configured to your current public IP address as seen by our servers.
                     To update your IP, open the following link in any way.
@@ -84,17 +83,17 @@
                   <p>
                     <a :href="updateURL" class="fixed-width">{{ updateURL }}</a>
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
               <v-expansion-panel>
-                <v-expansion-panel-header class="text-subtitle-1">Alternative IP Update Approaches</v-expansion-panel-header>
-                <v-expansion-panel-content>
+                <v-expansion-panel-title class="text-subtitle-1">Alternative IP Update Approaches</v-expansion-panel-title>
+                <v-expansion-panel-text>
                   <p>
                     For alternative approaches to updating your IP address and for a
                     detailed explanation of the update protocol, please refer to our
                     <a href="https://desec.readthedocs.io/en/latest/dyndns/update-api.html">documentation</a>.
                   </p>
-                </v-expansion-panel-content>
+                </v-expansion-panel-text>
               </v-expansion-panel>
             </v-expansion-panels>
             <p>
@@ -110,7 +109,7 @@
                 Please verify that your client is using the credentials provided by deSEC and then come back to check
                 again.
               </p>
-              <v-btn depressed outlined block @click="check" :loading="working">Check Again</v-btn>
+              <v-btn variant="outlined" block @click="check" :loading="working">Check Again</v-btn>
             </v-alert>
             <v-alert type="success" v-if="ips !== undefined && ips.length > 0">
               <p>
@@ -129,7 +128,7 @@
                 Enjoy!
               </p>
               <p>
-                <v-btn depressed outlined block @click="check" :loading="working">Update</v-btn>
+                <v-btn variant="outlined" block @click="check" :loading="working">Update</v-btn>
               </p>
               <p>
                 Please note that deSEC only assigns your IP address to your domain name.
@@ -144,7 +143,7 @@
                 for dynamic DNS only, but enables to you add more domains and other DNS information.
                 You can also assign a password later at any time.
               </p>
-              <v-btn outlined block :to="{name: 'reset-password'}">
+              <v-btn variant="outlined" block :to="{name: 'reset-password'}">
                 Assign Account Password
               </v-btn>
             </div>
@@ -155,7 +154,7 @@
               If you like our service, please consider donating.
             </p>
             <p>
-              <v-btn block outlined :to="{name: 'donate'}">Donate</v-btn>
+              <v-btn block variant="outlined" :to="{name: 'donate'}">Donate</v-btn>
             </p>
           </v-card-text>
           <v-card-actions>

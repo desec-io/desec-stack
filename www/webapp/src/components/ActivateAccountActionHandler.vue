@@ -6,24 +6,23 @@
             tabindex="1"
             ref="captchaField"
         />
-        <v-layout class="justify-center">
+        <v-row class="justify-center">
           <v-checkbox
                 v-model="terms"
                 hide-details="auto"
-                type="checkbox"
                 :rules="terms_rules"
                 tabindex="2"
           >
             <template #label>
-              <v-flex>
+              <v-col>
                 Yes, I agree to the <span @click.stop><router-link :to="{name: 'terms'}" target="_blank">Terms of Use</router-link></span> and
                 <span @click.stop><router-link :to="{name: 'privacy-policy'}" target="_blank">Privacy Policy</router-link></span>.
-              </v-flex>
+              </v-col>
             </template>
           </v-checkbox>
-        </v-layout>
+        </v-row>
         <v-btn
-                depressed
+                variant="flat"
                 class="mt-4"
                 color="primary"
                 type="submit"

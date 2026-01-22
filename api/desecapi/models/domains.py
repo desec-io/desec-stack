@@ -63,6 +63,11 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    delegation_checked = models.DateTimeField(null=True, blank=True)
+    is_registered = models.BooleanField(null=True, blank=True)
+    has_all_nameservers = models.BooleanField(null=True, blank=True)
+    is_delegated = models.BooleanField(null=True, blank=True)
+    is_secured = models.BooleanField(null=True, blank=True)
 
     _keys = None
     objects = DomainManager()

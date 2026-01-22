@@ -12,6 +12,7 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 from desecapi import permissions
+from desecapi.delegation import DelegationChecker
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
@@ -47,14 +48,19 @@ class DomainViewSet(
                 case "create":
                     ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.WithinDomainLimit)
+                    ret.append(permissions.WithinInsecureDelegatedDomainLimit)
                 case "destroy":
                     ret.append(permissions.HasDeleteDomainPermission)
+                case "delegation_check":
+                    pass
                 case _:
                     raise ValueError(f"Invalid action: {self.action}")
         return ret
 
     @property
     def throttle_scope(self):
+        if self.action == "delegation_check":
+            return "delegation_check"
         if self.action == "zonefile":
             self.throttle_scope_bucket = self.kwargs["name"]
             return "dns_api_per_domain_expensive"
@@ -135,6 +141,28 @@ class DomainViewSet(
         instance = self.get_object()
         prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
         return Response(prefix + instance.zonefile, content_type="text/dns")
+
+    @action(detail=True, methods=["post"])
+    def delegation_check(self, request, name=None):
+        instance = self.get_object()
+        checker = DelegationChecker()
+        update = checker.check_domain(instance)
+        instance.delegation_checked = update["delegation_checked"]
+        instance.is_registered = update["is_registered"]
+        instance.has_all_nameservers = update["has_all_nameservers"]
+        instance.is_delegated = update["is_delegated"]
+        instance.is_secured = update["is_secured"]
+        instance.save(
+            update_fields=[
+                "delegation_checked",
+                "is_registered",
+                "has_all_nameservers",
+                "is_delegated",
+                "is_secured",
+            ]
+        )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class SerialListView(APIView):

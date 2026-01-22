@@ -239,6 +239,8 @@ A JSON object representing your user account will be returned::
         "email": "youremailaddress@example.com",
         "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
         "limit_domains": 15,
+        "limit_insecure_domains": 1,
+        "insecure_delegated_domains": 0,
         "outreach_preference": true
     }
 
@@ -270,6 +272,18 @@ Field details:
     :Access mode: read-only
 
     Maximum number of domains the user can create.
+
+``limit_insecure_domains``
+    :Access mode: read-only
+
+    Maximum number of domains that may be delegated to deSEC without DNSSEC.
+    ``0`` means that creating new domains is not permitted.
+    ``null`` means unlimited.
+
+``insecure_delegated_domains``
+    :Access mode: read-only
+
+    Number of domains currently delegated without DNSSEC.
 
 ``outreach_preference``
     :Access mode: read, write

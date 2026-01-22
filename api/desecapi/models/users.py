@@ -33,6 +33,10 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     def _limit_domains_default():
         return settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
 
+    @staticmethod
+    def _limit_insecure_domains_default():
+        return settings.LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(
         verbose_name="email address",
@@ -46,6 +50,9 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     credentials_changed = models.DateTimeField(auto_now_add=True)
     limit_domains = models.PositiveIntegerField(
         default=_limit_domains_default.__func__, null=True, blank=True
+    )
+    limit_insecure_domains = models.PositiveIntegerField(
+        default=_limit_insecure_domains_default.__func__, null=True, blank=True
     )
     needs_captcha = models.BooleanField(default=True)
     outreach_preference = models.BooleanField(default=True)

@@ -1,6 +1,7 @@
 import dns.name
 import dns.zone
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers
 
 from desecapi.models import Domain, RR_SET_TYPES_AUTOMATIC
@@ -20,6 +21,11 @@ class DomainSerializer(serializers.ModelSerializer):
         model = Domain
         fields = (
             "created",
+            "delegation_checked",
+            "has_all_nameservers",
+            "is_delegated",
+            "is_registered",
+            "is_secured",
             "published",
             "name",
             "keys",
@@ -28,6 +34,11 @@ class DomainSerializer(serializers.ModelSerializer):
             "zonefile",
         )
         read_only_fields = (
+            "delegation_checked",
+            "has_all_nameservers",
+            "is_delegated",
+            "is_registered",
+            "is_secured",
             "published",
             "minimum_ttl",
         )
@@ -100,6 +111,21 @@ class DomainSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # save domain
         domain: Domain = super().create(validated_data)
+        if domain.is_locally_registrable:
+            domain.delegation_checked = timezone.now()
+            domain.is_registered = True
+            domain.has_all_nameservers = True
+            domain.is_delegated = True
+            domain.is_secured = True
+            domain.save(
+                update_fields=[
+                    "delegation_checked",
+                    "is_registered",
+                    "has_all_nameservers",
+                    "is_delegated",
+                    "is_secured",
+                ]
+            )
 
         # save RRsets if zonefile was given
         nodes = getattr(self.import_zone, "nodes", None)

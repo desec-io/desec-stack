@@ -53,6 +53,11 @@ api_urls = [
     path("", views.Root.as_view(), name="root"),
     # Domain and RRSet management
     path("domains/", include(domains_router.urls)),
+    path(
+        "domains/<name>/delegation-check/",
+        views.DomainViewSet.as_view({"post": "delegation_check"}),
+        name="domain-delegation-check",
+    ),
     path("domains/<name>/rrsets/", views.RRsetList.as_view(), name="rrsets"),
     path(
         "domains/<name>/rrsets/.../<type>/",

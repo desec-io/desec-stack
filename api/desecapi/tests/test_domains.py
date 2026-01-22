@@ -1,9 +1,11 @@
 from contextlib import nullcontext
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 
 from desecapi.models import Domain
@@ -232,6 +234,19 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 Domain(owner=self.owner, name=name).save()
 
     def test_list_domains(self):
+        self.my_domain.is_registered = True
+        self.my_domain.is_delegated = True
+        self.my_domain.has_all_nameservers = True
+        self.my_domain.is_secured = False
+        self.my_domain.save(
+            update_fields=[
+                "is_registered",
+                "is_delegated",
+                "has_all_nameservers",
+                "is_secured",
+            ]
+        )
+
         response = self.client.get(self.reverse("v1:domain-list"))
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), self.NUM_OWNED_DOMAINS)
@@ -240,6 +255,50 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         expected_set = {domain.name for domain in self.my_domains}
         self.assertEqual(response_set, expected_set)
         self.assertFalse(any("keys" in data for data in response.data))
+        for data in response.data:
+            for field in (
+                "delegation_checked",
+                "is_registered",
+                "has_all_nameservers",
+                "is_delegated",
+                "is_secured",
+            ):
+                self.assertIn(field, data)
+
+        my_domain_data = next(
+            entry for entry in response.data if entry["name"] == self.my_domain.name
+        )
+        self.assertTrue(my_domain_data["is_registered"])
+        self.assertTrue(my_domain_data["is_delegated"])
+        self.assertTrue(my_domain_data["has_all_nameservers"])
+        self.assertFalse(my_domain_data["is_secured"])
+
+    def test_delegation_check_endpoint(self):
+        url = (
+            self.reverse("v1:domain-detail", name=self.my_domain.name)
+            + "delegation-check/"
+        )
+        now = timezone.now()
+        update = {
+            "id": self.my_domain.id,
+            "delegation_checked": now,
+            "is_registered": True,
+            "has_all_nameservers": True,
+            "is_delegated": True,
+            "is_secured": True,
+        }
+        checker = Mock()
+        checker.check_domain.return_value = update
+        with patch("desecapi.views.domains.DelegationChecker", return_value=checker):
+            response = self.client.post(url)
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.my_domain.refresh_from_db()
+        self.assertTrue(self.my_domain.is_registered)
+        self.assertTrue(self.my_domain.has_all_nameservers)
+        self.assertTrue(self.my_domain.is_delegated)
+        self.assertTrue(self.my_domain.is_secured)
+        self.assertIsNotNone(self.my_domain.delegation_checked)
+        self.assertEqual(response.data["is_registered"], True)
 
     def test_list_domains_owns_qname(self):
         # Domains outside this account or non-existent
@@ -930,17 +989,38 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertTrue(domain.is_locally_registrable)
             self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH)
 
-    def test_domain_limit(self):
+    def test_create_many_local_public_suffix_domains(self):
         url = self.reverse("v1:domain-list")
-        user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
+        self.owner.limit_domains = self.NUM_OWNED_DOMAINS + 5
+        self.owner.limit_insecure_domains = 1
+        self.owner.save(update_fields=["limit_domains", "limit_insecure_domains"])
 
-        for i in range(user_quota):
-            name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
+        suffix = next(iter(self.AUTO_DELEGATION_DOMAINS))
+        created = []
+        for _ in range(5):
+            name = self.random_domain_name(suffix)
             with self.assertRequests(
-                self.requests_desec_domain_creation_auto_delegation(name)
+                self.requests_desec_domain_creation_auto_delegation(name=name)
             ):
                 response = self.client.post(url, {"name": name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
+            created.append(name)
+
+        for name in created:
+            domain = Domain.objects.get(name=name)
+            self.assertTrue(domain.is_locally_registrable)
+            self.assertTrue(domain.is_secured)
+            self.assertIsNotNone(domain.delegation_checked)
+
+    def test_domain_limit(self):
+        url = self.reverse("v1:domain-list")
+        self.owner.limit_domains = self.NUM_OWNED_DOMAINS + 1
+        self.owner.save(update_fields=["limit_domains"])
+
+        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
+        with self.assertRequests(self.requests_desec_domain_creation_auto_delegation(name)):
+            response = self.client.post(url, {"name": name})
+            self.assertStatus(response, status.HTTP_201_CREATED)
 
         response = self.client.post(
             url, {"name": self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)}
@@ -949,6 +1029,40 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             response, "Domain limit", status_code=status.HTTP_403_FORBIDDEN
         )
         self.assertFalse(mail.outbox)  # do not send email
+
+    def test_insecure_delegation_limit(self):
+        url = self.reverse("v1:domain-list")
+        insecure_domain = self.my_domain
+        insecure_domain.is_registered = True
+        insecure_domain.is_delegated = True
+        insecure_domain.is_secured = False
+        insecure_domain.save(
+            update_fields=["is_registered", "is_delegated", "is_secured"]
+        )
+
+        self.owner.limit_insecure_domains = 1
+        self.owner.save(update_fields=["limit_insecure_domains"])
+        response = self.client.post(
+            url, {"name": self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)}
+        )
+        self.assertContains(
+            response,
+            "Insecure delegation limit",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_insecure_delegation_limit_zero(self):
+        url = self.reverse("v1:domain-list")
+        self.owner.limit_insecure_domains = 0
+        self.owner.save(update_fields=["limit_insecure_domains"])
+        response = self.client.post(
+            url, {"name": self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)}
+        )
+        self.assertContains(
+            response,
+            "Insecure delegation limit",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
 
     def test_domain_minimum_ttl(self):
         url = self.reverse("v1:domain-list")

@@ -64,6 +64,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
                 user_override = account_serializer.save(
                     is_active=None if settings.USER_ACTIVATION_REQUIRED else True,
                     limit_domains=15,
+                    limit_insecure_domains=settings.LIMIT_USER_INSECURE_DOMAIN_COUNT_DEFAULT,
                     outreach_preference=False,
                 )
                 serializers.AuthenticatedActivateUserWithOverrideTokenActionSerializer.build_and_save(
