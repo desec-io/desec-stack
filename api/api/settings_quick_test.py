@@ -17,6 +17,10 @@ DATABASES = {
     },
 }
 
+test_db_name = os.environ.get("DESECSTACK_DJANGO_TEST_DB_NAME")
+if test_db_name:
+    DATABASES["default"]["TEST"] = {"NAME": test_db_name}
+
 # avoid computationally expensive password hashing for tests
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
