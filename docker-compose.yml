@@ -128,6 +128,7 @@ services:
     depends_on:
     - dbapi
     - nslord
+    - nslord_knot
     - nsmaster
     - celery-email
     - memcached
@@ -155,6 +156,8 @@ services:
     - DESECSTACK_IPV6_SUBNET
     - DESECSTACK_NSLORD_APIKEY
     - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET
+    - DESECSTACK_NSLORD_KNOT_HOST
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     - DESECSTACK_WATCHDOG_SECONDARIES
@@ -193,6 +196,25 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nslord"
+    restart: unless-stopped
+
+  nslord_knot:
+    build: nslord_knot
+    image: desec/dedyn-nslord-knot:latest
+    init: true
+    environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET
+    - DESECSTACK_NSMASTER_TSIGKEY
+    - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NS
+    networks:
+      rearapi_ns:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/nslord-knot"
     restart: unless-stopped
 
   nsmaster:
@@ -266,6 +288,7 @@ services:
     - DESECSTACK_IPV6_SUBNET
     - DESECSTACK_NSLORD_APIKEY
     - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET
     - DESECSTACK_NSMASTER_APIKEY
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     - DJANGO_SETTINGS_MODULE=api.settings

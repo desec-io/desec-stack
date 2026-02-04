@@ -1,0 +1,47 @@
+clear: !(zone)
+
+server:
+    user: knot:knot
+    listen: 0.0.0.0@53
+    listen: ::@53
+    version: ""
+
+log:
+  - target: stdout
+    any: info
+
+key:
+  - id: nslord-update
+    algorithm: hmac-sha256
+    secret: ${DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET}
+  - id: default
+    algorithm: hmac-sha256
+    secret: ${DESECSTACK_NSMASTER_TSIGKEY}
+
+acl:
+  - id: api-update
+    address: [${DESECSTACK_IPV4_REAR_PREFIX16}.1.10]
+    key: nslord-update
+    action: [update, transfer]
+  - id: nsmaster-xfr
+    address: [${DESECSTACK_IPV4_REAR_PREFIX16}.0.130, ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12, ${DESECSTACK_IPV4_REAR_PREFIX16}.4.3, ${DESECSTACK_IPV4_REAR_PREFIX16}.7.3]
+    action: transfer
+
+template:
+  - id: nslord-member
+    storage: /var/lib/knot
+    file: "%s.zone"
+    acl: [api-update, nsmaster-xfr]
+    dnssec-signing: on
+    dnssec-policy: default
+    serial-policy: unixtime
+    journal-content: all
+    zonefile-load: whole
+    zonefile-sync: -1
+
+zone:
+  - domain: catalog.internal
+    file: /var/lib/knot/catalog.zone
+    acl: [api-update]
+    catalog-role: interpret
+    catalog-template: nslord-member

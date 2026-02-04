@@ -47,6 +47,11 @@ services:
       front:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.130  # make available for test-e2e
 
+  nslord_knot:
+    networks:
+      front:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.131  # make available for test-e2e2
+
   test-e2e2:
     build: test/e2e2
     restart: "no"
@@ -60,6 +65,7 @@ services:
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     - DESECSTACK_NSMASTER_TSIGKEY
     - DESECSTACK_E2E2_SECONDARY_NS=${DESECSTACK_IPV4_REAR_PREFIX16}.0.130
+    - DESECSTACK_E2E2_KNOT_NS=${DESECSTACK_IPV4_REAR_PREFIX16}.0.131
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
@@ -71,6 +77,7 @@ services:
     depends_on:
     - www
     - nslord
+    - nslord_knot
     - nsmaster
     networks:
       front:

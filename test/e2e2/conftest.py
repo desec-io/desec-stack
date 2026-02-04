@@ -29,6 +29,10 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "performance: mark test as expensive performance test")
+    # Fail fast by default to speed up debugging unless overridden.
+    if not getattr(config.option, "maxfail", 0):
+        config.option.maxfail = 1
+        config.option.exitfirst = True
 
 
 def pytest_collection_modifyitems(config, items):
@@ -227,12 +231,14 @@ class DeSECAPIV1Client:
     def domain_list(self) -> requests.Response:
         return self.get("/domains/").json()
 
-    def domain_create(self, name, zonefile=None) -> requests.Response:
+    def domain_create(self, name, zonefile=None, nslord=None) -> requests.Response:
         if name in self.domains:
             raise ValueError
         data = {"name": name}
         if zonefile is not None:
             data['zonefile'] = zonefile
+        if nslord is not None:
+            data['nslord'] = nslord
         response = self.post("/domains/", data=data)
         self.domains[name] = response.json()
         return response
@@ -453,6 +459,10 @@ class NSLordClient(NSClient):
     where = os.environ["DESECSTACK_IPV4_REAR_PREFIX16"] + '.0.129'
 
 
+class NSLordKnotClient(NSClient):
+    where = os.environ["DESECSTACK_E2E2_KNOT_NS"]
+
+
 class SecondaryNSClient(NSClient):
     where = os.environ["DESECSTACK_E2E2_SECONDARY_NS"]
 
@@ -487,6 +497,17 @@ def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: flo
 
 def assert_all_ns(assertion: callable, retry_on=(AssertionError,)):
     assert assertion(NSLordClient.query)
+    assert_eventually(
+        assertion=assertion, timeout=60, retry_on=retry_on,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+
+
+def assert_all_ns_knot(assertion: callable, retry_on=(AssertionError,)):
+    assert_eventually(
+        assertion=assertion, timeout=10, retry_on=retry_on,
+        assertion_kwargs=dict(query=NSLordKnotClient.query),
+    )
     assert_eventually(
         assertion=assertion, timeout=60, retry_on=retry_on,
         assertion_kwargs=dict(query=SecondaryNSClient.query),

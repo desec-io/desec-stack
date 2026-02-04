@@ -3,7 +3,14 @@ import time
 
 import pytest
 
-from conftest import DeSECAPIV1Client, NSLordClient, random_domainname, FaketimeShift, assert_all_ns
+from conftest import (
+    DeSECAPIV1Client,
+    NSLordClient,
+    random_domainname,
+    FaketimeShift,
+    assert_all_ns,
+    assert_all_ns_knot,
+)
 
 DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
 
@@ -38,6 +45,16 @@ def test_create(api_user: DeSECAPIV1Client):
     assert api_user.domain_create(random_domainname()).status_code == 201
     assert len(api_user.domain_list()) == 1
     assert_all_ns(
+        assertion=lambda query: query(api_user.domain, 'SOA')[0].serial >= int(time.time()),
+        retry_on=(AssertionError, TypeError),
+    )
+
+
+def test_create_knot(api_user: DeSECAPIV1Client):
+    assert len(api_user.domain_list()) == 0
+    assert api_user.domain_create(random_domainname(), nslord="knot").status_code == 201
+    assert len(api_user.domain_list()) == 1
+    assert_all_ns_knot(
         assertion=lambda query: query(api_user.domain, 'SOA')[0].serial >= int(time.time()),
         retry_on=(AssertionError, TypeError),
     )

@@ -15,6 +15,9 @@ class DomainSerializer(serializers.ModelSerializer):
         "name_unavailable": "This domain name conflicts with an existing domain, or is disallowed by policy.",
     }
     zonefile = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    nslord = serializers.ChoiceField(
+        choices=Domain.NSLord.choices, required=False, write_only=True
+    )
 
     class Meta:
         model = Domain
@@ -26,6 +29,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "minimum_ttl",
             "touched",
             "zonefile",
+            "nslord",
         )
         read_only_fields = (
             "published",
@@ -45,6 +49,7 @@ class DomainSerializer(serializers.ModelSerializer):
         if not self.include_keys:
             fields.pop("keys")
         fields["name"].validators.append(ReadOnlyOnUpdateValidator())
+        fields["nslord"].validators.append(ReadOnlyOnUpdateValidator())
         return fields
 
     def validate_name(self, value):
