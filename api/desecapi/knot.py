@@ -337,6 +337,24 @@ def get_keys(domain):
         raise KnotException(
             f"Knot DNSKEY query failed with rcode {dns.rcode.to_text(response.rcode())}"
         )
+    cds_set = None
+    try:
+        cds_query = dns.message.make_query(domain.name, dns.rdatatype.CDS)
+        cds_response = dns.query.udp(
+            cds_query,
+            _knot_host_ip(),
+            port=settings.NSLORD_KNOT_PORT,
+            timeout=settings.NSLORD_KNOT_TIMEOUT,
+        )
+        if cds_response.rcode() == dns.rcode.NOERROR:
+            cds_set = {
+                rdata.to_text()
+                for rrset in cds_response.answer
+                if rrset.rdtype == dns.rdatatype.CDS
+                for rdata in rrset
+            }
+    except Exception:
+        cds_set = None
     keys = []
     for rrset in response.answer:
         if rrset.rdtype != dns.rdatatype.DNSKEY:
@@ -360,4 +378,9 @@ def get_keys(domain):
                     "keytype": None,
                 }
             )
+    if cds_set:
+        for key in keys:
+            if key["ds"]:
+                key["ds"] = [ds for ds in key["ds"] if ds in cds_set]
+    keys.sort(key=lambda key: (key["flags"] & dns.rdtypes.ANY.DNSKEY.SEP) == 0)
     return keys
