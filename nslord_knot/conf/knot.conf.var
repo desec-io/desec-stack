@@ -36,8 +36,14 @@ template:
     dnssec-policy: default
     serial-policy: unixtime
     journal-content: all
-    zonefile-load: whole
-    zonefile-sync: -1
+    zonefile-load: difference
+    zonefile-sync: 0
+
+policy:
+  - id: default
+    nsec3: on
+    nsec3-iterations: 0
+    nsec3-salt-length: 0
 
 zone:
   - domain: catalog.internal

@@ -9,6 +9,7 @@ services:
   api:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    - DESECSTACK_NSLORD_KNOT_HOST=${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
@@ -19,6 +20,7 @@ services:
   celery-email:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    - DESECSTACK_NSLORD_KNOT_HOST=${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
@@ -51,6 +53,15 @@ services:
     networks:
       front:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.131  # make available for test-e2e2
+      rearapi_ns:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
+    # faketime setup (match nslord container)
+    environment:
+    - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    volumes:
+    - faketime:/etc/faketime/:ro
 
   test-e2e2:
     build: test/e2e2

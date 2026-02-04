@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import threading
+import time
 
 from django.conf import settings
 from django.db.models.signals import post_delete, post_save
@@ -137,9 +139,19 @@ class BaseChangeTracker(ABC):
         # TODO introduce two phase commit protocol
         changes = self._compute_changes()
         axfr_required = set()
+        deferred_changes = []
         for change in changes:
+            change_start = time.monotonic()
             try:
+                if isinstance(change, KnotChangeTracker.CreateUpdateDeleteRRSets):
+                    deferred_changes.append(change)
+                    continue
+                print(f"nslord change start: {change}", flush=True)
                 change.nslord_do()
+                print(
+                    f"nslord change done: {change} ({time.monotonic() - change_start:.3f}s)",
+                    flush=True,
+                )
                 change.api_do()
                 if settings.PCH_API and not settings.DEBUG:
                     change.pch_do()
@@ -154,8 +166,53 @@ class BaseChangeTracker(ABC):
 
         self.transaction.__exit__(None, None, None)
 
+        for change in deferred_changes:
+            change_start = time.monotonic()
+            try:
+                print(f"nslord change start: {change}", flush=True)
+                change.nslord_do()
+                print(
+                    f"nslord change done: {change} ({time.monotonic() - change_start:.3f}s)",
+                    flush=True,
+                )
+                change.api_do()
+                if settings.PCH_API and not settings.DEBUG:
+                    change.pch_do()
+                if change.axfr_required:
+                    axfr_required.add(change.domain_name)
+            except Exception as e:
+                exc = ValueError(
+                    f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}"
+                )
+                raise exc from e
+
         for name in axfr_required:
+            nslord = self._nslord_for_domain(name)
+            if nslord == Domain.NSLord.KNOT:
+                wait_start = time.monotonic()
+                print(f"knot wait_for_zone start: {name}", flush=True)
+                wait_done = {}
+
+                def _wait():
+                    wait_done["result"] = knot.wait_for_zone(name)
+
+                thread = threading.Thread(target=_wait, daemon=True)
+                thread.start()
+                thread.join(timeout=5.0)
+                if thread.is_alive():
+                    print(f"knot wait_for_zone timeout: {name}", flush=True)
+                else:
+                    print(
+                        f"knot wait_for_zone done: {name} ({time.monotonic() - wait_start:.3f}s)",
+                        flush=True,
+                    )
+            axfr_start = time.monotonic()
+            print(f"pdns axfr_to_master start: {name}", flush=True)
             pdns.axfr_to_master(name)
+            print(
+                f"pdns axfr_to_master done: {name} ({time.monotonic() - axfr_start:.3f}s)",
+                flush=True,
+            )
         Domain.objects.filter(name__in=axfr_required).update(published=timezone.now())
 
     def _nslord_for_domain(self, domain_name):
@@ -502,6 +559,7 @@ class KnotChangeTracker(BaseChangeTracker):
 
         def nslord_do(self):
             knot.create_zone(self.domain_name)
+            knot.ensure_default_ns(self.domain_name)
             pdns.create_zone_master(
                 self.domain_name, master_host=settings.NSLORD_KNOT_HOST
             )

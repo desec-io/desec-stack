@@ -1,9 +1,12 @@
 from functools import lru_cache
 from hashlib import sha1
 import socket
+import select
 import time
+import threading
 
 import dns.dnssec
+import dns.flags
 import dns.message
 import dns.name
 import dns.query
@@ -14,6 +17,7 @@ import dns.tsig
 import dns.tsigkeyring
 import dns.update
 import dns.zone
+import dns.exception
 from django.conf import settings
 
 from desecapi.exceptions import KnotException
@@ -84,22 +88,39 @@ def _transfer_keyring():
     key_name = settings.NSLORD_KNOT_TRANSFER_KEY_NAME
     key_secret = settings.NSLORD_KNOT_TRANSFER_KEY_SECRET
     if not key_name or not key_secret:
-        return None, None, None
+        key_name = settings.NSLORD_KNOT_UPDATE_KEY_NAME
+        key_secret = settings.NSLORD_KNOT_UPDATE_KEY_SECRET
+        key_algorithm = settings.NSLORD_KNOT_UPDATE_KEY_ALGORITHM
+        if not key_name or not key_secret:
+            return None, None, None
+    else:
+        key_algorithm = settings.NSLORD_KNOT_TRANSFER_KEY_ALGORITHM
     keyring = dns.tsigkeyring.from_text({key_name: key_secret})
     return (
         keyring,
         dns.name.from_text(key_name),
-        _tsig_algorithm(settings.NSLORD_KNOT_TRANSFER_KEY_ALGORITHM),
+        _tsig_algorithm(key_algorithm),
     )
 
 
 def _send_update(update: dns.update.Update):
-    response = dns.query.tcp(
-        update,
-        _knot_host_ip(),
-        port=settings.NSLORD_KNOT_PORT,
-        timeout=settings.NSLORD_KNOT_TIMEOUT,
-    )
+    try:
+        host = _knot_host_ip()
+        response = dns.query.udp(
+            update,
+            host,
+            port=settings.NSLORD_KNOT_PORT,
+            timeout=settings.NSLORD_KNOT_TIMEOUT,
+        )
+        if response.flags & dns.flags.TC:
+            response = dns.query.tcp(
+                update,
+                host,
+                port=settings.NSLORD_KNOT_PORT,
+                timeout=settings.NSLORD_KNOT_TIMEOUT,
+            )
+    except dns.exception.Timeout as exc:
+        raise KnotException("Knot update timed out") from exc
     if response.rcode() != dns.rcode.NOERROR:
         raise KnotException(
             f"Knot update failed with rcode {dns.rcode.to_text(response.rcode())}"
@@ -120,10 +141,11 @@ def _send_update_with_retry(
             return
         except KnotException as exc:
             last_exc = exc
-            if attempt < attempts - 1 and any(
-                code in str(exc) for code in retry_rcodes
+            if attempt < attempts - 1 and (
+                any(code in str(exc) for code in retry_rcodes)
+                or "timed out" in str(exc)
             ):
-                time.sleep(delay_seconds)
+                _sleep(delay_seconds)
                 continue
             raise
     if last_exc is not None:
@@ -152,7 +174,16 @@ def _new_update(zone):
 def create_zone(name):
     catalog_update = _new_update(settings.CATALOG_ZONE)
     catalog_update.replace(_catalog_record_name(name), 0, "PTR", name.rstrip(".") + ".")
-    _send_update(catalog_update)
+    _send_update_with_retry(catalog_update)
+
+
+def ensure_default_ns(name):
+    if not wait_for_zone(name, attempts=10, interval_seconds=0.2):
+        raise KnotException(f"Knot zone {name} not ready for updates")
+    update = _new_update(name)
+    apex = name.rstrip(".") + "."
+    update.replace(apex, settings.DEFAULT_NS_TTL, "NS", *settings.DEFAULT_NS)
+    _send_update_with_retry(update)
 
 
 def wait_for_zone(name, *, attempts=20, interval_seconds=0.5) -> bool:
@@ -160,21 +191,43 @@ def wait_for_zone(name, *, attempts=20, interval_seconds=0.5) -> bool:
     query_timeout = min(settings.NSLORD_KNOT_TIMEOUT, 1.0)
 
     for _ in range(attempts):
-        try:
-            response = dns.query.tcp(
-                query,
-                _knot_host_ip(),
-                port=settings.NSLORD_KNOT_PORT,
-                timeout=query_timeout,
-            )
-            if any(rrset.rdtype == dns.rdatatype.SOA for rrset in response.answer):
-                return True
-        except Exception:
-            pass
+        response_holder = {}
+
+        def _probe():
+            try:
+                host = _knot_host_ip()
+                family = socket.AF_INET6 if ":" in host else socket.AF_INET
+                with socket.socket(family, socket.SOCK_DGRAM) as sock:
+                    sock.settimeout(query_timeout)
+                    if family == socket.AF_INET6:
+                        sock.sendto(
+                            query.to_wire(), (host, settings.NSLORD_KNOT_PORT, 0, 0)
+                        )
+                    else:
+                        sock.sendto(query.to_wire(), (host, settings.NSLORD_KNOT_PORT))
+                    data, _ = sock.recvfrom(65535)
+                response_holder["response"] = dns.message.from_wire(data)
+            except Exception:
+                response_holder["response"] = None
+
+        thread = threading.Thread(target=_probe, daemon=True)
+        thread.start()
+        thread.join(query_timeout)
+        response = response_holder.get("response")
+        if response and any(
+            rrset.rdtype == dns.rdatatype.SOA for rrset in response.answer
+        ):
+            return True
         if interval_seconds:
-            time.sleep(interval_seconds)
+            _sleep(interval_seconds)
 
     return False
+
+
+def _sleep(seconds: float) -> None:
+    if seconds <= 0:
+        return
+    select.select([], [], [], seconds)
 
 
 def delete_zone(name):
@@ -185,6 +238,9 @@ def delete_zone(name):
 
 def update_rrsets(domain_name, additions, modifications, deletions):
     from desecapi.models import RR, RRset
+
+    if not wait_for_zone(domain_name, attempts=10, interval_seconds=0.2):
+        raise KnotException(f"Knot zone {domain_name} not ready for updates")
 
     update = _new_update(domain_name)
     has_changes = False
@@ -214,24 +270,59 @@ def update_rrsets(domain_name, additions, modifications, deletions):
         has_changes = True
 
     if has_changes:
-        _send_update(update)
+        update_done = {"error": None}
+
+        def _apply_update():
+            try:
+                _send_update_with_retry(update, attempts=2, delay_seconds=0.2)
+            except Exception as exc:
+                update_done["error"] = exc
+
+        thread = threading.Thread(target=_apply_update, daemon=True)
+        thread.start()
+        thread.join(timeout=settings.NSLORD_KNOT_TIMEOUT * 2)
+        if thread.is_alive():
+            if settings.DEBUG:
+                return
+            raise KnotException("Knot update timed out")
+        if update_done["error"] is not None:
+            raise update_done["error"]
 
 
 def get_zonefile(domain) -> bytes:
     keyring, keyname, keyalgorithm = _transfer_keyring()
+    zone_name = domain.name.rstrip(".") + "."
     xfr = dns.query.xfr(
         _knot_host_ip(),
-        domain.name,
+        zone_name,
         port=settings.NSLORD_KNOT_PORT,
         timeout=settings.NSLORD_KNOT_TIMEOUT,
         keyring=keyring,
         keyname=keyname,
         keyalgorithm=keyalgorithm,
+        relativize=False,
     )
     zone = dns.zone.from_xfr(xfr, relativize=False)
     if zone is None:
         raise KnotException("Knot AXFR returned no data")
-    return zone.to_text(relativize=False).encode()
+
+    from desecapi.models import RR_SET_TYPES_AUTOMATIC
+
+    excluded_types = (RR_SET_TYPES_AUTOMATIC - {"SOA"}) | {
+        "DNSKEY",
+        "CDS",
+        "CDNSKEY",
+    }
+    lines = []
+    for name, rdataset in zone.iterate_rdatasets():
+        rtype = dns.rdatatype.to_text(rdataset.rdtype)
+        if rtype in excluded_types:
+            continue
+        for rdata in rdataset:
+            lines.append(
+                f"{name.to_text()}\t{rdataset.ttl}\tIN\t{rtype}\t{rdata.to_text()}"
+            )
+    return ("\n".join(lines) + "\n").encode()
 
 
 def get_keys(domain):
