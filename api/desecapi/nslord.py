@@ -11,7 +11,9 @@ def get_keys(domain):
         try:
             return knot.get_keys(domain)
         except KnotException:
-            logger.warning("Knot DNSKEY query failed for %s", domain.name, exc_info=True)
+            logger.warning(
+                "Knot DNSKEY query failed for %s", domain.name, exc_info=True
+            )
             return []
     return pdns.get_keys(domain)
 

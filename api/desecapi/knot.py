@@ -120,7 +120,9 @@ def _send_update_with_retry(
             return
         except KnotException as exc:
             last_exc = exc
-            if attempt < attempts - 1 and any(code in str(exc) for code in retry_rcodes):
+            if attempt < attempts - 1 and any(
+                code in str(exc) for code in retry_rcodes
+            ):
                 time.sleep(delay_seconds)
                 continue
             raise
