@@ -372,8 +372,13 @@ def test_create_valid_canonical(
     rr_type: str,
     value: str,
     assert_all_nslord,
+    nslord_backend: str,
 ):
-    if rr_type == "AFSDB" and value == "2 turquoise.FEMTO.edu." and getattr(api_user_domain, "domains", {}).get(api_user_domain.domain, {}).get("nslord") == "knot":
+    if (
+        rr_type == "AFSDB"
+        and value == "2 turquoise.FEMTO.edu."
+        and nslord_backend == "knot"
+    ):
         pytest.skip("knot normalizes AFSDB target case")
     domain_name = api_user_domain.domain
     expected = set()
