@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from django.db.models import Q
 
 from desecapi.models import BlockedSubnet, Domain, RR, RRset, User
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 
 
 class Command(BaseCommand):
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             # domains to truncate: all domains given and all domains belonging to a user given
             domains = Domain.objects.filter(
                 Q(name__in=options["names"]) | Q(owner__email__in=options["names"])

@@ -103,7 +103,11 @@ def _pdns_request(
         "X-API-Key": _config[server]["apikey"],
     }
     r = requests.request(
-        method, _config[server]["base_url"] + path, data=data, headers=headers
+        method,
+        _config[server]["base_url"] + path,
+        data=data,
+        headers=headers,
+        timeout=settings.PDNS_API_TIMEOUT,
     )
     if r.status_code not in range(200, 300):
         metrics.get("desecapi_pdns_request_failure").labels(
@@ -244,7 +248,7 @@ def create_zone_lord(name):
     )
 
 
-def create_zone_master(name):
+def create_zone_master(name, master_host="nslord"):
     name = name.rstrip(".") + "."
     _pdns_post(
         NSMASTER,
@@ -252,7 +256,7 @@ def create_zone_master(name):
         {
             "name": name,
             "kind": "SLAVE",
-            "masters": [gethostbyname_cached("nslord")],
+            "masters": [gethostbyname_cached(master_host)],
             "master_tsig_key_ids": ["default"],
         },
     )

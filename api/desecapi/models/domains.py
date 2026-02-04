@@ -15,7 +15,7 @@ from dns.exception import Timeout
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
-from desecapi import logger, metrics, pdns
+from desecapi import logger, metrics, nslord
 
 from .base import validate_domain_name
 from .records import RRset
@@ -42,6 +42,10 @@ class DomainManager(Manager):
 
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
+    class NSLord(models.TextChoices):
+        PDNS = "pdns", "powerdns"
+        KNOT = "knot", "knotdns"
+
     @staticmethod
     def _minimum_ttl_default():
         return settings.MINIMUM_TTL_DEFAULT
@@ -59,6 +63,9 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     owner = models.ForeignKey("User", on_delete=models.PROTECT, related_name="domains")
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
+    nslord = models.CharField(
+        max_length=16, choices=NSLord.choices, default=NSLord.PDNS
+    )
     renewal_state = models.IntegerField(
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
@@ -180,7 +187,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @property
     def keys(self):
         if not self._keys:
-            self._keys = [{**key, "managed": True} for key in pdns.get_keys(self)]
+            self._keys = [{**key, "managed": True} for key in nslord.get_keys(self)]
             try:
                 unmanaged_keys = self.rrset_set.get(
                     subname="", type="DNSKEY"
@@ -244,7 +251,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     @property
     def zonefile(self):
-        return pdns.get_zonefile(self)
+        return nslord.get_zonefile(self)
 
     def save(self, *args, **kwargs):
         self.full_clean(validate_unique=False)

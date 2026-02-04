@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from desecapi import permissions
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer
 
@@ -106,7 +106,7 @@ class DomainViewSet(
                 },
                 code="registration_suspended",
             )
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             domain = serializer.save(owner=self.request.user)
             if self.request.auth.auto_policy:
                 self.request.auth.tokendomainpolicy_set.create(
@@ -114,7 +114,7 @@ class DomainViewSet(
                 )
 
         # TODO this line raises if the local public suffix is not in our database!
-        PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
+        NSLordChangeTracker.track(lambda: self.auto_delegate(domain))
 
     @staticmethod
     def auto_delegate(domain: Domain):
@@ -123,11 +123,11 @@ class DomainViewSet(
             parent_domain.update_delegation(domain)
 
     def perform_destroy(self, instance: Domain):
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             instance.delete()
         if instance.is_locally_registrable:
             parent_domain = Domain.objects.get(name=instance.parent_domain_name)
-            with PDNSChangeTracker():
+            with NSLordChangeTracker():
                 parent_domain.update_delegation(instance)
 
     @action(detail=True, renderer_classes=[PlainTextRenderer])

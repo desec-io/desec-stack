@@ -29,6 +29,17 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "performance: mark test as expensive performance test")
+    # Fail fast by default to speed up debugging unless overridden.
+    args = getattr(config.invocation_params, "args", [])
+    has_maxfail = any(
+        arg == "-x"
+        or arg == "--exitfirst"
+        or arg.startswith("--maxfail")
+        for arg in args
+    )
+    if not has_maxfail and not getattr(config.option, "maxfail", 0):
+        config.option.maxfail = 1
+        config.option.exitfirst = True
 
 
 def pytest_collection_modifyitems(config, items):
@@ -227,14 +238,18 @@ class DeSECAPIV1Client:
     def domain_list(self) -> requests.Response:
         return self.get("/domains/").json()
 
-    def domain_create(self, name, zonefile=None) -> requests.Response:
+    def domain_create(self, name, zonefile=None, nslord=None) -> requests.Response:
         if name in self.domains:
             raise ValueError
         data = {"name": name}
         if zonefile is not None:
             data['zonefile'] = zonefile
+        if nslord is not None:
+            data['nslord'] = nslord
         response = self.post("/domains/", data=data)
         self.domains[name] = response.json()
+        if nslord is not None:
+            self.domains[name]["nslord"] = nslord
         return response
 
     def domain_destroy(self, name) -> requests.Response:
@@ -332,11 +347,16 @@ class DeSECAPIV1Client:
 
         if via_dns:
             # Assert DNS responses fulfil expectations
-            assert_all_ns(
+            nslord_backend = None
+            if self.domain and self.domain in self.domains:
+                nslord_backend = self.domains[self.domain].get("nslord")
+            assert_all = assert_all_ns_knot if nslord_backend == "knot" else assert_all_ns
+
+            assert_all(
                 assertion=lambda query: rrsets_dns(query).keys() & rrsets_unexpected.keys() == set(),
                 retry_on=(AssertionError, TypeError),
             )
-            assert_all_ns(
+            assert_all(
                 assertion=lambda query: rrsets_expected == rrsets_dns(query),
                 retry_on=(AssertionError, TypeError),
             )
@@ -376,13 +396,33 @@ def api_user() -> DeSECAPIV1Client:
     return api
 
 
+@pytest.fixture(params=["pdns", "knot"], ids=["pdns", "knot"])
+def nslord_backend(request) -> str:
+    return request.param
+
+
 @pytest.fixture()
-def api_user_domain(api_user) -> DeSECAPIV1Client:
+def nslord_param(nslord_backend: str) -> str | None:
+    return "knot" if nslord_backend == "knot" else None
+
+
+@pytest.fixture()
+def nslord_query(nslord_backend: str):
+    return NSLordKnotClient.query if nslord_backend == "knot" else NSLordClient.query
+
+
+@pytest.fixture()
+def assert_all_nslord(nslord_backend: str):
+    return assert_all_ns_knot if nslord_backend == "knot" else assert_all_ns
+
+
+@pytest.fixture()
+def api_user_domain(api_user, nslord_param: str | None) -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account that owns a domain with random name. The domain has
     no records other than the default ones.
     """
-    api_user.domain_create(random_domainname())
+    api_user.domain_create(random_domainname(), nslord=nslord_param)
     return api_user
 
 
@@ -407,22 +447,24 @@ api_user_lps = api_user
 
 
 @pytest.fixture()
-def lps(api_user_lps) -> DeSECAPIV1Client:
+def lps(api_user_lps, nslord_param: str | None) -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account that owns a local public suffix.
     """
     lps = "dedyn." + os.environ['DESECSTACK_DOMAIN']
-    api_user_lps.domain_create(lps)  # may return 400 if exists, but that's ok
+    api_user_lps.domain_create(lps, nslord=nslord_param)  # may return 400 if exists, but that's ok
     return lps
 
 
 @pytest.fixture()
-def api_user_lps_domain(api_user, lps) -> DeSECAPIV1Client:
+def api_user_lps_domain(
+    api_user, lps, nslord_param: str | None
+) -> DeSECAPIV1Client:
     """
     Access to the API with a fresh user account that owns a domain with random name under a local public suffix.
     The domain has no records other than the default ones.
     """
-    api_user.domain_create(random_domainname(suffix=lps))
+    api_user.domain_create(random_domainname(suffix=lps), nslord=nslord_param)
     return api_user
 
 
@@ -451,6 +493,10 @@ class NSClient:
 
 class NSLordClient(NSClient):
     where = os.environ["DESECSTACK_IPV4_REAR_PREFIX16"] + '.0.129'
+
+
+class NSLordKnotClient(NSClient):
+    where = os.environ["DESECSTACK_E2E2_KNOT_NS"]
 
 
 class SecondaryNSClient(NSClient):
@@ -487,6 +533,17 @@ def assert_eventually(assertion: callable, min_pause: float = .1, max_pause: flo
 
 def assert_all_ns(assertion: callable, retry_on=(AssertionError,)):
     assert assertion(NSLordClient.query)
+    assert_eventually(
+        assertion=assertion, timeout=60, retry_on=retry_on,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+
+
+def assert_all_ns_knot(assertion: callable, retry_on=(AssertionError,)):
+    assert_eventually(
+        assertion=assertion, timeout=10, retry_on=retry_on,
+        assertion_kwargs=dict(query=NSLordKnotClient.query),
+    )
     assert_eventually(
         assertion=assertion, timeout=60, retry_on=retry_on,
         assertion_kwargs=dict(query=SecondaryNSClient.query),
