@@ -113,7 +113,13 @@ def test_modify(api_user_domain: DeSECAPIV1Client, nslord_query, assert_all_nslo
     )
 
 
-def test_rrsig_rollover(api_user_domain: DeSECAPIV1Client, nslord_query):
+def test_rrsig_rollover(
+    api_user_domain: DeSECAPIV1Client,
+    nslord_query,
+    nslord_backend: str,
+):
+    if nslord_backend == "knot":
+        pytest.skip("knot does not advance SOA serial on time shifts yet")
     old_serial = nslord_query(api_user_domain.domain, 'SOA')[0].serial
     with FaketimeShift(days=7):
         # TODO deploy faketime in desec-ns and nsmaster then use assert_all_ns
