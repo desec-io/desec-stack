@@ -63,6 +63,8 @@ def task_failure(task_id, exception, args, kwargs, traceback, einfo, **other_kwa
         },
         exc_info=einfo,
     )
+
+
 logger = logging.getLogger(__name__)
 handler = django.utils.log.AdminEmailHandler()
 handler.setFormatter(CeleryFormatter())
