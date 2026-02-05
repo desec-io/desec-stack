@@ -57,6 +57,11 @@ services:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
     # faketime setup (match nslord container)
     environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET
+    - DESECSTACK_NSMASTER_TSIGKEY
+    - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NS
     - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
     - FAKETIME_NO_CACHE=1

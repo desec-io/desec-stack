@@ -2,11 +2,9 @@ from functools import lru_cache
 from hashlib import sha1
 import socket
 import select
-import time
 import threading
 
 import dns.dnssec
-import dns.flags
 import dns.message
 import dns.name
 import dns.query
@@ -24,7 +22,6 @@ from desecapi.exceptions import KnotException
 
 
 DEFAULT_SOA_CONTENT = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
-
 
 _TSIG_ALGORITHM_MAP = {
     "hmac-md5": dns.tsig.HMAC_MD5,
@@ -106,19 +103,12 @@ def _transfer_keyring():
 def _send_update(update: dns.update.Update):
     try:
         host = _knot_host_ip()
-        response = dns.query.udp(
+        response = dns.query.tcp(
             update,
             host,
             port=settings.NSLORD_KNOT_PORT,
             timeout=settings.NSLORD_KNOT_TIMEOUT,
         )
-        if response.flags & dns.flags.TC:
-            response = dns.query.tcp(
-                update,
-                host,
-                port=settings.NSLORD_KNOT_PORT,
-                timeout=settings.NSLORD_KNOT_TIMEOUT,
-            )
     except dns.exception.Timeout as exc:
         raise KnotException("Knot update timed out") from exc
     if response.rcode() != dns.rcode.NOERROR:
@@ -174,11 +164,18 @@ def _new_update(zone):
 def create_zone(name):
     catalog_update = _new_update(settings.CATALOG_ZONE)
     catalog_update.replace(_catalog_record_name(name), 0, "PTR", name.rstrip(".") + ".")
-    _send_update_with_retry(catalog_update)
+    try:
+        _send_update_with_retry(catalog_update)
+    except KnotException as exc:
+        if "timed out" not in str(exc):
+            raise
+        if wait_for_zone(name, attempts=60, interval_seconds=0.5):
+            return
+        raise
 
 
 def ensure_default_ns(name):
-    if not wait_for_zone(name, attempts=10, interval_seconds=0.2):
+    if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
     update = _new_update(name)
     apex = name.rstrip(".") + "."
@@ -191,29 +188,16 @@ def wait_for_zone(name, *, attempts=20, interval_seconds=0.5) -> bool:
     query_timeout = min(settings.NSLORD_KNOT_TIMEOUT, 1.0)
 
     for _ in range(attempts):
-        response_holder = {}
-
-        def _probe():
-            try:
-                host = _knot_host_ip()
-                family = socket.AF_INET6 if ":" in host else socket.AF_INET
-                with socket.socket(family, socket.SOCK_DGRAM) as sock:
-                    sock.settimeout(query_timeout)
-                    if family == socket.AF_INET6:
-                        sock.sendto(
-                            query.to_wire(), (host, settings.NSLORD_KNOT_PORT, 0, 0)
-                        )
-                    else:
-                        sock.sendto(query.to_wire(), (host, settings.NSLORD_KNOT_PORT))
-                    data, _ = sock.recvfrom(65535)
-                response_holder["response"] = dns.message.from_wire(data)
-            except Exception:
-                response_holder["response"] = None
-
-        thread = threading.Thread(target=_probe, daemon=True)
-        thread.start()
-        thread.join(query_timeout)
-        response = response_holder.get("response")
+        response = None
+        try:
+            response = dns.query.tcp(
+                query,
+                _knot_host_ip(),
+                port=settings.NSLORD_KNOT_PORT,
+                timeout=query_timeout,
+            )
+        except Exception:
+            response = None
         if response and any(
             rrset.rdtype == dns.rdatatype.SOA for rrset in response.answer
         ):
