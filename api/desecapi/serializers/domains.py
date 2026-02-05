@@ -130,6 +130,8 @@ class DomainSerializer(serializers.ModelSerializer):
         if self._csk_private_key_data is not None:
             domain._csk_private_key_data = self._csk_private_key_data
         domain.save()
+        if self._csk_private_key_data is not None:
+            domain.set_csk_private_key(self._csk_private_key_data["private_key"])
 
         # save RRsets if zonefile was given
         nodes = getattr(self.import_zone, "nodes", None)

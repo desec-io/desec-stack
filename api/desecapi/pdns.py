@@ -1,9 +1,16 @@
 import json
 import re
 import socket
+import time
 from functools import cache
 from hashlib import sha1
 
+import dns.message
+import dns.name
+import dns.query
+import dns.rdataclass
+import dns.rdatatype
+import dns.rcode
 import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
@@ -182,6 +189,24 @@ def delete_cryptokey(domain_name, key_id):
     _pdns_delete(NSLORD, "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id))
 
 
+def get_csk_private_key(domain_name):
+    keys = list_cryptokeys(domain_name)
+    candidates = [
+        key
+        for key in keys
+        if key.get("keytype") == "csk" or key.get("keytype") == "CSK"
+    ]
+    if not candidates:
+        candidates = keys
+    for key in candidates:
+        if not key.get("active", True):
+            continue
+        private_key = key.get("privatekey") or key.get("content")
+        if private_key:
+            return private_key
+    return None
+
+
 def get_zone(domain):
     """
     Retrieves a dict representation of the zone from pdns
@@ -309,6 +334,26 @@ def import_csk_key(name, *, dnskey, private_key):
     return cryptokey
 
 
+def import_zonefile_rrsets(name, rrsets):
+    data = {
+        "rrsets": [
+            {
+                "name": rrset["name"],
+                "type": rrset["type"],
+                "ttl": min(rrset["ttl"], settings.DEFAULT_NS_TTL),
+                "changetype": "REPLACE",
+                "records": [
+                    {"content": record, "disabled": False}
+                    for record in rrset["records"]
+                ],
+            }
+            for rrset in rrsets
+        ]
+    }
+    if data["rrsets"]:
+        update_zone(name, data)
+
+
 def delete_zone(name, server):
     _pdns_delete(server, "/zones/" + pdns_id(name))
 
@@ -327,6 +372,17 @@ def update_zone(name, data):
 
 def axfr_to_master(zone):
     _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
+
+
+def wait_for_master_zone(zone, *, attempts=20, delay_seconds=0.5):
+    zone_id = pdns_id(zone)
+    for _ in range(attempts):
+        try:
+            _pdns_get(NSMASTER, "/zones/%s" % zone_id)
+            return True
+        except PDNSException:
+            time.sleep(delay_seconds)
+    return False
 
 
 def rectify_zone(name):

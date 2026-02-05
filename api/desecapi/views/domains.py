@@ -1,5 +1,9 @@
 from datetime import timezone, datetime
+import logging
 
+import dns.rdata
+import dns.rdataclass
+import dns.rdatatype
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Subquery
@@ -11,7 +15,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from desecapi import permissions
+from desecapi import dnssec, knot, nslord, pdns, permissions
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import NSLordChangeTracker
@@ -19,6 +23,8 @@ from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer
 
 from .base import IdempotentDestroyMixin
+
+logger = logging.getLogger(__name__)
 
 
 class DomainViewSet(
@@ -48,6 +54,9 @@ class DomainViewSet(
                     ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.WithinDomainLimit)
                 case "destroy":
+                    ret.append(permissions.HasDeleteDomainPermission)
+                case "nslord":
+                    ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.HasDeleteDomainPermission)
                 case _:
                     raise ValueError(f"Invalid action: {self.action}")
@@ -135,6 +144,111 @@ class DomainViewSet(
         instance = self.get_object()
         prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
         return Response(prefix + instance.zonefile, content_type="text/dns")
+
+    @action(detail=True, methods=["post"])
+    def nslord(self, request, name=None):
+        domain = self.get_object()
+        target = request.data.get("nslord")
+        logger.info("nslord move requested for %s: target=%s", domain.name, target)
+        if target not in Domain.NSLord.values:
+            raise ValidationError({"nslord": ["Invalid nslord value."]})
+        if target == domain.nslord:
+            return Response(self.get_serializer(domain).data)
+
+        private_key = nslord.get_csk_private_key(domain)
+        if not private_key:
+            raise ValidationError({"nslord": ["No CSK private key available."]})
+        if domain.get_csk_private_key() is None:
+            domain.set_csk_private_key(private_key)
+        dnskey = dnssec.parse_csk_private_key(private_key)["dnskey"]
+        try:
+            key_rdata = dns.rdata.from_text(
+                dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey
+            )
+            logger.info(
+                "nslord move %s: CSK alg=%d keytag=%d",
+                domain.name,
+                key_rdata.algorithm,
+                dns.dnssec.key_id(key_rdata),
+            )
+        except Exception:
+            logger.info("nslord move %s: CSK parse failed", domain.name)
+        zonefile = nslord.get_zonefile_without_dnssec(domain).decode()
+        rrsets = nslord.zonefile_to_rrsets(domain.name, zonefile)
+        zonefile_serial = None
+        for rrset in rrsets:
+            if rrset["type"] == "SOA" and rrset["records"]:
+                soa_rdata = dns.rdata.from_text(
+                    dns.rdataclass.IN, dns.rdatatype.SOA, rrset["records"][0]
+                )
+                zonefile_serial = soa_rdata.serial
+                break
+        old_serial = nslord.get_soa_serial(domain) or zonefile_serial
+        if zonefile_serial is None:
+            logger.warning(
+                "nslord move %s: SOA serial not found in zonefile", domain.name
+            )
+        else:
+            logger.info(
+                "nslord move %s: zonefile SOA serial=%d",
+                domain.name,
+                zonefile_serial,
+            )
+        if old_serial is not None and old_serial != zonefile_serial:
+            logger.info("nslord move %s: DNS SOA serial=%d", domain.name, old_serial)
+        logger.info(
+            "nslord move %s: rrsets=%d zonefile_bytes=%d",
+            domain.name,
+            len(rrsets),
+            len(zonefile),
+        )
+
+        if target == Domain.NSLord.PDNS:
+            logger.info("nslord move %s: creating zone on PDNS", domain.name)
+            pdns.create_zone_lord(domain.name)
+            pdns.import_csk_key(domain.name, dnskey=dnskey, private_key=private_key)
+            pdns.import_zonefile_rrsets(domain.name, rrsets)
+        else:
+            logger.info("nslord move %s: creating zone on Knot", domain.name)
+            knot.prepare_csk_key(domain.name, dnskey=dnskey, private_key=private_key)
+            knot.create_zone(domain.name)
+            knot.wait_for_csk_key_ready(domain.name)
+            knot.ensure_default_ns(domain.name)
+            knot.import_zonefile_rrsets(domain.name, rrsets)
+            if old_serial is not None:
+                knot.ensure_soa_serial_min(domain.name, old_serial)
+            knot.import_csk_key(domain.name, dnskey=dnskey, private_key=private_key)
+
+        pdns.delete_zone_master(domain.name)
+        master_host = (
+            settings.NSLORD_KNOT_HOST if target == Domain.NSLord.KNOT else "nslord"
+        )
+        logger.info(
+            "nslord move %s: updating nsmaster master_host=%s",
+            domain.name,
+            master_host,
+        )
+        pdns.create_zone_master(domain.name, master_host=master_host)
+        pdns.axfr_to_master(domain.name)
+        if target == Domain.NSLord.PDNS:
+            if not pdns.wait_for_master_zone(domain.name):
+                logger.warning(
+                    "nslord move %s: nsmaster zone not ready after AXFR trigger",
+                    domain.name,
+                )
+
+        old_nslord = domain.nslord
+        domain.nslord = target
+        domain.save(update_fields=["nslord"])
+
+        if old_nslord == Domain.NSLord.PDNS:
+            logger.info("nslord move %s: deleting zone from PDNS", domain.name)
+            pdns.delete_zone_lord(domain.name)
+        else:
+            logger.info("nslord move %s: deleting zone from Knot", domain.name)
+            knot.delete_zone(domain.name)
+
+        return Response(self.get_serializer(domain).data)
 
 
 class SerialListView(APIView):

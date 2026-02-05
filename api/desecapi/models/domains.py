@@ -15,7 +15,7 @@ from dns.exception import Timeout
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
-from desecapi import logger, metrics, nslord
+from desecapi import crypto, logger, metrics, nslord
 
 from .base import validate_domain_name
 from .records import RRset
@@ -66,6 +66,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     nslord = models.CharField(
         max_length=16, choices=NSLord.choices, default=NSLord.PDNS
     )
+    csk_private_key_encrypted = models.BinaryField(null=True, blank=True)
     renewal_state = models.IntegerField(
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
@@ -302,6 +303,25 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     def delete(self, *args, **kwargs):
         ret = super().delete(*args, **kwargs)
         logger.warning(f"Domain {self.name} deleted (owner: {self.owner.pk})")
+
+    def set_csk_private_key(self, private_key: str | None) -> None:
+        if private_key is None:
+            self.csk_private_key_encrypted = None
+        else:
+            if self.pk is None:
+                raise ValueError("Domain must be saved before storing private key")
+            self.csk_private_key_encrypted = crypto.encrypt(
+                private_key.encode(), context=f"domain_csk:{self.pk}"
+            )
+        self.save(update_fields=["csk_private_key_encrypted"])
+
+    def get_csk_private_key(self) -> str | None:
+        if not self.csk_private_key_encrypted:
+            return None
+        _, decrypted = crypto.decrypt(
+            self.csk_private_key_encrypted, context=f"domain_csk:{self.pk}"
+        )
+        return decrypted.decode()
         return ret
 
     def __str__(self):

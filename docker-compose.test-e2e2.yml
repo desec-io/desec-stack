@@ -10,12 +10,14 @@ services:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
     - DESECSTACK_NSLORD_KNOT_HOST=${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
+    - DESECSTACK_NSLORD_KNOT_IMPORT_DIR=/knot-import
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
     - FAKETIME_NO_CACHE=1
     volumes:
     - faketime:/etc/faketime/:ro
+    - knot-import:/knot-import
 
   celery-email:
     environment:
@@ -62,11 +64,13 @@ services:
     - DESECSTACK_NSMASTER_TSIGKEY
     - DESECSTACK_NSLORD_DEFAULT_TTL
     - DESECSTACK_NS
+    - DESECSTACK_NSLORD_KNOT_IMPORT_DIR=/knot-import
     - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
     - FAKETIME_NO_CACHE=1
     volumes:
     - faketime:/etc/faketime/:ro
+    - knot-import:/knot-import
 
   test-e2e2:
     build: test/e2e2

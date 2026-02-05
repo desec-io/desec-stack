@@ -78,6 +78,7 @@ class BaseChangeTracker(ABC):
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
+        self._rr_deleted_records = {}
         self._domain_nslord = {}
         self.transaction = None
 
@@ -124,6 +125,7 @@ class BaseChangeTracker(ABC):
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
+        self._rr_deleted_records = {}
         self._domain_nslord = {}
         self._manage_signals("connect")
         self.transaction = atomic()
@@ -238,7 +240,7 @@ class BaseChangeTracker(ABC):
 
     @abstractmethod
     def _update_rrsets_change(
-        self, domain_name, additions, modifications, deletions, nslord
+        self, domain_name, additions, modifications, deletions, deleted_records, nslord
     ):
         raise NotImplementedError()
 
@@ -296,9 +298,15 @@ class BaseChangeTracker(ABC):
             }
 
             if additions | modifications | deletions:
+                deleted_records = self._rr_deleted_records.get(domain_name, {})
                 changes.append(
                     self._update_rrsets_change(
-                        domain_name, additions, modifications, deletions, nslord
+                        domain_name,
+                        additions,
+                        modifications,
+                        deletions,
+                        deleted_records,
+                        nslord,
                     )
                 )
 
@@ -379,7 +387,13 @@ class BaseChangeTracker(ABC):
     # noinspection PyUnusedLocal
     def _on_rr_post_delete(self, signal, sender, instance: RR, using, **kwargs):
         try:
-            self._rr_set_updated(instance.rrset)
+            rrset = instance.rrset
+            domain_name = rrset.domain.name
+            key = (rrset.type, rrset.subname)
+            self._rr_deleted_records.setdefault(domain_name, {}).setdefault(
+                key, set()
+            ).add(instance.content)
+            self._rr_set_updated(rrset)
         except RRset.DoesNotExist:
             pass
 
@@ -492,11 +506,14 @@ class PDNSChangeTracker(BaseChangeTracker):
             return "Delete Domain %s" % self.domain_name
 
     class CreateUpdateDeleteRRSets(PDNSChange):
-        def __init__(self, domain_name, additions, modifications, deletions):
+        def __init__(
+            self, domain_name, additions, modifications, deletions, deleted_records
+        ):
             super().__init__(domain_name)
             self._additions = additions
             self._modifications = modifications
             self._deletions = deletions
+            self._deleted_records = deleted_records
 
         @property
         def axfr_required(self):
@@ -559,10 +576,10 @@ class PDNSChangeTracker(BaseChangeTracker):
         return PDNSChangeTracker.DeleteDomain(domain_name)
 
     def _update_rrsets_change(
-        self, domain_name, additions, modifications, deletions, nslord
+        self, domain_name, additions, modifications, deletions, deleted_records, nslord
     ):
         return PDNSChangeTracker.CreateUpdateDeleteRRSets(
-            domain_name, additions, modifications, deletions
+            domain_name, additions, modifications, deletions, deleted_records
         )
 
 
@@ -580,7 +597,15 @@ class KnotChangeTracker(BaseChangeTracker):
             return True
 
         def nslord_do(self):
+            if self._create_payload:
+                knot.prepare_csk_key(
+                    self.domain_name,
+                    dnskey=self._create_payload["dnskey"],
+                    private_key=self._create_payload["private_key"],
+                )
             knot.create_zone(self.domain_name)
+            if self._create_payload:
+                knot.wait_for_csk_key_ready(self.domain_name)
             knot.ensure_default_ns(self.domain_name)
             if self._create_payload:
                 knot.import_csk_key(
@@ -628,11 +653,14 @@ class KnotChangeTracker(BaseChangeTracker):
             return "Delete Domain %s" % self.domain_name
 
     class CreateUpdateDeleteRRSets(KnotChange):
-        def __init__(self, domain_name, additions, modifications, deletions):
+        def __init__(
+            self, domain_name, additions, modifications, deletions, deleted_records
+        ):
             super().__init__(domain_name)
             self._additions = additions
             self._modifications = modifications
             self._deletions = deletions
+            self._deleted_records = deleted_records
 
         @property
         def axfr_required(self):
@@ -640,7 +668,11 @@ class KnotChangeTracker(BaseChangeTracker):
 
         def nslord_do(self):
             knot.update_rrsets(
-                self.domain_name, self._additions, self._modifications, self._deletions
+                self.domain_name,
+                self._additions,
+                self._modifications,
+                self._deletions,
+                self._deleted_records,
             )
 
         def __str__(self):
@@ -661,10 +693,10 @@ class KnotChangeTracker(BaseChangeTracker):
         return KnotChangeTracker.DeleteDomain(domain_name)
 
     def _update_rrsets_change(
-        self, domain_name, additions, modifications, deletions, nslord
+        self, domain_name, additions, modifications, deletions, deleted_records, nslord
     ):
         return KnotChangeTracker.CreateUpdateDeleteRRSets(
-            domain_name, additions, modifications, deletions
+            domain_name, additions, modifications, deletions, deleted_records
         )
 
 
@@ -681,8 +713,8 @@ class NSLordChangeTracker(BaseChangeTracker):
         return self._backend(nslord).DeleteDomain(domain_name)
 
     def _update_rrsets_change(
-        self, domain_name, additions, modifications, deletions, nslord
+        self, domain_name, additions, modifications, deletions, deleted_records, nslord
     ):
         return self._backend(nslord).CreateUpdateDeleteRRSets(
-            domain_name, additions, modifications, deletions
+            domain_name, additions, modifications, deletions, deleted_records
         )

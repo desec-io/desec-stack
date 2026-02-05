@@ -27,27 +27,30 @@ acl:
     address: [${DESECSTACK_IPV4_REAR_PREFIX16}.0.130, ${DESECSTACK_IPV4_REAR_PREFIX16}.1.12, ${DESECSTACK_IPV4_REAR_PREFIX16}.4.3, ${DESECSTACK_IPV4_REAR_PREFIX16}.7.3]
     action: transfer
 
+policy:
+  - id: manual
+    manual: off
+    dnskey-management: incremental
+    nsec3: on
+    nsec3-iterations: 0
+    nsec3-salt-length: 0
+    single-type-signing: on
+    algorithm: ecdsap256sha256
+    cds-digest-type: sha384
+    delete-delay: 1h
+    cds-cdnskey-publish: always
+
 template:
   - id: nslord-member
     storage: /var/lib/knot
     file: "%s.zone"
     acl: [api-update, nsmaster-xfr]
     dnssec-signing: on
-    dnssec-policy: default
-    serial-policy: unixtime
+    dnssec-policy: manual
+    serial-policy: increment
     journal-content: all
     zonefile-load: difference
     zonefile-sync: 0
-
-policy:
-  - id: default
-    nsec3: on
-    nsec3-iterations: 0
-    nsec3-salt-length: 0
-    single-type-signing: on
-    algorithm: ecdsap256sha256
-    dnskey-management: incremental
-    delete-delay: 1h
 
 zone:
   - domain: catalog.internal

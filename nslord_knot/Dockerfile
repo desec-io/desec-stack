@@ -1,5 +1,5 @@
 ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}cznic/knot:v3.3.4
+FROM ${DOCKER_REGISTRY}cznic/knot:3.5
 
 RUN set -ex \
     && apt-get update \
