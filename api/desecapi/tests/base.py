@@ -34,6 +34,8 @@ from desecapi.models.records import (
 )
 from .matchers import body_matcher
 
+MOCK_KNOT_SOA_CONTENT = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
+
 
 class DesecAPIClient(APIClient):
     @staticmethod
@@ -1239,6 +1241,9 @@ class MockKnotDNSMixin:
             self._knot_updates.append(message)
             return self._knot_response_noerror()
 
+        if message.question and message.question[0].rdtype == dns.rdatatype.SOA:
+            return self._knot_soa_response(message)
+
         if message.question and message.question[0].rdtype == dns.rdatatype.DNSKEY:
             self._knot_queries.append(message)
             return self._knot_dnskey_response(message)
@@ -1278,6 +1283,18 @@ class MockKnotDNSMixin:
             dns.rdataclass.IN,
             dns.rdatatype.DNSKEY,
             dnskey,
+        )
+        response.answer.append(rrset)
+        return response
+
+    def _knot_soa_response(self, message):
+        response = dns.message.make_response(message)
+        rrset = dns.rrset.from_text(
+            message.question[0].name,
+            3600,
+            dns.rdataclass.IN,
+            dns.rdatatype.SOA,
+            MOCK_KNOT_SOA_CONTENT,
         )
         response.answer.append(rrset)
         return response

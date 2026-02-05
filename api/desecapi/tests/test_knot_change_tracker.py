@@ -593,7 +593,15 @@ class DomainTestCase(KnotChangeTrackerTestCase):
     def test_create(self):
         name = self.random_domain_name()
         with (
-            self.assertKnotUpdates([(settings.CATALOG_ZONE, None)]),
+            self.assertKnotUpdates(
+                [
+                    (settings.CATALOG_ZONE, None),
+                    (
+                        name,
+                        {("NS", "", settings.DEFAULT_NS_TTL): settings.DEFAULT_NS},
+                    ),
+                ]
+            ),
             self.assertRequests(self.requests_desec_domain_creation_knot(name=name)),
             KnotChangeTracker(),
         ):

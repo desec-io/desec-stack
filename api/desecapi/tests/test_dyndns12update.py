@@ -530,8 +530,9 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         self.my_domain.minimum_ttl = 61
         self.my_domain.save()
 
-        # Test that dynDNS updates work both under a local public suffix (self.my_domain) and for a custom domains
-        for domain in [self.my_domain, self.create_domain(owner=self.owner)]:
+        # Test that dynDNS updates work both under a local public suffix (self.my_domain) and for a custom domain
+        other_domain = self.create_domain(owner=self.owner, minimum_ttl=61)
+        for domain in [self.my_domain, other_domain]:
             self.assertGreater(domain.minimum_ttl, 60)
             self.client.set_credentials_basic_auth(
                 domain.name.lower(), self.token.plain

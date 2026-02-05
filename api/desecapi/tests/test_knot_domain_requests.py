@@ -23,4 +23,4 @@ class KnotDomainQueryTestCase(KnotDesecTestCase):
         _ = self.domain.zonefile
         self.assertEqual(len(self._knot_xfr_calls), 1)
         _, zone = self._knot_xfr_calls[0]
-        self.assertEqual(zone, self.domain.name)
+        self.assertEqual(zone.rstrip("."), self.domain.name.rstrip("."))
