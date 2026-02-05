@@ -324,7 +324,7 @@ def get_keys(domain):
     cds_set = None
     try:
         cds_query = dns.message.make_query(domain.name, dns.rdatatype.CDS)
-        cds_response = dns.query.udp(
+        cds_response = dns.query.tcp(
             cds_query,
             _knot_host_ip(),
             port=settings.NSLORD_KNOT_PORT,
