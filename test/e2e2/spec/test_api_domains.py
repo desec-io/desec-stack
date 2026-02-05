@@ -1,6 +1,11 @@
 import os
 import time
 
+import dns.dnssec
+import dns.name
+import dns.rdata
+import dns.rdataclass
+import dns.rdatatype
 import pytest
 
 from conftest import (
@@ -32,9 +37,23 @@ p6gfsf6t5tvesh74gd38o43u26q8kqes 300 IN NSEC3 1 0 0 - p6gfsf6t5tvesh74gd38o43u26
 p6gfsf6t5tvesh74gd38o43u26q8kqes 300 IN RRSIG NSEC3 13 4 300 20220324000000 20220303000000 8312 @ b3ZfxXKLJrOGVTAqmQeEZSjbT7iYKtyM M6Wl6HilgjYTzWPvpiwpFSrETWWP5A19 wKRmT4Nh6nnbTDalUvXLsQ==
 """
 
+CSK_PRIVATE_KEY = """Private-key-format: v1.3
+Algorithm: 13 (ECDSAP256SHA256)
+PrivateKey: FOeR6PdkK5jxYb87ENYGlhFRFQzMFRpfip6SRdDUWNk=
+"""
+CSK_DNSKEY = "257 3 13 cIf/9k/9kNhBXrVOlxOZifYH1IuxFHCk nMVrrV3j36fQD/4qfLCImMZANXfrTiQx MVU8Tvm5AHCWeUbqEH5v9w=="
+
 
 def ttl(value, min_ttl=int(os.environ['DESECSTACK_MINIMUM_TTL_DEFAULT'])):
     return max(min_ttl, min(86400, value))
+
+
+def _normalize_dnskey(text: str) -> str:
+    parts = text.split()
+    if len(parts) < 4:
+        return text
+    return " ".join(parts[:3] + ["".join(parts[3:])])
+
 
 
 def test_create(
@@ -49,6 +68,41 @@ def test_create(
     assert len(api_user.domain_list()) == 1
     assert_all_nslord(
         assertion=lambda query: query(api_user.domain, 'SOA')[0].serial >= int(time.time()),
+        retry_on=(AssertionError, TypeError),
+    )
+
+
+def test_create_with_csk_private_key(
+    api_user: DeSECAPIV1Client,
+    nslord_param: str | None,
+    nslord_backend: str,
+    assert_all_nslord,
+):
+    name = random_domainname()
+    response = api_user.domain_create(
+        name, nslord=nslord_param, csk_private_key=CSK_PRIVATE_KEY
+    )
+    assert response.status_code == 201
+
+    expected_dnskey = _normalize_dnskey(CSK_DNSKEY)
+    assert_all_nslord(
+        assertion=lambda query: expected_dnskey
+        in {_normalize_dnskey(rr.to_text()) for rr in query(name, 'DNSKEY')},
+        retry_on=(AssertionError, TypeError),
+    )
+
+    dnskey_rdata = dns.rdata.from_text(
+        dns.rdataclass.IN, dns.rdatatype.DNSKEY, CSK_DNSKEY
+    )
+    name_obj = dns.name.from_text(name)
+    expected_ds = {
+        dns.dnssec.make_ds(name_obj, dnskey_rdata, algo).to_text()
+        for algo in (2, 4)
+    }
+    assert_all_nslord(
+        assertion=lambda query: expected_ds.issubset(
+            {rr.to_text() for rr in query(name, "CDS")}
+        ),
         retry_on=(AssertionError, TypeError),
     )
 

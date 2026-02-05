@@ -10,6 +10,7 @@ import dns.name
 import dns.query
 import dns.rcode
 import dns.rdtypes.ANY.DNSKEY
+import dns.rdata
 import dns.rdatatype
 import dns.tsig
 import dns.tsigkeyring
@@ -180,6 +181,26 @@ def ensure_default_ns(name):
     update = _new_update(name)
     apex = name.rstrip(".") + "."
     update.replace(apex, settings.DEFAULT_NS_TTL, "NS", *settings.DEFAULT_NS)
+    _send_update_with_retry(update)
+
+
+def import_csk_key(name, *, dnskey, private_key=None):
+    if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
+        raise KnotException(f"Knot zone {name} not ready for updates")
+    update = _new_update(name)
+    apex = name.rstrip(".") + "."
+    update.add(apex, settings.DEFAULT_NS_TTL, "DNSKEY", dnskey)
+    try:
+        key_rdata = dns.rdata.from_text(
+            dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey
+        )
+        cds_records = [
+            dns.dnssec.make_ds(dns.name.from_text(name), key_rdata, algo).to_text()
+            for algo in (2, 4)
+        ]
+        update.replace(apex, 0, "CDS", *cds_records)
+    except Exception:
+        pass
     _send_update_with_retry(update)
 
 
