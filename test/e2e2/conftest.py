@@ -266,6 +266,15 @@ class DeSECAPIV1Client:
         self.domains.pop(name)
         return response
 
+    def domain_move_nslord(self, name, nslord) -> requests.Response:
+        if name not in self.domains:
+            raise ValueError
+        response = self.post(f"/domains/{name}/nslord/", data={"nslord": nslord})
+        if response.ok:
+            self.domains[name].update(response.json())
+            self.domains[name]["nslord"] = nslord
+        return response
+
     def rr_set_create(self, domain_name: str, rr_type: str, records: Iterable[str], subname: str = '',
                       ttl: int = 3600) -> requests.Response:
         return self.post(

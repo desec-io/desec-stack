@@ -10,6 +10,8 @@ import pytest
 
 from conftest import (
     DeSECAPIV1Client,
+    NSLordClient,
+    NSLordKnotClient,
     random_domainname,
     FaketimeShift,
 )
@@ -212,3 +214,72 @@ def test_export(api_user_domain: DeSECAPIV1Client):
                     f"{api_user_domain.domain}.	{DEFAULT_TTL}	IN	NS	{name}."
                     for name in os.environ["DESECSTACK_NS"].split(" ")
                }
+
+
+def _normalized_dnskeys(query, domain: str):
+    return {_normalize_dnskey(rr.to_text()) for rr in query(domain, "DNSKEY")}
+
+
+def _cds_set(query, domain: str):
+    return {rr.to_text() for rr in query(domain, "CDS")}
+
+
+def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
+    name = random_domainname()
+    assert (
+        api_user.domain_create(name, csk_private_key=CSK_PRIVATE_KEY).status_code == 201
+    )
+    assert api_user.rr_set_create(name, "A", ["1.2.3.4"]).status_code == 201
+    assert api_user.rr_set_create(name, "TXT", ['"hello"']).status_code == 201
+
+    old_serial = NSLordClient.query(name, "SOA")[0].serial
+    old_keys = _normalized_dnskeys(NSLordClient.query, name)
+    old_cds = _cds_set(NSLordClient.query, name)
+
+    response = api_user.domain_move_nslord(name, "knot")
+    assert response.status_code == 200
+
+    new_serial = NSLordKnotClient.query(name, "SOA")[0].serial
+    assert new_serial >= old_serial
+    assert _normalized_dnskeys(NSLordKnotClient.query, name) == old_keys
+    assert _cds_set(NSLordKnotClient.query, name) == old_cds
+
+    api_user.assert_rrsets(
+        {
+            ("", "A"): (DEFAULT_TTL, {"1.2.3.4"}),
+            ("", "TXT"): (DEFAULT_TTL, {'"hello"'}),
+        },
+        via_api=False,
+    )
+
+
+def test_move_knot_to_pdns(api_user: DeSECAPIV1Client):
+    name = random_domainname()
+    assert (
+        api_user.domain_create(
+            name, nslord="knot", csk_private_key=CSK_PRIVATE_KEY
+        ).status_code
+        == 201
+    )
+    assert api_user.rr_set_create(name, "A", ["5.6.7.8"]).status_code == 201
+    assert api_user.rr_set_create(name, "TXT", ['"world"']).status_code == 201
+
+    old_serial = NSLordKnotClient.query(name, "SOA")[0].serial
+    old_keys = _normalized_dnskeys(NSLordKnotClient.query, name)
+    old_cds = _cds_set(NSLordKnotClient.query, name)
+
+    response = api_user.domain_move_nslord(name, "pdns")
+    assert response.status_code == 200
+
+    new_serial = NSLordClient.query(name, "SOA")[0].serial
+    assert new_serial >= old_serial
+    assert _normalized_dnskeys(NSLordClient.query, name) == old_keys
+    assert _cds_set(NSLordClient.query, name) == old_cds
+
+    api_user.assert_rrsets(
+        {
+            ("", "A"): (DEFAULT_TTL, {"5.6.7.8"}),
+            ("", "TXT"): (DEFAULT_TTL, {'"world"'}),
+        },
+        via_api=False,
+    )

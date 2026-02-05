@@ -11,7 +11,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from desecapi import permissions
+from desecapi import dnssec, knot, nslord, pdns, permissions
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import NSLordChangeTracker
@@ -48,6 +48,9 @@ class DomainViewSet(
                     ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.WithinDomainLimit)
                 case "destroy":
+                    ret.append(permissions.HasDeleteDomainPermission)
+                case "nslord":
+                    ret.append(permissions.HasCreateDomainPermission)
                     ret.append(permissions.HasDeleteDomainPermission)
                 case _:
                     raise ValueError(f"Invalid action: {self.action}")
@@ -135,6 +138,52 @@ class DomainViewSet(
         instance = self.get_object()
         prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
         return Response(prefix + instance.zonefile, content_type="text/dns")
+
+    @action(detail=True, methods=["post"])
+    def nslord(self, request, name=None):
+        domain = self.get_object()
+        target = request.data.get("nslord")
+        if target not in Domain.NSLord.values:
+            raise ValidationError({"nslord": ["Invalid nslord value."]})
+        if target == domain.nslord:
+            return Response(self.get_serializer(domain).data)
+
+        private_key = nslord.get_csk_private_key(domain)
+        if not private_key:
+            raise ValidationError({"nslord": ["No CSK private key available."]})
+        if domain.get_csk_private_key() is None:
+            domain.set_csk_private_key(private_key)
+        dnskey = dnssec.parse_csk_private_key(private_key)["dnskey"]
+        zonefile = nslord.get_zonefile_without_dnssec(domain).decode()
+        rrsets = nslord.zonefile_to_rrsets(domain.name, zonefile)
+
+        if target == Domain.NSLord.PDNS:
+            pdns.create_zone_lord(domain.name)
+            pdns.import_csk_key(domain.name, dnskey=dnskey, private_key=private_key)
+            pdns.import_zonefile_rrsets(domain.name, rrsets)
+        else:
+            knot.create_zone(domain.name)
+            knot.ensure_default_ns(domain.name)
+            knot.import_csk_key(domain.name, dnskey=dnskey, private_key=private_key)
+            knot.import_zonefile_rrsets(domain.name, rrsets)
+
+        pdns.delete_zone_master(domain.name)
+        master_host = (
+            settings.NSLORD_KNOT_HOST if target == Domain.NSLord.KNOT else "nslord"
+        )
+        pdns.create_zone_master(domain.name, master_host=master_host)
+        pdns.axfr_to_master(domain.name)
+
+        old_nslord = domain.nslord
+        domain.nslord = target
+        domain.save(update_fields=["nslord"])
+
+        if old_nslord == Domain.NSLord.PDNS:
+            pdns.delete_zone_lord(domain.name)
+        else:
+            knot.delete_zone(domain.name)
+
+        return Response(self.get_serializer(domain).data)
 
 
 class SerialListView(APIView):

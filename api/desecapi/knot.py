@@ -294,6 +294,19 @@ def update_rrsets(domain_name, additions, modifications, deletions):
             raise update_done["error"]
 
 
+def import_zonefile_rrsets(name, rrsets):
+    if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
+        raise KnotException(f"Knot zone {name} not ready for updates")
+    update = _new_update(name)
+    for rrset in rrsets:
+        if not rrset["records"]:
+            continue
+        update.replace(
+            rrset["name"], rrset["ttl"], rrset["type"], *rrset["records"]
+        )
+    _send_update_with_retry(update)
+
+
 def get_zonefile(domain) -> bytes:
     keyring, keyname, keyalgorithm = _transfer_keyring()
     zone_name = domain.name.rstrip(".") + "."
