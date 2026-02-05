@@ -45,11 +45,9 @@ def test_redirects(api_anon, protocol, hostname):
         expected_locations.append(f'https://{hostname}/')
     if hostname.startswith('www.'):
         expected_locations.append('{}://{}/'.format(protocol, hostname.removeprefix('www.')))
-    verify = hostname == f'dedyn.{os.environ["DESECSTACK_DOMAIN"]}'
     response = api_anon.get(
         f'{protocol}://{hostname}/',
         allow_redirects=False,
-        verify=verify,
     )
     assert response.headers['Location'] in expected_locations
 
