@@ -3,6 +3,7 @@ import dns.zone
 from django.conf import settings
 from rest_framework import serializers
 
+from desecapi import dnssec
 from desecapi.models import Domain, RR_SET_TYPES_AUTOMATIC
 from desecapi.validators import ReadOnlyOnUpdateValidator
 
@@ -15,6 +16,7 @@ class DomainSerializer(serializers.ModelSerializer):
         "name_unavailable": "This domain name conflicts with an existing domain, or is disallowed by policy.",
     }
     zonefile = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    csk_private_key = serializers.CharField(write_only=True, required=False)
     nslord = serializers.ChoiceField(
         choices=Domain.NSLord.choices, required=False, write_only=True
     )
@@ -29,6 +31,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "minimum_ttl",
             "touched",
             "zonefile",
+            "csk_private_key",
             "nslord",
         )
         read_only_fields = (
@@ -42,6 +45,7 @@ class DomainSerializer(serializers.ModelSerializer):
     def __init__(self, *args, include_keys=False, **kwargs):
         self.include_keys = include_keys
         self.import_zone = None
+        self._csk_private_key_data = None
         super().__init__(*args, **kwargs)
 
     def get_fields(self):
@@ -100,11 +104,32 @@ class DomainSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs.get("zonefile") is not None:
             self.parse_zonefile(attrs.get("name"), attrs.pop("zonefile"))
+        if attrs.get("csk_private_key") is not None:
+            private_key = attrs.get("csk_private_key")
+            if not private_key.strip():
+                raise serializers.ValidationError(
+                    {"csk_private_key": ["Missing private key material."]}
+                )
+            try:
+                parsed = dnssec.parse_csk_private_key(private_key)
+            except ValueError as exc:
+                raise serializers.ValidationError(
+                    {"csk_private_key": [str(exc)]}
+                ) from exc
+            self._csk_private_key_data = {
+                "private_key": private_key,
+                "dnskey": parsed["dnskey"],
+                "algorithm": parsed["algorithm"],
+            }
         return super().validate(attrs)
 
     def create(self, validated_data):
+        validated_data.pop("csk_private_key", None)
         # save domain
-        domain: Domain = super().create(validated_data)
+        domain = Domain(**validated_data)
+        if self._csk_private_key_data is not None:
+            domain._csk_private_key_data = self._csk_private_key_data
+        domain.save()
 
         # save RRsets if zonefile was given
         nodes = getattr(self.import_zone, "nodes", None)

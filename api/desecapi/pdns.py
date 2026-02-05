@@ -166,6 +166,22 @@ def get_keys(domain):
     ]
 
 
+def list_cryptokeys(domain_name):
+    return _pdns_get(NSLORD, "/zones/%s/cryptokeys" % pdns_id(domain_name)).json()
+
+
+def set_cryptokey_active(domain_name, key_id, active):
+    _pdns_put(
+        NSLORD,
+        "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id),
+        data={"active": bool(active)},
+    )
+
+
+def delete_cryptokey(domain_name, key_id):
+    _pdns_delete(NSLORD, "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id))
+
+
 def get_zone(domain):
     """
     Retrieves a dict representation of the zone from pdns
@@ -262,6 +278,37 @@ def create_zone_master(name, master_host="nslord"):
     )
 
 
+def import_csk_key(name, *, dnskey, private_key):
+    response = _pdns_post(
+        NSLORD,
+        "/zones/%s/cryptokeys" % pdns_id(name),
+        {
+            "keytype": "csk",
+            "active": True,
+            "published": True,
+            "content": private_key,
+        },
+    )
+    cryptokey = response.json()
+    imported_id = cryptokey.get("id")
+    keys = list_cryptokeys(name)
+    if imported_id is None:
+        for key in keys:
+            if key.get("dnskey") == dnskey:
+                imported_id = key.get("id")
+                break
+    if imported_id is None:
+        return cryptokey
+    for key in keys:
+        if key.get("id") == imported_id:
+            if not key.get("active", False):
+                set_cryptokey_active(name, imported_id, True)
+            continue
+        delete_cryptokey(name, key["id"])
+    rectify_zone(name)
+    return cryptokey
+
+
 def delete_zone(name, server):
     _pdns_delete(server, "/zones/" + pdns_id(name))
 
@@ -280,6 +327,10 @@ def update_zone(name, data):
 
 def axfr_to_master(zone):
     _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
+
+
+def rectify_zone(name):
+    _pdns_put(NSLORD, "/zones/%s/rectify" % pdns_id(name))
 
 
 def construct_catalog_rrset(

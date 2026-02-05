@@ -241,7 +241,9 @@ class DeSECAPIV1Client:
     def domain_list(self) -> requests.Response:
         return self.get("/domains/").json()
 
-    def domain_create(self, name, zonefile=None, nslord=None) -> requests.Response:
+    def domain_create(
+        self, name, zonefile=None, nslord=None, csk_private_key=None
+    ) -> requests.Response:
         if name in self.domains:
             raise ValueError
         data = {"name": name}
@@ -249,6 +251,8 @@ class DeSECAPIV1Client:
             data['zonefile'] = zonefile
         if nslord is not None:
             data['nslord'] = nslord
+        if csk_private_key is not None:
+            data['csk_private_key'] = csk_private_key
         response = self.post("/domains/", data=data)
         self.domains[name] = response.json()
         if nslord is not None:

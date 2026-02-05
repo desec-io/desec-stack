@@ -74,6 +74,7 @@ class BaseChangeTracker(ABC):
     def __init__(self):
         self._domain_additions = set()
         self._domain_deletions = set()
+        self._domain_create_payload = {}
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
@@ -119,6 +120,7 @@ class BaseChangeTracker(ABC):
         )
         self._domain_additions = set()
         self._domain_deletions = set()
+        self._domain_create_payload = {}
         self._rr_set_additions = {}
         self._rr_set_modifications = {}
         self._rr_set_deletions = {}
@@ -227,7 +229,7 @@ class BaseChangeTracker(ABC):
         return nslord or Domain.NSLord.PDNS
 
     @abstractmethod
-    def _create_domain_change(self, domain_name, nslord):
+    def _create_domain_change(self, domain_name, nslord, create_payload):
         raise NotImplementedError()
 
     @abstractmethod
@@ -258,7 +260,10 @@ class BaseChangeTracker(ABC):
         for domain_name in self._rr_set_additions.keys() | self._domain_additions:
             nslord = self._nslord_for_domain(domain_name)
             if domain_name in self._domain_additions:
-                changes.append(self._create_domain_change(domain_name, nslord))
+                create_payload = self._domain_create_payload.get(domain_name)
+                changes.append(
+                    self._create_domain_change(domain_name, nslord, create_payload)
+                )
 
             additions = self._rr_set_additions.get(domain_name, set())
             modifications = self._rr_set_modifications.get(domain_name, set())
@@ -356,6 +361,9 @@ class BaseChangeTracker(ABC):
                 deletions.remove(name)
             else:
                 additions.add(name)
+                create_payload = getattr(domain, "_csk_private_key_data", None)
+                if create_payload:
+                    self._domain_create_payload[name] = create_payload
         elif deleted:
             if name in additions:
                 additions.remove(name)
@@ -430,12 +438,22 @@ class PDNSChangeTracker(BaseChangeTracker):
             self.nslord_do()
 
     class CreateDomain(PDNSChange):
+        def __init__(self, domain_name, create_payload=None):
+            super().__init__(domain_name)
+            self._create_payload = create_payload or {}
+
         @property
         def axfr_required(self):
             return True
 
         def nslord_do(self):
             pdns.create_zone_lord(self.domain_name)
+            if self._create_payload:
+                pdns.import_csk_key(
+                    self.domain_name,
+                    dnskey=self._create_payload["dnskey"],
+                    private_key=self._create_payload["private_key"],
+                )
             pdns.create_zone_master(self.domain_name)
             pdns.update_catalog(self.domain_name)
 
@@ -534,8 +552,8 @@ class PDNSChangeTracker(BaseChangeTracker):
                 )
             )
 
-    def _create_domain_change(self, domain_name, nslord):
-        return PDNSChangeTracker.CreateDomain(domain_name)
+    def _create_domain_change(self, domain_name, nslord, create_payload):
+        return PDNSChangeTracker.CreateDomain(domain_name, create_payload)
 
     def _delete_domain_change(self, domain_name, nslord):
         return PDNSChangeTracker.DeleteDomain(domain_name)
@@ -553,6 +571,10 @@ class KnotChangeTracker(BaseChangeTracker):
         pass
 
     class CreateDomain(KnotChange):
+        def __init__(self, domain_name, create_payload=None):
+            super().__init__(domain_name)
+            self._create_payload = create_payload or {}
+
         @property
         def axfr_required(self):
             return True
@@ -560,6 +582,12 @@ class KnotChangeTracker(BaseChangeTracker):
         def nslord_do(self):
             knot.create_zone(self.domain_name)
             knot.ensure_default_ns(self.domain_name)
+            if self._create_payload:
+                knot.import_csk_key(
+                    self.domain_name,
+                    dnskey=self._create_payload["dnskey"],
+                    private_key=self._create_payload["private_key"],
+                )
             pdns.create_zone_master(
                 self.domain_name, master_host=settings.NSLORD_KNOT_HOST
             )
@@ -626,8 +654,8 @@ class KnotChangeTracker(BaseChangeTracker):
                 )
             )
 
-    def _create_domain_change(self, domain_name, nslord):
-        return KnotChangeTracker.CreateDomain(domain_name)
+    def _create_domain_change(self, domain_name, nslord, create_payload):
+        return KnotChangeTracker.CreateDomain(domain_name, create_payload)
 
     def _delete_domain_change(self, domain_name, nslord):
         return KnotChangeTracker.DeleteDomain(domain_name)
@@ -646,8 +674,8 @@ class NSLordChangeTracker(BaseChangeTracker):
             return KnotChangeTracker
         return PDNSChangeTracker
 
-    def _create_domain_change(self, domain_name, nslord):
-        return self._backend(nslord).CreateDomain(domain_name)
+    def _create_domain_change(self, domain_name, nslord, create_payload):
+        return self._backend(nslord).CreateDomain(domain_name, create_payload)
 
     def _delete_domain_change(self, domain_name, nslord):
         return self._backend(nslord).DeleteDomain(domain_name)
