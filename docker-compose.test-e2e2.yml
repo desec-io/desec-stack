@@ -9,16 +9,20 @@ services:
   api:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    - DESECSTACK_NSLORD_KNOT_HOST=${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
+    - DESECSTACK_NSLORD_KNOT_IMPORT_DIR=/knot-import
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
     - FAKETIME_NO_CACHE=1
     volumes:
     - faketime:/etc/faketime/:ro
+    - knot-import:/knot-import
 
   celery-email:
     environment:
     - DESECSTACK_E2E_TEST=TRUE # increase abuse limits and such
+    - DESECSTACK_NSLORD_KNOT_HOST=${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
@@ -47,6 +51,27 @@ services:
       front:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.130  # make available for test-e2e
 
+  nslord_knot:
+    networks:
+      front:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.0.131  # make available for test-e2e2
+      rearapi_ns:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.13
+    # faketime setup (match nslord container)
+    environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET
+    - DESECSTACK_NSMASTER_TSIGKEY
+    - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NS
+    - DESECSTACK_NSLORD_KNOT_IMPORT_DIR=/knot-import
+    - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1
+    - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
+    - FAKETIME_NO_CACHE=1
+    volumes:
+    - faketime:/etc/faketime/:ro
+    - knot-import:/knot-import
+
   test-e2e2:
     build: test/e2e2
     restart: "no"
@@ -60,6 +85,7 @@ services:
     - DESECSTACK_MINIMUM_TTL_DEFAULT
     - DESECSTACK_NSMASTER_TSIGKEY
     - DESECSTACK_E2E2_SECONDARY_NS=${DESECSTACK_IPV4_REAR_PREFIX16}.0.130
+    - DESECSTACK_E2E2_KNOT_NS=${DESECSTACK_IPV4_REAR_PREFIX16}.0.131
     # faketime setup
     - LD_PRELOAD=/lib/libfaketime.so
     - FAKETIME_TIMESTAMP_FILE=/etc/faketime/faketime.rc
@@ -71,6 +97,7 @@ services:
     depends_on:
     - www
     - nslord
+    - nslord_knot
     - nsmaster
     networks:
       front:

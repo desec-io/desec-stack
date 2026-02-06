@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -f ./.env ] ; then
+    source ../../.env
+fi
+
+TIME=0
+LIMIT=${1:-3}  # getting limit or default to 3 [sic]
+HOST=${DESECSTACK_E2E2_KNOT_NS:-${DESECSTACK_IPV4_REAR_PREFIX16}.0.131}
+PORT=${KNOTWAIT_PORT:-53}
+
+until nc -z -w 1 "${HOST}" "${PORT}" > /dev/null 2> /dev/null
+do
+    sleep 1
+    ((TIME+=1))
+
+    if [ $TIME -gt $LIMIT ]; then
+        echo "waited $LIMIT seconds for knot at ${HOST}:${PORT}, giving up" > /dev/stderr
+        exit 1
+    fi
+done
+
+echo "knot came up at ${HOST}:${PORT} after $TIME seconds:"

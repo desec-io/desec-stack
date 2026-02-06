@@ -2,6 +2,7 @@ import logging
 import pprint
 
 import django.utils.log
+from django.apps import apps as django_apps
 from celery import Celery
 from celery.signals import task_failure
 
@@ -26,8 +27,23 @@ def debug_task(self):
     print("Request: {0!r}".format(self.request))
 
 
+logger = logging.getLogger(__name__)
+
+
+def _configure_logger():
+    if getattr(_configure_logger, "configured", False):
+        return
+    if not django_apps.ready:
+        return
+    handler = django.utils.log.AdminEmailHandler()
+    handler.setFormatter(CeleryFormatter())
+    logger.addHandler(handler)
+    _configure_logger.configured = True
+
+
 @task_failure.connect()
 def task_failure(task_id, exception, args, kwargs, traceback, einfo, **other_kwargs):
+    _configure_logger()
     try:
         sender = other_kwargs.get("sender").name
     except AttributeError:
@@ -49,7 +65,6 @@ def task_failure(task_id, exception, args, kwargs, traceback, einfo, **other_kwa
     )
 
 
-django.setup()
 logger = logging.getLogger(__name__)
 handler = django.utils.log.AdminEmailHandler()
 handler.setFormatter(CeleryFormatter())

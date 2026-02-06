@@ -45,7 +45,10 @@ def test_redirects(api_anon, protocol, hostname):
         expected_locations.append(f'https://{hostname}/')
     if hostname.startswith('www.'):
         expected_locations.append('{}://{}/'.format(protocol, hostname.removeprefix('www.')))
-    response = api_anon.get(f'{protocol}://{hostname}/', allow_redirects=False)
+    response = api_anon.get(
+        f'{protocol}://{hostname}/',
+        allow_redirects=False,
+    )
     assert response.headers['Location'] in expected_locations
 
 

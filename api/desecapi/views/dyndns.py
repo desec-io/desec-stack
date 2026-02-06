@@ -17,7 +17,7 @@ from desecapi.authentication import (
 )
 from desecapi.exceptions import ConcurrencyException
 from desecapi.models import Domain, RR, replace_ip_subnet
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 from desecapi.permissions import IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import RRsetSerializer
@@ -290,7 +290,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
             ):
                 raise ConcurrencyException from e
             raise e
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             serializer.save()
 
         return Response("good", content_type="text/plain")
