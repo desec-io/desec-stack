@@ -19,7 +19,7 @@ for run in $(seq 1 "${RUNS}"); do
   {
     ${COMPOSE} down -v --remove-orphans
     ${COMPOSE} build api nslord_knot test-e2e2
-    ${COMPOSE} run --rm -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --maxfail=10 --skip-performance-tests -k 'knot' ."
+    ${COMPOSE} run --rm -T test-e2e2 sh -c "./apiwait 300 && ./knotwait 300 && python3 -m pytest -vv --maxfail=10 --skip-performance-tests -k 'knot' ."
     ${COMPOSE} down -v --remove-orphans
   } 2>&1 | tee "${log_file}"
   run_status=${PIPESTATUS[0]}

@@ -1,7 +1,12 @@
 import logging
 
+import dns.message
 import dns.name
+import dns.query
+import dns.rdataclass
+import dns.rdatatype
 import dns.zone
+from django.conf import settings
 
 from desecapi import knot, pdns
 from desecapi.exceptions import KnotException
@@ -74,8 +79,8 @@ def rrsets_to_zonefile(domain_name: str, rrsets) -> str:
         ttl = rrset["ttl"]
         rtype = rrset["type"]
         for record in rrset["records"]:
-            lines.append(f\"{name}\\t{ttl}\\tIN\\t{rtype}\\t{record}\")
-    return \"\\n\".join(lines) + \"\\n\"
+            lines.append(f"{name}\t{ttl}\tIN\t{rtype}\t{record}")
+    return "\n".join(lines) + "\n"
 
 
 def get_csk_private_key(domain):
@@ -83,3 +88,31 @@ def get_csk_private_key(domain):
         return domain.get_csk_private_key()
     private_key = pdns.get_csk_private_key(domain.name)
     return private_key or domain.get_csk_private_key()
+
+
+def get_soa_serial(domain):
+    name = domain.name.rstrip(".") + "."
+    if getattr(domain, "nslord", None) == "knot":
+        host = settings.NSLORD_KNOT_HOST
+        port = settings.NSLORD_KNOT_PORT
+        timeout = settings.NSLORD_KNOT_TIMEOUT
+    else:
+        host = "nslord"
+        port = 53
+        timeout = 5
+    query = dns.message.make_query(name, dns.rdatatype.SOA)
+    host = pdns.gethostbyname_cached(host)
+    try:
+        response = dns.query.tcp(query, host, port=port, timeout=timeout)
+    except Exception:
+        logger.warning("SOA serial query failed for %s", name, exc_info=True)
+        return None
+    rrset = response.get_rrset(
+        dns.message.ANSWER,
+        dns.name.from_text(name),
+        dns.rdataclass.IN,
+        dns.rdatatype.SOA,
+    )
+    if rrset is None:
+        return None
+    return rrset[0].serial

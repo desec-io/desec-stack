@@ -1,5 +1,5 @@
 ARG DOCKER_REGISTRY
-FROM ${DOCKER_REGISTRY}cznic/knot:v3.3.4
+FROM ${DOCKER_REGISTRY}cznic/knot:3.5
 
 RUN set -ex \
     && apt-get update \
@@ -10,7 +10,7 @@ RUN set -ex \
 RUN mkdir -p /etc/knot /var/lib/knot
 COPY conf/ /etc/knot/
 COPY entrypoint.sh /usr/local/bin/
-COPY catalog-watch.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/catalog-watch.sh
+COPY zone-watch.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/zone-watch.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

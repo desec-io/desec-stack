@@ -1,8 +1,11 @@
 from functools import lru_cache
 from hashlib import sha1
+import logging
+import os
 import socket
 import select
 import threading
+import time
 
 import dns.dnssec
 import dns.message
@@ -23,6 +26,8 @@ from desecapi.exceptions import KnotException
 
 
 DEFAULT_SOA_CONTENT = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
+
+logger = logging.getLogger(__name__)
 
 _TSIG_ALGORITHM_MAP = {
     "hmac-md5": dns.tsig.HMAC_MD5,
@@ -113,6 +118,13 @@ def _send_update(update: dns.update.Update):
     except dns.exception.Timeout as exc:
         raise KnotException("Knot update timed out") from exc
     if response.rcode() != dns.rcode.NOERROR:
+        zone = update.zone
+        zone_text = zone.to_text() if hasattr(zone, "to_text") else str(zone)
+        logger.warning(
+            "Knot update failed for zone=%s rcode=%s",
+            zone_text,
+            dns.rcode.to_text(response.rcode()),
+        )
         raise KnotException(
             f"Knot update failed with rcode {dns.rcode.to_text(response.rcode())}"
         )
@@ -132,6 +144,15 @@ def _send_update_with_retry(
             return
         except KnotException as exc:
             last_exc = exc
+            zone = update.zone
+            zone_text = zone.to_text() if hasattr(zone, "to_text") else str(zone)
+            logger.info(
+                "Knot update retry %d/%d for zone=%s error=%s",
+                attempt + 1,
+                attempts,
+                zone_text,
+                exc,
+            )
             if attempt < attempts - 1 and (
                 any(code in str(exc) for code in retry_rcodes)
                 or "timed out" in str(exc)
@@ -181,15 +202,133 @@ def ensure_default_ns(name):
     update = _new_update(name)
     apex = name.rstrip(".") + "."
     update.replace(apex, settings.DEFAULT_NS_TTL, "NS", *settings.DEFAULT_NS)
-    _send_update_with_retry(update)
+    update.replace(apex, settings.DEFAULT_NS_TTL, "SOA", DEFAULT_SOA_CONTENT)
+    _send_update_with_retry(update, attempts=10, delay_seconds=1.0)
+    if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
+        raise KnotException(f"Knot zone {name} not ready for updates")
+
+
+def _write_bind_keypair(name, dnskey, private_key):
+    import_dir = settings.NSLORD_KNOT_IMPORT_DIR
+    if not import_dir or not private_key:
+        return None
+    zone = name.rstrip(".")
+    key_rdata = dns.rdata.from_text(dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey)
+    key_tag = dns.dnssec.key_id(key_rdata)
+    base = f"K{zone}.+{key_rdata.algorithm:03d}+{key_tag:05d}"
+    zone_dir = os.path.join(import_dir, zone)
+    os.makedirs(zone_dir, exist_ok=True)
+    key_path = os.path.join(zone_dir, f"{base}.key")
+    private_path = os.path.join(zone_dir, f"{base}.private")
+    key_line = f"{zone}. IN DNSKEY {dnskey}\n"
+    with open(key_path, "w", encoding="ascii") as handle:
+        handle.write(key_line)
+    private_content = private_key.rstrip("\n") + "\n"
+    with open(private_path, "w", encoding="ascii") as handle:
+        handle.write(private_content)
+    with open(os.path.join(zone_dir, ".import"), "w", encoding="ascii") as handle:
+        handle.write(str(key_tag))
+    return key_tag
+
+
+def _key_ready_path(name):
+    import_dir = settings.NSLORD_KNOT_IMPORT_DIR
+    if not import_dir:
+        return None
+    zone = name.rstrip(".")
+    return os.path.join(import_dir, zone, ".ready")
+
+
+def prepare_csk_key(name, *, dnskey, private_key=None):
+    if not private_key:
+        return
+    _write_bind_keypair(name, dnskey, private_key)
+
+
+def wait_for_csk_key_ready(name):
+    ready_path = _key_ready_path(name)
+    if not ready_path:
+        return
+    timeout = settings.NSLORD_KNOT_KEY_READY_TIMEOUT
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if os.path.exists(ready_path):
+            return
+        _sleep(0.2)
+    raise KnotException(
+        f"Knot key import not ready for {name} after {timeout} seconds"
+    )
+
+
+def _dnskey_present(name, dnskey):
+    query = dns.message.make_query(name, dns.rdatatype.DNSKEY, want_dnssec=True)
+    response = dns.query.tcp(
+        query,
+        _knot_host_ip(),
+        port=settings.NSLORD_KNOT_PORT,
+        timeout=settings.NSLORD_KNOT_TIMEOUT,
+    )
+    for rrset in response.answer:
+        if rrset.rdtype != dns.rdatatype.DNSKEY:
+            continue
+        for rdata in rrset:
+            if rdata.to_text() == dnskey:
+                return True
+    return False
+
+
+def _wait_for_dnskey(name, dnskey, *, attempts: int = 20, delay_seconds: float = 0.2):
+    for _ in range(attempts):
+        if _dnskey_present(name, dnskey):
+            return True
+        if delay_seconds:
+            _sleep(delay_seconds)
+    return False
+
+
+def _dnskey_set(name):
+    query = dns.message.make_query(name, dns.rdatatype.DNSKEY, want_dnssec=True)
+    response = dns.query.tcp(
+        query,
+        _knot_host_ip(),
+        port=settings.NSLORD_KNOT_PORT,
+        timeout=settings.NSLORD_KNOT_TIMEOUT,
+    )
+    keys = set()
+    for rrset in response.answer:
+        if rrset.rdtype != dns.rdatatype.DNSKEY:
+            continue
+        for rdata in rrset:
+            keys.add(rdata.to_text())
+    return keys
+
+
+def _wait_for_dnskey_set(
+    name, expected, *, attempts: int = 60, delay_seconds: float = 0.5
+):
+    for _ in range(attempts):
+        if _dnskey_set(name) == expected:
+            return True
+        if delay_seconds:
+            _sleep(delay_seconds)
+    return False
 
 
 def import_csk_key(name, *, dnskey, private_key=None):
     if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
+    if private_key:
+        try:
+            key_tag = _write_bind_keypair(name, dnskey, private_key)
+            if key_tag is not None:
+                logger.info("Knot CSK import prepared for %s (keytag %d)", name, key_tag)
+        except Exception:
+            logger.warning("Knot CSK import failed for %s", name, exc_info=True)
     update = _new_update(name)
     apex = name.rstrip(".") + "."
-    update.add(apex, settings.DEFAULT_NS_TTL, "DNSKEY", dnskey)
+    has_changes = False
+    update.replace(apex, settings.DEFAULT_NS_TTL, "DNSKEY", dnskey)
+    has_changes = True
     try:
         key_rdata = dns.rdata.from_text(
             dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey
@@ -198,10 +337,23 @@ def import_csk_key(name, *, dnskey, private_key=None):
             dns.dnssec.make_ds(dns.name.from_text(name), key_rdata, algo).to_text()
             for algo in (2, 4)
         ]
-        update.replace(apex, 0, "CDS", *cds_records)
+        for record in cds_records:
+            update.add(apex, settings.DEFAULT_NS_TTL, "CDS", record)
+        has_changes = True
     except Exception:
         pass
-    _send_update_with_retry(update)
+    if has_changes:
+        _send_update_with_retry(update)
+    if private_key:
+        if not _wait_for_dnskey(name, dnskey):
+            logger.warning("Knot CSK DNSKEY not visible after import for %s", name)
+        expected = {dnskey}
+        if not _wait_for_dnskey_set(name, expected):
+            logger.warning(
+                "Knot CSK DNSKEY set not stabilized for %s: %s",
+                name,
+                _dnskey_set(name),
+            )
 
 
 def wait_for_zone(name, *, attempts=20, interval_seconds=0.5) -> bool:
@@ -241,7 +393,7 @@ def delete_zone(name):
     _send_update(catalog_update)
 
 
-def update_rrsets(domain_name, additions, modifications, deletions):
+def update_rrsets(domain_name, additions, modifications, deletions, deleted_records=None):
     from desecapi.models import RR, RRset
 
     if not wait_for_zone(domain_name, attempts=10, interval_seconds=0.2):
@@ -249,9 +401,16 @@ def update_rrsets(domain_name, additions, modifications, deletions):
 
     update = _new_update(domain_name)
     has_changes = False
+    deleted_records = deleted_records or {}
 
     for type_, subname in deletions:
         rrset_name = RRset.construct_name(subname, domain_name)
+        if type_ == "DNSKEY":
+            records = deleted_records.get((type_, subname), set())
+            if records:
+                update.delete(rrset_name, type_, *records)
+                has_changes = True
+            continue
         update.delete(rrset_name, type_)
         has_changes = True
 
@@ -268,6 +427,15 @@ def update_rrsets(domain_name, additions, modifications, deletions):
                 rrset__subname=subname,
             )
         ]
+        if type_ == "DNSKEY":
+            removed = deleted_records.get((type_, subname), set())
+            if removed:
+                update.delete(rrset_name, type_, *removed)
+                has_changes = True
+            if records:
+                update.add(rrset_name, ttl, type_, *records)
+                has_changes = True
+            continue
         if records:
             update.replace(rrset_name, ttl, type_, *records)
         else:
@@ -297,14 +465,80 @@ def update_rrsets(domain_name, additions, modifications, deletions):
 def import_zonefile_rrsets(name, rrsets):
     if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
+    record_count = 0
+    type_set = set()
     update = _new_update(name)
     for rrset in rrsets:
         if not rrset["records"]:
             continue
-        update.replace(
-            rrset["name"], rrset["ttl"], rrset["type"], *rrset["records"]
+        record_count += len(rrset["records"])
+        type_set.add(rrset["type"])
+        ttl = min(rrset["ttl"], settings.DEFAULT_NS_TTL)
+        update.replace(rrset["name"], ttl, rrset["type"], *rrset["records"])
+    type_list = sorted(type_set)
+    type_preview = ",".join(type_list[:10])
+    if len(type_list) > 10:
+        type_preview = f"{type_preview},...(+{len(type_list) - 10})"
+    logger.info(
+        "Knot import zonefile %s: rrsets=%d records=%d types=%s",
+        name,
+        len(rrsets),
+        record_count,
+        type_preview,
+    )
+    _send_update_with_retry(update, attempts=10, delay_seconds=1.0)
+
+
+def ensure_soa_serial_min(
+    name, serial: int, *, attempts: int = 5, delay_seconds: float = 0.2
+):
+    query = dns.message.make_query(name, dns.rdatatype.SOA)
+    for attempt in range(1, attempts + 1):
+        response = dns.query.tcp(
+            query,
+            _knot_host_ip(),
+            port=settings.NSLORD_KNOT_PORT,
+            timeout=settings.NSLORD_KNOT_TIMEOUT,
         )
-    _send_update_with_retry(update)
+        rrset = response.get_rrset(
+            dns.message.ANSWER,
+            dns.name.from_text(name),
+            dns.rdataclass.IN,
+            dns.rdatatype.SOA,
+        )
+        if rrset is None:
+            logger.info("Knot SOA not found for %s while enforcing serial", name)
+            return
+        rdata = rrset[0]
+        if rdata.serial >= serial:
+            if attempt > 1:
+                logger.info(
+                    "Knot SOA serial for %s satisfied after %d attempts: %d >= %d",
+                    name,
+                    attempt,
+                    rdata.serial,
+                    serial,
+                )
+            return
+        update = _new_update(name)
+        apex = name.rstrip(".") + "."
+        soa_text = (
+            f"{rdata.mname.to_text()} {rdata.rname.to_text()} "
+            f"{serial} {rdata.refresh} {rdata.retry} {rdata.expire} {rdata.minimum}"
+        )
+        logger.info(
+            "Knot SOA serial for %s below minimum: %d < %d (attempt %d/%d)",
+            name,
+            rdata.serial,
+            serial,
+            attempt,
+            attempts,
+        )
+        update.replace(apex, rrset.ttl, "SOA", soa_text)
+        _send_update_with_retry(update)
+        if delay_seconds:
+            _sleep(delay_seconds)
+    raise KnotException(f"Knot SOA serial for {name} still below {serial}")
 
 
 def get_zonefile(domain) -> bytes:

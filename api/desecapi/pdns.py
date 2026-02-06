@@ -1,9 +1,16 @@
 import json
 import re
 import socket
+import time
 from functools import cache
 from hashlib import sha1
 
+import dns.message
+import dns.name
+import dns.query
+import dns.rdataclass
+import dns.rdatatype
+import dns.rcode
 import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
@@ -335,7 +342,7 @@ def import_zonefile_rrsets(name, rrsets):
             {
                 "name": rrset["name"],
                 "type": rrset["type"],
-                "ttl": rrset["ttl"],
+                "ttl": min(rrset["ttl"], settings.DEFAULT_NS_TTL),
                 "changetype": "REPLACE",
                 "records": [
                     {"content": record, "disabled": False}
@@ -367,6 +374,17 @@ def update_zone(name, data):
 
 def axfr_to_master(zone):
     _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
+
+
+def wait_for_master_zone(zone, *, attempts=20, delay_seconds=0.5):
+    zone_id = pdns_id(zone)
+    for _ in range(attempts):
+        try:
+            _pdns_get(NSMASTER, "/zones/%s" % zone_id)
+            return True
+        except PDNSException:
+            time.sleep(delay_seconds)
+    return False
 
 
 def rectify_zone(name):

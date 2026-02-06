@@ -14,6 +14,7 @@ from conftest import (
     NSLordKnotClient,
     random_domainname,
     FaketimeShift,
+    tsprint,
 )
 
 DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
@@ -226,6 +227,7 @@ def _cds_set(query, domain: str):
 
 def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
     name = random_domainname()
+    tsprint(f"move pdns->knot start {name}")
     assert (
         api_user.domain_create(name, csk_private_key=CSK_PRIVATE_KEY).status_code == 201
     )
@@ -235,14 +237,19 @@ def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
     old_serial = NSLordClient.query(name, "SOA")[0].serial
     old_keys = _normalized_dnskeys(NSLordClient.query, name)
     old_cds = _cds_set(NSLordClient.query, name)
+    tsprint(
+        f"move pdns->knot before serial={old_serial} keys={len(old_keys)} cds={len(old_cds)}"
+    )
 
     response = api_user.domain_move_nslord(name, "knot")
     assert response.status_code == 200
+    tsprint("move pdns->knot api done")
 
     new_serial = NSLordKnotClient.query(name, "SOA")[0].serial
     assert new_serial >= old_serial
     assert _normalized_dnskeys(NSLordKnotClient.query, name) == old_keys
     assert _cds_set(NSLordKnotClient.query, name) == old_cds
+    tsprint(f"move pdns->knot after serial={new_serial}")
 
     api_user.assert_rrsets(
         {
@@ -255,6 +262,7 @@ def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
 
 def test_move_knot_to_pdns(api_user: DeSECAPIV1Client):
     name = random_domainname()
+    tsprint(f"move knot->pdns start {name}")
     assert (
         api_user.domain_create(
             name, nslord="knot", csk_private_key=CSK_PRIVATE_KEY
@@ -267,14 +275,19 @@ def test_move_knot_to_pdns(api_user: DeSECAPIV1Client):
     old_serial = NSLordKnotClient.query(name, "SOA")[0].serial
     old_keys = _normalized_dnskeys(NSLordKnotClient.query, name)
     old_cds = _cds_set(NSLordKnotClient.query, name)
+    tsprint(
+        f"move knot->pdns before serial={old_serial} keys={len(old_keys)} cds={len(old_cds)}"
+    )
 
     response = api_user.domain_move_nslord(name, "pdns")
     assert response.status_code == 200
+    tsprint("move knot->pdns api done")
 
     new_serial = NSLordClient.query(name, "SOA")[0].serial
     assert new_serial >= old_serial
     assert _normalized_dnskeys(NSLordClient.query, name) == old_keys
     assert _cds_set(NSLordClient.query, name) == old_cds
+    tsprint(f"move knot->pdns after serial={new_serial}")
 
     api_user.assert_rrsets(
         {
