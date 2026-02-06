@@ -506,7 +506,9 @@ class PDNSChangeTracker(BaseChangeTracker):
             return "Delete Domain %s" % self.domain_name
 
     class CreateUpdateDeleteRRSets(PDNSChange):
-        def __init__(self, domain_name, additions, modifications, deletions, deleted_records):
+        def __init__(
+            self, domain_name, additions, modifications, deletions, deleted_records
+        ):
             super().__init__(domain_name)
             self._additions = additions
             self._modifications = modifications
@@ -651,7 +653,9 @@ class KnotChangeTracker(BaseChangeTracker):
             return "Delete Domain %s" % self.domain_name
 
     class CreateUpdateDeleteRRSets(KnotChange):
-        def __init__(self, domain_name, additions, modifications, deletions, deleted_records):
+        def __init__(
+            self, domain_name, additions, modifications, deletions, deleted_records
+        ):
             super().__init__(domain_name)
             self._additions = additions
             self._modifications = modifications

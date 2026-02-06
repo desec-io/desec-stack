@@ -186,9 +186,7 @@ def set_cryptokey_active(domain_name, key_id, active):
 
 
 def delete_cryptokey(domain_name, key_id):
-    _pdns_delete(
-        NSLORD, "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id)
-    )
+    _pdns_delete(NSLORD, "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id))
 
 
 def get_csk_private_key(domain_name):

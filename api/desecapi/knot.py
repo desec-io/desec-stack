@@ -255,9 +255,7 @@ def wait_for_csk_key_ready(name):
         if os.path.exists(ready_path):
             return
         _sleep(0.2)
-    raise KnotException(
-        f"Knot key import not ready for {name} after {timeout} seconds"
-    )
+    raise KnotException(f"Knot key import not ready for {name} after {timeout} seconds")
 
 
 def _dnskey_present(name, dnskey):
@@ -321,7 +319,9 @@ def import_csk_key(name, *, dnskey, private_key=None):
         try:
             key_tag = _write_bind_keypair(name, dnskey, private_key)
             if key_tag is not None:
-                logger.info("Knot CSK import prepared for %s (keytag %d)", name, key_tag)
+                logger.info(
+                    "Knot CSK import prepared for %s (keytag %d)", name, key_tag
+                )
         except Exception:
             logger.warning("Knot CSK import failed for %s", name, exc_info=True)
     update = _new_update(name)
@@ -330,9 +330,7 @@ def import_csk_key(name, *, dnskey, private_key=None):
     update.replace(apex, settings.DEFAULT_NS_TTL, "DNSKEY", dnskey)
     has_changes = True
     try:
-        key_rdata = dns.rdata.from_text(
-            dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey
-        )
+        key_rdata = dns.rdata.from_text(dns.rdataclass.IN, dns.rdatatype.DNSKEY, dnskey)
         cds_records = [
             dns.dnssec.make_ds(dns.name.from_text(name), key_rdata, algo).to_text()
             for algo in (2, 4)
@@ -393,7 +391,9 @@ def delete_zone(name):
     _send_update(catalog_update)
 
 
-def update_rrsets(domain_name, additions, modifications, deletions, deleted_records=None):
+def update_rrsets(
+    domain_name, additions, modifications, deletions, deleted_records=None
+):
     from desecapi.models import RR, RRset
 
     if not wait_for_zone(domain_name, attempts=10, interval_seconds=0.2):
