@@ -12,9 +12,11 @@ from conftest import (
     DeSECAPIV1Client,
     NSLordClient,
     NSLordKnotClient,
+    SecondaryNSClient,
     random_domainname,
     FaketimeShift,
     tsprint,
+    assert_eventually,
 )
 
 DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
@@ -251,6 +253,37 @@ def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
     assert _cds_set(NSLordKnotClient.query, name) == old_cds
     tsprint(f"move pdns->knot after serial={new_serial}")
 
+    assert_eventually(
+        assertion=lambda query: query(name, "SOA")[0].serial >= old_serial,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _normalized_dnskeys(query, name) == old_keys,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _cds_set(query, name) == old_cds,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "A")} == {"1.2.3.4"},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "TXT")} == {'"hello"'},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+
     api_user.assert_rrsets(
         {
             ("", "A"): (DEFAULT_TTL, {"1.2.3.4"}),
@@ -288,6 +321,37 @@ def test_move_knot_to_pdns(api_user: DeSECAPIV1Client):
     assert _normalized_dnskeys(NSLordClient.query, name) == old_keys
     assert _cds_set(NSLordClient.query, name) == old_cds
     tsprint(f"move knot->pdns after serial={new_serial}")
+
+    assert_eventually(
+        assertion=lambda query: query(name, "SOA")[0].serial >= old_serial,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _normalized_dnskeys(query, name) == old_keys,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _cds_set(query, name) == old_cds,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "A")} == {"5.6.7.8"},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "TXT")} == {'"world"'},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
 
     api_user.assert_rrsets(
         {
