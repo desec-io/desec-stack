@@ -106,7 +106,8 @@ def _transfer_keyring():
     )
 
 
-def _send_update(update: dns.update.Update):
+def _send_update(update: dns.update.Update) -> None:
+    """Send a single DNS update to Knot and hard-fail on any error."""
     try:
         host = _knot_host_ip()
         response = dns.query.tcp(
@@ -130,40 +131,6 @@ def _send_update(update: dns.update.Update):
         )
 
 
-def _send_update_with_retry(
-    update: dns.update.Update,
-    *,
-    attempts: int = 5,
-    delay_seconds: float = 1.0,
-    retry_rcodes: tuple[str, ...] = ("NOTAUTH", "SERVFAIL"),
-):
-    last_exc = None
-    for attempt in range(attempts):
-        try:
-            _send_update(update)
-            return
-        except KnotException as exc:
-            last_exc = exc
-            zone = update.zone
-            zone_text = zone.to_text() if hasattr(zone, "to_text") else str(zone)
-            logger.info(
-                "Knot update retry %d/%d for zone=%s error=%s",
-                attempt + 1,
-                attempts,
-                zone_text,
-                exc,
-            )
-            if attempt < attempts - 1 and (
-                any(code in str(exc) for code in retry_rcodes)
-                or "timed out" in str(exc)
-            ):
-                _sleep(delay_seconds)
-                continue
-            raise
-    if last_exc is not None:
-        raise last_exc
-
-
 def _catalog_member_subname(zone):
     zone = zone.rstrip(".") + "."
     return f"{sha1(zone.encode()).hexdigest()}.zones"
@@ -184,10 +151,11 @@ def _new_update(zone):
 
 
 def create_zone(name):
+    """Create a zone via the catalog update and verify it becomes available."""
     catalog_update = _new_update(settings.CATALOG_ZONE)
     catalog_update.replace(_catalog_record_name(name), 0, "PTR", name.rstrip(".") + ".")
     try:
-        _send_update_with_retry(catalog_update)
+        _send_update(catalog_update)
     except KnotException as exc:
         if "timed out" not in str(exc):
             raise
@@ -197,13 +165,14 @@ def create_zone(name):
 
 
 def ensure_default_ns(name):
+    """Ensure default NS/SOA records exist for a zone and are visible."""
     if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
     update = _new_update(name)
     apex = name.rstrip(".") + "."
     update.replace(apex, settings.DEFAULT_NS_TTL, "NS", *settings.DEFAULT_NS)
     update.replace(apex, settings.DEFAULT_NS_TTL, "SOA", DEFAULT_SOA_CONTENT)
-    _send_update_with_retry(update, attempts=10, delay_seconds=1.0)
+    _send_update(update)
     if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
 
@@ -341,7 +310,7 @@ def import_csk_key(name, *, dnskey, private_key=None):
     except Exception:
         pass
     if has_changes:
-        _send_update_with_retry(update)
+        _send_update(update)
     if private_key:
         if not _wait_for_dnskey(name, dnskey):
             logger.warning("Knot CSK DNSKEY not visible after import for %s", name)
@@ -394,6 +363,7 @@ def delete_zone(name):
 def update_rrsets(
     domain_name, additions, modifications, deletions, deleted_records=None
 ):
+    """Apply RRset changes via a single update attempt and surface errors."""
     from desecapi.models import RR, RRset
 
     if not wait_for_zone(domain_name, attempts=10, interval_seconds=0.2):
@@ -447,7 +417,7 @@ def update_rrsets(
 
         def _apply_update():
             try:
-                _send_update_with_retry(update, attempts=2, delay_seconds=0.2)
+                _send_update(update)
             except Exception as exc:
                 update_done["error"] = exc
 
@@ -463,6 +433,7 @@ def update_rrsets(
 
 
 def import_zonefile_rrsets(name, rrsets):
+    """Import RRsets from a zonefile with one update attempt."""
     if not wait_for_zone(name, attempts=60, interval_seconds=0.5):
         raise KnotException(f"Knot zone {name} not ready for updates")
     record_count = 0
@@ -486,7 +457,7 @@ def import_zonefile_rrsets(name, rrsets):
         record_count,
         type_preview,
     )
-    _send_update_with_retry(update, attempts=10, delay_seconds=1.0)
+    _send_update(update)
 
 
 def ensure_soa_serial_min(
@@ -535,7 +506,7 @@ def ensure_soa_serial_min(
             attempts,
         )
         update.replace(apex, rrset.ttl, "SOA", soa_text)
-        _send_update_with_retry(update)
+        _send_update(update)
         if delay_seconds:
             _sleep(delay_seconds)
     raise KnotException(f"Knot SOA serial for {name} still below {serial}")
