@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils import timezone
 
+from desecapi.knot import DEFAULT_SOA_CONTENT
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns_change_tracker import KnotChangeTracker
 from desecapi.tests.base import KnotDesecTestCase
@@ -598,7 +599,10 @@ class DomainTestCase(KnotChangeTrackerTestCase):
                     (settings.CATALOG_ZONE, None),
                     (
                         name,
-                        {("NS", "", settings.DEFAULT_NS_TTL): settings.DEFAULT_NS},
+                        {
+                            ("NS", "", settings.DEFAULT_NS_TTL): settings.DEFAULT_NS,
+                            ("SOA", "", settings.DEFAULT_NS_TTL): [DEFAULT_SOA_CONTENT],
+                        },
                     ),
                 ]
             ),
