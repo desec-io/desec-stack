@@ -54,6 +54,19 @@ jobs:
     - name: Test desecapi formatting
       run: ruff format --check api/
 
+  test-watcher:
+    # runs Knot watcher unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install pytest
+      run: python3 -m pip install pytest
+    - name: Run watcher tests
+      run: python3 -m pytest nslord_knot/tests/test_zone_watch.py
+
   test-missing-migrations:
     # test if Django migrations are missing
     runs-on: ubuntu-latest

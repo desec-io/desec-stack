@@ -8,6 +8,6 @@ chown -R knot:knot /var/lib/knot
 mkdir -p /knot-import
 chmod 0777 /knot-import
 
-/usr/local/bin/zone-watch.sh &
+python3 /usr/local/bin/zone_watch.py &
 
 exec knotd -c /etc/knot/knot.conf
