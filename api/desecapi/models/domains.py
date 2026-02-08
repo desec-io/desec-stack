@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
+from threading import Thread
 
 import dns
 import psl_dns
@@ -96,12 +97,31 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     @cached_property
     def public_suffix(self):
-        try:
-            public_suffix = psl.get_public_suffix(self.name)
-            is_public_suffix = psl.is_public_suffix(self.name)
-        except (Timeout, NoNameservers):
+        result: dict[str, object] = {}
+
+        def _worker() -> None:
+            try:
+                result["public_suffix"] = psl.get_public_suffix(self.name)
+                result["is_public_suffix"] = psl.is_public_suffix(self.name)
+            except Exception as exc:
+                result["error"] = exc
+
+        thread = Thread(target=_worker, name="psl_lookup", daemon=True)
+        thread.start()
+        thread.join(timeout=1.0)
+        if thread.is_alive():
             public_suffix = self.name.rpartition(".")[2]
             is_public_suffix = "." not in self.name  # TLDs are public suffixes
+
+        if "error" in result:
+            if isinstance(result["error"], (Timeout, NoNameservers)):
+                public_suffix = self.name.rpartition(".")[2]
+                is_public_suffix = "." not in self.name  # TLDs are public suffixes
+            else:
+                raise result["error"]  # type: ignore[misc]
+        else:
+            public_suffix = result["public_suffix"]  # type: ignore[assignment]
+            is_public_suffix = result["is_public_suffix"]  # type: ignore[assignment]
 
         if is_public_suffix:
             return public_suffix
