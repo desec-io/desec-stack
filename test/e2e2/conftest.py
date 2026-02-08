@@ -21,6 +21,9 @@ from requests.exceptions import SSLError
 from urllib3.exceptions import InsecureRequestWarning
 
 
+DISABLE_FAKETIME_SHIFTS = True
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--skip-performance-tests", action="store_true", default=False, help="skip expensive performance tests"
@@ -552,6 +555,8 @@ def assert_all_ns_knot(assertion: callable, retry_on=(AssertionError,)):
 
 def faketime(t: str):
     print('FAKETIME', t)
+    if DISABLE_FAKETIME_SHIFTS:
+        return
     with open(os.environ['FAKETIME_TIMESTAMP_FILE'] + '.tmp', 'w') as f:
         f.write(t + '\n')
     # https://github.com/wolfcw/libfaketime/issues/392#issuecomment-1122344129
@@ -574,6 +579,8 @@ class FaketimeShift:
         self.days = days
 
     def __enter__(self):
+        if DISABLE_FAKETIME_SHIFTS:
+            pytest.skip("faketime shifts disabled for debugging")
         self._faketime = faketime_get()
         assert self._faketime[0] == '+'
         assert self._faketime[-1] == 'd'
