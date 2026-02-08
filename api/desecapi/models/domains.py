@@ -98,6 +98,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @cached_property
     def public_suffix(self):
         result: dict[str, object] = {}
+        timed_out = False
 
         def _worker() -> None:
             try:
@@ -110,10 +111,12 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         thread.start()
         thread.join(timeout=1.0)
         if thread.is_alive():
+            timed_out = True
             public_suffix = self.name.rpartition(".")[2]
             is_public_suffix = "." not in self.name  # TLDs are public suffixes
-
-        if "error" in result:
+        if timed_out:
+            pass
+        elif "error" in result:
             if isinstance(result["error"], (Timeout, NoNameservers)):
                 public_suffix = self.name.rpartition(".")[2]
                 is_public_suffix = "." not in self.name  # TLDs are public suffixes
