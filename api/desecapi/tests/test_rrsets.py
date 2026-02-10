@@ -1824,3 +1824,88 @@ class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
                 response = method(self.my_domain.name, [data])
                 self.assertStatus(response, status.HTTP_200_OK)
                 self.assertEqual(response.data, [])
+
+
+class AuthenticatedRRSetLPSNSPermissionTestCase(AuthenticatedRRSetBaseTestCase):
+    DYN = True
+
+    ns_data = {"type": "NS", "records": ["ns.example."], "ttl": 3600}
+
+    def setUp(self):
+        super().setUp()
+        for domain in (self.my_domain, self.my_empty_domain):
+            domain.allow_local_ns_changes = True
+            domain.save(update_fields=["allow_local_ns_changes"])
+
+    def test_create_ns_rrset_allowed(self):
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            with self.assertRequests(
+                self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
+            ):
+                response = self.client.post_rr_set(
+                    domain_name=self.my_empty_domain.name, **data
+                )
+                self.assertStatus(response, status.HTTP_201_CREATED)
+
+    def test_update_ns_rrset_allowed(self):
+        for subname in ["", "sub"]:
+            for method in (self.client.patch_rr_set, self.client.put_rr_set):
+                create_records = settings.DEFAULT_NS
+                update_records = list(self.ns_data["records"])
+                rrset = self.my_domain.rrset_set.filter(
+                    subname=subname, type="NS"
+                ).first()
+                if rrset is None:
+                    try:
+                        rrset = self.create_rr_set(
+                            self.my_domain,
+                            create_records,
+                            subname=subname,
+                            type="NS",
+                            ttl=3600,
+                        )
+                    except IntegrityError:
+                        rrset = self.my_domain.rrset_set.get(subname=subname, type="NS")
+                rrset.save_records(create_records)
+                current_records = list(rrset.records.values_list("content", flat=True))
+                if set(current_records) == set(update_records):
+                    update_records = create_records
+                update_data = dict(
+                    self.ns_data, subname=subname, records=update_records
+                )
+                with self.assertRequests(
+                    self.requests_desec_rr_sets_update(name=self.my_domain.name)
+                ):
+                    response = method(self.my_domain.name, subname, "NS", update_data)
+                    self.assertStatus(response, status.HTTP_200_OK)
+
+    def test_delete_ns_rrset_apex_allowed(self):
+        data = dict(self.ns_data, records=[], subname="")
+        for method in (self.client.patch_rr_set, self.client.put_rr_set):
+            if not self.my_domain.rrset_set.filter(subname="", type="NS").exists():
+                self.create_rr_set(
+                    self.my_domain,
+                    settings.DEFAULT_NS,
+                    subname="",
+                    type="NS",
+                    ttl=3600,
+                )
+            with self.assertRequests(
+                self.requests_desec_rr_sets_update(name=self.my_domain.name)
+            ):
+                response = method(self.my_domain.name, "", "NS", data)
+                self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+        if not self.my_domain.rrset_set.filter(subname="", type="NS").exists():
+            self.create_rr_set(
+                self.my_domain,
+                settings.DEFAULT_NS,
+                subname="",
+                type="NS",
+                ttl=3600,
+            )
+        with self.assertRequests(
+            self.requests_desec_rr_sets_update(name=self.my_domain.name)
+        ):
+            response = self.client.delete_rr_set(self.my_domain.name, "", "NS")
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)

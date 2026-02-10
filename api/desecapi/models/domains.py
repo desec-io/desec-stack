@@ -63,6 +63,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    allow_local_ns_changes = models.BooleanField(default=True)
 
     _keys = None
     objects = DomainManager()
@@ -74,6 +75,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         ordering = ("created",)
 
     def __init__(self, *args, **kwargs):
+        allow_local_ns_changes_provided = "allow_local_ns_changes" in kwargs
         if isinstance(kwargs.get("owner"), AnonymousUser):
             kwargs = {**kwargs, "owner": None}  # make a copy and override
         # Avoid super().__init__(owner=None, ...) to not mess up *values instantiation in django.db.models.Model.from_db
@@ -85,6 +87,12 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             and self.is_locally_registrable
         ):
             self.renewal_state = Domain.RenewalState.FRESH
+        if (
+            self.pk is None
+            and not allow_local_ns_changes_provided
+            and self.is_locally_registrable
+        ):
+            self.allow_local_ns_changes = False
 
     @cached_property
     def public_suffix(self):
@@ -225,6 +233,10 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @property
     def is_locally_registrable(self):
         return self.parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
+
+    @property
+    def can_modify_ns_records(self):
+        return (not self.is_locally_registrable) or self.allow_local_ns_changes
 
     @property
     def _owner_or_none(self):
