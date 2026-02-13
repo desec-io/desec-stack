@@ -5,6 +5,9 @@ api/venv
 # IDE files
 .idea
 
+# Local caches
+.cache
+
 # development helper scripts
 /*.sh
 
@@ -14,3 +17,4 @@ api/venv
 # Webapp development files
 node_modules
 package-lock.json
+www/webapp/.vite/

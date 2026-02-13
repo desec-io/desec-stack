@@ -1,0 +1,4 @@
+$ORIGIN catalog.internal.
+@ 300 IN SOA get.desec.io. get.desec.io. 1 86400 3600 2419200 3600
+@ 3600 IN NS get.desec.io.
+version 0 IN TXT "2"

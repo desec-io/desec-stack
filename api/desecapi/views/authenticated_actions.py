@@ -10,7 +10,7 @@ from desecapi import permissions, serializers
 from desecapi.authentication import AuthenticatedBasicUserActionAuthentication
 from desecapi.exceptions import AuthenticatedActionInvalidState
 from desecapi.models import Token
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 
 from .domains import DomainViewSet
 from .users import AccountDeleteView
@@ -150,7 +150,9 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
             )
         # TODO the following line is subject to race condition and can fail, as for the domain name, we have that
         #  time-of-check != time-of-action
-        return PDNSChangeTracker.track(lambda: serializer.save(owner=self.request.user))
+        return NSLordChangeTracker.track(
+            lambda: serializer.save(owner=self.request.user)
+        )
 
     def _finalize_without_domain(self):
         if not is_password_usable(self.request.user.password):
@@ -171,7 +173,7 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
     def _finalize_with_domain(self, domain):
         if domain.is_locally_registrable:
             # TODO the following line raises Domain.DoesNotExist under unknown conditions
-            PDNSChangeTracker.track(lambda: DomainViewSet.auto_delegate(domain))
+            NSLordChangeTracker.track(lambda: DomainViewSet.auto_delegate(domain))
             token = Token.objects.create(owner=domain.owner, name="dyndns")
             return Response(
                 {

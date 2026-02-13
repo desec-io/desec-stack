@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
+from threading import Thread
 
 import dns
 import psl_dns
@@ -15,7 +16,7 @@ from dns.exception import Timeout
 from dns.resolver import NoNameservers
 from rest_framework.exceptions import APIException
 
-from desecapi import logger, metrics, pdns
+from desecapi import crypto, logger, metrics, nslord
 
 from .base import validate_domain_name
 from .records import RRset
@@ -42,6 +43,10 @@ class DomainManager(Manager):
 
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
+    class NSLord(models.TextChoices):
+        PDNS = "pdns", "powerdns"
+        KNOT = "knot", "knotdns"
+
     @staticmethod
     def _minimum_ttl_default():
         return settings.MINIMUM_TTL_DEFAULT
@@ -59,6 +64,10 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     owner = models.ForeignKey("User", on_delete=models.PROTECT, related_name="domains")
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
+    nslord = models.CharField(
+        max_length=16, choices=NSLord.choices, default=NSLord.PDNS
+    )
+    csk_private_key_encrypted = models.BinaryField(null=True, blank=True)
     renewal_state = models.IntegerField(
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
@@ -88,12 +97,34 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     @cached_property
     def public_suffix(self):
-        try:
-            public_suffix = psl.get_public_suffix(self.name)
-            is_public_suffix = psl.is_public_suffix(self.name)
-        except (Timeout, NoNameservers):
+        result: dict[str, object] = {}
+        timed_out = False
+
+        def _worker() -> None:
+            try:
+                result["public_suffix"] = psl.get_public_suffix(self.name)
+                result["is_public_suffix"] = psl.is_public_suffix(self.name)
+            except Exception as exc:
+                result["error"] = exc
+
+        thread = Thread(target=_worker, name="psl_lookup", daemon=True)
+        thread.start()
+        thread.join(timeout=1.0)
+        if thread.is_alive():
+            timed_out = True
             public_suffix = self.name.rpartition(".")[2]
             is_public_suffix = "." not in self.name  # TLDs are public suffixes
+        if timed_out:
+            pass
+        elif "error" in result:
+            if isinstance(result["error"], (Timeout, NoNameservers)):
+                public_suffix = self.name.rpartition(".")[2]
+                is_public_suffix = "." not in self.name  # TLDs are public suffixes
+            else:
+                raise result["error"]  # type: ignore[misc]
+        else:
+            public_suffix = result["public_suffix"]  # type: ignore[assignment]
+            is_public_suffix = result["is_public_suffix"]  # type: ignore[assignment]
 
         if is_public_suffix:
             return public_suffix
@@ -180,7 +211,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @property
     def keys(self):
         if not self._keys:
-            self._keys = [{**key, "managed": True} for key in pdns.get_keys(self)]
+            self._keys = [{**key, "managed": True} for key in nslord.get_keys(self)]
             try:
                 unmanaged_keys = self.rrset_set.get(
                     subname="", type="DNSKEY"
@@ -244,7 +275,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     @property
     def zonefile(self):
-        return pdns.get_zonefile(self)
+        return nslord.get_zonefile(self)
 
     def save(self, *args, **kwargs):
         self.full_clean(validate_unique=False)
@@ -295,6 +326,25 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     def delete(self, *args, **kwargs):
         ret = super().delete(*args, **kwargs)
         logger.warning(f"Domain {self.name} deleted (owner: {self.owner.pk})")
+
+    def set_csk_private_key(self, private_key: str | None) -> None:
+        if private_key is None:
+            self.csk_private_key_encrypted = None
+        else:
+            if self.pk is None:
+                raise ValueError("Domain must be saved before storing private key")
+            self.csk_private_key_encrypted = crypto.encrypt(
+                private_key.encode(), context=f"domain_csk:{self.pk}"
+            )
+        self.save(update_fields=["csk_private_key_encrypted"])
+
+    def get_csk_private_key(self) -> str | None:
+        if not self.csk_private_key_encrypted:
+            return None
+        _, decrypted = crypto.decrypt(
+            self.csk_private_key_encrypted, context=f"domain_csk:{self.pk}"
+        )
+        return decrypted.decode()
         return ret
 
     def __str__(self):

@@ -4,7 +4,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
 
 from desecapi import models, permissions
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 from desecapi.serializers import RRsetSerializer
 
 from .base import IdempotentDestroyMixin
@@ -65,7 +65,7 @@ class RRsetView(DomainViewMixin):
         return {**super().get_serializer_context(), "domain": self.domain}
 
     def perform_update(self, serializer):
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             # noinspection PyUnresolvedReferences
             super().perform_update(serializer)
 
@@ -103,7 +103,7 @@ class RRsetDetail(
         if instance.type == "NS" and self.domain.is_locally_registrable:
             if instance.subname == "":
                 raise ValidationError("Cannot modify NS records for this domain.")
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             super().perform_destroy(instance)
 
 
@@ -150,5 +150,5 @@ class RRsetList(
         return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             super().perform_create(serializer)
