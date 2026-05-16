@@ -239,7 +239,7 @@ class RRsetListSerializer(serializers.ListSerializer):
                         raise serializers.ValidationError(
                             {
                                 api_settings.NON_FIELD_ERRORS_KEY: [
-                                    f"RRset with conflicting type present: {types_by_position}."
+                                    f"RRset with conflicting type present at same subname: {types_by_position}."
                                     " (No other RRsets are allowed alongside CNAME.)"
                                 ]
                             }
@@ -412,7 +412,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
                     "type",
                     "CNAME",
                 ),
-                message="RRset with conflicting type present: database ({types})."
+                message="RRset with conflicting type present at same subname: database ({types})."
                 " (No other RRsets are allowed alongside CNAME.)",
             ),
         ]
