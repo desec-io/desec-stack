@@ -138,6 +138,10 @@
                       <th>Litecoin (LTC)</th>
                       <td><strong>(No MWEB!)</strong> <span class="fixed-width">LeFYoRRcrMPiruRGQQknQBdjGdmsEpHzno</span></td>
                     </tr>
+                    <tr>
+                      <th>USDT (TRON/TRC20)</th>
+                      <td><span class="fixed-width">TNX3XpTx5WwzHrnDx6VB3YtWz4ME3UTu5x</span></td>
+                    </tr>
                   </table>
                   <p class="mt-4">Note that we cannot provide you a donation receipt for crypto donations.</p>
                 </v-expansion-panel-content>
