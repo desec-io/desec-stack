@@ -113,7 +113,7 @@
 
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC)
+                  <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC, TRON/TRC20)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
                   <p>If you prefer to donate in a crypto currency, you can use the following wallets:</p>
@@ -130,6 +130,10 @@
                     <tr>
                       <th>Litecoin (LTC)</th>
                       <td><strong>(No MWEB!)</strong> <span class="fixed-width crypto-address">LeFYoRRcrMPiruRGQQknQBdjGdmsEpHzno</span></td>
+                    </tr>
+                    <tr>
+                      <th>USDT (TRON/TRC20)</th>
+                      <td><span class="fixed-width crypto-address">TNX3XpTx5WwzHrnDx6VB3YtWz4ME3UTu5x</span></td>
                     </tr>
                     </tbody>
                   </table>
