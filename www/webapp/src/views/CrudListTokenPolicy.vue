@@ -43,7 +43,7 @@ export default {
           writeOnCreate: true,
           datatype: GenericText.name,
           searchable: true,
-          fieldProps: () => ({ placeholder: '(any domain)' }),
+          fieldProps: () => ({ placeholder: '(any domain)', hint: 'Leave empty to match any domain.' }),
         },
         subname: {
           name: 'item.subname',
@@ -56,7 +56,7 @@ export default {
           writeOnCreate: true,
           datatype: GenericText.name,
           searchable: true,
-          fieldProps: () => ({ placeholder: '(any subname)' }),
+          fieldProps: () => ({ placeholder: '(any subname)', hint: 'Leave empty to match any subname.' }),
         },
         type: {
           name: 'item.type',
@@ -69,7 +69,7 @@ export default {
           writeOnCreate: true,
           datatype: 'RRSetType',
           searchable: true,
-          fieldProps: (item) => ({ value: item.type || '', hint: 'Leave empty to match any record type. You can also enter types not listed.' }),
+          fieldProps: (item) => ({ value: item.type || '', placeholder: '(any type)', hint: 'Leave empty to match any record type. You can also enter types not listed.' }),
         },
         perm_write: {
           name: 'item.perm_write',
