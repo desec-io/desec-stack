@@ -3,7 +3,7 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    hint="You can also enter other types. For a full list, check the documentation."
+    :hint="hint"
     :persistent-hint="!readonly"
     :model-value="inputValue"
     :items="types"
@@ -33,6 +33,10 @@ export default {
     readonly: {
       type: Boolean,
       required: false,
+    },
+    hint: {
+      type: String,
+      default: 'You can also enter other types. For a full list, check the documentation.',
     },
     required: {
       type: Boolean,
