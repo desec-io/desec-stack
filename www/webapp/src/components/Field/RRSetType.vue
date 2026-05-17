@@ -4,6 +4,7 @@
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
     :hint="hint"
+    :placeholder="placeholder"
     :persistent-hint="!readonly"
     :model-value="inputValue"
     :items="types"
@@ -37,6 +38,10 @@ export default {
     hint: {
       type: String,
       default: 'You can also enter other types. For a full list, check the documentation.',
+    },
+    placeholder: {
+      type: String,
+      default: undefined,
     },
     required: {
       type: Boolean,
