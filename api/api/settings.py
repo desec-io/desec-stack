@@ -170,7 +170,7 @@ DEFAULT_NS_TTL = int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"])
 PSL_RESOLVER = os.environ.get("DESECSTACK_API_PSL_RESOLVER")
 LOCAL_PUBLIC_SUFFIXES = {"dedyn.%s" % os.environ["DESECSTACK_DOMAIN"]}
 
-# PowerDNS-related (nslord only; nsmaster is now Knot DNS, accessed via libknot)
+# nslord
 NSLORD_PDNS_API = "http://nslord:8081/api/v1/servers/localhost"
 NSLORD_PDNS_API_TOKEN = os.environ["DESECSTACK_NSLORD_APIKEY"]
 
