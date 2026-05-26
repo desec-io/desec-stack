@@ -253,7 +253,6 @@ def create_zone_master(name):
             "name": name,
             "kind": "SLAVE",
             "masters": [gethostbyname_cached("nslord")],
-            "master_tsig_key_ids": ["default"],
         },
     )
 

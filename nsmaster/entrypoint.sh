@@ -17,7 +17,4 @@ done
 # Manage credentials
 envsubst < /etc/powerdns/pdns.conf.var > /etc/powerdns/pdns.conf
 
-echo "Provisioning default TSIG key ..."
-pdnsutil import-tsig-key default hmac-sha256 "${DESECSTACK_NSMASTER_TSIGKEY}" > /dev/null
-
 exec pdns_server --daemon=no
