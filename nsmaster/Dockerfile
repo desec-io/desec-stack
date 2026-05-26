@@ -1,29 +1,34 @@
-FROM ubuntu:jammy
+FROM debian:bookworm-slim
 
-COPY ./entrypoint.sh /root/
-CMD ["/root/entrypoint.sh"]
+# Install prerequisites for adding the vendor apt repo
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    ca-certificates \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y \
-    dnsutils \
+# Add CZ.NIC vendor repository for Knot DNS
+RUN curl -fsSL https://pkg.labs.nic.cz/aptrepo/gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/knot-labs.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/knot-labs.gpg] \
+        https://pkg.labs.nic.cz/knot-dns bookworm main" \
+        > /etc/apt/sources.list.d/knot-dns.list
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    knot \
+    knot-dnsutils \
+    iproute2 \
     iptables \
-    net-tools \
-    dirmngr gnupg \
-    # credentials management via envsubst
-    && apt-get -y install gettext-base \
-    --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
+    gettext-base \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN set -ex \
-    && echo 'deb [arch=amd64] http://repo.powerdns.com/ubuntu jammy-auth-48 main' \
-        >> /etc/apt/sources.list \
-    && echo 'Package: pdns-*' > /etc/apt/preferences.d/pdns \
-    && echo 'Pin: origin repo.powerdns.com' >> /etc/apt/preferences.d/pdns \
-    && echo 'Pin-Priority: 600' >> /etc/apt/preferences.d/pdns \
-    && apt-key adv --keyserver keyserver.ubuntu.com --recv 0x1B0C6205FD380FBB
+# Main config template (variables injected at startup via envsubst)
+COPY conf/knot.conf.var /etc/knot/knot.conf.var
 
-RUN apt-get update \
-    && apt-get install -y pdns-server pdns-backend-pgsql postgresql-client-14 iproute2 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /etc/powerdns/
+# Entrypoint and scripts
+COPY entrypoint.sh    /root/entrypoint.sh
+COPY export-zones.sh  /root/export-zones.sh
+COPY import-zones.sh  /root/import-zones.sh
+RUN chmod +x /root/entrypoint.sh /root/export-zones.sh /root/import-zones.sh
 
-COPY conf/ /etc/powerdns/
+CMD ["/root/entrypoint.sh"]
