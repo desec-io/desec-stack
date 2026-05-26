@@ -1,5 +1,6 @@
 # python virtualenv and test files
 .env
+.env.dev
 api/venv
 
 # IDE files
@@ -10,6 +11,9 @@ api/venv
 
 # local certificates
 /certs/
+
+# Zone export directory (populated at migration time, not tracked)
+/zones-export/
 
 # Webapp development files
 node_modules
