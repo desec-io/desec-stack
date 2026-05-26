@@ -23,10 +23,11 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         )
 
     def assertPdnsZoneUpdate(self, name, rr_sets):
+        # After zone data changes, knot.retrieve_zone() is called (socket, not HTTP).
+        # The HTTP assertion here covers only the nslord zone update.
         return self.assertRequests(
             [
                 self.request_pdns_zone_update_assert_body(name, rr_sets),
-                self.request_pdns_zone_axfr(name),
             ],
         )
 

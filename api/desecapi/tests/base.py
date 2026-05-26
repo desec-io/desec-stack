@@ -512,29 +512,11 @@ class MockPDNSTestCase(APITestCase):
             "body": json.dumps(cls.get_body_pdns_zone_retrieve_crypto_keys()),
         }
 
-    @classmethod
-    def request_pdns_zone_axfr(cls, name=None):
-        return {
-            "method": "PUT",
-            "url": cls.get_full_pdns_url(
-                cls.PDNS_ZONE_AXFR, ns="MASTER", id=cls._pdns_zone_id_heuristic(name)
-            ),
-            "status": 200,
-            "body": "",
-        }
-
-    @classmethod
-    def request_pdns_update_catalog(cls):
-        return {
-            "method": "PATCH",
-            "url": cls.get_full_pdns_url(
-                cls.PDNS_ZONE,
-                ns="MASTER",
-                id=cls._pdns_zone_id_heuristic("catalog.internal"),
-            ),
-            "status": 204,
-            "body": "",
-        }
+    # Note: request_pdns_zone_axfr and request_pdns_update_catalog have been removed.
+    # After the nsmaster migration to Knot DNS, zone retrieval (axfr-retrieve) and
+    # catalog updates are no longer HTTP calls to nsmaster. They are handled via:
+    #   - knot.retrieve_zone() — socket call, mocked in MockPDNSTestCase.setUp()
+    #   - catalog.internal     — managed automatically by Knot, no API involvement
 
     def request_pch_zone_create(self, name):
         def request_callback(request):
@@ -620,27 +602,27 @@ class MockPDNSTestCase(APITestCase):
 
     def assertZoneCreation(self, name):
         """
-        Asserts that nslord, nsmaster and PCH are contacted for zone creation.
+        Asserts that nslord and PCH are contacted for zone creation.
+        nsmaster (Knot DNS) is notified via socket (knot.create_zone), mocked separately.
         Name is only asserted for requests to PCH.
         """
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
                 self.request_pdns_zone_create(ns="LORD"),
-                self.request_pdns_zone_create(ns="MASTER"),
                 self.request_pch_zone_create(name=name),
             ],
         )
 
     def assertZoneDeletion(self, name):
         """
-        Asserts that nslord, nsmaster and PCH are contacted for zone deletion.
+        Asserts that nslord and PCH are contacted for zone deletion.
+        nsmaster (Knot DNS) is notified via socket (knot.delete_zone), mocked separately.
         """
         return AssertRequestsContextManager(
             test_case=self,
             expected_requests=[
                 self.request_pdns_zone_delete(ns="LORD", name=name),
-                self.request_pdns_zone_delete(ns="MASTER", name=name),
                 self.request_pch_zone_delete(name=name),
             ],
         )
@@ -702,8 +684,7 @@ class MockPDNSTestCase(APITestCase):
         for request in [
             # TODO delete not in this list - is this even needed?
             self.request_pdns_zone_create(ns="LORD"),
-            self.request_pdns_zone_create(ns="MASTER"),
-            self.request_pdns_zone_axfr(),
+            # nsmaster (Knot DNS): no HTTP mock needed; socket calls are patched below
             self.request_pdns_zone_update(),
             self.request_pdns_zone_retrieve_crypto_keys(),
             self.request_pdns_zone_retrieve(),
@@ -712,6 +693,16 @@ class MockPDNSTestCase(APITestCase):
                 self.responses.add_callback(**request)
             else:
                 self.responses.add(**request)
+
+        # Patch all knot socket functions so tests run without a live Knot socket.
+        # Individual tests that want to assert these calls can inspect these mocks.
+        self.mock_knot_create_zone = mock.patch("desecapi.knot.create_zone").start()
+        self.mock_knot_delete_zone = mock.patch("desecapi.knot.delete_zone").start()
+        self.mock_knot_retrieve_zone = mock.patch("desecapi.knot.retrieve_zone").start()
+        self.mock_knot_get_serials = mock.patch(
+            "desecapi.knot.get_serials", return_value={}
+        ).start()
+        self.addCleanup(mock.patch.stopall)
 
 
 class DesecTestCase(MockPDNSTestCase):
@@ -907,12 +898,11 @@ class DesecTestCase(MockPDNSTestCase):
         soa_content = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
         requests = [
             self.request_pdns_zone_create("LORD", body_matcher(soa_content)),
-            self.request_pdns_zone_create(ns="MASTER"),
-            self.request_pdns_update_catalog(),
+            # nsmaster zone registration: knot.create_zone() via socket, not HTTP
+            # catalog.internal: updated automatically by Knot, no HTTP mock needed
             self.request_pch_zone_create(name=name),
         ]
-        if axfr:
-            requests.append(self.request_pdns_zone_axfr(name=name))
+        # axfr=True: knot.retrieve_zone() is called but mocked; no HTTP request
         if keys:
             requests.append(self.request_pdns_zone_retrieve_crypto_keys(name=name))
         return requests
@@ -920,8 +910,8 @@ class DesecTestCase(MockPDNSTestCase):
     def requests_desec_domain_deletion(self, domain):
         requests = [
             self.request_pdns_zone_delete(name=domain.name, ns="LORD"),
-            self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
-            self.request_pdns_update_catalog(),
+            # nsmaster zone removal: knot.delete_zone() via socket, not HTTP
+            # catalog.internal: updated automatically by Knot, no HTTP mock needed
             self.request_pch_zone_delete(name=domain.name),
         ]
 
@@ -929,7 +919,7 @@ class DesecTestCase(MockPDNSTestCase):
             delegate_at = self._find_auto_delegation_zone(domain.name)
             requests += [
                 self.request_pdns_zone_update(name=delegate_at),
-                self.request_pdns_zone_axfr(name=delegate_at),
+                # delegation-zone retrieve: knot.retrieve_zone() via socket, not HTTP
             ]
 
         return requests
@@ -938,14 +928,14 @@ class DesecTestCase(MockPDNSTestCase):
         delegate_at = self._find_auto_delegation_zone(name)
         return self.requests_desec_domain_creation(name=name) + [
             self.request_pdns_zone_update(name=delegate_at),
-            self.request_pdns_zone_axfr(name=delegate_at),
+            # delegation-zone retrieve: knot.retrieve_zone() via socket, not HTTP
         ]
 
     @classmethod
     def requests_desec_rr_sets_update(cls, name=None):
         return [
             cls.request_pdns_zone_update(name=name),
-            cls.request_pdns_zone_axfr(name=name),
+            # zone retrieve: knot.retrieve_zone() via socket, not HTTP
         ]
 
     def assertBadRequest(self, response, message, path=()):
@@ -1223,10 +1213,6 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
     DYN = True
 
     @classmethod
-    def request_pdns_zone_axfr(cls, name=None):
-        return super().request_pdns_zone_axfr(name.lower() if name else None)
-
-    @classmethod
     def request_pdns_zone_update(cls, name=None):
         return super().request_pdns_zone_update(name.lower() if name else None)
 
@@ -1250,7 +1236,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
             )
             requests = [
                 self.request_pdns_zone_update(name=pdns_name),
-                self.request_pdns_zone_axfr(name=pdns_name),
+                # zone retrieve: knot.retrieve_zone() via socket, not HTTP
             ]
         else:
             requests = []

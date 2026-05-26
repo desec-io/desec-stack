@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from desecapi import permissions
 from desecapi.models import Domain
-from desecapi.pdns import get_serials
+from desecapi.knot import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer

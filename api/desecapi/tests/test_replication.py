@@ -1,5 +1,3 @@
-import json
-
 from rest_framework import status
 
 from desecapi.tests.base import DesecTestCase
@@ -8,29 +6,19 @@ from desecapi.tests.base import DesecTestCase
 class ReplicationTest(DesecTestCase):
     def test_serials(self):
         url = self.reverse("v1:serial")
-        zones = [
-            {"name": "test.example.", "edited_serial": 12345},
-            {"name": "example.org.", "edited_serial": 54321},
-        ]
-        serials = {zone["name"]: zone["edited_serial"] for zone in zones}
-        pdns_requests = [
-            {
-                "method": "GET",
-                "url": self.get_full_pdns_url(r"/zones", ns="MASTER"),
-                "status": 200,
-                "body": json.dumps(zones),
-            }
-        ]
+        serials = {"test.example.": 12345, "example.org.": 54321}
+
+        # knot.get_serials is patched by MockPDNSTestCase.setUp(); configure it here.
+        self.mock_knot_get_serials.return_value = serials
 
         # Run twice to make sure cache output varies on remote address
         for i in range(2):
             response = self.client.get(path=url, REMOTE_ADDR="123.8.0.2")
             self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
 
-            with self.assertRequests(pdns_requests):
-                response = self.client.get(path=url, REMOTE_ADDR="10.8.0.2")
+            response = self.client.get(path=url, REMOTE_ADDR="10.8.0.2")
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(response.data, serials)
 
-            # Do not expect pdns request in next iteration (result will be cached)
-            pdns_requests = []
+            # Do not expect knot call in next iteration (result will be cached)
+            self.mock_knot_get_serials.return_value = {}
