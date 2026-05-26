@@ -2,17 +2,18 @@ FROM debian:bookworm-slim
 
 # Install prerequisites for adding the vendor apt repo
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-transport-https \
     curl \
     gnupg \
     ca-certificates \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Add CZ.NIC vendor repository for Knot DNS
-RUN curl -fsSL https://pkg.labs.nic.cz/aptrepo/gpg.key \
-        | gpg --dearmor -o /usr/share/keyrings/knot-labs.gpg \
- && echo "deb [signed-by=/usr/share/keyrings/knot-labs.gpg] \
+RUN curl -fsSL https://pkg.labs.nic.cz/gpg \
+        > /usr/share/keyrings/cznic-labs-pkg.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] \
         https://pkg.labs.nic.cz/knot-dns bookworm main" \
-        > /etc/apt/sources.list.d/knot-dns.list
+        > /etc/apt/sources.list.d/cznic-labs-knot-dns.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     knot \
