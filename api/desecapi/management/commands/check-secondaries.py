@@ -8,7 +8,7 @@ from django.core.management import BaseCommand
 from django.utils import timezone
 import dns.exception, dns.message, dns.query, dns.rdatatype
 
-from desecapi import pdns
+from desecapi import knot
 from desecapi.models import Domain
 
 
@@ -76,7 +76,7 @@ class Command(BaseCommand):
         ).values_list("name", flat=True)
         serials = {
             zone: s
-            for zone, s in pdns.get_serials().items()
+            for zone, s in knot.get_serials().items()
             if zone.rstrip(".") in recent_domain_names
         }
 
