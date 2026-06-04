@@ -31,6 +31,7 @@
           alt="deSEC Logo"
           class="app-logo"
           height="32"
+          width="147"
           eager
           contain
         ></v-img>
