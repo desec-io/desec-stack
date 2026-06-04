@@ -46,8 +46,8 @@
         </span>
       </div>
       <v-btn class="mx-4" color="primary" variant="flat" :to="{name: 'signup', query: $route.query}" v-if="!authenticated">Create Account</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!authenticated">Log In</v-btn>
-      <v-btn class="mx-4 mr-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
+      <v-btn class="mx-4 ml-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!authenticated">Log In</v-btn>
+      <v-btn class="mx-4 ml-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
       <template #extension v-if="authenticated">
         <div class="d-flex align-center w-100 bg-primary text-white">
