@@ -218,6 +218,7 @@
                     <template #activator="{ props }">
                       <v-btn
                               v-bind="props"
+                              variant="text"
                               :disabled="user.working || itemIsReadOnly(itemFieldProps.item, key)"
                               :class="'button-' + key"
                               color="grey"
