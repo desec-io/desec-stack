@@ -15,7 +15,7 @@
         :disabled="disabled"
         :readonly="readonly"
         :placeholder="required && !field.optional ? ' ' : '(optional)'"
-        :hide-details="!('mnemonics' in field) && !fieldInvalid(index)"
+        :hide-details="readonly || (!('mnemonics' in field) && !fieldInvalid(index))"
         variant="underlined"
         :error="fieldInvalid(index)"
         :error-messages="fieldErrorMessages(index)"
@@ -26,7 +26,6 @@
         @keydown="keydownHandler(index, $event)"
         @keyup="(e) => $emit('keyup', e)"
       />
-      {{ errorMessages.join(' ') }}
     </td>
   </tr>
 </template>
@@ -150,6 +149,9 @@ export default {
     this.update(this.content);
   },
   validations() {
+    if (this.readonly || this.disabled) {
+      return { fields: {} };
+    }
     const withMessages = (validators) => {
       if (!validators) {
         return {};
@@ -171,7 +173,8 @@ export default {
 
     validations.fields = this.fields.reduce(
       (acc, field, index) => {
-        acc[index] = { value: withMessages(field.validations) };
+        const validateOptionalValue = this.required || !!field.value;
+        acc[index] = { value: validateOptionalValue ? withMessages(field.validations) : {} };
         return acc;
       },
       validations.fields,

@@ -4,7 +4,7 @@
     <div class="d-none d-md-block triangle-bg"></div>
     <v-container class="pa-0">
       <v-row align="center">
-        <v-col class="col-md-6 col-12 py-8 triangle-fg">
+        <v-col cols="12" md="6" class="py-8 triangle-fg">
           <h1 class="text-h4 font-weight-bold">Modern DNS Hosting for Everyone</h1>
           <div class="text-subtitle-1 mt-2 pt-8 font-weight-regular">
             <p>
@@ -23,7 +23,7 @@
                           v-model="domainType"
                           class="pb-2"
                           hide-details
-                          row
+                          inline
                           @update:modelValue="$router.push({query: {domainType}})"
                   >
                     <span class="pb-2 pr-4">Start with ...</span>
@@ -41,7 +41,7 @@
                     type="email"
                     placeholder="Account email address"
                     :rules="email_rules"
-                    validate-on-blur
+                    validate-on="blur"
                     ></v-text-field>
                 </v-col>
                 <v-col style="padding-top: 2px">
@@ -80,12 +80,12 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
+        <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/icann.logo.svg" alt="ICANN Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
           </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           In our project "Closing the DNSSEC Maturity Gap through Automation", we develop technical solutions that
           enable automatic deployment of DNSSEC, and work with DNS and domain industry players to facilitate real-world
           introduction of these automation standards. This project is supported by the
@@ -93,12 +93,12 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
+        <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/nlnet.logo.svg" alt="NLnet Foundation Logo" class="mr-6" style="max-width: 180px; width: 100%"/>
           </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           deSEC received funding through <a class="text-primary" href="https://nlnet.nl/">NLnet
           Foundation</a> for its work on the automation and future viability of DNSSEC. The <strong>NGI Assure</strong>
           fund, established with financial support from the European Commission's <strong>Next Generation
@@ -107,24 +107,24 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
+        <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/ripe-ncc.logo.svg" alt="RIPE NCC Logo" class="mr-6" style="margin-bottom: -7%; margin-top: -7%; max-width: 240px; width: 100%"/>
           </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           Through their Community Projects Fund, <a class="text-primary" href="https://ripe.net/">RIPE NCC</a>
           in 2023 supported the ongoing operation of our DNS platform and covers global Anycast network expenses in
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
+        <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/eu.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
           </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           As a <a class="text-primary" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
           deSEC works to ensure implementation of robust and modern DNS security and privacy features.
           This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.<br />
@@ -142,12 +142,12 @@
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
-        <v-col class="col-12 col-lg-3 py-4">
+        <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <a href="https://www.joindns4.eu/"><img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/></a>
           </v-row>
         </v-col>
-        <v-col class="col-12 col-sm-10 col-lg-9 py-4 text-center">
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           DNS4EU is an initiative of the European Commission to provide an EU-based alternative public DNS resolver.
           The purpose of DNS4EU is to provide EU citizens, companies, and institutions with a secure, privacy-compliant,
           and powerful recursive DNS to protect European digital independence.
@@ -165,7 +165,7 @@
     <v-container>
       <v-row align="center" justify="center">
         <v-card
-          class="mx-auto col-12"
+          class="mx-auto w-100"
           color="grey-lighten-5"
         >
           <v-card-text
@@ -185,7 +185,7 @@
             </div>
           </v-card-text>
           <v-img
-            src="../assets/anycast.worldmap.svg" alt="World Map of Anycast POPs" contain
+            src="../assets/anycast.worldmap.svg" alt="World Map of Anycast POPs"
             class="justify-center"
             style="display: block; width: 100%; aspect-ratio: 2/1"
           >

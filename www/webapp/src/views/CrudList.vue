@@ -12,7 +12,7 @@
             :timeout="-1"
           >
             {{ errors[errors.length - 1] }}
-            <v-btn @click="snackbar = false">
+            <v-btn color="white" variant="text" @click="snackbar = false">
               Close
             </v-btn>
           </v-snackbar>
@@ -186,7 +186,7 @@
                   </v-card>
                 </v-dialog>
               </v-toolbar>
-              <v-alert variant="text" type="info" v-if="bannerText"><span v-html="bannerText"></span></v-alert>
+              <v-alert variant="tonal" type="info" v-if="bannerText"><span v-html="bannerText"></span></v-alert>
             </template>
 
             <template
@@ -196,19 +196,17 @@
               <component
                 :is="column.datatype"
                 :key="id"
-                :readonly="column.readonly"
-                :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
-                v-model="itemFieldProps.item[column.value]"
-                v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
+                :readonly="column.readonly || itemIsReadOnly(rawItem(itemFieldProps.item))"
+                :disabled="user.working"
+                :model-value="rawItem(itemFieldProps.item)[column.value]"
+                v-bind="column.fieldProps ? column.fieldProps(rawItem(itemFieldProps.item)) : {}"
+                @update:modelValue="value => updateItemValue(rawItem(itemFieldProps.item), column.value, value)"
                 @keyup="keyupHandler"
-                @dirty="dirty.add(itemFieldProps.item); dirtyError.delete(itemFieldProps.item);"
+                @dirty="dirty.add(rawItem(itemFieldProps.item)); dirtyError.delete(rawItem(itemFieldProps.item));"
               />
             </template>
             <template #[`item.actions`]="itemFieldProps">
-              <v-row
-                      class="my-1 py-3"
-                      justify="end"
-              >
+              <div class="crud-actions my-1 py-3">
                 <div :key="key" v-for="[key, action] in getActions(actions)">
                   <v-tooltip
                       :disabled="!action.tooltip"
@@ -219,11 +217,11 @@
                       <v-btn
                               v-bind="props"
                               variant="text"
-                              :disabled="user.working || itemIsReadOnly(itemFieldProps.item, key)"
+                              :disabled="user.working || itemIsReadOnly(rawItem(itemFieldProps.item), key)"
                               :class="'button-' + key"
                               color="grey"
                               icon
-                              @click.stop="action.go(itemFieldProps.item, $event)"
+                              @click.stop="action.go(rawItem(itemFieldProps.item), $event)"
                       >
                         <v-icon :icon="action.icon" />
                       </v-btn>
@@ -231,7 +229,7 @@
                     <span>{{ action.tooltip }}</span>
                   </v-tooltip>
                 </div>
-              </v-row>
+              </div>
             </template>
             <template #no-data>
               <div v-if="!pagination_required">
@@ -243,7 +241,6 @@
               <v-alert
                   v-else
                   border="top"
-                  colored-border
                   variant="text"
                   prominent
                   type="warning"
@@ -483,8 +480,15 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
+      cols = cols.map(col => ({
+        ...col,
+        title: col.title || col.text,
+        key: col.key || col.value,
+      }));
       cols.push({
+        title: 'Actions',
         text: 'Actions',
+        key: 'actions',
         sortable: false,
         align: 'right',
         value: 'actions',
@@ -576,7 +580,7 @@ export default {
     itemClass(item) {
       const baseClass = 'crud-item';
       if (this.itemIsReadOnly(item)) {
-        return baseClass + ' text-disabled bg-grey-lighten-4';
+        return baseClass;
       }
       if (this.dirtyError.has(item)) {
         return baseClass + ' bg-red-lighten-5';
@@ -596,6 +600,12 @@ export default {
     rowClick(value, row) {
       const raw = row?.item?.raw ?? row?.item ?? value?.raw ?? value?.item ?? value;
       this.handleRowClick(raw);
+    },
+    rawItem(item) {
+      return item?.raw ?? item;
+    },
+    updateItemValue(item, key, value) {
+      item[key] = value;
     },
     getActions(actions) {
       return Object.entries({...actions, ...this.defaultActions}).filter(([, action]) => action.if ?? true);
@@ -768,6 +778,14 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.crud-actions {
+  display: flex;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+</style>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
-  <v-row dense align="center" class="text-center">
-    <v-col cols="12">
+  <v-row dense align="start" class="captcha-row">
+    <v-col cols="12" sm="7">
       <v-text-field
           v-model="inputSolution"
           :label="l.inputSolution"
@@ -18,7 +18,7 @@
           ref="captchaField"
       ></v-text-field>
     </v-col>
-    <v-col cols="12" sm="auto">
+    <v-col cols="12" sm="auto" class="text-center">
       <v-progress-circular
           v-if="working"
           indeterminate
@@ -147,3 +147,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.captcha-row img {
+  max-width: 100%;
+}
+</style>

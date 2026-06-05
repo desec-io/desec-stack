@@ -7,7 +7,7 @@
     @keydown.esc="close"
   >
     <v-card>
-      <v-card-title>
+      <v-card-title class="domain-setup-title">
         <div class="text-h6">
           Setup Instructions for <b>{{ domain }}</b>
         </div>
@@ -73,3 +73,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.domain-setup-title {
+  flex-wrap: nowrap;
+}
+</style>

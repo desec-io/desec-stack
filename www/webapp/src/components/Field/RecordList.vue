@@ -226,7 +226,13 @@ export default {
 };
 </script>
 <style scoped>
+table {
+  line-height: 1.25;
+}
 table ::v-deep td:last-child {
   padding-right: 4px;
+}
+table ::v-deep .v-input {
+  margin-bottom: 0;
 }
 </style>

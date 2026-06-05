@@ -38,7 +38,7 @@
                                     variant="outlined"
                                     required
                                     :disabled="true"
-                                    validate-on-blur
+                                    validate-on="blur"
                             />
                             <v-text-field
                                     v-model="password"

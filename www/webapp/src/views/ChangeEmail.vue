@@ -40,7 +40,7 @@
                                     variant="outlined"
                                     required
                                     :disabled="true"
-                                    validate-on-blur
+                                    validate-on="blur"
                             />
                             <v-text-field
                                     v-model="password"
@@ -65,7 +65,7 @@
                                     :rules="[rules.required, rules.email]"
                                     :error-messages="email_errors"
                                     @change="email_errors=[]"
-                                    validate-on-blur
+                                    validate-on="blur"
                                     tabindex="2"
                             />
                         </v-card-text>

@@ -29,7 +29,7 @@
       <v-radio-group
           v-model="interval"
           mandatory
-          row
+          inline
       >
         <v-radio label="Just once" :value="0"></v-radio>
         <v-radio label="Monthly" :value="1"></v-radio>
@@ -55,7 +55,7 @@
               required
               :rules="iban_rules"
               :error-messages="iban_errors"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-text-field
@@ -73,7 +73,7 @@
               label="Message (optional)"
               :prepend-inner-icon="mdiMessageTextOutline"
               variant="outlined"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-text-field
@@ -83,7 +83,7 @@
               variant="outlined"
               :rules="email_rules"
               :error-messages="email_errors"
-              validate-on-blur
+              validate-on="blur"
       />
 
       <v-btn

@@ -1,8 +1,8 @@
 <template>
   <v-text-field
     :label="label"
-    :disabled="disabled || readonly"
-    :readonly="!!value_override"
+    :disabled="disabled"
+    :readonly="readonly || !!value_override"
     :error-messages="errorMessages"
     :model-value="value_override ? '' : inputValue"
     :type="type || ''"
@@ -11,7 +11,7 @@
     :persistent-hint="!!resolvedHint"
     :class="hintClass"
     :required="required"
-    :rules="[v => !required || !!v || 'Required.'].concat(rules)"
+    :rules="readonly || disabled ? [] : [v => !required || !!v || 'Required.'].concat(rules)"
     @update:modelValue="updateValue"
     @keyup="handleKeyup"
   />
@@ -105,16 +105,11 @@ export default {
 </script>
 
 <style>
-/* Removes dropdown icon from read-only select */
-.v-application--is-ltr .v-text-field.v-input--is-disabled .v-input__append-inner {
-  display: none;
+.v-field--disabled {
+  opacity: 1;
 }
-/* remove underline from disabled text fields so they look like regular text */
-:not(v-select).theme--light.v-text-field.v-input--is-disabled .v-input__slot::before {
-  content: none;
-}
-/* display disabled text fields in normal color */
-.theme--light.v-input--is-disabled input {
+.v-field--disabled input,
+.v-field--disabled textarea {
   color: rgba(0, 0, 0, 0.87);
 }
 /* Work around Firefox not propagating click events to parent element, see

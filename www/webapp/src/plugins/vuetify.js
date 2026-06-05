@@ -24,6 +24,7 @@ export default createVuetify({
           primary: colors.amber.base,
           secondary: colors.lightBlue.darken1,
           accent: colors.amber.accent4,
+          'on-primary': '#fff',
         },
       },
     },

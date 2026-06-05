@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row align="center">
-      <v-col class="col-md-6 col-12 py-8">
+      <v-col cols="12" md="6" class="py-8">
         <h1 class="text-h4 font-weight-bold">Donate to Support our Mission</h1>
         <div class="text-subtitle-1 mt-6 font-weight-regular">
           <p>
@@ -21,12 +21,12 @@
             <v-toolbar-title>Donate</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
-            <v-expansion-panels class="mb-4" focusable>
+            <v-expansion-panels class="mb-4">
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiBankTransferIn" /> Direct Debit – Let us Take your Money (Europe)
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -38,9 +38,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiBankTransferOut" /> Bank Transfer – Send us Money (Europe)
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -69,9 +69,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiCreditCardOutline" /> Credit Card
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -87,9 +87,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiGithub" /> GitHub Sponsors
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -100,9 +100,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiGiftOutline" /> PayPal
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -118,9 +118,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC)
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>If you prefer to donate in a crypto currency, you can use the following wallets:</p>
@@ -143,9 +143,9 @@
               </v-expansion-panel>
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">
-                  <v-row>
+                  <div class="donation-panel-title">
                     <v-icon class="mr-2" :icon="mdiHeartMultipleOutline" /> Double-up with Your Employer
-                  </v-row>
+                  </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
                   <p>
@@ -248,5 +248,10 @@
   }
   .fixed-width {
     font-family: monospace;
+  }
+  .donation-panel-title {
+    align-items: center;
+    display: flex;
+    min-width: 0;
   }
 </style>

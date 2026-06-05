@@ -47,7 +47,7 @@
                                     :rules="email_rules"
                                     :error-messages="email_errors"
                                     @change="email_errors=[]"
-                                    validate-on-blur
+                                    validate-on="blur"
                                     ref="emailField"
                                     tabindex="1"
                             />

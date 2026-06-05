@@ -39,7 +39,7 @@
               There are several options to connect your new domain name to an IP address.
               Choose an option that is right for you, then confirm that your setup is working using the check below.
             </p>
-            <v-expansion-panels class="mb-4" focusable>
+            <v-expansion-panels class="mb-4">
               <v-expansion-panel>
                 <v-expansion-panel-title class="text-subtitle-1">Configure Your Router</v-expansion-panel-title>
                 <v-expansion-panel-text>

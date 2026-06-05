@@ -2,7 +2,6 @@
   <v-app id="inspire">
     <v-navigation-drawer
       v-model="drawer"
-      app
       location="right"
       disable-resize-watcher
     >
@@ -24,7 +23,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar app color="white" :extended="authenticated">
+    <v-app-bar color="white" :extended="authenticated">
       <v-app-bar-title><router-link :to="{name: 'home'}">
         <v-img
           src="./assets/logo.svg"
@@ -33,14 +32,13 @@
           height="32"
           width="147"
           eager
-          contain
         ></v-img>
       </router-link></v-app-bar-title>
       <v-spacer/>
       <div class="d-none d-md-block">
         <span class="mx-2" v-for="(item, key) in menu" :key="key">
           <router-link
-            class="text-primary"
+            class="main-menu-link"
             :to="{name: item.name}"
           >{{ item.text }}</router-link>
           <v-icon v-if="item.post_icon" :icon="item.post_icon" :color="item.post_icon_color" class="ml-1" size="small" />
@@ -121,7 +119,6 @@
       <v-progress-linear
               :active="user.working"
               :indeterminate="user.working"
-              fixed
               color="secondary"
               style="z-index: 3"
       ></v-progress-linear>
@@ -142,7 +139,7 @@
           <div class="px-2"><router-link :to="{name: 'impressum'}">Legal Notice (Impressum)</router-link></div>
         </div>
       </div>
-      <div class="bg-grey-darken-4 d-md-flex flex-row justify-space-between pa-6">
+      <div class="bg-grey-darken-4 d-md-flex flex-row justify-space-between pa-6 footer-details">
         <div>
           <p>{{ email }}</p>
           <p>
@@ -300,19 +297,68 @@ export default {
 </script>
 
 <style>
+.v-application {
+  color: rgba(0, 0, 0, 0.87);
+}
+.v-application p {
+  margin-bottom: 16px;
+}
+.v-application ul,
+.v-application ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+.v-application li > ul,
+.v-application li > ol {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 .v-application a {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
+  color: #ffa000;
+  text-decoration: underline;
 }
 .v-application a:hover,
 .v-application a:focus {
   text-decoration: underline;
 }
+.v-application .main-menu-link {
+  color: #ffa000;
+}
 .v-application .bg-grey-darken-3 a,
 .v-application .bg-grey-darken-4 a {
   color: rgb(var(--v-theme-secondary));
+  text-decoration: underline;
 }
 .app-logo {
   width: auto;
+}
+.footer-details {
+  row-gap: 24px;
+}
+.v-card-title {
+  display: flex;
+  align-items: center;
+}
+.v-card-text {
+  letter-spacing: 0;
+}
+.v-alert .v-alert__content > :last-child,
+.v-card-text > :last-child,
+.v-expansion-panel-text__wrapper > :last-child {
+  margin-bottom: 0;
+}
+.v-application .text-primary {
+  color: #ffa000 !important;
+}
+.v-main {
+  flex: 1 0 auto;
+}
+.v-input--disabled {
+  opacity: 1;
+}
+.v-btn--disabled.v-btn--variant-flat {
+  background-color: #e0e0e0 !important;
+  color: rgba(0, 0, 0, 0.54) !important;
+  opacity: 1;
 }
 </style>

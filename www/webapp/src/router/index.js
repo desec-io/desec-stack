@@ -46,12 +46,18 @@ const routes = [
   {
     path: '/docs',
     name: 'docs',
-    beforeEnter() { location.href = 'https://desec.readthedocs.io/' },
+    beforeEnter() {
+      window.location.assign('https://desec.readthedocs.io/');
+      return false;
+    },
   },
   {
     path: '/talk',
     name: 'talk',
-    beforeEnter() { location.href = 'https://talk.desec.io/' },
+    beforeEnter() {
+      window.location.assign('https://talk.desec.io/');
+      return false;
+    },
   },
   {
     path: '/confirm/:action/:code',
@@ -101,7 +107,10 @@ const routes = [
   {
     path: '/roadmap',
     name: 'roadmap',
-    beforeEnter() { location.href = 'https://github.com/desec-io/desec-stack/milestones?direction=asc&sort=title&state=open' },
+    beforeEnter() {
+      window.location.assign('https://github.com/desec-io/desec-stack/milestones?direction=asc&sort=title&state=open');
+      return false;
+    },
   },
   {
     path: '/impressum/',
@@ -184,10 +193,15 @@ router.beforeEach((to, from, next) => {
     }
   } else {
     if (user.authenticated) {
+      if (to.name === 'login') {
+        next({name: 'domains'})
+        return;
+      }
       // Log in state was present, but not needed for the current page
       if (recovered && to.name === 'home') {
         // User restored a previous session. If navigation to home, divert to home page for authorized users
         next({name: 'domains'})
+        return;
       }
     }
     next() // make sure to always call next()!

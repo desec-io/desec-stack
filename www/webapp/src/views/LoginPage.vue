@@ -127,7 +127,11 @@ export default {
         if (this.useSessionStorage) {
           sessionStorage.setItem('token', JSON.stringify(response.data));
         }
-        if ('redirect' in this.$route.query && this.$route.query.redirect) {
+        if (
+          'redirect' in this.$route.query
+          && this.$route.query.redirect
+          && !['/login', '/login/'].includes(this.$route.query.redirect)
+        ) {
           this.$router.replace(this.$route.query.redirect);
         } else {
           this.$router.replace({ name: 'domains' });
