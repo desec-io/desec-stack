@@ -19,17 +19,19 @@
             <v-form @submit.prevent="signup" v-model="valid" ref="form">
               <v-row>
                 <v-col class="pb-0">
-                  <v-radio-group
-                          v-model="domainType"
-                          class="pb-2"
-                          hide-details
-                          inline
-                          @update:modelValue="$router.push({query: {domainType}})"
-                  >
-                    <span class="pb-2 pr-4">Start with ...</span>
-                    <v-radio class="pb-2" label="dynDNS domain" value="dynDNS"></v-radio>
-                    <v-radio class="pb-2" label="Managed domain" value="custom"></v-radio>
-                  </v-radio-group>
+                  <div class="domain-type-selector pb-2">
+                    <span class="domain-type-label">Start with ...</span>
+                    <v-radio-group
+                            v-model="domainType"
+                            class="domain-type-options"
+                            hide-details
+                            inline
+                            @update:modelValue="$router.push({query: {domainType}})"
+                    >
+                      <v-radio label="dynDNS domain" value="dynDNS"></v-radio>
+                      <v-radio label="Managed domain" value="custom"></v-radio>
+                    </v-radio-group>
+                  </div>
                 </v-col>
               </v-row>
               <v-row>
@@ -231,6 +233,28 @@
   }
   .triangle-fg {
     z-index: 2;
+  }
+  .domain-type-selector {
+    align-items: center;
+    column-gap: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .domain-type-label {
+    line-height: 40px;
+    white-space: nowrap;
+  }
+  .domain-type-options {
+    flex: 1 1 280px;
+  }
+  .domain-type-options :deep(.v-selection-control-group) {
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 8px;
+  }
+  .domain-type-options :deep(.v-selection-control) {
+    min-height: 40px;
   }
   .partner-logo {
     max-height: 113px;
