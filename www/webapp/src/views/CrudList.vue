@@ -216,28 +216,26 @@
             </template>
             <template #[`item.actions`]="itemFieldProps">
               <div class="crud-actions my-1 py-3">
-                <div :key="key" v-for="[key, action] in getActions(actions)">
+                <v-btn
+                    v-for="[key, action] in getActions(actions)"
+                    :key="key"
+                    variant="text"
+                    :disabled="user.working || itemIsReadOnly(rawItem(itemFieldProps.item), key)"
+                    :class="'button-' + key"
+                    color="grey"
+                    icon
+                    @click.stop="action.go(rawItem(itemFieldProps.item), $event)"
+                >
+                  <v-icon :icon="action.icon" />
                   <v-tooltip
-                      :disabled="!action.tooltip"
+                      v-if="action.tooltip"
+                      activator="parent"
                       location="top"
                       transition="fade-transition"
                   >
-                    <template #activator="{ props }">
-                      <v-btn
-                              v-bind="props"
-                              variant="text"
-                              :disabled="user.working || itemIsReadOnly(rawItem(itemFieldProps.item), key)"
-                              :class="'button-' + key"
-                              color="grey"
-                              icon
-                              @click.stop="action.go(rawItem(itemFieldProps.item), $event)"
-                      >
-                        <v-icon :icon="action.icon" />
-                      </v-btn>
-                    </template>
                     <span>{{ action.tooltip }}</span>
                   </v-tooltip>
-                </div>
+                </v-btn>
               </div>
             </template>
             <template #no-data>
@@ -823,9 +821,15 @@ export default {
 
 <style scoped>
 .crud-actions {
+  align-items: center;
+  column-gap: 4px;
   display: flex;
+  flex-direction: row;
   justify-content: flex-end;
   white-space: nowrap;
+}
+.crud-actions .v-btn {
+  flex: 0 0 auto;
 }
 .crud-readonly-value {
   align-items: center;
