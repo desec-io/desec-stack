@@ -353,8 +353,34 @@ export default {
 .v-main {
   flex: 1 0 auto;
 }
+.v-application .v-field {
+  background-color: #FFFFFF;
+}
+.v-application .v-field__overlay {
+  background-color: transparent;
+  opacity: 0;
+}
 .v-input--disabled {
   opacity: 1;
+}
+.v-application .v-input--disabled .v-field,
+.v-application .v-field--disabled,
+.v-application .v-field--variant-plain {
+  background-color: #FFFFFF;
+}
+.v-application .v-input--disabled .v-field__outline,
+.v-application .v-input--disabled .v-field__underlay,
+.v-application .v-field--disabled .v-field__outline,
+.v-application .v-field--disabled .v-field__underlay,
+.v-application .v-field--variant-plain .v-field__outline,
+.v-application .v-field--variant-plain .v-field__underlay {
+  display: none;
+}
+.v-application .v-input--disabled input,
+.v-application .v-input--disabled textarea,
+.v-application .v-field--disabled input,
+.v-application .v-field--disabled textarea {
+  color: rgba(0, 0, 0, 0.87);
 }
 .v-btn--disabled.v-btn--variant-flat {
   background-color: #e0e0e0 !important;

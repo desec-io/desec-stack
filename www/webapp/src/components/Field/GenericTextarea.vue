@@ -8,6 +8,7 @@
     :placeholder="required ? '' : '(optional)'"
     :hint="hint"
     persistent-hint
+    :variant="disabled || readonly ? 'plain' : 'underlined'"
     :required="required"
     :rules="[v => !required || !!v || 'Required.'].concat(rules)"
     @update:modelValue="updateValue"

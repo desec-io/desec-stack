@@ -7,6 +7,7 @@
     :persistent-hint="!readonly"
     :model-value="inputValue"
     :items="types"
+    :variant="disabled || readonly ? 'plain' : 'underlined'"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
     @update:modelValue="input"

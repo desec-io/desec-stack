@@ -5,6 +5,7 @@
                 v-model="payload.new_password"
                 :append-inner-icon="show ? mdiEyeOff : mdiEye"
                 label="New password"
+                variant="outlined"
                 required
                 :disabled="working"
                 :rules="[rules.required, rules.min]"

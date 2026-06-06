@@ -10,6 +10,7 @@
     :hint="resolvedHint"
     :persistent-hint="!!resolvedHint"
     :class="hintClass"
+    :variant="disabled || readonly ? 'plain' : 'underlined'"
     :required="required"
     :rules="readonly || disabled ? [] : [v => !required || !!v || 'Required.'].concat(rules)"
     @update:modelValue="updateValue"

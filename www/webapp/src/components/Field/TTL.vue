@@ -8,6 +8,7 @@
     max="86400"
     :min="min"
     :placeholder="required ? '' : '(optional)'"
+    :variant="disabled || readonly ? 'plain' : 'underlined'"
     :required="required"
     :rules="rules"
     @update:modelValue="updateValue"

@@ -128,7 +128,7 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     ::v-deep tr:not(.v-data-table__empty-wrapper) td {
-        vertical-align: top;
+        vertical-align: middle;
     }
     ::v-deep .v-data-table .v-data-table__mobile-row {
         height: auto;

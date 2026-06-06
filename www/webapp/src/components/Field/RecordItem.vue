@@ -16,7 +16,7 @@
         :readonly="readonly"
         :placeholder="required && !field.optional ? ' ' : '(optional)'"
         :hide-details="readonly || (!('mnemonics' in field) && !fieldInvalid(index))"
-        variant="underlined"
+        :variant="disabled || readonly ? 'plain' : 'underlined'"
         :error="fieldInvalid(index)"
         :error-messages="fieldErrorMessages(index)"
         :append-inner-icon="index == fields.length-1 && !readonly && !disabled ? appendIcon : ''"

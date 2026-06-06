@@ -28,7 +28,7 @@
                   :items-per-page="itemsPerPage"
                   :items-per-page-options="[10, 20, 30, 50, 100, -1]"
                   class="elevation-1"
-                  @click:row="rowClick"
+                  v-bind="rowEventProps"
                   @update:options="updatePagination"
           >
             <template #top>
@@ -41,6 +41,7 @@
                         v-if="display.smAndUp"
                         :append-inner-icon="mdiMagnify"
                         label="Search"
+                        variant="underlined"
                         single-line
                         hide-details
                 />
@@ -67,6 +68,7 @@
                           v-model="search"
                           :append-inner-icon="mdiMagnify"
                           label="Search"
+                          variant="underlined"
                           single-line
                           hide-details
                   />
@@ -193,7 +195,14 @@
               v-for="(column, id) in columns"
               #[column.name]="itemFieldProps"
             >
+              <div
+                v-if="cellUsesPlainText(column, rawItem(itemFieldProps.item))"
+                :key="`${id}-readonly`"
+                class="crud-readonly-value"
+                v-text="readonlyDisplayValue(column, rawItem(itemFieldProps.item))"
+              ></div>
               <component
+                v-else
                 :is="column.datatype"
                 :key="id"
                 :readonly="column.readonly || itemIsReadOnly(rawItem(itemFieldProps.item))"
@@ -431,6 +440,7 @@ export default {
     },
     // object
     itemDefaults: () => ({}),
+    rowsClickable: false,
     // callbacks
     itemIsReadOnly: () => false,
     pagination_required: false,
@@ -498,6 +508,9 @@ export default {
     },
     itemsPerPage() {
       return this.user.component_arg(`${this.$options.name}/itemsPerPage`) || 30;
+    },
+    rowEventProps() {
+      return this.rowsClickable ? {'onClick:row': this.rowClick} : {};
     },
     writeableStandardColumns() {
       return this.filterWriteableColumns(col => !(col.advanced || false));
@@ -578,17 +591,20 @@ export default {
       return { class: this.itemClass(raw) };
     },
     itemClass(item) {
-      const baseClass = 'crud-item';
+      const classes = ['crud-item'];
+      if (this.rowsClickable) {
+        classes.push('crud-item--clickable');
+      }
       if (this.itemIsReadOnly(item)) {
-        return baseClass;
+        return classes.join(' ');
       }
       if (this.dirtyError.has(item)) {
-        return baseClass + ' bg-red-lighten-5';
+        return [...classes, 'bg-red-lighten-5'].join(' ');
       }
       if (this.dirty.has(item)) {
-        return baseClass + ' bg-orange-lighten-5';
+        return [...classes, 'bg-orange-lighten-5'].join(' ');
       }
-      return baseClass;
+      return classes.join(' ');
     },
     filterWriteableColumns(callback) {
       const columns = filter(this.columns, c => !c.readonly || c.writeOnCreate);
@@ -598,8 +614,34 @@ export default {
       c.createErrors = [];
     },
     rowClick(value, row) {
+      if (!this.rowsClickable) {
+        return;
+      }
       const raw = row?.item?.raw ?? row?.item ?? value?.raw ?? value?.item ?? value;
       this.handleRowClick(raw);
+    },
+    cellIsReadOnly(column, item) {
+      return column.readonly || this.itemIsReadOnly(item);
+    },
+    cellUsesPlainText(column, item) {
+      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name;
+    },
+    readonlyDisplayValue(column, item) {
+      const value = item[column.value];
+      const props = column.fieldProps ? column.fieldProps(item) : {};
+      if (props.value_override) {
+        return props.value_override;
+      }
+      if (value === null || value === undefined || value === '') {
+        return props.placeholder || '—';
+      }
+      if (Array.isArray(value)) {
+        return value.join(', ');
+      }
+      if (typeof value === 'boolean') {
+        return value ? 'yes' : 'no';
+      }
+      return value;
     },
     rawItem(item) {
       return item?.raw ?? item;
@@ -785,6 +827,13 @@ export default {
   justify-content: flex-end;
   white-space: nowrap;
 }
+.crud-readonly-value {
+  align-items: center;
+  display: flex;
+  line-height: 1.5;
+  min-height: 56px;
+  padding: 0;
+}
 </style>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -809,10 +858,16 @@ export default {
   ::v-deep tr:focus-within :focus {
     background-color: #FFFFFF;
   }
-  ::v-deep tbody tr > :hover {
+  ::v-deep tbody tr.crud-item--clickable {
     cursor: pointer;
   }
-  ::v-deep tbody tr.text-disabled > :hover {
+  ::v-deep tbody tr.crud-item--clickable:hover > td {
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
+  }
+  ::v-deep tbody tr.text-disabled {
     cursor: auto;
+  }
+  ::v-deep tbody tr.text-disabled:hover > td {
+    background-color: initial;
   }
 </style>
