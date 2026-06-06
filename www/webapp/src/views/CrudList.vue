@@ -198,7 +198,25 @@
               v-for="(column, id) in columns"
               #[column.name]="itemFieldProps"
             >
+              <router-link
+                v-if="column.link"
+                :key="'link-' + id"
+                :to="column.link(itemFieldProps.item)"
+                class="text-decoration-none"
+                @click.native.stop
+              >
+                <component
+                  :is="column.datatype"
+                  :readonly="column.readonly"
+                  :disabled="user.working || itemIsReadOnly(itemFieldProps.item)"
+                  v-model="itemFieldProps.item[column.value]"
+                  v-bind="column.fieldProps ? column.fieldProps(itemFieldProps.item) : {}"
+                  @keyup="keyupHandler"
+                  @dirty="dirty.add(itemFieldProps.item); dirtyError.delete(itemFieldProps.item);"
+                />
+              </router-link>
               <component
+                v-else
                 :is="column.datatype"
                 :key="id"
                 :readonly="column.readonly"
