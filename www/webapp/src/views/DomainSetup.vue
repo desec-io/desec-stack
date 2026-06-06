@@ -40,7 +40,7 @@
             <strong>Be careful!</strong>
             Simply replacing records can cause errors, because resolvers may have old NS or DNSSEC settings cached.
             To prevent this, choose one of the following:
-            <ul>
+            <ul class="dnssec-move-options">
               <li>
                 Keep DNSSEC enabled throughout: please contact support to configure a temporary "multi-signer" setup (RFC 8901).
               </li>
@@ -242,3 +242,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.dnssec-move-options {
+  list-style-position: outside;
+  margin-top: 8px;
+  padding-left: 24px;
+}
+</style>
