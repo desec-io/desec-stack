@@ -28,31 +28,35 @@
             <v-card-text>
               <error-alert :errors="errors"></error-alert>
 
-              <v-text-field
-                      v-model="email"
-                      label="Email"
-                      :prepend-inner-icon="mdiEmail"
-                      variant="outlined"
-                      required
-                      :rules="email_rules"
-                      :error-messages="email_errors"
-                      @change="email_errors=[]"
-                      validate-on="blur"
-                      ref="emailField"
-                      tabindex="1"
-              />
+              <div class="signup-form-row">
+                <v-icon class="signup-form-icon" :icon="mdiEmail" />
+                <v-text-field
+                        v-model="email"
+                        label="Email"
+                        variant="outlined"
+                        required
+                        :rules="email_rules"
+                        :error-messages="email_errors"
+                        @change="email_errors=[]"
+                        validate-on="blur"
+                        ref="emailField"
+                        tabindex="1"
+                />
+              </div>
 
-              <v-radio-group
-                      v-model="domainType"
-                      hint="You can also use our REST API or web interface to create domains."
-                      label="Do you want to set up a domain right away?"
-                      persistent-hint
-                      :prepend-icon="mdiDns"
-              >
-                <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
-                <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
-                <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
-              </v-radio-group>
+              <div class="signup-form-row">
+                <v-icon class="signup-form-icon" :icon="mdiDns" />
+                <v-radio-group
+                        v-model="domainType"
+                        hint="You can also use our REST API or web interface to create domains."
+                        label="Do you want to set up a domain right away?"
+                        persistent-hint
+                >
+                  <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
+                  <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
+                  <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
+                </v-radio-group>
+              </div>
 
               <v-expand-transition>
                 <div v-if="domainType === 'dynDNS'">
@@ -89,33 +93,38 @@
                 </div>
               </v-expand-transition>
 
-              <v-text-field
-                      v-model="domain"
-                      :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
-                      variant="outlined"
-                      required
-                      :disabled="domainType === 'none' || domainType === undefined || (domainType === 'dynDNS' && !limitationsAccepted)"
-                      :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
-                      :error-messages="domain_errors"
-                      :suffix="domainType === 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
-                      @change="domain_errors=[]"
-                      class="lowercase"
-                      ref="domainField"
-                      tabindex="3"
-                      :hint="domainType === 'dynDNS'
-                        ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as your router).'
-                        : 'Your first domain (you can add more later). – To use with dynDNS, please see the docs.'
-                      "
-                      persistent-hint
-              />
+              <div class="signup-form-row">
+                <span class="signup-form-icon"></span>
+                <v-text-field
+                        v-model="domain"
+                        :label="domainType === 'dynDNS' ? 'DynDNS domain' : 'Domain name'"
+                        variant="outlined"
+                        required
+                        :disabled="domainType === 'none' || domainType === undefined || (domainType === 'dynDNS' && !limitationsAccepted)"
+                        :rules="domainType === 'dynDNS' ? dyn_domain_rules : (domainType === 'custom' ? domain_rules : [])"
+                        :error-messages="domain_errors"
+                        :suffix="domainType === 'dynDNS' ? ('.' + LOCAL_PUBLIC_SUFFIXES[0]) : ''"
+                        @change="domain_errors=[]"
+                        class="lowercase"
+                        ref="domainField"
+                        tabindex="3"
+                        :hint="domainType === 'dynDNS'
+                          ? 'After sign-up, we will send you instructions on how to configure your dynDNS client (such as your router).'
+                          : 'Your first domain (you can add more later). – To use with dynDNS, please see the docs.'
+                        "
+                        persistent-hint
+                />
+              </div>
 
-              <v-container class="pa-0">
+              <div class="signup-form-row">
+                <v-icon class="signup-form-icon" :icon="mdiAccountCheck" />
                 <generic-captcha
                     @update="(id, solution) => {captchaID=id; captchaSolution=solution}"
                     tabindex="4"
                     ref="captchaField"
+                    :show-prepend-icon="false"
                 />
-              </v-container>
+              </div>
 
               <v-row class="justify-center">
                 <v-checkbox
@@ -169,7 +178,7 @@
   import {domain_pattern, email_pattern} from '@/validation';
   import {digestError} from '@/utils';
   import ErrorAlert from "@/components/ErrorAlert.vue";
-  import {mdiDns, mdiEmail} from "@mdi/js";
+  import {mdiAccountCheck, mdiDns, mdiEmail} from "@mdi/js";
   import GenericCaptcha from "@/components/Field/GenericCaptcha.vue";
 
   const LOCAL_PUBLIC_SUFFIXES = import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
@@ -196,6 +205,7 @@
 
         mdiDns: mdiDns,
         mdiEmail: mdiEmail,
+        mdiAccountCheck: mdiAccountCheck,
 
         /* email field */
         email: '',
@@ -216,7 +226,7 @@
         /* domain field */
         domain: '',
         domainType: null,
-        domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Domain names can only contain letters, numbers, dots (.), and dashes (-), and must end with a top-level domain.'],
+        domain_rules: [v => !!v && !!domain_pattern.test(v) || 'Use letters, numbers, dots, and dashes, and include a top-level domain.'],
         dyn_domain_rules: [v => !!v && v.indexOf('.') < 0 && !!domain_pattern.test(v + '.' + LOCAL_PUBLIC_SUFFIXES[0]) || 'Your domain name can only contain letters, numbers, and dashes (-).'],
         domain_errors: [],
 
@@ -299,6 +309,24 @@
 </script>
 
 <style lang="scss">
+  .signup-form-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .signup-form-row > .v-input,
+  .signup-form-row > .captcha-row {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .signup-form-icon {
+    color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+    flex: 0 0 26px;
+    justify-content: center;
+    margin-top: 24px;
+    width: 26px;
+  }
   .uppercase input {
     text-transform: uppercase;
   }

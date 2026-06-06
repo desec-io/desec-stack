@@ -5,7 +5,7 @@
           v-model="inputSolution"
           :label="l.inputSolution"
           :hint="kind === 'image' ? l.hintProblemWithImage : l.hintProblemWithAudio"
-          :prepend-inner-icon="mdiAccountCheck"
+          :prepend-inner-icon="showPrependIcon ? mdiAccountCheck : undefined"
           :rules="rules"
           :error-messages="errors"
           :tabindex="tabindex"
@@ -72,6 +72,10 @@ export default {
     tabindex: {
       type: String,
       required: true,
+    },
+    showPrependIcon: {
+      type: Boolean,
+      default: true,
     },
   },
   data: () => ({
