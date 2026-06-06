@@ -154,10 +154,10 @@
         </v-col>
       </v-row>
       <v-row align="center" class="mt-6" justify="center" style="text-align: center">
-        <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
-        <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" style="max-width: 160px; width: 100%"/></a></v-col>
-        <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" style="height: 100%; max-height: 80px; min-width: 50px; vertical-align: middle"/></a></v-col>
-        <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" style="max-height: 113px; min-width: 50px"/></a></v-col>
+        <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" class="partner-logo"/></a></v-col>
+        <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" class="partner-logo partner-logo--sse"/></a></v-col>
+        <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" class="partner-logo partner-logo--sav"/></a></v-col>
+        <v-col><a href="https://www.hanssonit.se/"><img loading="lazy" src="../assets/non-free/hanssonit.logo.png" alt="Hansson IT Logo" class="partner-logo"/></a></v-col>
       </v-row>
     </v-container>
   </v-container>
@@ -231,6 +231,17 @@
   }
   .triangle-fg {
     z-index: 2;
+  }
+  .partner-logo {
+    max-height: 113px;
+    min-width: 50px;
+    vertical-align: middle;
+  }
+  .partner-logo--sse {
+    max-width: 160px;
+  }
+  .partner-logo--sav {
+    max-height: 80px;
   }
 </style>
 
