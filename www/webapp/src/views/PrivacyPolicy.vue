@@ -118,7 +118,7 @@
                   'PBKDF2-based password hashing to secure your sensitive information.',
         },
         {
-          title: 'No External Trackers and Resources, No Cookies',
+          title: 'No Cookies or Trackers',
           text: "We don't use any type of user tracking or behavioral analytics, and we do not load any dependencies " +
                   'from external hosts.',
         },
