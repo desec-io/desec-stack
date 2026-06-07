@@ -1,5 +1,5 @@
 <script>
-import { ipAddress } from '@vuelidate/validators';
+import { ip4Address } from './ipAddressValidators';
 import RecordItem from './RecordItem.vue';
 
 export default {
@@ -8,10 +8,10 @@ export default {
   setup: RecordItem.setup,
   data: () => ({
     errors: {
-      ipAddress: 'This field must contain an IPv4 address.',
+      ip4Address: 'This field must contain an IPv4 address.',
     },
     fields: [
-      { label: 'IPv4 address', validations: { ipAddress } },
+      { label: 'IPv4 address', validations: { ip4Address } },
     ],
   }),
 };
