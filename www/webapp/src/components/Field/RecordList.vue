@@ -1,7 +1,7 @@
 <template>
   <div>
     <div style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
-      <table style="border-spacing: 0; width: 100%" @keydown="keydownHandler($event)" @paste.prevent="pasteHandler($event)">
+      <table class="record-list-values" style="border-spacing: 0; width: 100%" @keydown="keydownHandler($event)" @paste.prevent="pasteHandler($event)">
         <component
                 :is="getRecordComponentName(type)"
                 v-for="(item, index) in inputValue"
@@ -10,6 +10,7 @@
                 :error-messages="errorMessages[index] ? errorMessages[index].content : []"
                 :hide-label="index > 0"
                 :append-icon="inputValue.length > 1 ? mdiClose : ''"
+                :density="index > 0 ? 'compact' : 'default'"
                 :disabled="disabled"
                 :readonly="readonly"
                 :required="required"
@@ -229,10 +230,17 @@ export default {
 table {
   line-height: 1.25;
 }
-table ::v-deep td:last-child {
+.record-list-values :deep(td:last-child) {
   padding-right: 4px;
 }
-table ::v-deep .v-input {
+.record-list-values :deep(.v-input) {
   margin-bottom: 0;
+}
+.record-list-values :deep(tr + tr .v-field) {
+  min-height: 36px;
+}
+.record-list-values :deep(tr + tr .v-field__input) {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 </style>

@@ -14,6 +14,7 @@
         :class="hideLabel ? 'pt-0' : ''"
         :disabled="disabled"
         :readonly="readonly"
+        :density="density"
         :placeholder="required && !field.optional ? ' ' : '(optional)'"
         :hide-details="readonly || (!('mnemonics' in field) && !fieldInvalid(index))"
         :variant="disabled || readonly ? 'plain' : 'underlined'"
@@ -67,6 +68,10 @@ export default {
     appendIcon: {
       type: String,
       required: false,
+    },
+    density: {
+      type: String,
+      default: 'default',
     },
   },
   data: () => ({
