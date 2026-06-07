@@ -53,6 +53,25 @@ jobs:
     - name: Test desecapi formatting
       run: ruff format --check api/
 
+  test-webapp:
+    # runs webapp unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v6
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: 18
+        cache: npm
+        cache-dependency-path: www/webapp/package-lock.json
+    - name: Install webapp dependencies
+      run: npm ci
+      working-directory: www/webapp
+    - name: Run webapp tests
+      run: npm test
+      working-directory: www/webapp
+
   test-missing-migrations:
     # test if Django migrations are missing
     runs-on: ubuntu-latest
