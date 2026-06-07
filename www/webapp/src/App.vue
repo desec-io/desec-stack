@@ -313,12 +313,15 @@ export default {
   margin-top: 0;
   margin-bottom: 0;
 }
-.v-application a {
-  color: #ffa000;
+.v-application a,
+.v-overlay-container a {
+  color: #ffa000 !important;
   text-decoration: underline;
 }
 .v-application a:hover,
-.v-application a:focus {
+.v-application a:focus,
+.v-overlay-container a:hover,
+.v-overlay-container a:focus {
   text-decoration: underline;
 }
 .v-application .main-menu-link {
@@ -326,7 +329,7 @@ export default {
 }
 .v-application .bg-grey-darken-3 a,
 .v-application .bg-grey-darken-4 a {
-  color: rgb(var(--v-theme-secondary));
+  color: rgb(var(--v-theme-secondary)) !important;
   text-decoration: underline;
 }
 .app-logo {
