@@ -63,10 +63,8 @@ jobs:
       uses: actions/setup-node@v6
       with:
         node-version: 18
-        cache: npm
-        cache-dependency-path: www/webapp/package-lock.json
     - name: Install webapp dependencies
-      run: npm ci
+      run: npm install
       working-directory: www/webapp
     - name: Run webapp tests
       run: npm test
