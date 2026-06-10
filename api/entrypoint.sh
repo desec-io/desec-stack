@@ -8,6 +8,10 @@ echo "waiting for dependencies ..."
 # set permissions for Django metrics (docker-compose.yml setting does not work, see #333)
 chmod 1777 /var/local/django_metrics
 
+# allow shared Knot key import
+mkdir -p /knot-import
+chmod 0777 /knot-import
+
 # start cron
 # Start child process that starts grand-child process.
 # After the child process's death, the grand-child will be adopted by init.

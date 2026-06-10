@@ -34,6 +34,10 @@ class PCHException(ExternalAPIException):
     pass
 
 
+class KnotException(APIException):
+    pass
+
+
 class ConcurrencyException(APIException):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = "Too many concurrent requests."

@@ -28,6 +28,10 @@ def test_homepage_v2(api_anon_v2: DeSECAPIV2Client):
 
 
 def test_get_desec_io(api_anon: DeSECAPIV1Client):
-    response = api_anon.get("https://get.desec." + os.environ['DESECSTACK_DOMAIN'], allow_redirects=False)
+    response = api_anon.get(
+        "https://get.desec." + os.environ["DESECSTACK_DOMAIN"],
+        allow_redirects=False,
+        verify=False,
+    )
     assert 300 < response.status_code < 400
     assert response.headers['Location'] == f"https://desec.{os.environ['DESECSTACK_DOMAIN']}/"

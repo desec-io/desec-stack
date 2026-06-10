@@ -175,6 +175,34 @@ NSLORD_PDNS_API = "http://nslord:8081/api/v1/servers/localhost"
 NSLORD_PDNS_API_TOKEN = os.environ["DESECSTACK_NSLORD_APIKEY"]
 NSMASTER_PDNS_API = "http://nsmaster:8081/api/v1/servers/localhost"
 NSMASTER_PDNS_API_TOKEN = os.environ["DESECSTACK_NSMASTER_APIKEY"]
+NSLORD_KNOT_HOST = os.environ.get("DESECSTACK_NSLORD_KNOT_HOST", "nslord_knot")
+NSLORD_KNOT_PORT = int(os.environ.get("DESECSTACK_NSLORD_KNOT_PORT", "53"))
+NSLORD_KNOT_TIMEOUT = float(os.environ.get("DESECSTACK_NSLORD_KNOT_TIMEOUT", "5"))
+NSLORD_KNOT_KEY_READY_TIMEOUT = float(
+    os.environ.get("DESECSTACK_NSLORD_KNOT_KEY_READY_TIMEOUT", "30")
+)
+NSLORD_KNOT_IMPORT_DIR = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_IMPORT_DIR", "/knot-import"
+)
+NSLORD_KNOT_UPDATE_KEY_NAME = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_UPDATE_KEY_NAME", "nslord-update"
+)
+NSLORD_KNOT_UPDATE_KEY_SECRET = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET", ""
+)
+NSLORD_KNOT_UPDATE_KEY_ALGORITHM = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_UPDATE_KEY_ALGORITHM", "hmac-sha256"
+)
+NSLORD_KNOT_TRANSFER_KEY_NAME = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_TRANSFER_KEY_NAME", "nsmaster-xfr"
+)
+NSLORD_KNOT_TRANSFER_KEY_SECRET = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_TRANSFER_KEY_SECRET",
+    os.environ.get("DESECSTACK_NSMASTER_TSIGKEY", ""),
+)
+NSLORD_KNOT_TRANSFER_KEY_ALGORITHM = os.environ.get(
+    "DESECSTACK_NSLORD_KNOT_TRANSFER_KEY_ALGORITHM", "hmac-sha256"
+)
 CATALOG_ZONE = "catalog.internal"
 
 # Celery
@@ -193,6 +221,7 @@ TASK_CONFIG = {  # The first entry is the default queue
 # pdns accepts request payloads of this size.
 # This will hopefully soon be configurable: https://github.com/PowerDNS/pdns/pull/7550
 PDNS_MAX_BODY_SIZE = 16 * 1024 * 1024
+PDNS_API_TIMEOUT = float(os.environ.get("DESECSTACK_PDNS_API_TIMEOUT", "10"))
 
 # SEPA direct debit settings
 SEPA = {

@@ -34,6 +34,7 @@ env:
   DESECSTACK_NSMASTER_ALSO_NOTIFY:
   DESECSTACK_NSMASTER_APIKEY: LLq1orOQuXCINUz4TV
   DESECSTACK_NSMASTER_TSIGKEY: +++undefined/undefined/undefined/undefined/undefined/undefined/undefined/undefined+++A==
+  DESECSTACK_NSLORD_KNOT_UPDATE_KEY_SECRET: insecure
   DESECSTACK_IPV4_REAR_PREFIX16: 172.16
   DESECSTACK_IPV6_SUBNET: bade:affe:dead:beef:b011::/80
   DESECSTACK_IPV6_ADDRESS: bade:affe:dead:beef:b011:0642:ac10:0080
@@ -52,6 +53,19 @@ jobs:
       run: python3 -m pip install ruff
     - name: Test desecapi formatting
       run: ruff format --check api/
+
+  test-watcher:
+    # runs Knot watcher unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install pytest
+      run: python3 -m pip install pytest
+    - name: Run watcher tests
+      run: python3 -m pytest nslord_knot/tests/test_zone_watch.py
 
   test-missing-migrations:
     # test if Django migrations are missing

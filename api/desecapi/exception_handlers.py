@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from desecapi import metrics
-from desecapi.exceptions import PDNSException
+from desecapi.exceptions import KnotException, PDNSException
 
 
 def exception_handler(exc, context):
@@ -39,6 +39,7 @@ def exception_handler(exc, context):
         IntegrityError: _409,
         OSError: _500,  # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
         PDNSException: _500,  # nslord/nsmaster returned an error
+        KnotException: _500,  # knot returned an error
     }
 
     for exception_class, handler in handlers.items():

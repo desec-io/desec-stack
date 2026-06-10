@@ -1,9 +1,23 @@
 import os
 import time
 
+import dns.dnssec
+import dns.name
+import dns.rdata
+import dns.rdataclass
+import dns.rdatatype
 import pytest
 
-from conftest import DeSECAPIV1Client, NSLordClient, random_domainname, FaketimeShift, assert_all_ns
+from conftest import (
+    DeSECAPIV1Client,
+    NSLordClient,
+    NSLordKnotClient,
+    SecondaryNSClient,
+    random_domainname,
+    FaketimeShift,
+    tsprint,
+    assert_eventually,
+)
 
 DEFAULT_TTL = int(os.environ['DESECSTACK_NSLORD_DEFAULT_TTL'])
 
@@ -28,25 +42,87 @@ p6gfsf6t5tvesh74gd38o43u26q8kqes 300 IN NSEC3 1 0 0 - p6gfsf6t5tvesh74gd38o43u26
 p6gfsf6t5tvesh74gd38o43u26q8kqes 300 IN RRSIG NSEC3 13 4 300 20220324000000 20220303000000 8312 @ b3ZfxXKLJrOGVTAqmQeEZSjbT7iYKtyM M6Wl6HilgjYTzWPvpiwpFSrETWWP5A19 wKRmT4Nh6nnbTDalUvXLsQ==
 """
 
+CSK_PRIVATE_KEY = """Private-key-format: v1.3
+Algorithm: 13 (ECDSAP256SHA256)
+PrivateKey: FOeR6PdkK5jxYb87ENYGlhFRFQzMFRpfip6SRdDUWNk=
+"""
+CSK_DNSKEY = "257 3 13 cIf/9k/9kNhBXrVOlxOZifYH1IuxFHCk nMVrrV3j36fQD/4qfLCImMZANXfrTiQx MVU8Tvm5AHCWeUbqEH5v9w=="
+
 
 def ttl(value, min_ttl=int(os.environ['DESECSTACK_MINIMUM_TTL_DEFAULT'])):
     return max(min_ttl, min(86400, value))
 
 
-def test_create(api_user: DeSECAPIV1Client):
+def _normalize_dnskey(text: str) -> str:
+    parts = text.split()
+    if len(parts) < 4:
+        return text
+    return " ".join(parts[:3] + ["".join(parts[3:])])
+
+
+
+def test_create(
+    api_user: DeSECAPIV1Client,
+    nslord_param: str | None,
+    assert_all_nslord,
+):
     assert len(api_user.domain_list()) == 0
-    assert api_user.domain_create(random_domainname()).status_code == 201
+    assert api_user.domain_create(
+        random_domainname(), nslord=nslord_param
+    ).status_code == 201
     assert len(api_user.domain_list()) == 1
-    assert_all_ns(
+    assert_all_nslord(
         assertion=lambda query: query(api_user.domain, 'SOA')[0].serial >= int(time.time()),
         retry_on=(AssertionError, TypeError),
     )
 
 
-def test_create_import_export(api_user: DeSECAPIV1Client):
+def test_create_with_csk_private_key(
+    api_user: DeSECAPIV1Client,
+    nslord_param: str | None,
+    nslord_backend: str,
+    assert_all_nslord,
+):
+    name = random_domainname()
+    response = api_user.domain_create(
+        name, nslord=nslord_param, csk_private_key=CSK_PRIVATE_KEY
+    )
+    assert response.status_code == 201
+
+    expected_dnskey = _normalize_dnskey(CSK_DNSKEY)
+    assert_all_nslord(
+        assertion=lambda query: expected_dnskey
+        in {_normalize_dnskey(rr.to_text()) for rr in query(name, 'DNSKEY')},
+        retry_on=(AssertionError, TypeError),
+    )
+
+    dnskey_rdata = dns.rdata.from_text(
+        dns.rdataclass.IN, dns.rdatatype.DNSKEY, CSK_DNSKEY
+    )
+    name_obj = dns.name.from_text(name)
+    expected_ds = {
+        dns.dnssec.make_ds(name_obj, dnskey_rdata, algo).to_text()
+        for algo in (2, 4)
+    }
+    assert_all_nslord(
+        assertion=lambda query: expected_ds.issubset(
+            {rr.to_text() for rr in query(name, "CDS")}
+        ),
+        retry_on=(AssertionError, TypeError),
+    )
+
+
+def test_create_import_export(
+    api_user: DeSECAPIV1Client,
+    nslord_param: str | None,
+    assert_all_nslord,
+):
     assert len(api_user.domain_list()) == 0
     domainname = random_domainname()
-    assert api_user.domain_create(domainname, example_zonefile).status_code == 201
+    assert (
+        api_user.domain_create(domainname, example_zonefile, nslord=nslord_param).status_code
+        == 201
+    )
     assert len(api_user.domain_list()) == 1
     api_user.assert_rrsets({
         ('', 'NS'): (
@@ -65,7 +141,7 @@ def test_create_import_export(api_user: DeSECAPIV1Client):
         ('', 'DNSKEY'): (None, None),
         ('', 'SOA'): (None, None),
     }, via_dns=False)
-    assert_all_ns(
+    assert_all_nslord(
         assertion=lambda query: query(api_user.domain, 'NSEC3PARAM')[0].to_text() == '1 0 0 -',
         retry_on=(AssertionError, TypeError),
     )
@@ -78,29 +154,35 @@ def test_create_import_export(api_user: DeSECAPIV1Client):
            }
 
 
-def test_get(api_user_domain: DeSECAPIV1Client):
+def test_get(api_user_domain: DeSECAPIV1Client, assert_all_nslord):
     domain = api_user_domain.get(f"/domains/{api_user_domain.domain}/").json()
-    assert_all_ns(
+    assert_all_nslord(
         assertion=lambda query: {rr.to_text() for rr in query(api_user_domain.domain, 'CDS')} == set(domain['keys'][0]['ds']),
         retry_on=(AssertionError, TypeError),
     )
     assert domain['name'] == api_user_domain.domain
 
 
-def test_modify(api_user_domain: DeSECAPIV1Client):
-    old_serial = NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial
+def test_modify(api_user_domain: DeSECAPIV1Client, nslord_query, assert_all_nslord):
+    old_serial = nslord_query(api_user_domain.domain, 'SOA')[0].serial
     api_user_domain.rr_set_create(api_user_domain.domain, 'A', ['127.0.0.1'])
-    assert_all_ns(
+    assert_all_nslord(
         assertion=lambda query: query(api_user_domain.domain, 'SOA')[0].serial > old_serial,
         retry_on=(AssertionError, TypeError),
     )
 
 
-def test_rrsig_rollover(api_user_domain: DeSECAPIV1Client):
-    old_serial = NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial
+def test_rrsig_rollover(
+    api_user_domain: DeSECAPIV1Client,
+    nslord_query,
+    nslord_backend: str,
+):
+    if nslord_backend == "knot":
+        pytest.skip("knot does not advance SOA serial on time shifts yet")
+    old_serial = nslord_query(api_user_domain.domain, 'SOA')[0].serial
     with FaketimeShift(days=7):
         # TODO deploy faketime in desec-ns and nsmaster then use assert_all_ns
-        assert NSLordClient.query(api_user_domain.domain, 'SOA')[0].serial > old_serial
+        assert nslord_query(api_user_domain.domain, 'SOA')[0].serial > old_serial
 
 
 def test_destroy(api_user_domain: DeSECAPIV1Client):
@@ -110,12 +192,17 @@ def test_destroy(api_user_domain: DeSECAPIV1Client):
 
 
 @pytest.mark.skip  # TODO currently broken
-def test_recreate(api_user_domain: DeSECAPIV1Client):
+def test_recreate(
+    api_user_domain: DeSECAPIV1Client,
+    nslord_param: str | None,
+    nslord_query,
+    assert_all_nslord,
+):
     name = api_user_domain.domain
-    old_serial = NSLordClient.query(name, 'SOA')[0].serial
+    old_serial = nslord_query(name, 'SOA')[0].serial
     assert api_user_domain.domain_destroy(name).status_code == 204
-    assert api_user_domain.domain_create(name).status_code == 201
-    assert_all_ns(
+    assert api_user_domain.domain_create(name, nslord=nslord_param).status_code == 201
+    assert_all_nslord(
         assertion=lambda query: query(name, 'SOA')[0].serial > old_serial,
         retry_on=(AssertionError, TypeError),
     )
@@ -130,3 +217,146 @@ def test_export(api_user_domain: DeSECAPIV1Client):
                     f"{api_user_domain.domain}.	{DEFAULT_TTL}	IN	NS	{name}."
                     for name in os.environ["DESECSTACK_NS"].split(" ")
                }
+
+
+def _normalized_dnskeys(query, domain: str):
+    return {_normalize_dnskey(rr.to_text()) for rr in query(domain, "DNSKEY")}
+
+
+def _cds_set(query, domain: str):
+    return {rr.to_text() for rr in query(domain, "CDS")}
+
+
+def test_move_pdns_to_knot(api_user: DeSECAPIV1Client):
+    name = random_domainname()
+    tsprint(f"move pdns->knot start {name}")
+    assert (
+        api_user.domain_create(name, csk_private_key=CSK_PRIVATE_KEY).status_code == 201
+    )
+    assert api_user.rr_set_create(name, "A", ["1.2.3.4"]).status_code == 201
+    assert api_user.rr_set_create(name, "TXT", ['"hello"']).status_code == 201
+
+    old_serial = NSLordClient.query(name, "SOA")[0].serial
+    old_keys = _normalized_dnskeys(NSLordClient.query, name)
+    old_cds = _cds_set(NSLordClient.query, name)
+    tsprint(
+        f"move pdns->knot before serial={old_serial} keys={len(old_keys)} cds={len(old_cds)}"
+    )
+
+    response = api_user.domain_move_nslord(name, "knot")
+    assert response.status_code == 200
+    tsprint("move pdns->knot api done")
+
+    new_serial = NSLordKnotClient.query(name, "SOA")[0].serial
+    assert new_serial >= old_serial
+    assert _normalized_dnskeys(NSLordKnotClient.query, name) == old_keys
+    assert _cds_set(NSLordKnotClient.query, name) == old_cds
+    tsprint(f"move pdns->knot after serial={new_serial}")
+
+    assert_eventually(
+        assertion=lambda query: query(name, "SOA")[0].serial >= old_serial,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _normalized_dnskeys(query, name) == old_keys,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _cds_set(query, name) == old_cds,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "A")} == {"1.2.3.4"},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "TXT")} == {'"hello"'},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+
+    api_user.assert_rrsets(
+        {
+            ("", "A"): (DEFAULT_TTL, {"1.2.3.4"}),
+            ("", "TXT"): (DEFAULT_TTL, {'"hello"'}),
+        },
+        via_api=False,
+    )
+
+
+def test_move_knot_to_pdns(api_user: DeSECAPIV1Client):
+    name = random_domainname()
+    tsprint(f"move knot->pdns start {name}")
+    assert (
+        api_user.domain_create(
+            name, nslord="knot", csk_private_key=CSK_PRIVATE_KEY
+        ).status_code
+        == 201
+    )
+    assert api_user.rr_set_create(name, "A", ["5.6.7.8"]).status_code == 201
+    assert api_user.rr_set_create(name, "TXT", ['"world"']).status_code == 201
+
+    old_serial = NSLordKnotClient.query(name, "SOA")[0].serial
+    old_keys = _normalized_dnskeys(NSLordKnotClient.query, name)
+    old_cds = _cds_set(NSLordKnotClient.query, name)
+    tsprint(
+        f"move knot->pdns before serial={old_serial} keys={len(old_keys)} cds={len(old_cds)}"
+    )
+
+    response = api_user.domain_move_nslord(name, "pdns")
+    assert response.status_code == 200
+    tsprint("move knot->pdns api done")
+
+    new_serial = NSLordClient.query(name, "SOA")[0].serial
+    assert new_serial >= old_serial
+    assert _normalized_dnskeys(NSLordClient.query, name) == old_keys
+    assert _cds_set(NSLordClient.query, name) == old_cds
+    tsprint(f"move knot->pdns after serial={new_serial}")
+
+    assert_eventually(
+        assertion=lambda query: query(name, "SOA")[0].serial >= old_serial,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _normalized_dnskeys(query, name) == old_keys,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: _cds_set(query, name) == old_cds,
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "A")} == {"5.6.7.8"},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+    assert_eventually(
+        assertion=lambda query: {rr.to_text() for rr in query(name, "TXT")} == {'"world"'},
+        retry_on=(AssertionError, TypeError),
+        timeout=60,
+        assertion_kwargs=dict(query=SecondaryNSClient.query),
+    )
+
+    api_user.assert_rrsets(
+        {
+            ("", "A"): (DEFAULT_TTL, {"5.6.7.8"}),
+            ("", "TXT"): (DEFAULT_TTL, {'"world"'}),
+        },
+        via_api=False,
+    )

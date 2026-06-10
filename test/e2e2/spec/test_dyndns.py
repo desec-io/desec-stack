@@ -1,7 +1,7 @@
 import ipaddress
 import os
 
-from conftest import DeSECAPIV1Client, NSLordClient, assert_eventually, assert_all_ns
+from conftest import DeSECAPIV1Client
 
 import base64
 import pytest
@@ -16,7 +16,13 @@ update6_url = "https://update6.dedyn." + os.environ["DESECSTACK_DOMAIN"] + "/"
 @pytest.mark.parametrize("subname", [None, '', 'foo', '*.bar'])
 @pytest.mark.parametrize("base_url", [update_url, update6_url])
 @pytest.mark.parametrize("auth_method", ['basic', 'token', 'query'])
-def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
+def test(
+    api_user_lps_domain: DeSECAPIV1Client,
+    assert_all_nslord,
+    auth_method,
+    base_url,
+    subname,
+):
     domain = api_user_lps_domain.domain
     api_headers = api_user_lps_domain.headers.copy()
 
@@ -50,7 +56,7 @@ def test(api_user_lps_domain: DeSECAPIV1Client, auth_method, base_url, subname):
                 rrs_dns = {rr.to_text() for rr in query(params.get('hostname', domain), qtype) or []}
                 return len(rrs_dns) == (1 if expected_net else 0) and _ips_in_network(rrs_dns, expected_net)
 
-            assert_all_ns(assertion, retry_on=(AssertionError, TypeError))
+            assert_all_nslord(assertion, retry_on=(AssertionError, TypeError))
 
     headers = {}
     params = {}

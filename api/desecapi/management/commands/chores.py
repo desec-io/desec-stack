@@ -8,7 +8,7 @@ from django.utils import timezone
 import dns.message, dns.rdatatype, dns.query
 
 from desecapi import models
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 
 
 class Command(BaseCommand):
@@ -40,7 +40,7 @@ class Command(BaseCommand):
             return
 
         content = f'"{int(time.time())}"'
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             rrset, _ = domain.rrset_set.update_or_create(
                 subname="", type="TXT", defaults={"ttl": settings.MINIMUM_TTL_DEFAULT}
             )

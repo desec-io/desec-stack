@@ -8,7 +8,7 @@ from django.db.models.functions import Greatest
 from django.utils import timezone
 
 from desecapi import models, serializers, views
-from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.pdns_change_tracker import NSLordChangeTracker
 
 
 fresh_days = 183
@@ -99,12 +99,12 @@ class Command(BaseCommand):
         )
 
         for domain in expired_domains:
-            with PDNSChangeTracker():
+            with NSLordChangeTracker():
                 domain.delete()
             if not domain.owner.domains.exists():
                 domain.owner.delete()
         # Do one large delegation update
-        with PDNSChangeTracker():
+        with NSLordChangeTracker():
             for domain in expired_domains:
                 views.DomainViewSet.auto_delegate(domain)
 

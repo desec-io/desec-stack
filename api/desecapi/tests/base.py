@@ -8,6 +8,14 @@ import string
 from contextlib import nullcontext
 from functools import partial, reduce
 from unittest import mock
+import dns.message
+import dns.name
+import dns.opcode
+import dns.rcode
+import dns.rdataclass
+import dns.rdatatype
+import dns.rrset
+import dns.zone
 
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
@@ -25,6 +33,8 @@ from desecapi.models.records import (
     RR_SET_TYPES_MANAGEABLE,
 )
 from .matchers import body_matcher
+
+MOCK_KNOT_SOA_CONTENT = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
 
 
 class DesecAPIClient(APIClient):
@@ -255,6 +265,21 @@ class AssertRequestsContextManager:
                 )
             )
         socket.gethostbyname = self._gethostbyname
+
+
+class CompositeContextManager:
+    def __init__(self, *contexts):
+        self._contexts = contexts
+
+    def __enter__(self):
+        for context in self._contexts:
+            context.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for context in reversed(self._contexts):
+            context.__exit__(exc_type, exc_val, exc_tb)
+        return False
 
 
 class MockPDNSTestCase(APITestCase):
@@ -714,6 +739,27 @@ class MockPDNSTestCase(APITestCase):
                 self.responses.add(**request)
 
 
+class AssertKnotUpdatesContextManager:
+    def __init__(self, test_case, expected_updates, expect_order=True):
+        self.test_case = test_case
+        self.expected_updates = expected_updates
+        self.expect_order = expect_order
+        self._start_index = 0
+
+    def __enter__(self):
+        self._start_index = len(self.test_case._knot_updates)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            return False
+        seen_updates = self.test_case._knot_updates[self._start_index :]
+        self.test_case._assert_knot_updates(
+            seen_updates, self.expected_updates, expect_order=self.expect_order
+        )
+        return False
+
+
 class DesecTestCase(MockPDNSTestCase):
     """
     This test case is run in the "standard" deSEC e.V. setting, i.e. with an API that is aware of the public suffix
@@ -1164,6 +1210,265 @@ class PublicSuffixMockMixin:
             psl, "is_public_suffix", side_effect=self._mock_is_public_suffix
         ).start()
         self.addCleanup(mock.patch.stopall)
+
+
+class MockKnotDNSMixin:
+    def setUp(self):
+        super().setUp()
+        self._knot_updates = []
+        self._knot_queries = []
+        self._knot_xfr_calls = []
+        self._last_xfr_zone = None
+        self._knot_tcp_patcher = mock.patch("dns.query.tcp", self._mock_dns_tcp)
+        self._knot_xfr_patcher = mock.patch("dns.query.xfr", self._mock_dns_xfr)
+        self._knot_from_xfr_patcher = mock.patch(
+            "dns.zone.from_xfr", self._mock_zone_from_xfr
+        )
+        self._knot_tcp_patcher.start()
+        self._knot_xfr_patcher.start()
+        self._knot_from_xfr_patcher.start()
+
+    def tearDown(self):
+        try:
+            self._knot_tcp_patcher.stop()
+        finally:
+            self._knot_xfr_patcher.stop()
+            self._knot_from_xfr_patcher.stop()
+        super().tearDown()
+
+    def _mock_dns_tcp(self, message, where, port=None, timeout=None, **kwargs):
+        if message.opcode() == dns.opcode.UPDATE:
+            self._knot_updates.append(message)
+            return self._knot_response_noerror()
+
+        if message.question and message.question[0].rdtype == dns.rdatatype.SOA:
+            return self._knot_soa_response(message)
+
+        if message.question and message.question[0].rdtype == dns.rdatatype.DNSKEY:
+            self._knot_queries.append(message)
+            return self._knot_dnskey_response(message)
+
+        raise AssertionError(f"Unexpected DNS TCP query: {message}")
+
+    def _mock_dns_xfr(self, where, zone, port=None, timeout=None, **kwargs):
+        self._knot_xfr_calls.append((where, zone))
+        self._last_xfr_zone = zone
+        return object()
+
+    def _mock_zone_from_xfr(self, xfr, relativize=False, **kwargs):
+        zone_name = self._last_xfr_zone or "example.com."
+        zone_name = zone_name.rstrip(".") + "."
+        origin = dns.name.from_text(zone_name)
+        zone_text = (
+            f"{zone_name} 300 IN SOA get.desec.io. get.desec.io. 1 86400 3600 2419200 3600\n"
+            f"{zone_name} 3600 IN NS get.desec.io.\n"
+        )
+        return dns.zone.from_text(zone_text, origin=origin, relativize=relativize)
+
+    @staticmethod
+    def _knot_response_noerror():
+        class Response:
+            @staticmethod
+            def rcode():
+                return dns.rcode.NOERROR
+
+        return Response()
+
+    def _knot_dnskey_response(self, message):
+        response = dns.message.make_response(message)
+        dnskey = self.get_body_pdns_zone_retrieve_crypto_keys()[0]["dnskey"]
+        rrset = dns.rrset.from_text(
+            message.question[0].name,
+            3600,
+            dns.rdataclass.IN,
+            dns.rdatatype.DNSKEY,
+            dnskey,
+        )
+        response.answer.append(rrset)
+        return response
+
+    def _knot_soa_response(self, message):
+        response = dns.message.make_response(message)
+        rrset = dns.rrset.from_text(
+            message.question[0].name,
+            3600,
+            dns.rdataclass.IN,
+            dns.rdatatype.SOA,
+            MOCK_KNOT_SOA_CONTENT,
+        )
+        response.answer.append(rrset)
+        return response
+
+    def _knot_update_actual(self, update):
+        actual_zone = update.sections[0][0].name.to_text()
+        actual_adds = {}
+        actual_deletes = set()
+        for rrset in update.sections[2]:
+            name = rrset.name.to_text()
+            rr_type = dns.rdatatype.to_text(rrset.rdtype)
+            if rrset.rdclass == dns.rdataclass.IN:
+                if len(rrset) == 0 and rrset.ttl == 0:
+                    actual_deletes.add((name, rr_type))
+                else:
+                    records = {r.to_text() for r in rrset}
+                    key = (name, rr_type, rrset.ttl)
+                    if key in actual_adds:
+                        actual_adds[key] |= records
+                    else:
+                        actual_adds[key] = records
+            elif rrset.rdclass == dns.rdataclass.ANY and len(rrset) == 0:
+                actual_deletes.add((name, rr_type))
+        actual_deletes = actual_deletes - {
+            (name, rr_type) for (name, rr_type, _) in actual_adds.keys()
+        }
+        return actual_zone, actual_adds, actual_deletes
+
+    def _knot_update_expected(self, expected_zone, expected_rr_sets):
+        expected_zone = self._normalize_name(expected_zone)
+        if expected_rr_sets is None:
+            return expected_zone, None, None
+
+        if hasattr(expected_rr_sets, "all"):
+            expected_rr_sets = list(expected_rr_sets.all())
+
+        if isinstance(expected_rr_sets, list):
+            expected_rr_sets_dict = {
+                (rr_set.type, rr_set.subname, rr_set.ttl): [
+                    rr.content for rr in rr_set.records.all()
+                ]
+                for rr_set in expected_rr_sets
+            }
+        elif isinstance(expected_rr_sets, dict):
+            expected_rr_sets_dict = expected_rr_sets
+        else:
+            raise ValueError("expected_rr_sets must be a list of RRSets or a dict.")
+
+        def normalize_record(rr_type, record):
+            try:
+                rdata = dns.rdata.from_text(
+                    dns.rdataclass.IN,
+                    dns.rdatatype.from_text(rr_type),
+                    record,
+                )
+                return rdata.to_text()
+            except Exception:
+                return record
+
+        expected_adds = {
+            (
+                self._normalize_name(".".join(filter(None, [subname, expected_zone]))),
+                rr_type,
+                ttl,
+            ): {normalize_record(rr_type, record) for record in records}
+            for (rr_type, subname, ttl), records in expected_rr_sets_dict.items()
+            if records
+        }
+        expected_deletes = {
+            (
+                self._normalize_name(".".join(filter(None, [subname, expected_zone]))),
+                rr_type,
+            )
+            for (rr_type, subname, _), records in expected_rr_sets_dict.items()
+            if not records
+        }
+        return expected_zone, expected_adds, expected_deletes
+
+    def _assert_knot_updates(self, seen_updates, expected_updates, expect_order=True):
+        self.assertEqual(
+            len(expected_updates),
+            len(seen_updates),
+            "Unexpected number of knot updates: expected %i, saw %i."
+            % (len(expected_updates), len(seen_updates)),
+        )
+
+        if not expect_order:
+            actual_signatures = [
+                self._knot_update_actual(update) for update in seen_updates
+            ]
+            remaining = actual_signatures[:]
+            for expected_zone, expected_rr_sets in expected_updates:
+                expected_zone, expected_adds, expected_deletes = (
+                    self._knot_update_expected(expected_zone, expected_rr_sets)
+                )
+                for idx, (actual_zone, actual_adds, actual_deletes) in enumerate(
+                    remaining
+                ):
+                    if actual_zone != expected_zone:
+                        continue
+                    if expected_rr_sets is None or (
+                        expected_adds == actual_adds
+                        and expected_deletes == actual_deletes
+                    ):
+                        remaining.pop(idx)
+                        break
+                else:
+                    self.fail(
+                        f"Expected knot update for {expected_zone} with {expected_rr_sets}, but did not see one."
+                    )
+            if remaining:
+                self.fail(f"Saw unexpected knot updates: {remaining}")
+            return
+
+        for (expected_zone, expected_rr_sets), update in zip(
+            expected_updates, seen_updates
+        ):
+            actual_zone, actual_adds, actual_deletes = self._knot_update_actual(update)
+            expected_zone, expected_adds, expected_deletes = self._knot_update_expected(
+                expected_zone, expected_rr_sets
+            )
+            self.assertEqual(
+                expected_zone,
+                actual_zone,
+                f"Unexpected knot zone update target: expected {expected_zone}, saw {actual_zone}.",
+            )
+            if expected_rr_sets is None:
+                continue
+            self.assertEqual(
+                expected_adds,
+                actual_adds,
+                f"Unexpected knot update additions for {expected_zone}.",
+            )
+            self.assertEqual(
+                expected_deletes,
+                actual_deletes,
+                f"Unexpected knot update deletions for {expected_zone}.",
+            )
+
+    def assertKnotUpdates(self, expected_updates, expect_order=True):
+        return AssertKnotUpdatesContextManager(
+            test_case=self, expected_updates=expected_updates, expect_order=expect_order
+        )
+
+    def assertKnotZoneUpdate(self, name, rr_sets):
+        return self.assertKnotUpdates([(name, rr_sets)])
+
+    def assertKnotZoneUpdateWithAxfr(self, name, rr_sets):
+        return CompositeContextManager(
+            self.assertKnotZoneUpdate(name, rr_sets),
+            self.assertRequests([self.request_pdns_zone_axfr(name)]),
+        )
+
+    def requests_desec_domain_creation_knot(self, name=None, axfr=True):
+        requests = [
+            self.request_pdns_zone_create(ns="MASTER"),
+            self.request_pdns_update_catalog(),
+            self.request_pch_zone_create(name=name),
+        ]
+        if axfr:
+            requests.append(self.request_pdns_zone_axfr(name=name))
+        return requests
+
+    def requests_desec_domain_deletion_knot(self, domain):
+        requests = [
+            self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
+            self.request_pdns_update_catalog(),
+            self.request_pch_zone_delete(name=domain.name),
+        ]
+        return requests
+
+
+class KnotDesecTestCase(MockKnotDNSMixin, DesecTestCase):
+    pass
 
 
 class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):

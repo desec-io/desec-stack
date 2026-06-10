@@ -1,9 +1,16 @@
 import json
 import re
 import socket
+import time
 from functools import cache
 from hashlib import sha1
 
+import dns.message
+import dns.name
+import dns.query
+import dns.rdataclass
+import dns.rdatatype
+import dns.rcode
 import requests
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
@@ -103,7 +110,11 @@ def _pdns_request(
         "X-API-Key": _config[server]["apikey"],
     }
     r = requests.request(
-        method, _config[server]["base_url"] + path, data=data, headers=headers
+        method,
+        _config[server]["base_url"] + path,
+        data=data,
+        headers=headers,
+        timeout=settings.PDNS_API_TIMEOUT,
     )
     if r.status_code not in range(200, 300):
         metrics.get("desecapi_pdns_request_failure").labels(
@@ -160,6 +171,40 @@ def get_keys(domain):
         for key in r.json()
         if key["published"]
     ]
+
+
+def list_cryptokeys(domain_name):
+    return _pdns_get(NSLORD, "/zones/%s/cryptokeys" % pdns_id(domain_name)).json()
+
+
+def set_cryptokey_active(domain_name, key_id, active):
+    _pdns_put(
+        NSLORD,
+        "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id),
+        data={"active": bool(active)},
+    )
+
+
+def delete_cryptokey(domain_name, key_id):
+    _pdns_delete(NSLORD, "/zones/%s/cryptokeys/%s" % (pdns_id(domain_name), key_id))
+
+
+def get_csk_private_key(domain_name):
+    keys = list_cryptokeys(domain_name)
+    candidates = [
+        key
+        for key in keys
+        if key.get("keytype") == "csk" or key.get("keytype") == "CSK"
+    ]
+    if not candidates:
+        candidates = keys
+    for key in candidates:
+        if not key.get("active", True):
+            continue
+        private_key = key.get("privatekey") or key.get("content")
+        if private_key:
+            return private_key
+    return None
 
 
 def get_zone(domain):
@@ -244,7 +289,7 @@ def create_zone_lord(name):
     )
 
 
-def create_zone_master(name):
+def create_zone_master(name, master_host="nslord"):
     name = name.rstrip(".") + "."
     _pdns_post(
         NSMASTER,
@@ -252,10 +297,61 @@ def create_zone_master(name):
         {
             "name": name,
             "kind": "SLAVE",
-            "masters": [gethostbyname_cached("nslord")],
+            "masters": [gethostbyname_cached(master_host)],
             "master_tsig_key_ids": ["default"],
         },
     )
+
+
+def import_csk_key(name, *, dnskey, private_key):
+    response = _pdns_post(
+        NSLORD,
+        "/zones/%s/cryptokeys" % pdns_id(name),
+        {
+            "keytype": "csk",
+            "active": True,
+            "published": True,
+            "content": private_key,
+        },
+    )
+    cryptokey = response.json()
+    imported_id = cryptokey.get("id")
+    keys = list_cryptokeys(name)
+    if imported_id is None:
+        for key in keys:
+            if key.get("dnskey") == dnskey:
+                imported_id = key.get("id")
+                break
+    if imported_id is None:
+        return cryptokey
+    for key in keys:
+        if key.get("id") == imported_id:
+            if not key.get("active", False):
+                set_cryptokey_active(name, imported_id, True)
+            continue
+        delete_cryptokey(name, key["id"])
+    rectify_zone(name)
+    return cryptokey
+
+
+def import_zonefile_rrsets(name, rrsets):
+    data = {
+        "rrsets": [
+            {
+                "name": rrset["name"],
+                "type": rrset["type"],
+                "ttl": min(rrset["ttl"], settings.DEFAULT_NS_TTL),
+                "changetype": "REPLACE",
+                "records": [
+                    {"content": record, "disabled": False}
+                    for record in rrset["records"]
+                ],
+            }
+            for rrset in rrsets
+        ]
+    }
+    if data["rrsets"]:
+        update_zone(name, data)
 
 
 def delete_zone(name, server):
@@ -276,6 +372,21 @@ def update_zone(name, data):
 
 def axfr_to_master(zone):
     _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
+
+
+def wait_for_master_zone(zone, *, attempts=20, delay_seconds=0.5):
+    zone_id = pdns_id(zone)
+    for _ in range(attempts):
+        try:
+            _pdns_get(NSMASTER, "/zones/%s" % zone_id)
+            return True
+        except PDNSException:
+            time.sleep(delay_seconds)
+    return False
+
+
+def rectify_zone(name):
+    _pdns_put(NSLORD, "/zones/%s/rectify" % pdns_id(name))
 
 
 def construct_catalog_rrset(
