@@ -226,14 +226,14 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
 1. **Configure desec-stack.** As docker compose application, desec-stack is configured by environment variables defined in the `.env` file in the project root directory.
     Because it contains sensitive information for each deployment, `.env` is not part of the repository and ignored by git.
-    However, we ship `.env.default` and `.env.dev` with templates for production and development, respectively.
-    `.env.dev` is almost good enough for a basic development system, so let's use that as a basis:
+    However, we ship `.env.default` and `.env.dev.template` with templates for production and development, respectively.
+    `.env.dev.template` is almost good enough for a basic development system, so let's use that as a basis:
 
-       sed "s/^DESECSTACK_DOMAIN=.*/DESECSTACK_DOMAIN=${DOMAIN}/" .env.dev > .env
+       sed "s/^DESECSTACK_DOMAIN=.*/DESECSTACK_DOMAIN=${DOMAIN}/" .env.dev.template > .env.dev
 
-    Optionally, edit the file and
-    1. configure an email server host name, username, and password to deliver emails can be included in `.env`. A convenient option is a MailTrap account.
-    2. adjust the network prefixes in `.env` to avoid collisions with other local networks.
+    Optionally, edit the env file and
+    1. configure an email server host name, username, and password to deliver emails can be included. A convenient option is a MailTrap account.
+    2. adjust the network prefixes to avoid collisions with other local networks.
 
     Additionally, the VPN server for the replication network needs to be equipped with a pre-shared key (PSK) and a public key infrastructure (PKI).
     To generate the PSK, use the openvpn-server container:
