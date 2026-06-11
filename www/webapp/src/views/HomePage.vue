@@ -75,7 +75,7 @@
     </v-container>
   </v-container>
   <v-container fluid class="bg-grey-lighten-4">
-    <v-container class="py-8">
+    <v-container class="py-8" id="supporters">
       <v-row align="center">
         <v-col class="text-center">
           <h2>Supporters</h2>
@@ -91,7 +91,7 @@
           In our project "Closing the DNSSEC Maturity Gap through Automation", we develop technical solutions that
           enable automatic deployment of DNSSEC, and work with DNS and domain industry players to facilitate real-world
           introduction of these automation standards. This project is supported by the
-          <a class="text-primary" href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
+          <a href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
@@ -101,7 +101,7 @@
           </v-row>
         </v-col>
         <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
-          deSEC received funding through <a class="text-primary" href="https://nlnet.nl/">NLnet
+          deSEC received funding through <a href="https://nlnet.nl/">NLnet
           Foundation</a> for its work on the automation and future viability of DNSSEC. The <strong>NGI Assure</strong>
           fund, established with financial support from the European Commission's <strong>Next Generation
           Internet</strong> programme, is dedicated to technologies providing strong assurances about the Internet's
@@ -115,9 +115,21 @@
           </v-row>
         </v-col>
         <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
-          Through their Community Projects Fund, <a class="text-primary" href="https://ripe.net/">RIPE NCC</a>
+          Through their Community Projects Fund, <a href="https://ripe.net/">RIPE NCC</a>
           in 2023 supported the ongoing operation of our DNS platform and covers global Anycast network expenses in
           particular. We greatly appreciate their support.
+        </v-col>
+      </v-row>
+      <v-row align="center" class="py-2" justify="center">
+        <v-col cols="12" lg="3" class="py-4">
+          <v-row class="justify-center">
+            <img loading="lazy" src="../assets/non-free/layershift.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
+          </v-row>
+        </v-col>
+        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
+          <a href="https://www.layershift.com/">Layershift</a> is a Managed VPS provider with services in the UK, Singapore, and the USA.
+          They created and maintain a <a href="https://ext.plesk.com/packages/953aab94-01e1-45a6-952f-bffc4a2e82fa-ls-desec-dns">deSEC Plesk extension</a>,
+          and support us by adopting frontend servers in each of their service regions.
         </v-col>
       </v-row>
       <v-row align="center" class="py-2" justify="center">
@@ -127,11 +139,9 @@
           </v-row>
         </v-col>
         <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
-          As a <a class="text-primary" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
-          deSEC works to ensure implementation of robust and modern DNS security and privacy features.
-          This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.<br />
-          The project is co-funded by the European Union (project number: 101095329 21-EU-DIG-EU-DNS, project name:
-          DNS4EU and European DNS Shield).
+          As a <a href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
+          deSEC worked to ensure implementation of robust and modern DNS security and privacy features.
+          This included support for state-of-the-art DNSSEC as well as encrypted DNS transport.
         </v-col>
       </v-row>
     </v-container>
@@ -141,18 +151,6 @@
       <v-row align="center">
         <v-col class="text-center">
           <h2>Partners</h2>
-        </v-col>
-      </v-row>
-      <v-row align="center" class="py-2" justify="center">
-        <v-col cols="12" lg="3" class="py-4">
-          <v-row class="justify-center">
-            <a href="https://www.joindns4.eu/"><img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/></a>
-          </v-row>
-        </v-col>
-        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
-          DNS4EU is an initiative of the European Commission to provide an EU-based alternative public DNS resolver.
-          The purpose of DNS4EU is to provide EU citizens, companies, and institutions with a secure, privacy-compliant,
-          and powerful recursive DNS to protect European digital independence.
         </v-col>
       </v-row>
       <v-row align="center" class="mt-6" justify="center" style="text-align: center">
@@ -222,6 +220,9 @@
 </template>
 
 <style scoped>
+  #supporters a {
+    color: #333 !important;
+  }
   div.triangle-bg {
     border: 80em solid transparent;
     border-right: 60em solid #FFC107;
