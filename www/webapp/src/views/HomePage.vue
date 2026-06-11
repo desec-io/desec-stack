@@ -128,10 +128,8 @@
         </v-col>
         <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
           As a <a class="text-primary" href="https://www.joindns4.eu/">DNS4EU</a> consortium member,
-          deSEC works to ensure implementation of robust and modern DNS security and privacy features.
-          This includes support for state-of-the-art DNSSEC as well as encrypted DNS transport.<br />
-          The project is co-funded by the European Union (project number: 101095329 21-EU-DIG-EU-DNS, project name:
-          DNS4EU and European DNS Shield).
+          deSEC worked to ensure implementation of robust and modern DNS security and privacy features.
+          This included support for state-of-the-art DNSSEC as well as encrypted DNS transport.
         </v-col>
       </v-row>
     </v-container>
@@ -141,18 +139,6 @@
       <v-row align="center">
         <v-col class="text-center">
           <h2>Partners</h2>
-        </v-col>
-      </v-row>
-      <v-row align="center" class="py-2" justify="center">
-        <v-col cols="12" lg="3" class="py-4">
-          <v-row class="justify-center">
-            <a href="https://www.joindns4.eu/"><img loading="lazy" src="../assets/non-free/dns4eu.logo.svg" alt="DNS4EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 210px; width: 100%"/></a>
-          </v-row>
-        </v-col>
-        <v-col cols="12" sm="10" lg="9" class="py-4 text-center">
-          DNS4EU is an initiative of the European Commission to provide an EU-based alternative public DNS resolver.
-          The purpose of DNS4EU is to provide EU citizens, companies, and institutions with a secure, privacy-compliant,
-          and powerful recursive DNS to protect European digital independence.
         </v-col>
       </v-row>
       <v-row align="center" class="mt-6" justify="center" style="text-align: center">
