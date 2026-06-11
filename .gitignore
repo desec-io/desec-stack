@@ -1,5 +1,6 @@
 # python virtualenv and test files
 .env
+.env.dev
 api/venv
 
 # IDE files
