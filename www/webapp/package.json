@@ -20,7 +20,7 @@
     "date-fns": "^4.1.0",
     "pinia": "^2.0.30",
     "vue": "~2.7.14",
-    "vue-router": "~3.6.5",
+    "vue-router": "~4.6.3",
     "vuelidate": "^0.7.7",
     "vuetify": "^2.7.0"
   },
