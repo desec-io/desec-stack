@@ -30,10 +30,6 @@ env:
   DESECSTACK_DBAPI_PASSWORD_desec: 9Fn33T5yGueeee
   DESECSTACK_NSLORD_APIKEY: 9Fn33T5yGukjekwjew
   DESECSTACK_NSLORD_DEFAULT_TTL: 1234
-  DESECSTACK_DBMASTER_PASSWORD_pdns: 9Fn33T5yGukjwelt
-  DESECSTACK_NSMASTER_ALSO_NOTIFY:
-  DESECSTACK_NSMASTER_APIKEY: LLq1orOQuXCINUz4TV
-  DESECSTACK_NSMASTER_TSIGKEY: +++undefined/undefined/undefined/undefined/undefined/undefined/undefined/undefined+++A==
   DESECSTACK_IPV4_REAR_PREFIX16: 172.16
   DESECSTACK_IPV6_SUBNET: bade:affe:dead:beef:b011::/80
   DESECSTACK_IPV6_ADDRESS: bade:affe:dead:beef:b011:0642:ac10:0080
@@ -62,7 +58,7 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
       with:
-        images: api dbapi nslord nsmaster dblord dbmaster
+        images: api dbapi nslord nsmaster dblord
     - name: Check for missing migrations
       run: docker compose run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
 
@@ -92,7 +88,7 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
       with:
-        images: api dbapi nslord nsmaster dblord dbmaster
+        images: api dbapi nslord nsmaster dblord
     - name: Run API Tests
       run: docker compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
     - name: API Tests Logs and Cleanup

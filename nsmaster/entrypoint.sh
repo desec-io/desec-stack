@@ -1,23 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Route required for communicating with secondaries through VPN
-/sbin/ip route add 10.8.0.0/24 via 172.16.7.2
-/sbin/ip route add 239.1.2.0/24 via 172.16.7.2
+# VPN routing (same as before)
+/sbin/ip route add 10.8.0.0/24  via ${DESECSTACK_IPV4_REAR_PREFIX16}.7.2 || true
+/sbin/ip route add 239.1.2.0/24 via ${DESECSTACK_IPV4_REAR_PREFIX16}.7.2 || true
 
-# Fix UDP TTL which sometimes is one, causing packets intended for VPN clients to be dropped at the VPN server
-# TODO remove this workaround once the problem has been solved at its root
-iptables -t mangle -A OUTPUT -p udp -j TTL --ttl-set 64
+# Fix UDP TTL (same workaround as before)
+iptables -t mangle -A OUTPUT -p udp -j TTL --ttl-set 64 || true
 
-# wait for dbmaster database to come up
-until PGPASSWORD=$DESECSTACK_DBMASTER_PASSWORD_pdns psql -h dbmaster -U pdns -c '\q'; do
-  >&2 echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
+# Inject environment variables into Knot config
+envsubst < /etc/knot/knot.conf.var > /etc/knot/knot.conf
+chown knot:knot /etc/knot/knot.conf
 
-# Manage credentials
-envsubst < /etc/powerdns/pdns.conf.var > /etc/powerdns/pdns.conf
+# Ensure storage and socket directories exist with correct ownership
+mkdir -p /var/lib/knot /run/knot
+chown -R knot:knot /var/lib/knot /run/knot
+# 777 on the socket directory so the api container (different uid) can reach the socket.
+# The socket itself is created world-accessible via umask 0 below.
+chmod 777 /run/knot
 
-echo "Provisioning default TSIG key ..."
-pdnsutil import-tsig-key default hmac-sha256 "${DESECSTACK_NSMASTER_TSIGKEY}" > /dev/null
-
-exec pdns_server --daemon=no
+# umask 0 is inherited by knotd, causing the control socket to be created with mode 0777,
+# which allows the api container's process to connect without a shared GID.
+umask 0
+exec knotd -c /etc/knot/knot.conf

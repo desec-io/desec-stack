@@ -22,10 +22,6 @@ services:
     logging:
       driver: "json-file"
 
-  dbmaster:
-    logging:
-      driver: "json-file"
-
   api:
     environment:
     - DESECSTACK_API_DEBUG=True

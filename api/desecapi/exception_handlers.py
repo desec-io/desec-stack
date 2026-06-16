@@ -38,7 +38,7 @@ def exception_handler(exc, context):
     handlers = {
         IntegrityError: _409,
         OSError: _500,  # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
-        PDNSException: _500,  # nslord/nsmaster returned an error
+        PDNSException: _500,  # nslord returned an error
     }
 
     for exception_class, handler in handlers.items():

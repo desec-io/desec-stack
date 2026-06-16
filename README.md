@@ -4,9 +4,9 @@ deSEC Stack
 This is a docker compose application providing the basic stack for deSEC name services. It consists of
 
 - `nslord`: Eventually authoritative DNS server (PowerDNS). DNSSEC keying material is generated here.
-- `nsmaster`: Stealth authoritative DNS server (PowerDNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
+- `nsmaster`: Intermediary authoritative DNS server (Knot DNS). Receives fully signed AXFR zone transfers from `nslord`. No access to keys.
 - `api`: RESTful API to create deSEC users and domains, see [documentation](https://desec.readthedocs.io/).
-- `dbapi`, `dblord`, `dbmaster`: Postgres databases for `api` and `nsmaster`, MariaDB database for `nslord`, respectively.
+- `dbapi`, `dblord`: Postgres database for `api`, MariaDB database for `nslord`, respectively.
 - `www`: nginx instance serving static website content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
 - `rabbitmq`: `celery`'s queue
@@ -61,13 +61,6 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_NSLORD_CARBONSERVER`: pdns `carbon-server` setting on nslord (optional)
       - `DESECSTACK_NSLORD_CARBONOURNAME`: pdns `carbon-ourname` setting on nslord (optional)
       - `DESECSTACK_NSLORD_DEFAULT_TTL`: TTL to use by default, including for default NS records
-    - nsmaster-related
-      - `DESECSTACK_DBMASTER_PASSWORD_pdns`: mysql password for pdns on nsmaster
-      - `DESECSTACK_NSMASTER_ALSO_NOTIFY`: Comma-separated list of additional IP addresses to notify of zone updates
-      - `DESECSTACK_NSMASTER_APIKEY`: pdns API key on nsmaster (required so that we can execute zone deletions on nsmaster, which replicates to the secondaries)
-      - `DESECSTACK_NSMASTER_CARBONSERVER`: pdns `carbon-server` setting on nsmaster (optional)
-      - `DESECSTACK_NSMASTER_CARBONOURNAME`: pdns `carbon-ourname` setting on nsmaster (optional)
-      - `DESECSTACK_NSMASTER_TSIGKEY`: Base64-encoded value of the default TSIG key used for talking to external secondaries (algorithm: HMAC-SHA256)
     - monitoring-related
       - `DESECSTACK_WATCHDOG_SECONDARIES`: space-separated list of secondary hostnames; used to check correct replication of recent DNS changes
       - `DESECSTACK_PROMETHEUS_PASSWORD`: basic auth password for user `prometheus` at `https://${DESECSTACK_DOMAIN}/prometheus/`

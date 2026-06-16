@@ -3,7 +3,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
 
-from desecapi import pch, pdns
+from desecapi import knot, pch, pdns
 from desecapi.models import RRset, RR, Domain
 
 
@@ -69,8 +69,8 @@ class PDNSChangeTracker:
 
         def pdns_do(self):
             pdns.create_zone_lord(self.domain_name)
-            pdns.create_zone_master(self.domain_name)
-            pdns.update_catalog(self.domain_name)
+            knot.create_zone(self.domain_name)
+            # catalog.internal updated automatically by Knot
 
         def api_do(self):
             rr_set = RRset(
@@ -97,8 +97,8 @@ class PDNSChangeTracker:
 
         def pdns_do(self):
             pdns.delete_zone_lord(self.domain_name)
-            pdns.delete_zone_master(self.domain_name)
-            pdns.update_catalog(self.domain_name, delete=True)
+            knot.delete_zone(self.domain_name)
+            # catalog.internal updated automatically by Knot
 
         def api_do(self):
             pass
@@ -258,7 +258,7 @@ class PDNSChangeTracker:
         self.transaction.__exit__(None, None, None)
 
         for name in axfr_required:
-            pdns.axfr_to_master(name)
+            knot.retrieve_zone(name)
         Domain.objects.filter(name__in=axfr_required).update(published=timezone.now())
 
     def _compute_changes(self):

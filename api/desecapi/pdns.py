@@ -1,8 +1,5 @@
 import json
 import re
-import socket
-from functools import cache
-from hashlib import sha1
 
 import requests
 from django.conf import settings
@@ -70,23 +67,13 @@ SUPPORTED_RRSET_TYPES = {
 }
 
 NSLORD = object()
-NSMASTER = object()
 
 _config = {
     NSLORD: {
         "base_url": settings.NSLORD_PDNS_API,
         "apikey": settings.NSLORD_PDNS_API_TOKEN,
     },
-    NSMASTER: {
-        "base_url": settings.NSMASTER_PDNS_API,
-        "apikey": settings.NSMASTER_PDNS_API_TOKEN,
-    },
 }
-
-
-@cache
-def gethostbyname_cached(host):
-    return socket.gethostbyname(host)
 
 
 def _pdns_request(
@@ -198,19 +185,6 @@ def get_rrset_datas(domain):
     ]
 
 
-def update_catalog(zone, delete=False):
-    """
-    Updates the catalog zone information (`settings.CATALOG_ZONE`) for the given zone.
-    """
-    content = _pdns_patch(
-        NSMASTER,
-        "/zones/" + pdns_id(settings.CATALOG_ZONE),
-        {"rrsets": [construct_catalog_rrset(zone=zone, delete=delete)]},
-    )
-    metrics.get("desecapi_pdns_catalog_updated").inc()
-    return content
-
-
 def create_zone_lord(name):
     name = name.rstrip(".") + "."
     _pdns_post(
@@ -244,20 +218,6 @@ def create_zone_lord(name):
     )
 
 
-def create_zone_master(name):
-    name = name.rstrip(".") + "."
-    _pdns_post(
-        NSMASTER,
-        "/zones?rrsets=false",
-        {
-            "name": name,
-            "kind": "SLAVE",
-            "masters": [gethostbyname_cached("nslord")],
-            "master_tsig_key_ids": ["default"],
-        },
-    )
-
-
 def delete_zone(name, server):
     _pdns_delete(server, "/zones/" + pdns_id(name))
 
@@ -266,45 +226,5 @@ def delete_zone_lord(name):
     _pdns_delete(NSLORD, "/zones/" + pdns_id(name))
 
 
-def delete_zone_master(name):
-    _pdns_delete(NSMASTER, "/zones/" + pdns_id(name))
-
-
 def update_zone(name, data):
     _pdns_patch(NSLORD, "/zones/" + pdns_id(name), data)
-
-
-def axfr_to_master(zone):
-    _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
-
-
-def construct_catalog_rrset(
-    zone=None, delete=False, subname=None, qtype="PTR", rdata=None
-):
-    # subname can be generated from zone for convenience; exactly one needs to be given
-    assert (zone is None) ^ (subname is None)
-    # sanity check: one can't delete an rrset and give record data at the same time
-    assert not (delete and rdata)
-
-    if subname is None:
-        zone = zone.rstrip(".") + "."
-        m_unique = sha1(zone.encode()).hexdigest()
-        subname = f"{m_unique}.zones"
-
-    if rdata is None:
-        rdata = zone
-
-    return {
-        "name": f"{subname}.{settings.CATALOG_ZONE}".strip(".") + ".",
-        "type": qtype,
-        "ttl": 0,  # as per the specification
-        "changetype": "REPLACE",
-        "records": [] if delete else [{"content": rdata, "disabled": False}],
-    }
-
-
-def get_serials():
-    return {
-        zone["name"]: zone["edited_serial"]
-        for zone in _pdns_get(NSMASTER, "/zones").json()
-    }

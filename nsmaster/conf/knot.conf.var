@@ -1,0 +1,46 @@
+server:
+  rundir: "/run/knot"
+  user: knot:knot
+  listen: [ "0.0.0.0@53", "::@53" ]
+  # Persist runtime zone additions/removals in Knot's config database
+  config-db: /var/lib/knot/confdb
+
+log:
+  - target: stderr
+    any: info
+
+# ACL: allow external secondaries (connected via VPN) to AXFR from nsmaster
+acl:
+  - id: acl-secondary-xfr
+    address: 10.8.0.0/24
+    action: transfer
+
+remote:
+  # nslord is the zone master; its IP authorises both NOTIFYs and AXFR sources
+  - id: nslord
+    address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.11@53
+
+  # Multicast notify target inherited from the PowerDNS also-notify configuration
+  - id: notify-multicast
+    address: 239.1.2.3@53
+
+# Template for zones slaved from nslord.
+# catalog-zone causes each such zone to appear automatically in catalog.internal.
+template:
+  - id: slave
+    master: nslord
+    acl: acl-secondary-xfr
+    notify: notify-multicast
+    catalog-zone: catalog.internal.  # Knot maintains PTR entries here automatically
+    zonefile-sync: -1        # keep data in journal; no zone-file writes at runtime
+    zonefile-load: whole     # load from file on first start if a file is present
+    journal-content: changes
+
+# Catalog zone: Knot generates its content from all zones with catalog-zone set above.
+# Declared statically so it is present in the config-db from the very first startup.
+zone:
+  - domain: catalog.internal.
+    catalog-role: generate
+    acl: acl-secondary-xfr
+    notify: notify-multicast
+    journal-content: changes
