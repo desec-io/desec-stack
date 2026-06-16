@@ -11,7 +11,7 @@
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
             </p>
             <p>
-              Running on <strong>open-source software</strong> and <strong>supported by <a href="https://securesystems.de/">SSE</a></strong>,
+              Running on <strong>open-source software</strong> and <strong>supported by <a href="https://systemsecurity.com/">SSE</a></strong>,
               deSEC is free for everyone to use.
             </p>
           </div>
