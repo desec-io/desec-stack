@@ -108,11 +108,18 @@ export default {
       await HTTP
           .post('captcha/', {kind: this.kind})
           .then((res) => {
-            this.captcha = res.data;
+            if (res.data?.id && res.data?.challenge) {
+              this.captcha = res.data;
+              this.errors = [];
+            } else {
+              this.captcha = null;
+              this.errors = ['Could not request captcha from server.'];
+            }
           })
           .catch((e) => {
+            this.captcha = null;
             if(e.response) {
-              this.errors = [e.response.data.detail];
+              this.errors = [e.response.data?.detail || 'Could not request captcha from server.'];
             } else if(e.request) {
               this.errors = ['Could not request captcha from server.'];
             } else {
@@ -130,7 +137,7 @@ export default {
       this.errors.push(...values);
     },
     captchaID() {
-      return this.captcha.id;
+      return this.captcha?.id || null;
     },
     captchaSolution() {
       return this.inputSolution.toUpperCase();

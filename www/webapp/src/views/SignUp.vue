@@ -181,7 +181,7 @@
   import {mdiAccountCheck, mdiDns, mdiEmail} from "@mdi/js";
   import GenericCaptcha from "@/components/Field/GenericCaptcha.vue";
 
-  const LOCAL_PUBLIC_SUFFIXES = import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' ');
+  const LOCAL_PUBLIC_SUFFIXES = (import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES || 'dedyn.example.com').split(' ');
 
   const HTTP = axios.create({
     baseURL: '/api/v1/',

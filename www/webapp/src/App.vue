@@ -5,7 +5,7 @@
       location="right"
       disable-resize-watcher
     >
-      <v-list density="compact">
+      <v-list density="compact" class="main-menu-drawer">
         <v-list-item
           v-for="(item, key) in menu"
           :key="key"
@@ -49,7 +49,7 @@
       <v-btn class="mx-4 ml-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
       <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
       <template #extension v-if="authenticated">
-        <div class="d-flex align-center w-100 bg-primary text-white">
+        <div class="authenticated-tabs d-flex align-center w-100 bg-primary text-white">
           <v-tabs v-model="activeTab" class="flex-grow-1 text-white" bg-color="primary" color="white" slider-color="white" grow>
             <v-tab
               v-for="(item, key) in tabmenu"
@@ -125,6 +125,7 @@
       <router-view/>
     </v-main>
     <v-footer
+      app
       class="d-flex flex-column align-stretch pa-0 text-white elevation-12"
     >
       <div class="bg-grey-darken-3 d-sm-flex flex-row justify-space-between pa-4">
@@ -325,11 +326,33 @@ export default {
   text-decoration: underline;
 }
 .v-application .main-menu-link {
-  color: #ffa000;
+  color: #ffa000 !important;
+  text-decoration: none;
+}
+.v-application .main-menu-link:hover,
+.v-application .main-menu-link:focus {
+  color: #ffa000 !important;
+}
+.v-application .main-menu-drawer .v-list-item {
+  color: rgba(0, 0, 0, 0.87) !important;
+  text-decoration: none;
+}
+.v-application .main-menu-drawer .v-list-item--active {
+  background-color: #e0e0e0;
+}
+.v-application .main-menu-drawer .v-list-item .v-icon {
+  color: rgba(0, 0, 0, 0.54);
+}
+.v-application .v-btn.bg-primary {
+  color: #fff !important;
+  text-decoration: none;
+}
+.v-application .authenticated-tabs a {
+  color: #fff !important;
 }
 .v-application .bg-grey-darken-3 a,
 .v-application .bg-grey-darken-4 a {
-  color: rgb(var(--v-theme-secondary)) !important;
+  color: #ffa000 !important;
   text-decoration: underline;
 }
 .app-logo {
@@ -353,9 +376,6 @@ export default {
 .v-application .text-primary {
   color: #ffa000 !important;
 }
-.v-main {
-  flex: 1 0 auto;
-}
 .v-application .v-field {
   background-color: #FFFFFF;
 }
@@ -366,24 +386,32 @@ export default {
 .v-input--disabled {
   opacity: 1;
 }
-.v-application .v-input--disabled .v-field,
-.v-application .v-field--disabled,
 .v-application .v-field--variant-plain {
   background-color: #FFFFFF;
+}
+.v-application .v-field--variant-plain .v-field__outline,
+.v-application .v-field--variant-plain .v-field__underlay {
+  display: none;
+}
+.v-application .v-field--variant-plain input,
+.v-application .v-field--variant-plain textarea {
+  color: rgba(0, 0, 0, 0.87);
+}
+.v-application .v-input--disabled .v-field,
+.v-application .v-field--disabled {
+  background-color: #f5f5f5;
 }
 .v-application .v-input--disabled .v-field__outline,
 .v-application .v-input--disabled .v-field__underlay,
 .v-application .v-field--disabled .v-field__outline,
-.v-application .v-field--disabled .v-field__underlay,
-.v-application .v-field--variant-plain .v-field__outline,
-.v-application .v-field--variant-plain .v-field__underlay {
+.v-application .v-field--disabled .v-field__underlay {
   display: none;
 }
 .v-application .v-input--disabled input,
 .v-application .v-input--disabled textarea,
 .v-application .v-field--disabled input,
 .v-application .v-field--disabled textarea {
-  color: rgba(0, 0, 0, 0.87);
+  color: rgba(0, 0, 0, 0.54);
 }
 .v-btn--disabled.v-btn--variant-flat {
   background-color: #e0e0e0 !important;

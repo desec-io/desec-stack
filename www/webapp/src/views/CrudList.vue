@@ -12,9 +12,11 @@
             :timeout="-1"
           >
             {{ errors[errors.length - 1] }}
-            <v-btn color="white" variant="text" @click="snackbar = false">
-              Close
-            </v-btn>
+            <template #actions>
+              <v-btn color="white" class="text-error" variant="flat" @click="snackbar = false">
+                Dismiss
+              </v-btn>
+            </template>
           </v-snackbar>
 
           <!-- The Actual Table -->
