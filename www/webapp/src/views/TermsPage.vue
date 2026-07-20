@@ -1,12 +1,12 @@
 <template>
   <div>
-  <v-card outline tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+  <v-card outline tile class="pa-md-12 pa-8 elevation-2" style="overflow: hidden">
     <div class="d-none d-md-block triangle-bg">§§</div>
     <v-container class="pa-0">
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col cols="12" md="6" class="py-8 triangle-fg">
-          <h1 class="text-h4 font-weight-bold">Terms of Use</h1>
-          <div class="text-subtitle-1 mt-2 py-8 font-weight-regular">
+          <h1 class="text-headline-large font-weight-bold">Terms of Use</h1>
+          <div class="text-body-large mt-2 py-8 font-weight-regular">
             <p>
               We collect as little data as possible and restrict the usage of our DNS service only where necessary to
               meet legal requirements or to ensure the smooth operation of our services. In turn, we rely on the

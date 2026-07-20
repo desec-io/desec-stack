@@ -1,13 +1,14 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center" style="max-width: 100%">
+  <v-container class="fill-height d-flex align-center flex-wrap" fluid>
+    <v-row class="align-center justify-center" style="max-width: 100%">
+
       <v-col cols="12" :sm="fullWidth ? '12' : '10'">
         <v-card>
           <!-- Error Snackbar -->
           <v-snackbar
             v-model="snackbar"
             color="error"
-            multi-line
+            min-height="68"
             vertical
             :timeout="-1"
           >
@@ -86,7 +87,7 @@
                   <v-card>
                     <v-form ref="createForm" v-model="valid" @submit.prevent="save()">
                       <v-card-title>
-                        <span class="text-h5">{{ headlines.create }}</span>
+                        <span class="text-headline-small">{{ headlines.create }}</span>
                         <v-spacer />
                         <v-icon :icon="mdiClose" @click.stop="close" />
                       </v-card-title>
@@ -244,7 +245,7 @@
             <template #no-data>
               <div v-if="!pagination_required">
                 <div class="py-4 text-center">
-                  <h2 class="text-h6">Feels so empty here!</h2>
+                  <h2 class="text-title-large">Feels so empty here!</h2>
                   <p>No entries yet.</p>
                 </div>
               </div>
@@ -256,7 +257,7 @@
                   type="warning"
               >
                 <div class="py-4">
-                  <h2 class="text-h6">Too much data!</h2>
+                  <h2 class="text-title-large">Too much data!</h2>
                   <p>
                     Wow! There are more than 500 entries here.<br>
                     Unfortunately, the web interface can't handle this.
@@ -280,7 +281,7 @@
             <v-card>
               <v-form @submit.prevent="destroy(destroyDialogItem)">
                 <v-card-title>
-                  <span class="text-h5">{{ headlines.destroy }}</span>
+                  <span class="text-headline-small">{{ headlines.destroy }}</span>
                 </v-card-title>
 
                 <v-divider />
