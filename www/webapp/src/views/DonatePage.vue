@@ -60,7 +60,7 @@
                     </tbody>
                   </v-table>
                   <div class="text-center">
-                    <qrcode-vue :value="bank_transfer_epc" size="300"/>
+                    <qrcode-vue :value="bank_transfer_epc" :size="300"/>
                   </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>
@@ -209,7 +209,7 @@
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
   import {mdiBankTransferIn, mdiBankTransferOut, mdiBitcoin, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
-  import QrcodeVue from '@/components/QrcodeVue.vue';
+  import QrcodeVue from '@/modules/qrcode.vue/dist/qrcode.vue.esm.js';
 
   export default {
     name: 'DonatePage',

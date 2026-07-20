@@ -46,7 +46,7 @@
             <strong>This code is only displayed once.</strong>
           </p>
           <div class="text-center">
-            <qrcode-vue :value="payload.uri" size="300" level="H"/>
+            <qrcode-vue :value="payload.uri" :size="300" level="H"/>
           </div>
           <p class="mt-6">
             <v-icon :icon="mdiNumeric2Circle" />
@@ -98,7 +98,7 @@
 <script>
 import {digestError, HTTP, logout, withWorking} from '@/utils'
 import ErrorAlert from "@/components/ErrorAlert.vue";
-import QrcodeVue from '@/components/QrcodeVue.vue'
+import QrcodeVue from '@/modules/qrcode.vue/dist/qrcode.vue.esm.js'
 import {mdiCheck, mdiClose, mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 
 export default {
