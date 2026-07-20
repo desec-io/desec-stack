@@ -10,7 +10,7 @@
     </p>
 
     <div v-if="!user.authenticated">
-      <div class="my-2 text-h6">
+      <div class="my-2 text-title-large">
         <v-icon class="text-primary" :icon="mdiNumeric0Circle" />
         Configure your DNS records
       </div>
@@ -22,7 +22,7 @@
       </ul>
     </div>
 
-    <div class="mb-2 mt-5 text-h6">
+    <div class="mb-2 mt-5 text-title-large">
       <v-icon class="text-primary" :icon="mdiNumeric1Circle" />
       Delegate your domain
     </div>
@@ -73,7 +73,7 @@
     </v-card>
     <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <div class="mb-2 mt-5 text-h6">
+    <div class="mb-2 mt-5 text-title-large">
       <v-icon class="text-primary" :icon="mdiNumeric2Circle" />
       Enable DNSSEC
     </div>
@@ -130,7 +130,7 @@
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
       </v-card>
 
-      <div class="mb-2 mt-5 text-h6">
+      <div class="mb-2 mt-5 text-title-large">
         <v-icon class="text-primary" :icon="mdiNumeric3Circle" />
         Check Setup
       </div>

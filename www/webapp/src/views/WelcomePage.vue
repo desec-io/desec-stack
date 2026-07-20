@@ -1,18 +1,15 @@
 <template>
   <v-container
-          class="fill-height"
+          class="fill-height d-flex align-center flex-wrap"
           fluid
   >
-    <v-row
-            align="center"
-            justify="center"
-    >
+    <v-row class="align-center justify-center">
       <v-col
               cols="12"
               sm="8"
               md="6"
       >
-        <v-card class="elevation-12">
+        <v-card class="elevation-5">
           <v-toolbar
                   color="primary"
                   flat

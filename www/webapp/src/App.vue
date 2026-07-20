@@ -125,7 +125,7 @@
       <router-view/>
     </v-main>
     <v-footer
-      class="d-flex flex-column align-stretch pa-0 text-white elevation-12"
+      class="d-flex flex-column align-stretch pa-0 text-white elevation-5"
     >
       <div class="bg-grey-darken-3 d-sm-flex flex-row justify-space-between pa-4">
         <div class="pa-2">
