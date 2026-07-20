@@ -1,6 +1,6 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
+  <v-container class="fill-height d-flex align-center flex-wrap" fluid>
+    <v-row class="align-center justify-center">
       <v-col cols="12" sm="8" md="6">
         <v-card>
           <v-toolbar
@@ -17,10 +17,10 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row align="center" justify="center">
+    <v-row class="align-center justify-center">
       <v-col cols="12" sm="8" md="3">
         <v-card>
-          <v-card-title><div class="text-h6">Find Help</div></v-card-title>
+          <v-card-title><div class="text-title-large">Find Help</div></v-card-title>
           <v-card-text>
             In our forum <router-link :to="{name: 'talk'}">talk.desec.io</router-link>, members of the community
             discuss ideas and applications of deSEC. If you have a question, chances are that you may be able to find
@@ -33,7 +33,7 @@
       </v-col>
       <v-col cols="12" sm="8" md="3">
         <v-card>
-          <v-card-title><div class="text-h6">Keep deSEC Going</div></v-card-title>
+          <v-card-title><div class="text-title-large">Keep deSEC Going</div></v-card-title>
           <v-card-text>
             To offer free DNS hosting for everyone, deSEC relies on donations only.
             If you like our service, please consider donating.
