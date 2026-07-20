@@ -25,7 +25,7 @@
     "date-fns": "^4.1.0",
     "pinia": "^2.0.30",
     "vue": "^3.4.19",
-    "vue-router": "^4.3.0",
+    "vue-router": "^5.2.0",
     "vuetify": "^3.7.5"
   },
   "devDependencies": {
