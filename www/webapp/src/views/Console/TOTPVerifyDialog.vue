@@ -9,7 +9,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title class="d-flex align-center">
-          <span class="text-h6">
+          <span class="text-title-large">
             Verify TOTP: <b>{{ displayName }}</b>
           </span>
           <v-spacer/>
@@ -54,7 +54,7 @@
           </p>
 
           <v-container class="pa-0">
-            <v-row dense align="center" class="justify-center">
+            <v-row density="compact" class="justify-center align-center">
               <v-col cols="12" sm="6">
                 <v-otp-input
                     v-model="code"
@@ -67,7 +67,7 @@
                 />
               </v-col>
             </v-row>
-            <v-row dense align="center" class="justify-center">
+            <v-row density="compact" class="justify-center align-center">
               <v-col cols="auto">
                 <v-btn
                         variant="flat"
@@ -97,7 +97,7 @@
 <script>
 import {digestError, HTTP, logout, withWorking} from '@/utils'
 import ErrorAlert from "@/components/ErrorAlert.vue";
-import QrcodeVue from '@/components/QrcodeVue.vue'
+import QrcodeVue from '@/modules/qrcode-vue/dist/qrcode.vue.esm.js'
 import {mdiCheck, mdiClose, mdiNumeric1Circle, mdiNumeric2Circle} from "@mdi/js";
 
 export default {

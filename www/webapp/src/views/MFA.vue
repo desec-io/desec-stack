@@ -8,7 +8,7 @@
     <v-form @submit.prevent="verify" ref="form">
       <v-card>
         <v-card-title>
-          <div class="text-h6">
+          <div class="text-title-large">
             2FA Required
           </div>
           <v-spacer/>
@@ -24,7 +24,7 @@
               Please select a TOTP token:
             </p>
             <v-container class="pa-0">
-              <v-row dense align="center" class="justify-center">
+              <v-row density="compact" class="justify-center align-center">
                 <v-col cols="12" sm="6">
                   <v-select
                     :items="factors"
@@ -43,7 +43,7 @@
               Enter the code displayed in the authenticator app to continue:
             </p>
             <v-container class="pa-0">
-              <v-row dense align="center" class="justify-center">
+              <v-row density="compact" class="justify-center align-center">
                 <v-col cols="12" sm="6">
                   <v-otp-input
                       v-model="code"
@@ -56,7 +56,7 @@
                   />
                 </v-col>
               </v-row>
-              <v-row dense align="center" class="justify-center">
+              <v-row density="compact" class="justify-center align-center">
                 <v-col cols="auto">
                   <v-btn
                           variant="flat"
