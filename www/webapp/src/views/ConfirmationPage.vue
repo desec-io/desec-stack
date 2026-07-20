@@ -1,18 +1,15 @@
 <template>
   <v-container
-          class="fill-height"
+          class="fill-height d-flex align-center flex-wrap"
           fluid
   >
-    <v-row
-            align="center"
-            justify="center"
-    >
+    <v-row class="align-center justify-center">
       <v-col
               cols="12"
               sm="8"
               md="6"
       >
-        <v-card class="elevation-12">
+        <v-card class="elevation-5">
           <v-toolbar
                   color="primary"
                   flat
@@ -34,7 +31,7 @@
               ></component>
             </v-form>
             <hr class="mt-6 mb-4" />
-            <h2 class="text-h6">... keep deSEC going!</h2>
+            <h2 class="text-title-large">... keep deSEC going!</h2>
             <p>
               To offer free DNS hosting for everyone, deSEC relies on donations only.
               If you like our service, please consider donating.
