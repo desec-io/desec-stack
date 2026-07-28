@@ -1,6 +1,6 @@
 <template>
   <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
+    <v-row align="center" justify="center" style="max-width: 100%">
       <v-col cols="12" :sm="fullWidth ? '12' : '10'">
         <v-card>
           <!-- Error Snackbar -->
