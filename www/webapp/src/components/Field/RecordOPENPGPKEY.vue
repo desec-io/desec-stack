@@ -2,7 +2,7 @@
 import { helpers } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
-const base64 = helpers.regex('base64', /^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
+const base64 = helpers.regex(/^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
 
 export default {
   name: 'RecordOPENPGPKEY',

@@ -2,7 +2,7 @@
 import { helpers, integer, between } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
-const base64 = helpers.regex('base64', /^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
+const base64 = helpers.regex(/^[0-9a-zA-Z+/][0-9a-zA-Z+/\s]*(=\s*){0,3}$/);
 
 const MAX8 = 255;
 const int8 = between(0, MAX8);

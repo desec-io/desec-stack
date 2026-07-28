@@ -2,8 +2,8 @@
 import { and, helpers, integer, between } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 
-const hex = helpers.regex('hex', /^([0-9a-fA-F]\s*)*[0-9a-fA-F]$/);
-const trim = and(helpers.regex('trimBegin', /^[^\s]/), helpers.regex('trimEnd', /[^\s]$/));
+const hex = helpers.regex(/^([0-9a-fA-F]\s*)*[0-9a-fA-F]$/);
+const trim = helpers.regex(/^[^\s]/, /[^\s]$/);
 
 const MAX8 = 255;
 const int8 = between(0, MAX8);
