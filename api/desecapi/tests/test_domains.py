@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.test import override_settings
-from rest_framework import status
+from rest_framework import mixins, status
+from rest_framework.test import APIRequestFactory
 
 from desecapi.models import Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
@@ -14,6 +15,7 @@ from desecapi.tests.base import (
     DomainOwnerTestCase,
     PublicSuffixMockMixin,
 )
+from desecapi.views import DomainViewSet
 
 
 class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
@@ -195,6 +197,38 @@ class UnauthenticatedDomainTests(DesecTestCase):
 
 
 class DomainOwnerTestCase1(DomainOwnerTestCase):
+    def test_bound_unsafe_method_via_as_view(self):
+        class UpdatableDomainViewSet(mixins.UpdateModelMixin, DomainViewSet):
+            pass
+
+        view = UpdatableDomainViewSet.as_view({"put": "update"})
+        request = APIRequestFactory().put("/", {}, format="json")
+        with self.assertRaises(RuntimeError):
+            view(request, name=self.my_domain.name)
+
+    def test_options_list(self):
+        response = self.client.options(self.reverse("v1:domain-list"))
+        self.assertStatus(response, status.HTTP_200_OK)
+        # POST is bound on the list route and the test token may create domains,
+        # so check_permissions() inspection of internal POST request clone works
+        self.assertIn("POST", response.data["actions"])
+        self.assertIn("name", response.data["actions"]["POST"])
+
+    def test_options_list_no_create_permission(self):
+        self.token.perm_create_domain = False
+        self.token.save()
+        response = self.client.options(self.reverse("v1:domain-list"))
+        self.assertStatus(response, status.HTTP_200_OK)
+        # HasCreateDomainPermission denies on the POST clone --> no actions, 200
+        self.assertNotIn("actions", response.data)
+
+    def test_options_detail(self):
+        url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+        response = self.client.options(url)
+        self.assertStatus(response, status.HTTP_200_OK)
+        # Neither PUT nor POST is bound here, so no determine_actions() actions
+        self.assertNotIn("actions", response.data)
+
     def test_name_validity(self):
         for name in [
             "FOO.BAR.com",
