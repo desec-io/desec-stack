@@ -541,7 +541,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         # Deletion using records=[] is allowed, except at the apex
         if (
             type_ == "NS"
-            and self.domain.is_locally_registrable
+            and not self.domain.can_modify_ns_records
             and (
                 attrs.get("records", True)
                 or not attrs.get("subname", self.instance.subname)
