@@ -52,6 +52,7 @@
                 <v-switch
                     v-model="showAdvanced"
                     v-if="Object.keys(writeableAdvancedColumns).length > 0"
+                    color="primary"
                     label="Show advanced settings"
                     class="mt-6"
                 />
