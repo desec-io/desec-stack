@@ -24,7 +24,7 @@
             tabindex="1"
             ref="captchaField"
         />
-        <v-row class="justify-center">
+        <v-row class="justify-center" no-gutters>
           <v-checkbox
                 v-model="payload.outreach_preference"
                 hide-details
@@ -38,7 +38,7 @@
           </v-checkbox>
         </v-row>
 
-        <v-row class="justify-center">
+        <v-row class="justify-center" no-gutters>
           <v-checkbox
                 v-model="terms"
                 hide-details="auto"
