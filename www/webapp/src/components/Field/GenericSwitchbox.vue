@@ -4,6 +4,7 @@
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
     :model-value="inputValue"
+    color="primary"
     :required="required"
     :rules="[v => !required || !!v || 'Required.']"
     @update:modelValue="change"
