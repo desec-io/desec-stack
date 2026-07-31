@@ -23,7 +23,7 @@
           <v-card-text>
             <v-expansion-panels class="mb-4">
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBankTransferIn" /> Direct Debit – Let us Take your Money (Europe)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
@@ -36,7 +36,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBankTransferOut" /> Bank Transfer – Send us Money (Europe)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -66,7 +66,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiCreditCardOutline" /> Credit Card
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -83,7 +83,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiGithub" /> GitHub Sponsors
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -95,7 +95,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiGiftOutline" /> PayPal
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -112,7 +112,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -138,7 +138,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiHeartMultipleOutline" /> Double-up with Your Employer
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
