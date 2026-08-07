@@ -43,3 +43,13 @@ html_static_path = ['_static']
 latex_documents = [
     ('index', 'deSEC.tex', 'deSEC DNS API Documentation', 'deSEC e.V., Individual Contributors', 'manual'),
 ]
+
+# -- Read the Docs theme options ----------------------------------------------
+# https://docs.readthedocs.com/platform/stable/guides/edit-source-links-sphinx.html
+html_context = {
+    "display_github": True,
+    "github_user": "desec-io",
+    "github_repo": "desec-stack",
+    "github_version": "main",
+    "conf_py_path": "/docs/",
+}
