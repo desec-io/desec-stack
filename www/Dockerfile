@@ -1,4 +1,4 @@
-FROM node:lts AS webapp
+FROM node:24-slim AS webapp
 RUN \
   apt-get update \
   && apt-get -y install gettext-base \
