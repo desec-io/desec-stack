@@ -1,35 +1,17 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# https://docs.github.com/code-security/reference/supply-chain-security/dependabot-options-reference
 
 version: 2
 updates:
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
       timezone: "Europe/Berlin"
       time: "05:00"
     groups:
       github-actions:
         patterns:
           - "*"
-  - package-ecosystem: "npm"
-    directory: "www/webapp/"
-    schedule:
-      interval: "weekly"
-      timezone: "Europe/Berlin"
-      day: "monday"
-      time: "05:00"
-    ignore:
-      - dependency-name: "eslint"
-      - dependency-name: "sass"
-    groups:
-      npm-webapp:
-        update-types:
-          - "minor"
-          - "patch"
   - package-ecosystem: "pip"
     directory: "api/"
     schedule:
@@ -45,7 +27,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "docs/"
     schedule:
-      interval: "weekly"
+      interval: "yearly"
       timezone: "Europe/Berlin"
       day: "monday"
       time: "05:00"
@@ -56,7 +38,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "test/e2e2/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       timezone: "Europe/Berlin"
       day: "monday"
       time: "05:00"
