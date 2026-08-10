@@ -1,2 +1,2 @@
-sphinx
-sphinx-rtd-theme
+sphinx==9.*
+sphinx-rtd-theme==3.*
