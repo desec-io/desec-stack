@@ -255,7 +255,7 @@ class PDNSChangeTracker:
                 context = f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}"
                 if isinstance(e, APIException):
                     # These already carry the status code the client needs to see, such as 413
-                    # for RequestEntityTooLarge. Keep the context as a note on the traceback.
+                    # for RequestEntityTooLarge, so don't mask it behind a generic 500.
                     e.add_note(context)
                     raise
                 raise ChangeTrackerException(f"{context}: {str(e)}") from e
