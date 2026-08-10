@@ -285,9 +285,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
     def test_delete_my_domain_retry_after_partial_pdns_failure(self):
-        # A deletion that fails at nsmaster rolls the database back, but the nslord zone stays
-        # gone. The retry then hits a zone that no longer exists and must still succeed,
-        # otherwise the domain is stranded and keeps occupying a slot against limit_domains.
+        # A retried deletion must succeed against a zone the first attempt already removed,
+        # or the domain stays stranded and keeps occupying a slot against limit_domains.
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
         self.client.raise_request_exception = False
 
@@ -310,8 +309,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
 
     def test_delete_my_domain_pdns_failure_renders_json(self):
-        # Clients parse error bodies, so a failed commit must stay within the API's JSON
-        # error contract rather than falling through to Django's HTML error page.
+        # A failed commit must stay within the API's JSON error contract rather than falling
+        # through to Django's HTML error page.
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
         self.client.raise_request_exception = False
 
