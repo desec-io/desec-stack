@@ -90,7 +90,7 @@ def gethostbyname_cached(host):
 
 
 def _pdns_request(
-    method, *, server, path, data=None, accept="application/json", **kwargs
+    method, *, server, path, data=None, accept="application/json", tolerate=(), **kwargs
 ):
     if data is not None:
         data = json.dumps(data)
@@ -109,8 +109,10 @@ def _pdns_request(
         metrics.get("desecapi_pdns_request_failure").labels(
             method, path, r.status_code
         ).inc()
-        raise PDNSException(response=r)
-    metrics.get("desecapi_pdns_request_success").labels(method, r.status_code).inc()
+        if r.status_code not in tolerate:
+            raise PDNSException(response=r)
+    else:
+        metrics.get("desecapi_pdns_request_success").labels(method, r.status_code).inc()
     return r
 
 
@@ -259,15 +261,17 @@ def create_zone_master(name):
 
 
 def delete_zone(name, server):
-    _pdns_delete(server, "/zones/" + pdns_id(name))
+    # Tolerate 404 so that deletion stays idempotent: a zone left behind by a partially
+    # applied deletion must not block the retry that clears the corresponding API state.
+    _pdns_delete(server, "/zones/" + pdns_id(name), tolerate=(404,))
 
 
 def delete_zone_lord(name):
-    _pdns_delete(NSLORD, "/zones/" + pdns_id(name))
+    delete_zone(name, NSLORD)
 
 
 def delete_zone_master(name):
-    _pdns_delete(NSMASTER, "/zones/" + pdns_id(name))
+    delete_zone(name, NSMASTER)
 
 
 def update_zone(name, data):
