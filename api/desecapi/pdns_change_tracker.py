@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db.models.signals import post_save, post_delete
 from django.db.transaction import atomic
 from django.utils import timezone
+from rest_framework.exceptions import APIException
 
 from desecapi import pch, pdns
 from desecapi.exceptions import ChangeTrackerException
@@ -251,10 +252,13 @@ class PDNSChangeTracker:
                     axfr_required.add(change.domain_name)
             except Exception as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
-                exc = ChangeTrackerException(
-                    f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}"
-                )
-                raise exc from e
+                context = f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}"
+                if isinstance(e, APIException):
+                    # These already carry the status code the client needs to see, such as 413
+                    # for RequestEntityTooLarge. Keep the context as a note on the traceback.
+                    e.add_note(context)
+                    raise
+                raise ChangeTrackerException(f"{context}: {str(e)}") from e
 
         self.transaction.__exit__(None, None, None)
 

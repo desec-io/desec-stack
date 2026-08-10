@@ -499,6 +499,15 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             str(response.data),
         )
 
+    def test_create_my_rr_sets_exceeding_pdns_body_size(self):
+        # The payload is rejected before it reaches pdns, so the client must see the 413 that
+        # RequestEntityTooLarge declares instead of a generic server error.
+        data = {"records": ["1.2.3.4"], "ttl": 3600, "type": "A", "subname": "name"}
+        with self.settings(PDNS_MAX_BODY_SIZE=1):
+            with self.assertRequests():
+                response = self.client.post_rr_set(self.my_empty_domain.name, **data)
+        self.assertStatus(response, status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+
     def test_create_my_rr_sets_twice(self):
         data = {"records": ["1.2.3.4"], "ttl": 3660, "type": "A"}
         with self.assertRequests(
