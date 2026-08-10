@@ -4,6 +4,7 @@ from django.db.transaction import atomic
 from django.utils import timezone
 
 from desecapi import pch, pdns
+from desecapi.exceptions import ChangeTrackerException
 from desecapi.models import RRset, RR, Domain
 
 
@@ -250,7 +251,7 @@ class PDNSChangeTracker:
                     axfr_required.add(change.domain_name)
             except Exception as e:
                 self.transaction.__exit__(type(e), e, e.__traceback__)
-                exc = ValueError(
+                exc = ChangeTrackerException(
                     f"For changes {list(map(str, changes))}, {type(e)} occurred during {change}: {str(e)}"
                 )
                 raise exc from e

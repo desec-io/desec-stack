@@ -876,8 +876,8 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
         with self.assertRequests(self.request_pdns_zone_create_422()):
-            with self.assertRaises(ValueError):
-                self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
             self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_punycode(self):
