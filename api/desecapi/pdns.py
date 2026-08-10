@@ -261,8 +261,8 @@ def create_zone_master(name):
 
 
 def delete_zone(name, server):
-    # Tolerate 404 so that deletion stays idempotent: a zone left behind by a partially
-    # applied deletion must not block the retry that clears the corresponding API state.
+    # Tolerate 404: a zone already removed by a partially applied deletion must not block
+    # the retry that clears the leftover API state.
     _pdns_delete(server, "/zones/" + pdns_id(name), tolerate=(404,))
 
 
