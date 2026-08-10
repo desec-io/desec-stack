@@ -351,6 +351,20 @@ class MockPDNSTestCase(APITestCase):
         }
 
     @classmethod
+    def request_pdns_zone_delete_404(cls, name=None, ns="LORD"):
+        request = cls.request_pdns_zone_delete(name=name, ns=ns)
+        request["status"] = 404
+        request["body"] = json.dumps({"error": "Could not find domain"})
+        return request
+
+    @classmethod
+    def request_pdns_zone_delete_500(cls, name=None, ns="LORD"):
+        request = cls.request_pdns_zone_delete(name=name, ns=ns)
+        request["status"] = 500
+        request["body"] = json.dumps({"error": "Internal Server Error"})
+        return request
+
+    @classmethod
     def request_pdns_zone_update(cls, name=None):
         return {
             "method": "PATCH",
