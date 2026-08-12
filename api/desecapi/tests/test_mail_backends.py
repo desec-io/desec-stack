@@ -18,7 +18,8 @@ from desecapi import mail_backends
     },
 )
 class MultiLaneEmailBackendTestCase(TestCase):
-    test_backend = settings.EMAIL_BACKEND
+    def setUp(self):
+        self.test_backend = settings.EMAIL_BACKEND
 
     def test_lanes(self):
         debug_params = {"foo": "bar"}
