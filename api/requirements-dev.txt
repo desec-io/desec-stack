@@ -1,0 +1,6 @@
+# Test-runner dependencies, needed to run desecapi tests from an IDE (see
+# ../.vscode/settings.json and pytest.ini). Not installed into the api image,
+# which runs tests via `manage.py test`.
+-r requirements.txt
+pytest~=9.1.1
+pytest-django~=4.14.0
