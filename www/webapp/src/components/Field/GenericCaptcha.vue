@@ -1,5 +1,5 @@
 <template>
-  <v-row dense align="start" class="captcha-row">
+  <v-row density="compact" class="captcha-row align-start">
     <v-col cols="12" sm="7">
       <v-text-field
           v-model="inputSolution"

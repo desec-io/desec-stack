@@ -1,12 +1,12 @@
 <template>
   <div>
-  <v-card variant="outlined" tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+  <v-card variant="outlined" tile class="pa-md-12 pa-8 elevation-2" style="overflow: hidden">
     <div class="d-none d-md-block triangle-bg"></div>
     <v-container class="pa-0">
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col cols="12" md="6" class="py-8 triangle-fg">
-          <h1 class="text-h4 font-weight-bold">Modern DNS Hosting for Everyone</h1>
-          <div class="text-subtitle-1 mt-2 pt-8 font-weight-regular">
+          <h1 class="text-headline-large font-weight-bold">Modern DNS Hosting for Everyone</h1>
+          <div class="text-body-large mt-2 pt-8 font-weight-regular">
             <p>
               deSEC is a <strong>free DNS hosting</strong> service, <strong>designed with security in mind</strong>.
             </p>
@@ -65,7 +65,7 @@
   </v-card>
   <v-container fluid>
     <v-container>
-      <v-row justify="center" class="py-8">
+      <v-row class="py-8 justify-center">
         <v-col cols="12" sm="4" class="text-center" v-for="f in features" :key="f.title">
           <v-icon size="x-large" :icon="f.icon" />
           <h1 class="text-grey-darken-2"><span>{{ f.title }}</span></h1>
@@ -76,12 +76,12 @@
   </v-container>
   <v-container fluid class="bg-grey-lighten-4">
     <v-container class="py-8" id="supporters">
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col class="text-center">
           <h2>Supporters</h2>
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
+      <v-row class="py-2 align-center justify-center">
         <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/icann.logo.svg" alt="ICANN Logo" class="mr-6" style="max-width: 160px; width: 100%"/>
@@ -94,7 +94,7 @@
           <a href="https://www.icann.org/en/grant-program">ICANN Grant Program</a>.
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
+      <v-row class="py-2 align-center justify-center">
         <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/nlnet.logo.svg" alt="NLnet Foundation Logo" class="mr-6" style="max-width: 180px; width: 100%"/>
@@ -108,7 +108,7 @@
           security and trustworthiness.
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
+      <v-row class="py-2 align-center justify-center">
         <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/ripe-ncc.logo.svg" alt="RIPE NCC Logo" class="mr-6" style="margin-bottom: -7%; margin-top: -7%; max-width: 240px; width: 100%"/>
@@ -120,7 +120,7 @@
           particular. We greatly appreciate their support.
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
+      <v-row class="py-2 align-center justify-center">
         <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/layershift.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
@@ -132,7 +132,7 @@
           and support us by adopting frontend servers in each of their service regions.
         </v-col>
       </v-row>
-      <v-row align="center" class="py-2" justify="center">
+      <v-row class="py-2 align-center justify-center">
         <v-col cols="12" lg="3" class="py-4">
           <v-row class="justify-center">
             <img loading="lazy" src="../assets/non-free/eu.logo.svg" alt="EU Logo" class="mr-6" style="margin-bottom: 0; margin-top: 0; max-width: 200px; width: 100%"/>
@@ -148,12 +148,12 @@
   </v-container>
   <v-container fluid>
     <v-container class="py-8">
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col class="text-center">
           <h2>Partners</h2>
         </v-col>
       </v-row>
-      <v-row align="center" class="mt-6" justify="center" style="text-align: center">
+      <v-row class="mt-6 align-center justify-center" style="text-align: center">
         <v-col><a href="https://nextcloud.com/"><img loading="lazy" src="../assets/non-free/nextcloud-logo-inverted.svg" alt="Nextcloud Logo" class="partner-logo"/></a></v-col>
         <v-col><a href="https://systemsecurity.com/"><img loading="lazy" src="../assets/non-free/sse.logo.png" alt="SSE Logo" class="partner-logo partner-logo--sse"/></a></v-col>
         <v-col><a href="https://sav.com/"><img loading="lazy" src="../assets/non-free/sav.logo.svg" alt="Sav Logo" class="partner-logo partner-logo--sav"/></a></v-col>
@@ -163,7 +163,7 @@
   </v-container>
   <v-container fluid class="bg-grey-lighten-4">
     <v-container>
-      <v-row align="center" justify="center">
+      <v-row class="align-center justify-center">
         <v-card
           class="mx-auto w-100"
           color="grey-lighten-5"
@@ -172,10 +172,10 @@
                   class="pt-6"
                   style="position: relative;"
           >
-            <h3 class="text-h4 mb-2 text-grey-darken-2 text-center">
+            <h3 class="text-headline-large mb-2 text-grey-darken-2 text-center">
               deSEC Global Anycast Networks
             </h3>
-            <div class="font-weight-light text-h6 mb-2">
+            <div class="font-weight-light text-title-large mb-2">
               Global distribution of our frontend servers ensures quick answers to queries, regardless of the user's
               location on the globe. You can
               <a :href="'mailto:' + contact_email + '?subject=' + encodeURIComponent(contact_subject) +

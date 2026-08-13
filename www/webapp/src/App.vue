@@ -125,7 +125,7 @@
       <router-view/>
     </v-main>
     <v-footer
-      class="d-flex flex-column align-stretch pa-0 text-white elevation-12"
+      class="d-flex flex-column align-stretch pa-0 text-white elevation-5"
     >
       <div class="bg-grey-darken-3 d-sm-flex flex-row justify-space-between pa-4">
         <div class="pa-2">
@@ -303,6 +303,17 @@ export default {
 .v-application p {
   margin-bottom: 16px;
 }
+/* Vuetify 4 removed the global CSS reset (no more `* { margin: 0 }`), so raw
+   headings would regain their browser-default margins. Restore the prior
+   behavior (spacing is added explicitly where needed, e.g. #satzung h3). */
+.v-application h1,
+.v-application h2,
+.v-application h3,
+.v-application h4,
+.v-application h5,
+.v-application h6 {
+  margin: 0;
+}
 .v-application ul,
 .v-application ol {
   padding-left: 24px;
@@ -363,6 +374,13 @@ export default {
 .v-card-title {
   display: flex;
   align-items: center;
+}
+/* Vuetify 4 puts component styles in @layer, so a button placed inside a
+   VCardTitle inherits the title's large font (22px) instead of its own size.
+   This unlayered rule restores each button's intended size (e.g. the "Copy"
+   buttons in the domain setup cards). */
+.v-card-title .v-btn {
+  font-size: var(--v-btn-size, 0.875rem);
 }
 .v-card-text {
   letter-spacing: 0;
