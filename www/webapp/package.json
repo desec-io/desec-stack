@@ -13,14 +13,14 @@
   },
   "type": "module",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=24"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.0.3",
     "@mdi/js": "~7.4.47",
     "@vuelidate/core": "^2.0.3",
     "@vuelidate/validators": "^2.0.4",
-    "axios": "^1.4.0",
+    "axios": "^1.19.0",
     "date-fns": "^4.1.0",
     "pinia": "^4.0.0",
     "vue": "^3.4.19",
