@@ -5,6 +5,9 @@ location / {
     root   /usr/share/nginx/html/;
     error_page 403 =503 /503.html;
 
+    # advertise HTTP/3
+    add_header Alt-Svc 'h3=":443"; ma=86400' always;
+
     gzip on;
     gzip_types *;
 
