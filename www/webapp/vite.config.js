@@ -36,6 +36,18 @@ export default defineConfig({
     ],
     server: {
         port: 8080,
+        proxy: {
+            // The webapp talks to the API at a relative URL, so the dev server
+            // has to forward it somewhere. Defaults to the public API, which
+            // allows running the webapp without the stack. See README.md.
+            '/api': {
+                target: process.env.DESEC_API_ORIGIN || 'https://desec.io',
+                changeOrigin: true,
+                // A local stack usually serves a self-signed certificate. The
+                // public API is always verified.
+                secure: !process.env.DESEC_API_ORIGIN,
+            },
+        },
     },
     resolve: {
         alias: [{
