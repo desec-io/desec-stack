@@ -5,7 +5,10 @@ from ipaddress import IPv6Address
 
 import dns
 import dns.dnssec
+import dns.flags
+import dns.message
 import dns.name
+import dns.query
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
 import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
 import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
@@ -143,3 +146,27 @@ class NS(_NameMixin("target", allow_root=False), dns.rdtypes.ANY.NS.NS):
 @dns.immutable.immutable
 class SRV(_NameMixin("target", allow_root=True), dns.rdtypes.IN.SRV.SRV):
     pass
+
+
+# Authoritative servers are asked directly, with no resolver in between to
+# retry, spread the load and remember what is slow, so the budget per attempt is
+# the one a resolver gives a single try -- not the one it gives a whole lookup.
+AUTHORITATIVE_TIMEOUT = 3
+
+
+def query_server(address, qname, rdtype):
+    """
+    Sends a non-recursive query directly to an authoritative server, bypassing
+    any resolver, and returns the response. This is how the parent side of a
+    delegation is obtained: a resolver only ever hands out the child's copy.
+
+    Raises dns.exception.DNSException or OSError if the server does not answer.
+    """
+    # With EDNS, so that a referral carrying glue for a dozen nameservers fits
+    # into the UDP response instead of costing a TCP round trip on top.
+    message = dns.message.make_query(qname, rdtype, use_edns=0, payload=1232)
+    message.flags &= ~dns.flags.RD
+    response, _ = dns.query.udp_with_fallback(
+        message, address, timeout=AUTHORITATIVE_TIMEOUT
+    )
+    return response
