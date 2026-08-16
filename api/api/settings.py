@@ -166,6 +166,12 @@ DESECSTACK_DOMAIN = os.environ["DESECSTACK_DOMAIN"]
 DEFAULT_NS = [name + "." for name in os.environ["DESECSTACK_NS"].strip().split()]
 DEFAULT_NS_TTL = int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"])
 
+# Delegation checks: where to reach our resolver. (The nameservers a delegation
+# is expected to point at are DEFAULT_NS, i.e. the ones we publish.)
+UNBOUND_HOST = "unbound"
+UNBOUND_PORT = 53
+UNBOUND_CONTROL_PORT = 8953
+
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get("DESECSTACK_API_PSL_RESOLVER")
 LOCAL_PUBLIC_SUFFIXES = {"dedyn.%s" % os.environ["DESECSTACK_DOMAIN"]}
