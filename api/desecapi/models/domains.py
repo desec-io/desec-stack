@@ -85,6 +85,15 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    # Denormalized pointer to the newest DelegationCheck, so that list views do
+    # not need a per-domain subquery on the check history.
+    current_delegation_check = models.OneToOneField(
+        "DelegationCheck",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
 
     _keys = None
     objects = DomainManager()

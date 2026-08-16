@@ -2,6 +2,7 @@ from .abuse import BlockedSubnet
 from .authenticated_actions import *
 from .base import validate_domain_name, validate_lower, validate_upper
 from .captcha import Captcha
+from .delegation import DelegationCheck
 from .domains import Domain
 from .donation import Donation
 from .mfa import BaseFactor, TOTPFactor
