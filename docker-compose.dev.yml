@@ -47,6 +47,10 @@ services:
     logging:
       driver: "json-file"
 
+  unbound:
+    logging:
+      driver: "json-file"
+
   rabbitmq:
     ports:
     - "15672:15672"

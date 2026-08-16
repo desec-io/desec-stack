@@ -163,6 +163,8 @@ services:
       rearapi_dbapi:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
+      rearapi_unbound:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.10
       rearwww:
       rearmonitoring_api:
     logging:
@@ -223,6 +225,23 @@ services:
       driver: "syslog"
       options:
         tag: "desec/nsmaster"
+    restart: unless-stopped
+
+  unbound:
+    build: unbound
+    image: desec/dedyn-unbound:latest
+    init: true
+    environment:
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    networks:
+      # Recursion needs egress to port 53, which this bridge network's NAT
+      # provides. The resolver is deliberately not on any other network.
+      rearapi_unbound:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.11
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/unbound"
     restart: unless-stopped
 
   rabbitmq:
@@ -403,6 +422,13 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.1
+  rearapi_unbound:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.1
   rearwww:
     driver: bridge
     ipam:
