@@ -8,8 +8,8 @@
     "build": "vite build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint --ignore-path .gitignore --no-fix src/**/*.{vue,js,json}",
-    "lint:fix": "eslint --ignore-path .gitignore --fix src/**/*.{vue,js,json}",
+    "lint": "eslint --ignore-path .gitignore --no-fix \"src/**/*.{vue,js,json}\"",
+    "lint:fix": "eslint --ignore-path .gitignore --fix \"src/**/*.{vue,js,json}\"",
     "postinstall": "vue-demi-switch 3"
   },
   "type": "module",

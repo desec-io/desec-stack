@@ -1,5 +1,5 @@
 <script>
-import { and, helpers, integer, between } from '@vuelidate/validators';
+import { helpers, integer, between } from '@vuelidate/validators';
 import RecordItem from './RecordItem.vue';
 import { dnskey_algorithm_mnemonics } from './RecordDNSKEY.vue';
 
