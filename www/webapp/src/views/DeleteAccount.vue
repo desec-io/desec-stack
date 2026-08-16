@@ -22,7 +22,7 @@
                                 color="primary"
                                 flat
                         >
-                            <v-toolbar-title>Delete Account</v-toolbar-title>
+                            <v-toolbar-title tag="h1">Delete Account</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
                             <error-alert :errors="errors"></error-alert>
