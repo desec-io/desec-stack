@@ -3,6 +3,8 @@ import threading
 from contextlib import contextmanager
 from unittest import mock
 
+from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 import dns.edns, dns.exception, dns.flags, dns.message, dns.rcode, dns.rdatatype, dns.rrset
 
@@ -739,3 +741,194 @@ class DelegationCheckModelTestCase(TestCase):
         self.domain.refresh_from_db()
         self.domain.delete()
         self.assertFalse(DelegationCheck.objects.exists())
+
+
+class CheckDelegationCommandTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.local_suffix = next(iter(settings.LOCAL_PUBLIC_SUFFIXES))
+        cls.foreign = Domain.objects.create(name="example.com", owner=cls.user)
+        cls.local = Domain.objects.create(
+            name=f"mine.{cls.local_suffix}", owner=cls.user
+        )
+        cls.local_grandchild = Domain.objects.create(
+            name=f"sub.mine.{cls.local_suffix}", owner=cls.user
+        )
+
+    @contextmanager
+    def checks(self, **kwargs):
+        result = delegation.DelegationCheckResult(
+            security_status=DelegationCheck.SecurityStatus.SECURE,
+            nameserver_status=DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+            nameservers=["ns1.example.net."],
+            **kwargs,
+        )
+        with mock.patch("desecapi.delegation.check", return_value=result) as check:
+            yield check
+
+    @staticmethod
+    def checked_names(check):
+        return sorted(call.args[0] for call in check.call_args_list)
+
+    def test_named_domains(self):
+        with self.checks() as check:
+            call_command("check-delegation", "example.com")
+        self.assertEqual(self.checked_names(check), ["example.com"])
+        self.assertEqual(DelegationCheck.objects.count(), 1)
+
+    def test_named_domains_include_locally_registrable_ones(self):
+        with self.checks() as check:
+            call_command("check-delegation", self.local.name)
+        self.assertEqual(self.checked_names(check), [self.local.name])
+
+    def test_unknown_domain(self):
+        with self.checks():
+            with self.assertRaisesMessage(CommandError, "Unknown domain(s): nope.test"):
+                call_command("check-delegation", "nope.test")
+
+    def test_no_selection(self):
+        with self.checks():
+            with self.assertRaises(CommandError):
+                call_command("check-delegation")
+
+    def test_all_skips_domains_under_local_public_suffix(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all")
+        # Not only the immediate child: the grandchild reaches us through the
+        # same zones we host and sign, so it is skipped as well.
+        self.assertEqual(self.checked_names(check), [self.foreign.name])
+
+    def test_all_with_include_local(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--include-local")
+        self.assertEqual(
+            self.checked_names(check),
+            sorted(Domain.objects.values_list("name", flat=True)),
+        )
+
+    def test_all_together_with_named_domain(self):
+        with self.checks() as check:
+            call_command("check-delegation", self.local.name, "--all")
+        # The named one is checked although --all skips its kind; its
+        # grandchild, which was not named, still is not.
+        self.assertEqual(
+            self.checked_names(check),
+            sorted([self.foreign.name, self.local.name]),
+        )
+
+    def test_stale(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+        # Everything has just been checked, so nothing is stale anymore.
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600")
+        self.assertEqual(self.checked_names(check), [])
+
+        # ... but with a zero threshold, everything is.
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "0")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+    def other_user(self):
+        other = User.objects.create_user(email="other@example.com", password="s3cret!!")
+        Domain.objects.create(name="example.net", owner=other)
+        return other
+
+    def test_user_by_email(self):
+        self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--user", self.user.email)
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+    def test_user_by_id(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--user", str(other.pk))
+        self.assertEqual(self.checked_names(check), ["example.net"])
+
+    def test_user_filters_stale_selection(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600", "--user", other.email)
+        self.assertEqual(self.checked_names(check), ["example.net"])
+
+    def test_user_filters_named_domains(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "example.com", "--user", str(other.pk))
+        self.assertEqual(self.checked_names(check), [])
+
+    def test_unknown_user(self):
+        with self.checks():
+            unknown = (
+                "nobody@example.com",
+                "3b1f0000-0000-4000-8000-000000000000",
+                "x",
+            )
+            for value in unknown:
+                with self.assertRaisesMessage(CommandError, f"Unknown user: {value}"):
+                    call_command("check-delegation", "--all", "--user", value)
+
+    def test_user_alone_is_not_a_selection(self):
+        with self.checks():
+            with self.assertRaises(CommandError):
+                call_command("check-delegation", "--user", self.user.email)
+
+    def test_dry_run(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--dry-run")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+        self.assertFalse(DelegationCheck.objects.exists())
+
+    def test_concurrency(self):
+        threads = set()
+
+        def check(name):
+            threads.add(threading.current_thread())
+            return delegation.DelegationCheckResult(
+                security_status=DelegationCheck.SecurityStatus.SECURE,
+                nameserver_status=DelegationCheck.NameserverStatus.NOT_DELEGATED,
+            )
+
+        with mock.patch("desecapi.delegation.check", side_effect=check) as checked:
+            call_command("check-delegation", "--all", "--concurrency", "2")
+
+        self.assertEqual(
+            self.checked_names(checked),
+            [self.foreign.name],
+        )
+        self.assertEqual(DelegationCheck.objects.count(), 1)
+        # Measuring runs in the pool; recording stays on the main thread, which
+        # is what keeps the ORM out of threads we do not manage.
+        self.assertTrue(threads)  # ... and something did run there
+        self.assertNotIn(threading.current_thread(), threads)
+
+    def test_invalid_concurrency(self):
+        with self.checks():
+            with self.assertRaisesMessage(CommandError, "--concurrency"):
+                call_command("check-delegation", "--all", "--concurrency", "0")
+
+    def test_resolver_failure_aborts(self):
+        with mock.patch(
+            "desecapi.delegation.check",
+            side_effect=unbound.UnboundControlException("nope"),
+        ):
+            with self.assertRaisesMessage(CommandError, "Resolver unavailable"):
+                call_command("check-delegation", "--all")
