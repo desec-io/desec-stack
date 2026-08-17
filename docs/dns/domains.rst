@@ -163,6 +163,11 @@ If you have reached the maximum number of domains for your account, the API
 responds with ``403 Forbidden``.  If you find yourself affected by this limit
 although you have a legitimate use case, please contact our support.
 
+Domains that we offer for registration ourselves, such as those directly under
+``dedyn.io``, are limited to one per account.  Attempting to register a second
+one returns ``400 Bad Request``; delete the one you have if you would like a
+different name.
+
 Restrictions on what is a valid domain name apply.  In particular, domains
 listed on the `Public Suffix List`_ such as ``co.uk`` cannot be registered.
 (If you operate a public suffix and would like to host it with deSEC, that's

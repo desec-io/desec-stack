@@ -106,6 +106,26 @@ class DomainViewSet(
                 },
                 code="registration_suspended",
             )
+        if domain.is_locally_registrable:
+            # These are free, and we secure them ourselves rather than the
+            # user doing it, so without a cap an account could hold any number
+            # of domains that are correctly delegated at no cost to it. One per
+            # account also matches what the names are for: a dynDNS host, not
+            # an inventory.
+            registered = self.request.user.domains.under_local_public_suffix().first()
+            if registered is not None:
+                suffixes = ", ".join(sorted(settings.LOCAL_PUBLIC_SUFFIXES))
+                raise ValidationError(
+                    {
+                        "name": [
+                            f"You already have {registered.name}. Only one domain "
+                            f"under {suffixes} can be registered per account; "
+                            "please delete it first if you would like a different "
+                            "name."
+                        ]
+                    },
+                    code="local_domain_limit_exceeded",
+                )
         with PDNSChangeTracker():
             domain = serializer.save(owner=self.request.user)
             if self.request.auth.auto_policy:
