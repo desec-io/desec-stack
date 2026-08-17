@@ -13,17 +13,59 @@ class DelegationCheckManager(models.Manager):
         Records the outcome of a check as a change log entry: when it agrees
         with the domain's current state, only the confirmation time is bumped;
         otherwise, a new row begins a new state.
+
+        Also maintains Domain.secure_delegation_since, which unlike the change
+        log ignores checks that failed -- see _secure_since().
         """
         with transaction.atomic():
             check = domain.current_delegation_check
-            if check is not None and check.agrees_with(result):
-                check.save(update_fields=["checked"])  # auto_now bumps it
-                return check
+            agrees = check is not None and check.agrees_with(result)
 
-            check = self.create(domain=domain, **asdict(result))
-            domain.current_delegation_check = check
-            domain.save(update_fields=["current_delegation_check"])
+            if agrees:
+                check.save(update_fields=["checked"])  # auto_now bumps it
+                update_fields = set()
+            else:
+                check = self.create(domain=domain, **asdict(result))
+                domain.current_delegation_check = check
+                update_fields = {"current_delegation_check"}
+
+            since = self._secure_since(domain, result, check)
+            if since != domain.secure_delegation_since:
+                domain.secure_delegation_since = since
+                update_fields.add("secure_delegation_since")
+
+            if update_fields:
+                domain.save(update_fields=update_fields)
             return check
+
+    @staticmethod
+    def _secure_since(domain, result, check):
+        """
+        Returns the domain's new secure_delegation_since value.
+
+        A check that could not be carried out says nothing about the domain, so
+        it must not clear the field: an outage on our side is ours, not the
+        user's. Everything else is a statement about the domain and does update
+        it, including the negative ones. The original transition time is
+        preserved as long as the domain stays secure, so the field reads as
+        "secure since", not "last seen secure".
+        """
+        if (
+            result.security_status == DelegationCheck.SecurityStatus.ERROR
+            or result.nameserver_status == DelegationCheck.NameserverStatus.ERROR
+        ):
+            return domain.secure_delegation_since
+
+        secure = result.security_status == DelegationCheck.SecurityStatus.SECURE and (
+            result.nameserver_status
+            in (
+                DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+                # A multi-signer setup that has us among its providers is work
+                # the user did, and the zone is validly signed either way.
+                DelegationCheck.NameserverStatus.MULTI_PROVIDER,
+            )
+        )
+        return (domain.secure_delegation_since or check.created) if secure else None
 
 
 class DelegationCheck(ExportModelOperationsMixin("DelegationCheck"), models.Model):

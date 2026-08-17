@@ -215,7 +215,10 @@ AUTH_PASSWORD_VALIDATORS = [
 MINIMUM_TTL_DEFAULT = int(os.environ["DESECSTACK_MINIMUM_TTL_DEFAULT"])
 MAXIMUM_TTL = 86400
 AUTH_USER_MODEL = "desecapi.User"
-LIMIT_USER_DOMAIN_COUNT_DEFAULT = int(
+# How many domains an account may hold without having secured any: the floor
+# under the headroom in User.effective_limit_domains. The environment variable
+# keeps its historical name.
+DOMAIN_LIMIT_INSECURE_HEADROOM = int(
     os.environ.get("DESECSTACK_API_LIMIT_USER_DOMAIN_COUNT_DEFAULT", "1")
 )
 USER_ACTIVATION_REQUIRED = True
@@ -253,7 +256,7 @@ if DEBUG and not EMAIL_HOST:
 
 if os.environ.get("DESECSTACK_E2E_TEST", "").upper() == "TRUE":
     DEBUG = True
-    LIMIT_USER_DOMAIN_COUNT_DEFAULT = 5000
+    DOMAIN_LIMIT_INSECURE_HEADROOM = 5000
     USER_ACTIVATION_REQUIRED = False
     EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
     REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []

@@ -779,7 +779,6 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 self._test_registration(domain=domain, late_captcha=True)
 
     def test_registration_with_override_token(self):
-        limit_domains = 15
         token = self.create_token(owner=self.create_user(), perm_manage_tokens=True)
         self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
 
@@ -806,7 +805,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             self.assertIsNone(user.is_active)
             self.assertTrue(user.needs_captcha)
             self.assertFalse(user.outreach_preference)
-            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertIsNone(user.limit_domains)  # computed, like everyone's
             self.assertPassword(email, None)
 
             # Check confirmation email
@@ -835,7 +834,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             # Check user has been activated correctly
             user.refresh_from_db()
             self.assertTrue(user.is_active)
-            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertIsNone(user.limit_domains)  # computed, like everyone's
             self.assertFalse(user.needs_captcha)
             self.assertEqual(user.outreach_preference, outreach_preference)
             self.assertPassword(email, None)
@@ -956,6 +955,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
                 "id",
                 "limit_domains",
                 "outreach_preference",
+                "secure_domains",
             },
         )
         self.assertEqual(response.data["email"], self.email)
@@ -963,7 +963,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
             response.data["id"], str(User.objects.get(email=self.email).pk)
         )
         self.assertEqual(
-            response.data["limit_domains"], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
+            response.data["limit_domains"], settings.DOMAIN_LIMIT_INSECURE_HEADROOM
         )
         self.assertTrue(response.data["outreach_preference"])
 
