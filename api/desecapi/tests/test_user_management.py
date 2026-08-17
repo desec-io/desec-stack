@@ -278,6 +278,15 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             msg_prefix=str(response.data),
         )
 
+    def assertRegistrationFailureDomainTooDeepResponse(self, response, domain):
+        self.assertContains(
+            response=response,
+            text="Only direct registrations are allowed under",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            msg_prefix=str(response.data),
+        )
+        self.assertEqual(response.data["domain"][0].code, "name_too_deep")
+
     def assertRegistrationFailureCaptchaInvalidResponse(self, response):
         self.assertContains(
             response=response,
@@ -648,6 +657,15 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         with self.get_psl_context_manager(local_public_suffix):
             self._test_registration_with_domain(
                 domain=self.random_domain_name(suffix=local_public_suffix)
+            )
+
+    def test_registration_with_domain_below_local_public_suffix(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        local_public_suffix = random.sample(list(self.AUTO_DELEGATION_DOMAINS), 1)[0]
+        with self.get_psl_context_manager(local_public_suffix):
+            self._test_registration_with_domain(
+                domain="sub." + self.random_domain_name(suffix=local_public_suffix),
+                expect_failure_response=self.assertRegistrationFailureDomainTooDeepResponse,
             )
 
     @override_settings(REGISTER_LPS=False)

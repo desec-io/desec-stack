@@ -792,6 +792,16 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["name"][0].code, "registration_suspended")
 
+    def test_create_below_local_public_suffix(self):
+        suffix = next(iter(self.AUTO_DELEGATION_DOMAINS))
+        for name in (f"sub.foo.{suffix}", f"a.b.c.{suffix}"):
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data["name"][0].code, "name_too_deep")
+            # ... and says what to register instead.
+            self.assertIn(f"example.{suffix}", response.data["name"][0])
+            self.assertFalse(Domain.objects.filter(name=name).exists())
+
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = "amazonaws.com"
         with (
