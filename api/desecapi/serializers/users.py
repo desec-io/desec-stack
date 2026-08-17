@@ -93,7 +93,14 @@ class RegisterAccountSerializer(UserSerializer):
         serializer = DomainSerializer(data=dict(name=value), context=self.context)
         try:
             serializer.is_valid(raise_exception=True)
-        except serializers.ValidationError:
+        except serializers.ValidationError as e:
+            details = [
+                detail
+                for detail in e.detail.get("name", [])
+                if detail.code == "name_too_deep"
+            ]
+            if details:
+                raise serializers.ValidationError(details, code="name_too_deep")
             raise serializers.ValidationError(
                 serializer.default_error_messages["name_unavailable"],
                 code="name_unavailable",

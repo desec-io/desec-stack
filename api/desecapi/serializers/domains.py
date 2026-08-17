@@ -13,6 +13,9 @@ class DomainSerializer(serializers.ModelSerializer):
     default_error_messages = {
         **serializers.Serializer.default_error_messages,
         "name_unavailable": "This domain name conflicts with an existing domain, or is disallowed by policy.",
+        "name_too_deep": "Only direct registrations are allowed under {suffix}, such as "
+        "example.{suffix}. (Deeper subdomains are possible by creating subdomain records "
+        "inside your domain.)",
     }
     zonefile = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
@@ -48,9 +51,19 @@ class DomainSerializer(serializers.ModelSerializer):
         return fields
 
     def validate_name(self, value):
-        if not Domain(name=value, owner=self.context["request"].user).is_registrable():
+        domain = Domain(name=value, owner=self.context["request"].user)
+        if not domain.is_registrable():
             raise serializers.ValidationError(
                 self.default_error_messages["name_unavailable"], code="name_unavailable"
+            )
+        suffix = domain.public_suffix
+        if (
+            suffix in settings.LOCAL_PUBLIC_SUFFIXES
+            and value.count(".") > suffix.count(".") + 1
+        ):
+            raise serializers.ValidationError(
+                self.default_error_messages["name_too_deep"].format(suffix=suffix),
+                code="name_too_deep",
             )
         return value
 

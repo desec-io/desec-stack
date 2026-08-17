@@ -171,6 +171,11 @@ certainly possible; please contact support.) Also, domains ending with
 
 .. _Public Suffix List: https://publicsuffix.org/
 
+Under domains that we offer for registration ourselves, such as ``dedyn.io``,
+only direct children like ``example.dedyn.io`` can be registered.  Deeper names
+such as ``sub.example.dedyn.io`` return ``400 Bad Request``; register
+``example.dedyn.io`` and manage them as records within it.
+
 Furthermore, we may impose other restrictions on a per-user basis if necessary
 to enforce our `Terms of Use`_.
 
