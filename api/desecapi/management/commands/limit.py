@@ -16,7 +16,12 @@ class Command(BaseCommand):
             help="Identifies the entity to be updated. Users are identified by email address; "
             "domains by their name.",
         )
-        parser.add_argument("new_limit", help="New value for the limit.")
+        parser.add_argument(
+            "new_limit",
+            help='New value for the limit. For "domains", the special value '
+            '"auto" hands the account back to the limit computed from its '
+            "securely delegated domains.",
+        )
 
     def handle(self, *args, **options):
         if options["kind"] == "domains":
@@ -26,11 +31,15 @@ class Command(BaseCommand):
                 raise CommandError(
                     f'User with email address "{options["id"]}" could not be found.'
                 )
-            user.limit_domains = options["new_limit"]
+            auto = str(options["new_limit"]).lower() == "auto"
+            user.limit_domains = None if auto else options["new_limit"]
             user.save()
-            print(
-                f"Updated {user.email}: set max number of domains to {user.limit_domains}."
+            value = (
+                f"auto (currently {user.effective_limit_domains})"
+                if auto
+                else str(user.effective_limit_domains)
             )
+            print(f"Updated {user.email}: set max number of domains to {value}.")
         elif options["kind"] == "ttl":
             try:
                 domain = Domain.objects.get(name=options["id"])
