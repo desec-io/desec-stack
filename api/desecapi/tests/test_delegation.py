@@ -1,8 +1,10 @@
+import importlib
 import socket
 import threading
 from contextlib import contextmanager
 from unittest import mock
 
+from django.apps import apps as global_apps
 from django.conf import settings
 from django.core.management import CommandError, call_command
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -60,6 +62,21 @@ def _answer(item):
     if isinstance(item, BaseException):
         raise item
     return item
+
+
+def result(**kwargs):
+    """A check outcome, secure and correctly delegated unless said otherwise."""
+    kwargs.setdefault("security_status", DelegationCheck.SecurityStatus.SECURE)
+    kwargs.setdefault(
+        "nameserver_status", DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED
+    )
+    kwargs.setdefault("nameservers", ["ns1.example.net."])
+    return delegation.DelegationCheckResult(**kwargs)
+
+
+def secure(domain):
+    """Records a check that finds the domain securely delegated to us."""
+    return DelegationCheck.objects.record(domain, result())
 
 
 class DelegationCheckTestCase(SimpleTestCase):
@@ -669,17 +686,8 @@ class DelegationCheckModelTestCase(TestCase):
         )
         cls.domain = Domain.objects.create(name="example.com", owner=cls.user)
 
-    @staticmethod
-    def result(**kwargs):
-        kwargs.setdefault("security_status", DelegationCheck.SecurityStatus.SECURE)
-        kwargs.setdefault(
-            "nameserver_status", DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED
-        )
-        kwargs.setdefault("nameservers", ["ns1.example.net."])
-        return delegation.DelegationCheckResult(**kwargs)
-
     def test_first_check_is_recorded_and_becomes_current(self):
-        check = DelegationCheck.objects.record(self.domain, self.result(rcode=0))
+        check = DelegationCheck.objects.record(self.domain, result(rcode=0))
         self.domain.refresh_from_db()
         self.assertEqual(self.domain.current_delegation_check, check)
         self.assertEqual(check.security_status, DelegationCheck.SecurityStatus.SECURE)
@@ -689,9 +697,9 @@ class DelegationCheckModelTestCase(TestCase):
         self.assertIsNone(check.ede_code)
 
     def test_unchanged_outcome_only_bumps_checked(self):
-        check = DelegationCheck.objects.record(self.domain, self.result())
+        check = DelegationCheck.objects.record(self.domain, result())
         self.domain.refresh_from_db()
-        again = DelegationCheck.objects.record(self.domain, self.result())
+        again = DelegationCheck.objects.record(self.domain, result())
 
         self.assertEqual(again.pk, check.pk)
         self.assertEqual(self.domain.delegation_checks.count(), 1)
@@ -699,20 +707,20 @@ class DelegationCheckModelTestCase(TestCase):
         self.assertGreater(again.checked, check.checked)
 
     def test_unchanged_outcome_with_new_ede_only_bumps_checked(self):
-        check = DelegationCheck.objects.record(self.domain, self.result(ede_code=6))
+        check = DelegationCheck.objects.record(self.domain, result(ede_code=6))
         self.domain.refresh_from_db()
         again = DelegationCheck.objects.record(
-            self.domain, self.result(ede_code=7, ede_text="later")
+            self.domain, result(ede_code=7, ede_text="later")
         )
         self.assertEqual(again.pk, check.pk)
         self.assertEqual(again.ede_code, 6)  # not part of the recorded state
 
     def test_changed_outcome_starts_a_new_row(self):
-        check = DelegationCheck.objects.record(self.domain, self.result())
+        check = DelegationCheck.objects.record(self.domain, result())
         self.domain.refresh_from_db()
         changed = DelegationCheck.objects.record(
             self.domain,
-            self.result(security_status=DelegationCheck.SecurityStatus.MISCONFIGURED),
+            result(security_status=DelegationCheck.SecurityStatus.MISCONFIGURED),
         )
         self.domain.refresh_from_db()
 
@@ -721,26 +729,163 @@ class DelegationCheckModelTestCase(TestCase):
         self.assertEqual(self.domain.current_delegation_check, changed)
 
     def test_changed_nameservers_start_a_new_row(self):
-        DelegationCheck.objects.record(self.domain, self.result())
+        DelegationCheck.objects.record(self.domain, result())
         self.domain.refresh_from_db()
         DelegationCheck.objects.record(
             self.domain,
-            self.result(nameservers=["ns1.example.net.", "ns2.example.net."]),
+            result(nameservers=["ns1.example.net.", "ns2.example.net."]),
         )
         self.assertEqual(self.domain.delegation_checks.count(), 2)
 
     def test_history_survives_and_is_cleared_from_domain_on_deletion(self):
-        check = DelegationCheck.objects.record(self.domain, self.result())
+        check = DelegationCheck.objects.record(self.domain, result())
         self.domain.refresh_from_db()
         check.delete()
         self.domain.refresh_from_db()
         self.assertIsNone(self.domain.current_delegation_check)
 
     def test_checks_are_deleted_with_their_domain(self):
-        DelegationCheck.objects.record(self.domain, self.result())
+        DelegationCheck.objects.record(self.domain, result())
         self.domain.refresh_from_db()
         self.domain.delete()
         self.assertFalse(DelegationCheck.objects.exists())
+
+
+class SecureDelegationSinceTestCase(TestCase):
+    """
+    Domain.secure_delegation_since is what the computed limit counts, so what
+    does and does not move it is the load-bearing part of this feature.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.domain = Domain.objects.create(name="example.com", owner=cls.user)
+
+    def record(self, **kwargs):
+        check = DelegationCheck.objects.record(self.domain, result(**kwargs))
+        self.domain.refresh_from_db()
+        return check
+
+    def test_secure_result_sets_it(self):
+        check = self.record()
+        self.assertEqual(self.domain.secure_delegation_since, check.created)
+
+    def test_multi_provider_counts_as_secure(self):
+        check = self.record(
+            nameserver_status=DelegationCheck.NameserverStatus.MULTI_PROVIDER
+        )
+        self.assertEqual(self.domain.secure_delegation_since, check.created)
+
+    def test_repeated_secure_result_keeps_the_original_time(self):
+        since = self.record().created
+        # A new row (the nameserver set changed), still secure.
+        self.record(nameservers=["ns1.example.net.", "ns2.example.net."])
+        self.assertEqual(self.domain.secure_delegation_since, since)
+
+    def test_conclusive_non_secure_results_clear_it(self):
+        for kwargs in [
+            {"security_status": DelegationCheck.SecurityStatus.INSECURE},
+            {"security_status": DelegationCheck.SecurityStatus.MISCONFIGURED},
+            {
+                "nameserver_status": DelegationCheck.NameserverStatus.NOT_DELEGATED,
+            },
+            {
+                "nameserver_status": DelegationCheck.NameserverStatus.OTHER_PROVIDER,
+            },
+        ]:
+            with self.subTest(**kwargs):
+                self.record()
+                self.assertIsNotNone(self.domain.secure_delegation_since)
+                self.record(**kwargs)
+                self.assertIsNone(self.domain.secure_delegation_since)
+
+    def test_error_does_not_clear_it(self):
+        """A resolver outage must not revoke what a user has demonstrated."""
+        for kwargs in [
+            {"security_status": DelegationCheck.SecurityStatus.ERROR},
+            {"nameserver_status": DelegationCheck.NameserverStatus.ERROR},
+            {
+                "security_status": DelegationCheck.SecurityStatus.ERROR,
+                "nameserver_status": DelegationCheck.NameserverStatus.ERROR,
+            },
+        ]:
+            with self.subTest(**kwargs):
+                self.record()
+                since = self.domain.secure_delegation_since
+                check = self.record(**kwargs)
+
+                # The failure is recorded honestly ...
+                self.assertEqual(self.domain.current_delegation_check, check)
+                # ... but says nothing about the domain.
+                self.assertEqual(self.domain.secure_delegation_since, since)
+                self.assertEqual(self.user.secure_domain_count, 1)
+
+    def test_error_on_a_never_checked_domain_leaves_it_null(self):
+        self.record(
+            security_status=DelegationCheck.SecurityStatus.ERROR,
+            nameserver_status=DelegationCheck.NameserverStatus.ERROR,
+        )
+        self.assertIsNone(self.domain.secure_delegation_since)
+
+
+class BackfillTestCase(TestCase):
+    """
+    The 0048 data migration runs once, in production, against checks that are
+    already there -- so its query is worth exercising with rows in the table.
+    """
+
+    migration = importlib.import_module(
+        "desecapi.migrations.0049_domain_secure_delegation_since_and_more"
+    )
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+
+    def backfill(self):
+        # As if the column had just been added.
+        Domain.objects.update(secure_delegation_since=None)
+        self.migration.backfill_secure_delegation_since(global_apps, None)
+
+    def test_adopts_secure_checks(self):
+        domain = Domain.objects.create(name="secure.example.com", owner=self.user)
+        check = secure(domain)
+        multi = Domain.objects.create(name="multi.example.com", owner=self.user)
+        multi_check = DelegationCheck.objects.record(
+            multi,
+            result(nameserver_status=DelegationCheck.NameserverStatus.MULTI_PROVIDER),
+        )
+
+        self.backfill()
+
+        domain.refresh_from_db()
+        multi.refresh_from_db()
+        self.assertEqual(domain.secure_delegation_since, check.created)
+        self.assertEqual(multi.secure_delegation_since, multi_check.created)
+
+    def test_leaves_everything_else_null(self):
+        Domain.objects.create(name="unchecked.example.com", owner=self.user)
+        for i, kwargs in enumerate(
+            [
+                {"security_status": DelegationCheck.SecurityStatus.INSECURE},
+                {"security_status": DelegationCheck.SecurityStatus.ERROR},
+                {"nameserver_status": DelegationCheck.NameserverStatus.NOT_DELEGATED},
+            ]
+        ):
+            domain = Domain.objects.create(name=f"d{i}.example.com", owner=self.user)
+            DelegationCheck.objects.record(domain, result(**kwargs))
+
+        self.backfill()
+
+        self.assertEqual(self.user.secure_domain_count, 0)
+        self.assertFalse(
+            Domain.objects.filter(secure_delegation_since__isnull=False).exists()
+        )
 
 
 class CheckDelegationCommandTestCase(TestCase):
