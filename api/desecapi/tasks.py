@@ -15,15 +15,29 @@ wait for an ad-hoc check is one domain check, not one bulk run.
 from datetime import timedelta
 
 from celery import shared_task
-from django.db.models import Q
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.db.models import F, Q
 from django.utils import timezone
 
 from desecapi import delegation, logger, unbound
-from desecapi.models import DelegationCheck, Domain
+from desecapi.models import DelegationCheck, Domain, User
 
 
 BULK_QUEUE = "delegation_bulk"
 ADHOC_QUEUE = "delegation_adhoc"
+
+# How many domains one ad-hoc plan may enqueue, so that a single user with a
+# large portfolio cannot monopolize the ad-hoc queue. Least recently checked
+# first, so that repeated requests work through the backlog.
+MAX_ADHOC_DOMAINS = 20
+
+# Minimum spacing between ad-hoc plans for the same user, so that a
+# create/delete loop cannot generate outbound DNS traffic on demand.
+ADHOC_COOLDOWN = 60
+
+# How fresh a check has to be for an ad-hoc request to leave it alone.
+ADHOC_MAX_AGE = 900
 
 
 def stale_q(max_age):
@@ -41,6 +55,53 @@ def enqueue_checks(domain_ids, queue, max_age):
         check_domain_delegation.apply_async((domain_id, max_age), queue=queue)
         count += 1
     return count
+
+
+def enqueue_user_delegation_check(user, max_age=ADHOC_MAX_AGE):
+    """
+    Asks for the user's not-yet-secure domains to be checked, at most once per
+    ADHOC_COOLDOWN seconds per user. Returns whether the request was accepted.
+
+    Which domains those are is deliberately not decided here: the set may
+    change between enqueueing and running, so the task resolves it when it runs.
+
+    Never raises. Callers sit in the request path, where the response is what
+    matters and the check is a nicety: a broker or cache outage must not turn a
+    request into a 500. The bulk queue reaches the domain either way.
+    """
+    try:
+        if not cache.add(f"delegation-adhoc-{user.pk}", True, timeout=ADHOC_COOLDOWN):
+            return False
+        plan_user_delegation_checks.delay(str(user.pk), max_age)
+    except Exception:
+        logger.exception("Could not enqueue delegation checks for user %s", user.pk)
+        return False
+    return True
+
+
+@shared_task(queue=ADHOC_QUEUE, acks_late=True, ignore_result=True)
+def plan_user_delegation_checks(user_id, max_age=ADHOC_MAX_AGE):
+    """
+    Enqueues checks for the domains of one user that are not (or not known to
+    be) securely delegated to us. Domains that already are do not need looking
+    at: their state can only be lost by a check, and a check that would find it
+    lost is the bulk queue's business, not the ad-hoc one's.
+    """
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return  # deleted between enqueueing and running
+    except ValidationError:
+        return  # not a uuid; a message from an incompatible producer
+
+    domains = (
+        user.domains.exclude_under_local_public_suffix()
+        .filter(secure_delegation_since__isnull=True)
+        .filter(stale_q(max_age))
+        .order_by(F("current_delegation_check__checked").asc(nulls_first=True))
+        .values_list("pk", flat=True)[:MAX_ADHOC_DOMAINS]
+    )
+    enqueue_checks(list(domains), ADHOC_QUEUE, max_age)
 
 
 @shared_task(queue=BULK_QUEUE, acks_late=True, ignore_result=True)

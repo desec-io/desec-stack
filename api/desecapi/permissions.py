@@ -168,7 +168,7 @@ class WithinDomainLimit(permissions.BasePermission):
 
     message = (
         "Domain limit exceeded. The limit grows as you delegate your domains to us "
-        "securely (with DNSSEC)."
+        "securely (with DNSSEC); we are re-checking yours now."
     )
     # Let views recognize this denial; DomainViewSet uses it to schedule a check.
     code = "domain_limit_exceeded"

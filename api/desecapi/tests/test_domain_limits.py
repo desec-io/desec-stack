@@ -1,8 +1,11 @@
+from datetime import timedelta
 from unittest import mock
 
 from django.conf import settings
 from django.core.cache import cache
 from django.test import TestCase, override_settings
+from django.utils import timezone
+from kombu.exceptions import OperationalError
 from rest_framework import status
 
 from desecapi import tasks, unbound
@@ -201,6 +204,202 @@ class UserSerializerTestCase(TestCase):
 
         for field in ("limit_domains", "secure_domains"):
             self.assertTrue(UserSerializer().fields[field].read_only)
+
+
+class DelegationTriggerTestCase(DomainOwnerTestCase):
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+
+    def test_domain_creation_enqueues_a_check_after_commit(self):
+        name = self.random_domain_name()
+        with (
+            mock.patch(
+                "desecapi.views.domains.enqueue_user_delegation_check"
+            ) as enqueue,
+            self.assertRequests(self.requests_desec_domain_creation(name)),
+            self.captureOnCommitCallbacks(execute=True) as callbacks,
+        ):
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            # Still inside the transaction: the worker is another process on the
+            # same database, and must not go looking for a domain that is not
+            # committed yet.
+            enqueue.assert_not_called()
+
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        self.assertEqual(len(callbacks), 1)
+        enqueue.assert_called_once_with(self.owner)
+
+    def test_hitting_the_limit_enqueues_a_check(self):
+        self.owner.limit_domains = self.owner.domains.count()
+        self.owner.save()
+        with mock.patch(
+            "desecapi.views.domains.enqueue_user_delegation_check"
+        ) as enqueue:
+            response = self.client.post(
+                self.reverse("v1:domain-list"), {"name": self.random_domain_name()}
+            )
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        enqueue.assert_called_once_with(self.owner)
+
+
+class EnqueueTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+
+    def setUp(self):
+        cache.clear()
+
+    def test_is_rate_limited_per_user(self):
+        with mock.patch.object(tasks.plan_user_delegation_checks, "delay") as delay:
+            self.assertTrue(tasks.enqueue_user_delegation_check(self.user))
+            self.assertFalse(tasks.enqueue_user_delegation_check(self.user))
+        delay.assert_called_once_with(str(self.user.pk), tasks.ADHOC_MAX_AGE)
+
+    def test_other_users_are_unaffected(self):
+        other = User.objects.create_user(email="other@example.com", password="secret")
+        with mock.patch.object(tasks.plan_user_delegation_checks, "delay"):
+            self.assertTrue(tasks.enqueue_user_delegation_check(self.user))
+            self.assertTrue(tasks.enqueue_user_delegation_check(other))
+
+    def test_survives_an_unavailable_broker(self):
+        """
+        Callers sit in the request path, where the response is what the client
+        is owed and the check is a nicety.
+        """
+        with mock.patch.object(
+            tasks.plan_user_delegation_checks,
+            "delay",
+            side_effect=OperationalError("broker down"),
+        ):
+            self.assertFalse(tasks.enqueue_user_delegation_check(self.user))
+
+    def test_survives_an_unavailable_cache(self):
+        with mock.patch(
+            "desecapi.tasks.cache.add", side_effect=RuntimeError("memcached down")
+        ):
+            self.assertFalse(tasks.enqueue_user_delegation_check(self.user))
+
+
+class PlanUserDelegationChecksTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.local_suffix = next(iter(settings.LOCAL_PUBLIC_SUFFIXES))
+
+    def setUp(self):
+        cache.clear()
+
+    def plan(self, **kwargs):
+        """Returns the (domain_id, max_age, queue) triples enqueued, in order."""
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            tasks.plan_user_delegation_checks(str(self.user.pk), **kwargs)
+        return [
+            (*call.args[0], call.kwargs["queue"]) for call in enqueued.call_args_list
+        ]
+
+    def planned(self, **kwargs):
+        return {domain_id for domain_id, _, _ in self.plan(**kwargs)}
+
+    def test_enqueues_on_the_adhoc_queue(self):
+        """
+        Not the bulk queue: an ad-hoc check queued behind a bulk run waits for
+        it, which is the whole thing the split exists to avoid. The freshness
+        bound travels with the task, because the worker re-checks it.
+        """
+        domain = Domain.objects.create(name="example.com", owner=self.user)
+        self.assertEqual(
+            self.plan(max_age=1234), [(domain.pk, 1234, tasks.ADHOC_QUEUE)]
+        )
+
+    def test_resolves_the_domain_list_when_it_runs(self):
+        """
+        The task is handed a user, never a list of domains: what was true at
+        enqueue time need not be true when a worker gets there.
+        """
+        early = Domain.objects.create(name="early.example.com", owner=self.user)
+        with mock.patch.object(tasks.plan_user_delegation_checks, "delay") as delay:
+            tasks.enqueue_user_delegation_check(self.user)
+
+        # Between enqueueing and running: one domain more, one domain fewer.
+        late = Domain.objects.create(name="late.example.com", owner=self.user)
+        early.delete()
+
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            tasks.plan_user_delegation_checks(*delay.call_args.args)
+        self.assertEqual(
+            {call.args[0][0] for call in enqueued.call_args_list}, {late.pk}
+        )
+
+    def test_enqueues_least_recently_checked_first(self):
+        """
+        What makes repeated requests work through a backlog instead of
+        replanning its head over and over. Never-checked domains come first.
+        """
+        never = Domain.objects.create(name="never.example.com", owner=self.user)
+        checked = []
+        for i in range(3):
+            domain = Domain.objects.create(name=f"d{i}.example.com", owner=self.user)
+            check = DelegationCheck.objects.record(
+                domain, result(security_status=DelegationCheck.SecurityStatus.INSECURE)
+            )
+            # Set explicitly: `checked` is auto_now, so recording three checks in
+            # a loop would order them by how fast the loop runs.
+            DelegationCheck.objects.filter(pk=check.pk).update(
+                checked=timezone.now() - timedelta(days=3 - i)
+            )
+            checked.append(domain)
+
+        self.assertEqual(
+            [domain_id for domain_id, _, _ in self.plan()],
+            [never.pk, *(domain.pk for domain in checked)],
+        )
+
+    def test_skips_secure_and_locally_registrable_domains(self):
+        secure(Domain.objects.create(name="secure.example.com", owner=self.user))
+        Domain.objects.create(name=f"mine.{self.local_suffix}", owner=self.user)
+        insecure = Domain.objects.create(name="insecure.example.com", owner=self.user)
+        self.assertEqual(self.planned(), {insecure.pk})
+
+    def test_skips_recently_checked_domains(self):
+        fresh = Domain.objects.create(name="fresh.example.com", owner=self.user)
+        DelegationCheck.objects.record(
+            fresh, result(security_status=DelegationCheck.SecurityStatus.INSECURE)
+        )
+        self.assertEqual(self.planned(max_age=3600), set())
+        self.assertEqual(self.planned(max_age=0), {fresh.pk})
+
+    def test_is_capped(self):
+        for i in range(tasks.MAX_ADHOC_DOMAINS + 5):
+            Domain.objects.create(name=f"d{i}.example.com", owner=self.user)
+        self.assertEqual(len(self.planned()), tasks.MAX_ADHOC_DOMAINS)
+
+    def test_survives_a_deleted_user(self):
+        user_id = str(self.user.pk)
+        self.user.domains.all().delete()
+        User.objects.filter(pk=user_id).delete()
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            tasks.plan_user_delegation_checks(user_id)
+        enqueued.assert_not_called()
+
+    def test_survives_a_malformed_user_id(self):
+        """A message from an incompatible producer is not an incident."""
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            tasks.plan_user_delegation_checks("not-a-uuid")
+        enqueued.assert_not_called()
 
 
 class CheckDomainDelegationTaskTestCase(TestCase):

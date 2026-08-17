@@ -2,6 +2,7 @@ from datetime import timezone, datetime
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Subquery
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -17,6 +18,7 @@ from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import DomainSerializer
+from desecapi.tasks import enqueue_user_delegation_check
 
 from .base import IdempotentDestroyMixin
 
@@ -136,6 +138,19 @@ class DomainViewSet(
 
         # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
+
+        # Creating a domain is when the user is thinking about delegation, so
+        # it is a good moment to re-measure the ones they have not secured yet:
+        # what raises their limit is the state of those, not of this one.
+        user = self.request.user
+        transaction.on_commit(lambda: enqueue_user_delegation_check(user))
+
+    def permission_denied(self, request, message=None, code=None):
+        if code == permissions.WithinDomainLimit.code:
+            # The user is at the wall right now, which is when a fresh
+            # measurement is worth most: securing a domain raises the limit.
+            enqueue_user_delegation_check(request.user)
+        super().permission_denied(request, message, code)
 
     @staticmethod
     def auto_delegate(domain: Domain):
