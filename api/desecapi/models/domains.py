@@ -24,7 +24,29 @@ from .records import RRset
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
 
 
-class DomainManager(Manager):
+def under_local_public_suffix_q():
+    """
+    Domains below one of our local public suffixes, at any depth.
+
+    Deliberately broader than Domain.is_locally_registrable, which is "immediate
+    child" and is what drives auto-delegation: every zone between
+    sub.mine.dedyn.io and the public root is one we host and sign, just as for
+    mine.dedyn.io, so neither has a delegation the user could get wrong. The
+    suffix itself is excluded -- dedyn.io is delegated to us from io, which is
+    somebody else's zone.
+    """
+    q = Q()
+    for suffix in settings.LOCAL_PUBLIC_SUFFIXES:
+        q |= Q(name__endswith=f".{suffix}")
+    return q
+
+
+class DomainQuerySet(models.QuerySet):
+    def under_local_public_suffix(self):
+        return self.filter(under_local_public_suffix_q())
+
+
+class DomainManager(Manager.from_queryset(DomainQuerySet)):
     def filter_qname(self, qname: str, **kwargs) -> models.query.QuerySet:
         qs = self.annotate(
             name_length=Length("name")
