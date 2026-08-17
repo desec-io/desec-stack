@@ -23,6 +23,24 @@ class LimitCommandTest(DomainOwnerTestCase):
         # did not delete domains below limit:
         self.assertEqual(Domain.objects.filter(owner_id=self.owner.id).count(), 2)
 
+    def test_update_domains_auto(self):
+        """Hands an account whose limit support has pinned back to the rule."""
+        management.call_command("limit", "domains", self.owner.email, "123")
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.limit_domains, 123)
+
+        for spelling in ["auto", "AUTO"]:
+            management.call_command("limit", "domains", self.owner.email, spelling)
+            self.owner.refresh_from_db()
+            self.assertIsNone(self.owner.limit_domains)
+            # No secure domains yet, so the computed limit is at its floor.
+            self.assertEqual(
+                self.owner.effective_limit_domains,
+                settings.DOMAIN_LIMIT_INSECURE_HEADROOM,
+            )
+            # ... and pinning it again still works.
+            management.call_command("limit", "domains", self.owner.email, "123")
+
     def test_update_minimum_ttl(self):
         management.call_command("limit", "ttl", self.my_domain.name, "123")
         self.my_domain.refresh_from_db()
