@@ -1,7 +1,8 @@
 import importlib
+import io
 import socket
 import threading
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 from unittest import mock
 
 from django.apps import apps as global_apps
@@ -10,7 +11,7 @@ from django.core.management import CommandError, call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 import dns.edns, dns.exception, dns.flags, dns.message, dns.rcode, dns.rdatatype, dns.rrset
 
-from desecapi import delegation, unbound
+from desecapi import delegation, tasks, unbound
 from desecapi.models import DelegationCheck, Domain, User
 
 
@@ -1065,10 +1066,42 @@ class CheckDelegationCommandTestCase(TestCase):
         self.assertTrue(threads)  # ... and something did run there
         self.assertNotIn(threading.current_thread(), threads)
 
+    def test_enqueue_hands_domains_to_workers(self):
+        with mock.patch("desecapi.delegation.check") as checked:
+            with mock.patch.object(
+                tasks.check_domain_delegation, "apply_async"
+            ) as enqueued:
+                call_command(
+                    "check-delegation", "--all", "--stale", "60", "--concurrency", "0"
+                )
+
+        checked.assert_not_called()  # nothing is measured here
+        self.assertEqual(
+            {call.args[0][0] for call in enqueued.call_args_list},
+            {self.foreign.pk},
+        )
+        # Workers re-check staleness, so they are told what --stale meant.
+        for call in enqueued.call_args_list:
+            self.assertEqual(call.args[0][1], 60)
+            self.assertEqual(call.kwargs["queue"], tasks.BULK_QUEUE)
+
+    def test_enqueue_dry_run_enqueues_nothing(self):
+        out = io.StringIO()
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            with redirect_stdout(out):
+                call_command(
+                    "check-delegation", "--all", "--concurrency", "0", "--dry-run"
+                )
+        enqueued.assert_not_called()
+        # ... and says so, rather than reporting work it did not do.
+        self.assertEqual(out.getvalue().strip(), "1 domain(s) would be enqueued.")
+
     def test_invalid_concurrency(self):
         with self.checks():
             with self.assertRaisesMessage(CommandError, "--concurrency"):
-                call_command("check-delegation", "--all", "--concurrency", "0")
+                call_command("check-delegation", "--all", "--concurrency", "-1")
 
     def test_resolver_failure_aborts(self):
         with mock.patch(
