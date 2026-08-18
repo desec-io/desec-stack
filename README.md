@@ -274,9 +274,12 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
 1. **Install webapp dependencies.** To install the dependencies for the web site and GUI, run
 
-       cd webapp/
+       cd www/webapp/
        npm install
        cd -
+
+    The webapp can also be run on its own, without starting the stack; see
+    [www/webapp/README.md](www/webapp/README.md).
 
 1. **Run desec-stack.** To run desec-stack, use
 
