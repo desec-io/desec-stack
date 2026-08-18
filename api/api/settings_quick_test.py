@@ -36,6 +36,11 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"user": "1000/s"}
 # Carry email backend connection over to test mail outbox
 CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ["connection"]
 
+# In-process broker: tasks may be enqueued without a rabbitmq to talk to, and
+# without running (which would perform real checks). Tests that care about a
+# task being scheduled assert on .delay() instead.
+CELERY_BROKER_URL = "memory://"
+
 DOMAIN_LIMIT_INSECURE_HEADROOM = 15
 
 PCH_API = "http://api.invalid"

@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework import status
 
+from desecapi import tasks, unbound
 from desecapi.models import DelegationCheck, Domain, User
 from desecapi.serializers import UserSerializer
 from desecapi.tests.base import DomainOwnerTestCase
@@ -200,3 +201,46 @@ class UserSerializerTestCase(TestCase):
 
         for field in ("limit_domains", "secure_domains"):
             self.assertTrue(UserSerializer().fields[field].read_only)
+
+
+class CheckDomainDelegationTaskTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.domain = Domain.objects.create(name="example.com", owner=cls.user)
+
+    def test_records_the_result(self):
+        with mock.patch("desecapi.delegation.check", return_value=result()) as check:
+            tasks.check_domain_delegation(self.domain.pk)
+        check.assert_called_once_with(self.domain.name)
+        self.domain.refresh_from_db()
+        self.assertIsNotNone(self.domain.secure_delegation_since)
+
+    def test_skips_a_recently_checked_domain(self):
+        """A duplicate message costs a query, not a check."""
+        secure(self.domain)
+        with mock.patch("desecapi.delegation.check") as check:
+            tasks.check_domain_delegation(self.domain.pk, 3600)
+        check.assert_not_called()
+
+    def test_skips_a_deleted_domain(self):
+        pk = self.domain.pk
+        self.domain.delete()
+        with mock.patch("desecapi.delegation.check") as check:
+            tasks.check_domain_delegation(pk)
+        check.assert_not_called()
+
+    def test_survives_an_unavailable_resolver(self):
+        """
+        Failing would mail admins once per domain in the backlog; the failure
+        is counted where it happens.
+        """
+        with mock.patch(
+            "desecapi.delegation.check",
+            side_effect=unbound.UnboundControlException("down"),
+        ):
+            tasks.check_domain_delegation(self.domain.pk)
+        self.domain.refresh_from_db()
+        self.assertIsNone(self.domain.current_delegation_check)
