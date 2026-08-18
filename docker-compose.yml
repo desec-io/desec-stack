@@ -297,6 +297,51 @@ services:
         tag: "desec/celery-email"
     restart: unless-stopped
 
+  # Deliberately not a dependency of api, and not depending on unbound: both
+  # would drag the (slow, from-source) unbound build into the CI jobs that only
+  # run `docker compose run api`. The worker copes with the resolver being down.
+  celery-delegation:
+    build: api
+    image: desec/dedyn-api:latest
+    init: true
+    command: celery -A api worker -Q delegation_adhoc,delegation_bulk -c 4 -n delegation --prefetch-multiplier 1 -l info --uid nobody --gid nogroup
+    depends_on:
+    - dbapi
+    - rabbitmq
+    environment:
+    - DESECSTACK_DOMAIN
+    - DESECSTACK_NS
+    - DESECSTACK_API_ADMIN
+    - DESECSTACK_API_SEPA_CREDITOR_ID
+    - DESECSTACK_API_SEPA_CREDITOR_NAME
+    - DESECSTACK_API_EMAIL_HOST
+    - DESECSTACK_API_EMAIL_HOST_USER
+    - DESECSTACK_API_EMAIL_HOST_PASSWORD
+    - DESECSTACK_API_EMAIL_PORT
+    - DESECSTACK_API_SECRETKEY
+    - DESECSTACK_API_PSL_RESOLVER
+    - DESECSTACK_API_LIMIT_USER_DOMAIN_COUNT_DEFAULT
+    - DESECSTACK_DBAPI_PASSWORD_desec
+    - DESECSTACK_IPV4_REAR_PREFIX16
+    - DESECSTACK_IPV6_SUBNET
+    - DESECSTACK_NSLORD_APIKEY
+    - DESECSTACK_NSLORD_DEFAULT_TTL
+    - DESECSTACK_NSMASTER_APIKEY
+    - DESECSTACK_MINIMUM_TTL_DEFAULT
+    - DJANGO_SETTINGS_MODULE=api.settings
+    networks:
+      rearapi_celery:
+      rearapi_dbapi:
+      # Needed twice over: the resolver lives here, and checks also query the
+      # parents' nameservers directly, for which this bridge's NAT is the way out.
+      rearapi_unbound:
+        ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.12
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/celery-delegation"
+    restart: unless-stopped
+
   memcached:
     image: memcached:1.6-alpine
     init: true

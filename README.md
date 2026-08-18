@@ -9,9 +9,10 @@ This is a docker compose application providing the basic stack for deSEC name se
 - `dbapi`, `dblord`, `dbmaster`: Postgres databases for `api` and `nsmaster`, MariaDB database for `nslord`, respectively.
 - `www`: nginx instance serving static website content and proxying to `api`
 - `celery`: A shadow instance of the `api` code for performing asynchronous tasks (email delivery).
+- `celery-delegation`: Another shadow instance of the `api` code, running delegation checks off two queues: a bulk one for runs over the whole inventory, and an ad-hoc one for checks asked for on a single user's behalf.
 - `rabbitmq`: `celery`'s queue
 - `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
-- `unbound`: Validating recursive resolver used by `api` to check how domains are delegated and secured (`manage.py check-delegation`). Reachable only from `api`, as it is an open resolver by design.
+- `unbound`: Validating recursive resolver used by `api` and `celery-delegation` to check how domains are delegated and secured (`manage.py check-delegation`). Reachable only from those two, as it is an open resolver by design.
 - `openvpn-server`: OpenVPN server used to tunnel replication traffic between this stack and frontend DNS secondaries
 - `prometheus`: Prometheus server for monitoring
 
