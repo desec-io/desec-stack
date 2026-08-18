@@ -8,7 +8,7 @@ from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from django.utils import timezone
 
-from desecapi import delegation, unbound
+from desecapi import delegation, tasks, unbound
 from desecapi.models import DelegationCheck, Domain, User
 from desecapi.models.domains import under_local_public_suffix_q
 
@@ -66,7 +66,10 @@ class Command(BaseCommand):
             metavar="N",
             help="Check up to this many domains at a time (default: 4). Checks "
             "wait on the network, so this is about how much load our resolver "
-            "and the parents' nameservers see, not about CPU.",
+            "and the parents' nameservers see, not about CPU. With 0, hand the "
+            "selected domains to the delegation workers instead of checking them "
+            "here, one task per domain, so that an ad-hoc check never waits for a "
+            "whole run to finish.",
         )
 
     @staticmethod
@@ -118,9 +121,25 @@ class Command(BaseCommand):
         # along with the domain instead of once per domain.
         return domains.select_related("current_delegation_check").order_by("name")
 
+    def enqueue(self, options):
+        # Workers re-check staleness when they get to a domain, so re-planning
+        # a run whose backlog is still draining costs queries, not checks.
+        max_age = options["stale"] or 0
+        domains = self.get_domains(options).values_list("pk", flat=True)
+        if options["dry_run"]:
+            print(f"{domains.count()} domain(s) would be enqueued.")
+        else:
+            count = tasks.enqueue_checks(
+                domains.iterator(chunk_size=BATCH_SIZE), tasks.BULK_QUEUE, max_age
+            )
+            print(f"{count} domain(s) enqueued.")
+
     def handle(self, *args, **options):
-        if options["concurrency"] < 1:
-            raise CommandError("--concurrency must be at least 1.")
+        if options["concurrency"] < 0:
+            raise CommandError("--concurrency must not be negative.")
+
+        if options["concurrency"] == 0:
+            return self.enqueue(options)
 
         domains = self.get_domains(options).iterator(chunk_size=BATCH_SIZE)
         try:
