@@ -1,15 +1,34 @@
+import copy
 import logging
 
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import get_connection
+from django.core.mail import EmailMessage, get_connection
 from django.core.mail.backends.base import BaseEmailBackend
-from djcelery_email.utils import dict_to_email, email_to_dict
 
 from desecapi import metrics
 
 
 logger = logging.getLogger(__name__)
+
+
+def serialize(message: EmailMessage) -> dict:
+    """
+    Represents an EmailMessage by its attributes, so that it can be passed through the
+    task queue. Attachment contents must be str (we don't send binary attachments).
+    """
+    return {
+        key: value
+        for key, value in message.__dict__.items()
+        if key not in settings.EMAIL_MESSAGE_TRANSIENT_ATTRIBUTES
+    }
+
+
+def deserialize(attributes: dict) -> EmailMessage:
+    """Inverse of serialize()."""
+    message = EmailMessage()
+    message.__dict__.update(copy.deepcopy(attributes))  # copy: retries reuse the input
+    return message
 
 
 class MultiLaneEmailBackend(BaseEmailBackend):
@@ -27,8 +46,8 @@ class MultiLaneEmailBackend(BaseEmailBackend):
         super().__init__(fail_silently)
 
     def send_messages(self, email_messages):
-        dict_messages = [email_to_dict(msg) for msg in email_messages]
-        TASKS[self.config["name"]].delay(dict_messages, **self.task_kwargs)
+        messages = [serialize(message) for message in email_messages]
+        TASKS[self.config["name"]].delay(messages, **self.task_kwargs)
         return len(email_messages)
 
     @staticmethod
@@ -39,7 +58,7 @@ class MultiLaneEmailBackend(BaseEmailBackend):
         )
         with get_connection(**kwargs) as connection:
             return connection.send_messages(
-                [dict_to_email(message) for message in messages]
+                [deserialize(message) for message in messages]
             )
 
     @property
