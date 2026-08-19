@@ -186,6 +186,9 @@ class DeSECAPIV1Client:
     def post(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
         return self._request("POST", path=path, data=data, **kwargs)
 
+    def put(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
+        return self._request("PUT", path=path, data=data, **kwargs)
+
     def patch(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
         return self._request("PATCH", path=path, data=data, **kwargs)
 
