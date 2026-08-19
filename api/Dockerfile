@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM python:3.14-alpine
 
 COPY --from=trajano/alpine-libfaketime /faketime.so /lib/libfaketime.so
 RUN mkdir -p /etc/faketime
