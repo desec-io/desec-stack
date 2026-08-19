@@ -34,7 +34,7 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = ["desecapi.throttling.UserRateThrot
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"user": "1000/s"}
 
 # Carry email backend connection over to test mail outbox
-CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = ["connection"]
+EMAIL_MESSAGE_TRANSIENT_ATTRIBUTES = []
 
 # In-process broker: tasks may be enqueued without a rabbitmq to talk to, and
 # without running (which would perform real checks). Tests that care about a
