@@ -1,0 +1,1112 @@
+import importlib
+import io
+import socket
+import threading
+from contextlib import contextmanager, redirect_stdout
+from unittest import mock
+
+from django.apps import apps as global_apps
+from django.conf import settings
+from django.core.management import CommandError, call_command
+from django.test import SimpleTestCase, TestCase, override_settings
+import dns.edns, dns.exception, dns.flags, dns.message, dns.rcode, dns.rdatatype, dns.rrset
+
+from desecapi import delegation, tasks, unbound
+from desecapi.models import DelegationCheck, Domain, User
+
+
+OUR_NS = ["ns1.example.net", "ns2.example.net"]
+QNAME = "example.com."
+PARENT = "com."
+PARENT_NS = "a.gtld.example."
+
+
+def make_response(
+    qname=QNAME, *, rcode=dns.rcode.NOERROR, ad=False, answer=(), authority=(), ede=()
+):
+    query = dns.message.make_query(qname, dns.rdatatype.NS, want_dnssec=True)
+    response = dns.message.make_response(query)
+    response.set_rcode(rcode)
+    if ad:
+        response.flags |= dns.flags.AD
+    response.answer.extend(answer)
+    response.authority.extend(authority)
+    response.use_edns(options=[dns.edns.EDEOption(*option) for option in ede])
+    return response
+
+
+def ns_rrset(*targets, name=QNAME):
+    return dns.rrset.from_text(name, 3600, "IN", "NS", *targets)
+
+
+def soa_rrset(name=PARENT):
+    return dns.rrset.from_text(
+        name, 3600, "IN", "SOA", f"ns1.{name} hostmaster.{name} 1 2 3 4 5"
+    )
+
+
+def rrsig_rrset(name=QNAME, *, covers="DS", signer=PARENT):
+    return dns.rrset.from_text(
+        name,
+        3600,
+        "IN",
+        "RRSIG",
+        f"{covers} 13 2 3600 20260401000000 20260101000000 12345 {signer} AAAA",
+    )
+
+
+def a_rrset(*addresses, name=PARENT_NS):
+    return dns.rrset.from_text(name, 3600, "IN", "A", *addresses)
+
+
+def _answer(item):
+    if isinstance(item, BaseException):
+        raise item
+    return item
+
+
+def result(**kwargs):
+    """A check outcome, secure and correctly delegated unless said otherwise."""
+    kwargs.setdefault("security_status", DelegationCheck.SecurityStatus.SECURE)
+    kwargs.setdefault(
+        "nameserver_status", DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED
+    )
+    kwargs.setdefault("nameservers", ["ns1.example.net."])
+    return delegation.DelegationCheckResult(**kwargs)
+
+
+def secure(domain):
+    """Records a check that finds the domain securely delegated to us."""
+    return DelegationCheck.objects.record(domain, result())
+
+
+class DelegationCheckTestCase(SimpleTestCase):
+    """
+    Pins down the decision tables of desecapi.delegation: no resolver, no
+    network, and (by way of SimpleTestCase) no database.
+    """
+
+    def check(
+        self,
+        *,
+        ds=None,
+        soa=None,
+        parent_ns=None,
+        addresses=None,
+        delegation_=None,
+        cds=None,
+        dnskey=None,
+        name="example.com",
+        our_nameservers=OUR_NS,
+    ):
+        """
+        Runs a check, answering each of its queries with the given response (or
+        raising it, if it is an exception). The defaults describe example.com,
+        securely delegated to our nameservers by a signed parent; a test states
+        only the step it is about.
+
+        `delegation_` may be a list with one item per parent nameserver, which
+        are then made to exist.
+        """
+        if delegation_ is None:
+            delegation_ = [make_response(authority=[ns_rrset(*OUR_NS)])]
+        elif not isinstance(delegation_, list):
+            delegation_ = [delegation_]
+        if addresses is None:
+            addresses = make_response(
+                PARENT_NS,
+                answer=[a_rrset(*(f"192.0.2.{i}" for i in range(len(delegation_))))],
+            )
+
+        responses = {
+            # The parent is signed and says so, by signing its answer about the
+            # DS (here: about there not being one).
+            dns.rdatatype.DS: ds
+            if ds is not None
+            else make_response(authority=[rrsig_rrset()]),
+            dns.rdatatype.SOA: soa
+            if soa is not None
+            else make_response(PARENT, answer=[soa_rrset()]),
+            dns.rdatatype.NS: parent_ns
+            if parent_ns is not None
+            else make_response(PARENT, answer=[ns_rrset(PARENT_NS, name=PARENT)]),
+            dns.rdatatype.A: addresses,
+            dns.rdatatype.CDS: cds if cds is not None else make_response(ad=True),
+            dns.rdatatype.DNSKEY: dnskey
+            if dnskey is not None
+            else make_response(PARENT, ad=True),
+        }
+        self.calls = []
+        pending = list(delegation_)
+
+        def flush(name):
+            self.calls.append(("flush", name))
+
+        def resolve(qname, rdtype, *, cd=False):
+            self.calls.append(("query", qname.to_text(), dns.rdatatype.to_text(rdtype)))
+            return _answer(responses[rdtype])
+
+        def ask_server(address, qname, rdtype):
+            self.calls.append(("query_server", address, qname.to_text()))
+            return _answer(pending.pop(0))
+
+        with (
+            mock.patch("desecapi.unbound.flush_delegation", side_effect=flush),
+            mock.patch("desecapi.unbound.query", side_effect=resolve),
+            mock.patch("desecapi.delegation.query_server", side_effect=ask_server),
+        ):
+            return delegation.check(name, our_nameservers=our_nameservers)
+
+    def assertStatus(self, result, security_status, nameserver_status):
+        self.assertEqual(
+            (result.security_status, result.nameserver_status),
+            (security_status, nameserver_status),
+        )
+
+    @property
+    def queried(self):
+        return [call[1:] for call in self.calls if call[0] == "query"]
+
+    @contextmanager
+    def assertInconclusive(self, message):
+        with self.assertLogs("desecapi", "ERROR") as logs:
+            yield
+        self.assertIn(message, "\n".join(logs.output))
+
+    # Finding the parent (step 1)
+
+    def test_parent_is_the_signer_of_the_ds_response(self):
+        # The DS, and the denial of it, live in the parent zone and are signed
+        # by it, so the signature names the zone cut -- no guessing.
+        result = self.check(
+            ds=make_response(answer=[rrsig_rrset(covers="DS", signer="com.")])
+        )
+        self.assertIn((PARENT, "NS"), self.queried)
+        self.assertNotIn((PARENT, "SOA"), self.queried)
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.SECURE,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_parent_is_the_signer_of_a_denial(self):
+        result = self.check(
+            ds=make_response(authority=[rrsig_rrset(covers="NSEC3", signer="com.")])
+        )
+        self.assertIn((PARENT, "NS"), self.queried)
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_unsigned_parent_is_found_by_soa_and_settles_the_status(self):
+        # No signature on the DS response: the parent is unsigned, so it cannot
+        # carry a DS, and no further question about security needs asking.
+        result = self.check(ds=make_response())
+        self.assertIn((PARENT, "SOA"), self.queried)
+        self.assertNotIn((QNAME, "CDS"), self.queried)
+        self.assertNotIn((PARENT, "DNSKEY"), self.queried)
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.INSECURE,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_parent_is_the_soa_owner_not_the_stripped_name(self):
+        # sub.example.com is inside example.com, so stripping one label lands
+        # in the middle of a zone; the SOA in the response is what counts.
+        self.check(
+            name="sub.example.com",
+            ds=make_response("sub.example.com."),
+            soa=make_response(
+                "example.com.",
+                rcode=dns.rcode.NXDOMAIN,
+                authority=[soa_rrset("example.com.")],
+            ),
+            parent_ns=make_response(
+                "example.com.", answer=[ns_rrset(PARENT_NS, name="example.com.")]
+            ),
+            delegation_=make_response("sub.example.com.", rcode=dns.rcode.NXDOMAIN),
+        )
+        self.assertIn(("example.com.", "SOA"), self.queried)
+        self.assertIn(("example.com.", "NS"), self.queried)
+
+    def test_servfail_on_ds_is_misconfigured(self):
+        result = self.check(
+            ds=make_response(
+                rcode=dns.rcode.SERVFAIL, ede=[(dns.edns.EDECode.DNSSEC_BOGUS, "bogus")]
+            )
+        )
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.MISCONFIGURED,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+        self.assertEqual(result.ede_code, int(dns.edns.EDECode.DNSSEC_BOGUS))
+        self.assertEqual(result.ede_text, "bogus")
+        self.assertEqual(result.rcode, dns.rcode.SERVFAIL)
+
+    def test_servfail_on_ds_without_dnssec_ede_is_error(self):
+        result = self.check(
+            ds=make_response(
+                rcode=dns.rcode.SERVFAIL,
+                ede=[(dns.edns.EDECode.NETWORK_ERROR, "network")],
+            )
+        )
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.ERROR,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_parent_undetermined_without_soa(self):
+        with self.assertInconclusive("no SOA for com."):
+            result = self.check(ds=make_response(), soa=make_response(PARENT))
+        # The parent is unsigned, which we know even without knowing its name.
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.INSECURE,
+            DelegationCheck.NameserverStatus.ERROR,
+        )
+
+    def test_parent_undetermined_on_timeout(self):
+        with self.assertInconclusive("no response to example.com. DS"):
+            result = self.check(ds=dns.exception.Timeout())
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.ERROR,
+            DelegationCheck.NameserverStatus.ERROR,
+        )
+        self.assertIsNone(result.rcode)
+
+    def test_parent_undetermined_on_refused(self):
+        with self.assertInconclusive("example.com. DS: REFUSED"):
+            result = self.check(ds=make_response(rcode=dns.rcode.REFUSED))
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.ERROR,
+            DelegationCheck.NameserverStatus.ERROR,
+        )
+
+    # Reading the delegation off the parent (steps 2 and 3)
+
+    def test_delegation_is_read_from_the_parents_servers(self):
+        self.check()
+        self.assertEqual(
+            [call for call in self.calls if call[0] == "query_server"],
+            [("query_server", "192.0.2.0", QNAME)],
+        )
+        # The child's own idea of its NS RRset is never asked for.
+        self.assertNotIn((QNAME, "NS"), self.queried)
+
+    def test_correctly_delegated(self):
+        result = self.check()
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+        self.assertEqual(result.nameservers, ["ns1.example.net.", "ns2.example.net."])
+
+    def test_correctly_delegated_with_subset_of_our_nameservers(self):
+        result = self.check(
+            delegation_=make_response(authority=[ns_rrset(OUR_NS[0])]),
+        )
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+        self.assertEqual(result.nameservers, ["ns1.example.net."])
+
+    def test_multi_provider(self):
+        result = self.check(
+            delegation_=make_response(
+                authority=[ns_rrset(OUR_NS[0], "ns1.other.example.")]
+            )
+        )
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.MULTI_PROVIDER
+        )
+        self.assertEqual(result.nameservers, ["ns1.example.net.", "ns1.other.example."])
+
+    def test_other_provider(self):
+        result = self.check(
+            delegation_=make_response(
+                authority=[ns_rrset("ns1.other.example.", "ns2.other.example.")]
+            )
+        )
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.OTHER_PROVIDER
+        )
+
+    def test_delegation_in_answer_section(self):
+        # The parent's servers may be authoritative for the child as well, in
+        # which case they answer instead of referring.
+        result = self.check(delegation_=make_response(answer=[ns_rrset(*OUR_NS)]))
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_nameservers_are_normalized_and_deduplicated(self):
+        result = self.check(
+            delegation_=make_response(
+                authority=[ns_rrset("NS2.Example.NET.", "ns2.example.net.")]
+            )
+        )
+        self.assertEqual(result.nameservers, ["ns2.example.net."])
+
+    def test_nameservers_of_other_names_are_ignored(self):
+        result = self.check(
+            delegation_=make_response(
+                authority=[ns_rrset(*OUR_NS, name="other.example."), soa_rrset()]
+            )
+        )
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.NOT_DELEGATED
+        )
+        self.assertEqual(result.nameservers, [])
+
+    def test_not_delegated_nxdomain(self):
+        result = self.check(
+            delegation_=make_response(
+                rcode=dns.rcode.NXDOMAIN, authority=[soa_rrset()]
+            ),
+        )
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.NOT_DELEGATED
+        )
+
+    def test_not_delegated_nodata(self):
+        result = self.check(delegation_=make_response(authority=[soa_rrset()]))
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.NOT_DELEGATED
+        )
+
+    def test_next_parent_server_is_asked_after_a_timeout(self):
+        with self.assertLogs("desecapi", "WARNING"):
+            result = self.check(
+                delegation_=[
+                    dns.exception.Timeout(),
+                    make_response(authority=[ns_rrset(*OUR_NS)]),
+                ]
+            )
+        self.assertEqual(
+            [call[1] for call in self.calls if call[0] == "query_server"],
+            ["192.0.2.0", "192.0.2.1"],
+        )
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_next_parent_server_is_asked_after_a_servfail(self):
+        with self.assertLogs("desecapi", "WARNING"):
+            result = self.check(
+                delegation_=[
+                    make_response(rcode=dns.rcode.SERVFAIL),
+                    make_response(authority=[ns_rrset(*OUR_NS)]),
+                ]
+            )
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_only_a_few_parent_servers_are_tried(self):
+        # A parent that is unreachable must not cost one timeout per nameserver
+        # -- TLDs have up to thirteen of them.
+        with self.assertInconclusive("no usable answer"):
+            self.check(
+                parent_ns=make_response(
+                    PARENT,
+                    answer=[
+                        ns_rrset(
+                            *(f"ns{i}.gtld.example." for i in range(5)), name=PARENT
+                        )
+                    ],
+                ),
+                addresses=make_response(PARENT_NS, answer=[a_rrset("192.0.2.1")]),
+                delegation_=[dns.exception.Timeout()] * 5,
+            )
+        self.assertEqual(
+            len([call for call in self.calls if call[0] == "query_server"]),
+            delegation.MAX_PARENT_SERVERS,
+        )
+        self.assertEqual(
+            len([call for call in self.queried if call[1] == "A"]),
+            delegation.MAX_PARENT_SERVERS,
+        )
+
+    def test_delegation_undetermined_when_no_server_answers(self):
+        with self.assertInconclusive("no usable answer for example.com. NS"):
+            result = self.check(delegation_=[dns.exception.Timeout()])
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.ERROR,
+            DelegationCheck.NameserverStatus.ERROR,
+        )
+
+    def test_delegation_undetermined_without_parent_nameservers(self):
+        with self.assertInconclusive("no nameservers for com."):
+            result = self.check(parent_ns=make_response(PARENT))
+        self.assertEqual(
+            result.nameserver_status, DelegationCheck.NameserverStatus.ERROR
+        )
+
+    def test_delegation_undetermined_without_parent_addresses(self):
+        with self.assertInconclusive("no usable answer for example.com. NS"):
+            self.check(addresses=make_response(PARENT_NS))
+
+    def test_known_security_status_survives_an_undetermined_delegation(self):
+        with self.assertInconclusive("no usable answer"):
+            result = self.check(
+                ds=make_response(), delegation_=[dns.exception.Timeout()]
+            )
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.INSECURE,
+            DelegationCheck.NameserverStatus.ERROR,
+        )
+
+    # Judging the delegation of a signed parent (step 4)
+
+    def test_secure_delegation_is_read_from_a_record_below_the_cut(self):
+        result = self.check(cds=make_response(ad=True))
+        self.assertIn((QNAME, "CDS"), self.queried)
+        self.assertNotIn((PARENT, "DNSKEY"), self.queried)
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.SECURE,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+        self.assertEqual(result.rcode, dns.rcode.NOERROR)
+        self.assertIsNone(result.ede_code)
+
+    def test_insecure_delegation(self):
+        result = self.check(cds=make_response(ad=False))
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.INSECURE,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_misconfigured_for_each_dnssec_ede(self):
+        for code in sorted(delegation.DNSSEC_EDE_CODES):
+            with self.subTest(ede_code=int(code)):
+                result = self.check(
+                    cds=make_response(rcode=dns.rcode.SERVFAIL, ede=[(code, "no luck")])
+                )
+                self.assertEqual(
+                    result.security_status,
+                    DelegationCheck.SecurityStatus.MISCONFIGURED,
+                )
+                self.assertEqual(result.ede_code, int(code))
+                self.assertEqual(result.ede_text, "no luck")
+
+    def test_error_for_other_ede(self):
+        for code in (
+            dns.edns.EDECode.NO_REACHABLE_AUTHORITY,  # 22
+            dns.edns.EDECode.NETWORK_ERROR,  # 23
+        ):
+            with self.subTest(ede_code=int(code)):
+                result = self.check(
+                    cds=make_response(rcode=dns.rcode.SERVFAIL, ede=[(code, None)])
+                )
+                self.assertEqual(
+                    result.security_status, DelegationCheck.SecurityStatus.ERROR
+                )
+                self.assertEqual(result.ede_code, int(code))
+                self.assertEqual(result.ede_text, "")
+
+    def test_error_for_servfail_without_ede(self):
+        result = self.check(cds=make_response(rcode=dns.rcode.SERVFAIL))
+        self.assertEqual(result.security_status, DelegationCheck.SecurityStatus.ERROR)
+        self.assertIsNone(result.ede_code)
+
+    def test_dnssec_ede_wins_over_others(self):
+        result = self.check(
+            cds=make_response(
+                rcode=dns.rcode.SERVFAIL,
+                ede=[
+                    (dns.edns.EDECode.NETWORK_ERROR, "network"),
+                    (dns.edns.EDECode.DNSSEC_BOGUS, "bogus"),
+                ],
+            )
+        )
+        self.assertEqual(
+            result.security_status, DelegationCheck.SecurityStatus.MISCONFIGURED
+        )
+        self.assertEqual(result.ede_code, int(dns.edns.EDECode.DNSSEC_BOGUS))
+
+    def test_security_undetermined_on_refused(self):
+        with self.assertInconclusive("example.com. CDS: REFUSED"):
+            result = self.check(cds=make_response(rcode=dns.rcode.REFUSED))
+        # Only the security dimension is in doubt; the delegation is not.
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.ERROR,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+    def test_security_undetermined_on_timeout(self):
+        with self.assertInconclusive("no response to example.com. CDS"):
+            result = self.check(cds=dns.exception.Timeout())
+        self.assertEqual(result.security_status, DelegationCheck.SecurityStatus.ERROR)
+        self.assertIsNone(result.rcode)
+
+    def test_undelegated_name_is_secure_below_a_signed_parent(self):
+        # The parent's denial of the name cannot be used for this: under NSEC3
+        # opt-out it comes back insecure however well the parent is signed. So
+        # the parent's own DNSKEY is what gets validated.
+        result = self.check(
+            delegation_=make_response(
+                rcode=dns.rcode.NXDOMAIN, authority=[soa_rrset()]
+            ),
+            dnskey=make_response(PARENT, ad=True),
+        )
+        self.assertIn((PARENT, "DNSKEY"), self.queried)
+        self.assertNotIn((QNAME, "CDS"), self.queried)
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.SECURE,
+            DelegationCheck.NameserverStatus.NOT_DELEGATED,
+        )
+
+    def test_undelegated_name_is_insecure_below_an_unsigned_parent(self):
+        result = self.check(
+            delegation_=make_response(
+                rcode=dns.rcode.NXDOMAIN, authority=[soa_rrset()]
+            ),
+            dnskey=make_response(PARENT, ad=False),
+        )
+        self.assertStatus(
+            result,
+            DelegationCheck.SecurityStatus.INSECURE,
+            DelegationCheck.NameserverStatus.NOT_DELEGATED,
+        )
+
+    # Queries made
+
+    def test_cache_is_flushed_before_querying(self):
+        self.check()
+        self.assertEqual(self.calls[0], ("flush", QNAME))
+        self.assertEqual(len([call for call in self.calls if call[0] == "flush"]), 1)
+
+    def test_control_channel_failure_propagates(self):
+        with mock.patch(
+            "desecapi.unbound.flush_delegation",
+            side_effect=unbound.UnboundControlException("nope"),
+        ):
+            with self.assertRaises(unbound.UnboundControlException):
+                delegation.check("example.com", our_nameservers=OUR_NS)
+
+    def test_unreachable_resolver_propagates(self):
+        with self.assertRaises(unbound.UnboundQueryException):
+            self.check(ds=unbound.UnboundQueryException("nope"))
+
+    @override_settings(DEFAULT_NS=["ns1.example.net."])
+    def test_our_nameservers_default_to_setting(self):
+        result = self.check(
+            delegation_=make_response(authority=[ns_rrset("ns1.example.net.")]),
+            our_nameservers=None,
+        )
+        self.assertEqual(
+            result.nameserver_status,
+            DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+        )
+
+
+class UnboundControlTestCase(SimpleTestCase):
+    """
+    Exercises the unbound-control client against a socket speaking the UBCT1
+    handshake.
+    """
+
+    @contextmanager
+    def server(self, response=b"ok\n"):
+        received = []
+        listener = socket.create_server(("127.0.0.1", 0))
+
+        def serve():
+            try:
+                connection, _ = listener.accept()
+            except OSError:  # listener closed without a connection
+                return
+            with connection:
+                received.append(connection.recv(4096))
+                connection.sendall(response)
+
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+        try:
+            with override_settings(
+                UNBOUND_HOST="127.0.0.1",
+                UNBOUND_CONTROL_PORT=listener.getsockname()[1],
+            ):
+                yield received
+        finally:
+            listener.close()
+            thread.join(timeout=5)
+
+    def test_command(self):
+        with self.server() as received:
+            unbound.flush_delegation("example.com.")
+        self.assertEqual(received, [b"UBCT1 flush_delegation example.com.\n"])
+
+    def test_error_response(self):
+        with self.server(response=b"error unknown command\n"):
+            with self.assertRaisesMessage(
+                unbound.UnboundControlException, "error unknown command"
+            ):
+                unbound.flush_delegation("example.com.")
+
+    def test_empty_response(self):
+        with self.server(response=b""):
+            with self.assertRaises(unbound.UnboundControlException):
+                unbound.flush_delegation("example.com.")
+
+    def test_unreachable(self):
+        # Claim a port, then release it so that nothing listens on it.
+        with socket.create_server(("127.0.0.1", 0)) as listener:
+            port = listener.getsockname()[1]
+        with override_settings(UNBOUND_HOST="127.0.0.1", UNBOUND_CONTROL_PORT=port):
+            with self.assertRaises(unbound.UnboundControlException):
+                unbound.flush_delegation("example.com.")
+
+
+class DelegationCheckModelTestCase(TestCase):
+    """
+    The check history is a change log: identical outcomes update the existing
+    row's confirmation time, changed ones start a new row.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.domain = Domain.objects.create(name="example.com", owner=cls.user)
+
+    def test_first_check_is_recorded_and_becomes_current(self):
+        check = DelegationCheck.objects.record(self.domain, result(rcode=0))
+        self.domain.refresh_from_db()
+        self.assertEqual(self.domain.current_delegation_check, check)
+        self.assertEqual(check.security_status, DelegationCheck.SecurityStatus.SECURE)
+        self.assertEqual(check.nameservers, ["ns1.example.net."])
+        self.assertEqual(check.rcode, 0)
+        self.assertEqual(check.ede_text, "")
+        self.assertIsNone(check.ede_code)
+
+    def test_unchanged_outcome_only_bumps_checked(self):
+        check = DelegationCheck.objects.record(self.domain, result())
+        self.domain.refresh_from_db()
+        again = DelegationCheck.objects.record(self.domain, result())
+
+        self.assertEqual(again.pk, check.pk)
+        self.assertEqual(self.domain.delegation_checks.count(), 1)
+        self.assertEqual(again.created, check.created)
+        self.assertGreater(again.checked, check.checked)
+
+    def test_unchanged_outcome_with_new_ede_only_bumps_checked(self):
+        check = DelegationCheck.objects.record(self.domain, result(ede_code=6))
+        self.domain.refresh_from_db()
+        again = DelegationCheck.objects.record(
+            self.domain, result(ede_code=7, ede_text="later")
+        )
+        self.assertEqual(again.pk, check.pk)
+        self.assertEqual(again.ede_code, 6)  # not part of the recorded state
+
+    def test_changed_outcome_starts_a_new_row(self):
+        check = DelegationCheck.objects.record(self.domain, result())
+        self.domain.refresh_from_db()
+        changed = DelegationCheck.objects.record(
+            self.domain,
+            result(security_status=DelegationCheck.SecurityStatus.MISCONFIGURED),
+        )
+        self.domain.refresh_from_db()
+
+        self.assertNotEqual(changed.pk, check.pk)
+        self.assertEqual(self.domain.delegation_checks.count(), 2)
+        self.assertEqual(self.domain.current_delegation_check, changed)
+
+    def test_changed_nameservers_start_a_new_row(self):
+        DelegationCheck.objects.record(self.domain, result())
+        self.domain.refresh_from_db()
+        DelegationCheck.objects.record(
+            self.domain,
+            result(nameservers=["ns1.example.net.", "ns2.example.net."]),
+        )
+        self.assertEqual(self.domain.delegation_checks.count(), 2)
+
+    def test_history_survives_and_is_cleared_from_domain_on_deletion(self):
+        check = DelegationCheck.objects.record(self.domain, result())
+        self.domain.refresh_from_db()
+        check.delete()
+        self.domain.refresh_from_db()
+        self.assertIsNone(self.domain.current_delegation_check)
+
+    def test_checks_are_deleted_with_their_domain(self):
+        DelegationCheck.objects.record(self.domain, result())
+        self.domain.refresh_from_db()
+        self.domain.delete()
+        self.assertFalse(DelegationCheck.objects.exists())
+
+
+class SecureDelegationSinceTestCase(TestCase):
+    """
+    Domain.secure_delegation_since is what the computed limit counts, so what
+    does and does not move it is the load-bearing part of this feature.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.domain = Domain.objects.create(name="example.com", owner=cls.user)
+
+    def record(self, **kwargs):
+        check = DelegationCheck.objects.record(self.domain, result(**kwargs))
+        self.domain.refresh_from_db()
+        return check
+
+    def test_secure_result_sets_it(self):
+        check = self.record()
+        self.assertEqual(self.domain.secure_delegation_since, check.created)
+
+    def test_multi_provider_counts_as_secure(self):
+        check = self.record(
+            nameserver_status=DelegationCheck.NameserverStatus.MULTI_PROVIDER
+        )
+        self.assertEqual(self.domain.secure_delegation_since, check.created)
+
+    def test_repeated_secure_result_keeps_the_original_time(self):
+        since = self.record().created
+        # A new row (the nameserver set changed), still secure.
+        self.record(nameservers=["ns1.example.net.", "ns2.example.net."])
+        self.assertEqual(self.domain.secure_delegation_since, since)
+
+    def test_conclusive_non_secure_results_clear_it(self):
+        for kwargs in [
+            {"security_status": DelegationCheck.SecurityStatus.INSECURE},
+            {"security_status": DelegationCheck.SecurityStatus.MISCONFIGURED},
+            {
+                "nameserver_status": DelegationCheck.NameserverStatus.NOT_DELEGATED,
+            },
+            {
+                "nameserver_status": DelegationCheck.NameserverStatus.OTHER_PROVIDER,
+            },
+        ]:
+            with self.subTest(**kwargs):
+                self.record()
+                self.assertIsNotNone(self.domain.secure_delegation_since)
+                self.record(**kwargs)
+                self.assertIsNone(self.domain.secure_delegation_since)
+
+    def test_error_does_not_clear_it(self):
+        """A resolver outage must not revoke what a user has demonstrated."""
+        for kwargs in [
+            {"security_status": DelegationCheck.SecurityStatus.ERROR},
+            {"nameserver_status": DelegationCheck.NameserverStatus.ERROR},
+            {
+                "security_status": DelegationCheck.SecurityStatus.ERROR,
+                "nameserver_status": DelegationCheck.NameserverStatus.ERROR,
+            },
+        ]:
+            with self.subTest(**kwargs):
+                self.record()
+                since = self.domain.secure_delegation_since
+                check = self.record(**kwargs)
+
+                # The failure is recorded honestly ...
+                self.assertEqual(self.domain.current_delegation_check, check)
+                # ... but says nothing about the domain.
+                self.assertEqual(self.domain.secure_delegation_since, since)
+                self.assertEqual(self.user.secure_domain_count, 1)
+
+    def test_error_on_a_never_checked_domain_leaves_it_null(self):
+        self.record(
+            security_status=DelegationCheck.SecurityStatus.ERROR,
+            nameserver_status=DelegationCheck.NameserverStatus.ERROR,
+        )
+        self.assertIsNone(self.domain.secure_delegation_since)
+
+
+class BackfillTestCase(TestCase):
+    """
+    The 0048 data migration runs once, in production, against checks that are
+    already there -- so its query is worth exercising with rows in the table.
+    """
+
+    migration = importlib.import_module(
+        "desecapi.migrations.0048_domain_secure_delegation_since_and_more"
+    )
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+
+    def backfill(self):
+        # As if the column had just been added.
+        Domain.objects.update(secure_delegation_since=None)
+        self.migration.backfill_secure_delegation_since(global_apps, None)
+
+    def test_adopts_secure_checks(self):
+        domain = Domain.objects.create(name="secure.example.com", owner=self.user)
+        check = secure(domain)
+        multi = Domain.objects.create(name="multi.example.com", owner=self.user)
+        multi_check = DelegationCheck.objects.record(
+            multi,
+            result(nameserver_status=DelegationCheck.NameserverStatus.MULTI_PROVIDER),
+        )
+
+        self.backfill()
+
+        domain.refresh_from_db()
+        multi.refresh_from_db()
+        self.assertEqual(domain.secure_delegation_since, check.created)
+        self.assertEqual(multi.secure_delegation_since, multi_check.created)
+
+    def test_leaves_everything_else_null(self):
+        Domain.objects.create(name="unchecked.example.com", owner=self.user)
+        for i, kwargs in enumerate(
+            [
+                {"security_status": DelegationCheck.SecurityStatus.INSECURE},
+                {"security_status": DelegationCheck.SecurityStatus.ERROR},
+                {"nameserver_status": DelegationCheck.NameserverStatus.NOT_DELEGATED},
+            ]
+        ):
+            domain = Domain.objects.create(name=f"d{i}.example.com", owner=self.user)
+            DelegationCheck.objects.record(domain, result(**kwargs))
+
+        self.backfill()
+
+        self.assertEqual(self.user.secure_domain_count, 0)
+        self.assertFalse(
+            Domain.objects.filter(secure_delegation_since__isnull=False).exists()
+        )
+
+
+class CheckDelegationCommandTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="test@example.com", password="secret1234"
+        )
+        cls.local_suffix = next(iter(settings.LOCAL_PUBLIC_SUFFIXES))
+        cls.foreign = Domain.objects.create(name="example.com", owner=cls.user)
+        cls.local = Domain.objects.create(
+            name=f"mine.{cls.local_suffix}", owner=cls.user
+        )
+        cls.local_grandchild = Domain.objects.create(
+            name=f"sub.mine.{cls.local_suffix}", owner=cls.user
+        )
+
+    @contextmanager
+    def checks(self, **kwargs):
+        result = delegation.DelegationCheckResult(
+            security_status=DelegationCheck.SecurityStatus.SECURE,
+            nameserver_status=DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+            nameservers=["ns1.example.net."],
+            **kwargs,
+        )
+        with mock.patch("desecapi.delegation.check", return_value=result) as check:
+            yield check
+
+    @staticmethod
+    def checked_names(check):
+        return sorted(call.args[0] for call in check.call_args_list)
+
+    def test_named_domains(self):
+        with self.checks() as check:
+            call_command("check-delegation", "example.com")
+        self.assertEqual(self.checked_names(check), ["example.com"])
+        self.assertEqual(DelegationCheck.objects.count(), 1)
+
+    def test_named_domains_include_locally_registrable_ones(self):
+        with self.checks() as check:
+            call_command("check-delegation", self.local.name)
+        self.assertEqual(self.checked_names(check), [self.local.name])
+
+    def test_unknown_domain(self):
+        with self.checks():
+            with self.assertRaisesMessage(CommandError, "Unknown domain(s): nope.test"):
+                call_command("check-delegation", "nope.test")
+
+    def test_no_selection(self):
+        with self.checks():
+            with self.assertRaises(CommandError):
+                call_command("check-delegation")
+
+    def test_all_skips_domains_under_local_public_suffix(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all")
+        # Not only the immediate child: the grandchild reaches us through the
+        # same zones we host and sign, so it is skipped as well.
+        self.assertEqual(self.checked_names(check), [self.foreign.name])
+
+    def test_all_with_include_local(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--include-local")
+        self.assertEqual(
+            self.checked_names(check),
+            sorted(Domain.objects.values_list("name", flat=True)),
+        )
+
+    def test_all_together_with_named_domain(self):
+        with self.checks() as check:
+            call_command("check-delegation", self.local.name, "--all")
+        # The named one is checked although --all skips its kind; its
+        # grandchild, which was not named, still is not.
+        self.assertEqual(
+            self.checked_names(check),
+            sorted([self.foreign.name, self.local.name]),
+        )
+
+    def test_stale(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+        # Everything has just been checked, so nothing is stale anymore.
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600")
+        self.assertEqual(self.checked_names(check), [])
+
+        # ... but with a zero threshold, everything is.
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "0")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+    def other_user(self):
+        other = User.objects.create_user(email="other@example.com", password="s3cret!!")
+        Domain.objects.create(name="example.net", owner=other)
+        return other
+
+    def test_user_by_email(self):
+        self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--user", self.user.email)
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+
+    def test_user_by_id(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--user", str(other.pk))
+        self.assertEqual(self.checked_names(check), ["example.net"])
+
+    def test_user_filters_stale_selection(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "--stale", "3600", "--user", other.email)
+        self.assertEqual(self.checked_names(check), ["example.net"])
+
+    def test_user_filters_named_domains(self):
+        other = self.other_user()
+        with self.checks() as check:
+            call_command("check-delegation", "example.com", "--user", str(other.pk))
+        self.assertEqual(self.checked_names(check), [])
+
+    def test_unknown_user(self):
+        with self.checks():
+            unknown = (
+                "nobody@example.com",
+                "3b1f0000-0000-4000-8000-000000000000",
+                "x",
+            )
+            for value in unknown:
+                with self.assertRaisesMessage(CommandError, f"Unknown user: {value}"):
+                    call_command("check-delegation", "--all", "--user", value)
+
+    def test_user_alone_is_not_a_selection(self):
+        with self.checks():
+            with self.assertRaises(CommandError):
+                call_command("check-delegation", "--user", self.user.email)
+
+    def test_dry_run(self):
+        with self.checks() as check:
+            call_command("check-delegation", "--all", "--dry-run")
+        self.assertEqual(
+            self.checked_names(check),
+            [self.foreign.name],
+        )
+        self.assertFalse(DelegationCheck.objects.exists())
+
+    def test_concurrency(self):
+        threads = set()
+
+        def check(name):
+            threads.add(threading.current_thread())
+            return delegation.DelegationCheckResult(
+                security_status=DelegationCheck.SecurityStatus.SECURE,
+                nameserver_status=DelegationCheck.NameserverStatus.NOT_DELEGATED,
+            )
+
+        with mock.patch("desecapi.delegation.check", side_effect=check) as checked:
+            call_command("check-delegation", "--all", "--concurrency", "2")
+
+        self.assertEqual(
+            self.checked_names(checked),
+            [self.foreign.name],
+        )
+        self.assertEqual(DelegationCheck.objects.count(), 1)
+        # Measuring runs in the pool; recording stays on the main thread, which
+        # is what keeps the ORM out of threads we do not manage.
+        self.assertTrue(threads)  # ... and something did run there
+        self.assertNotIn(threading.current_thread(), threads)
+
+    def test_enqueue_hands_domains_to_workers(self):
+        with mock.patch("desecapi.delegation.check") as checked:
+            with mock.patch.object(
+                tasks.check_domain_delegation, "apply_async"
+            ) as enqueued:
+                call_command(
+                    "check-delegation", "--all", "--stale", "60", "--concurrency", "0"
+                )
+
+        checked.assert_not_called()  # nothing is measured here
+        self.assertEqual(
+            {call.args[0][0] for call in enqueued.call_args_list},
+            {self.foreign.pk},
+        )
+        # Workers re-check staleness, so they are told what --stale meant.
+        for call in enqueued.call_args_list:
+            self.assertEqual(call.args[0][1], 60)
+            self.assertEqual(call.kwargs["queue"], tasks.BULK_QUEUE)
+
+    def test_enqueue_dry_run_enqueues_nothing(self):
+        out = io.StringIO()
+        with mock.patch.object(
+            tasks.check_domain_delegation, "apply_async"
+        ) as enqueued:
+            with redirect_stdout(out):
+                call_command(
+                    "check-delegation", "--all", "--concurrency", "0", "--dry-run"
+                )
+        enqueued.assert_not_called()
+        # ... and says so, rather than reporting work it did not do.
+        self.assertEqual(out.getvalue().strip(), "1 domain(s) would be enqueued.")
+
+    def test_invalid_concurrency(self):
+        with self.checks():
+            with self.assertRaisesMessage(CommandError, "--concurrency"):
+                call_command("check-delegation", "--all", "--concurrency", "-1")
+
+    def test_resolver_failure_aborts(self):
+        with mock.patch(
+            "desecapi.delegation.check",
+            side_effect=unbound.UnboundControlException("nope"),
+        ):
+            with self.assertRaisesMessage(CommandError, "Resolver unavailable"):
+                call_command("check-delegation", "--all")

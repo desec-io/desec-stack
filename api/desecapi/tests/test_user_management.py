@@ -278,6 +278,15 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
             msg_prefix=str(response.data),
         )
 
+    def assertRegistrationFailureDomainTooDeepResponse(self, response, domain):
+        self.assertContains(
+            response=response,
+            text="Only direct registrations are allowed under",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            msg_prefix=str(response.data),
+        )
+        self.assertEqual(response.data["domain"][0].code, "name_too_deep")
+
     def assertRegistrationFailureCaptchaInvalidResponse(self, response):
         self.assertContains(
             response=response,
@@ -650,6 +659,15 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 domain=self.random_domain_name(suffix=local_public_suffix)
             )
 
+    def test_registration_with_domain_below_local_public_suffix(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        local_public_suffix = random.sample(list(self.AUTO_DELEGATION_DOMAINS), 1)[0]
+        with self.get_psl_context_manager(local_public_suffix):
+            self._test_registration_with_domain(
+                domain="sub." + self.random_domain_name(suffix=local_public_suffix),
+                expect_failure_response=self.assertRegistrationFailureDomainTooDeepResponse,
+            )
+
     @override_settings(REGISTER_LPS=False)
     def test_registration_with_domain_lps_disabled(self):
         PublicSuffixMockMixin.setUpMockPatch(self)
@@ -761,7 +779,6 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 self._test_registration(domain=domain, late_captcha=True)
 
     def test_registration_with_override_token(self):
-        limit_domains = 15
         token = self.create_token(owner=self.create_user(), perm_manage_tokens=True)
         self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
 
@@ -788,7 +805,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             self.assertIsNone(user.is_active)
             self.assertTrue(user.needs_captcha)
             self.assertFalse(user.outreach_preference)
-            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertIsNone(user.limit_domains)  # computed, like everyone's
             self.assertPassword(email, None)
 
             # Check confirmation email
@@ -817,7 +834,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             # Check user has been activated correctly
             user.refresh_from_db()
             self.assertTrue(user.is_active)
-            self.assertEqual(user.limit_domains, limit_domains)
+            self.assertIsNone(user.limit_domains)  # computed, like everyone's
             self.assertFalse(user.needs_captcha)
             self.assertEqual(user.outreach_preference, outreach_preference)
             self.assertPassword(email, None)
@@ -938,6 +955,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
                 "id",
                 "limit_domains",
                 "outreach_preference",
+                "secure_domains",
             },
         )
         self.assertEqual(response.data["email"], self.email)
@@ -945,7 +963,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
             response.data["id"], str(User.objects.get(email=self.email).pk)
         )
         self.assertEqual(
-            response.data["limit_domains"], settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
+            response.data["limit_domains"], settings.DOMAIN_LIMIT_INSECURE_HEADROOM
         )
         self.assertTrue(response.data["outreach_preference"])
 

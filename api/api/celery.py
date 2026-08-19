@@ -5,7 +5,7 @@ import django.utils.log
 from celery import Celery
 from celery.signals import task_failure
 
-app = Celery("api", include="desecapi.mail_backends")
+app = Celery("api", include=["desecapi.mail_backends", "desecapi.tasks"])
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import uuid
 
 from django.conf import settings
@@ -31,7 +32,9 @@ class MyUserManager(BaseUserManager):
 class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     @staticmethod
     def _limit_domains_default():
-        return settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT
+        # No longer used as a field default (limit_domains defaults to null,
+        # i.e. to the computed limit), but referenced by historical migrations.
+        return settings.DOMAIN_LIMIT_INSECURE_HEADROOM
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(
@@ -44,9 +47,10 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     credentials_changed = models.DateTimeField(auto_now_add=True)
-    limit_domains = models.PositiveIntegerField(
-        default=_limit_domains_default.__func__, null=True, blank=True
-    )
+    # Null means the limit is computed from the user's securely delegated
+    # domains (see effective_limit_domains); a value pins it, e.g. because
+    # support granted one. Never enforced directly -- go through the property.
+    limit_domains = models.PositiveIntegerField(null=True, blank=True)
     needs_captcha = models.BooleanField(default=True)
     outreach_preference = models.BooleanField(default=True)
     throttle_daily_rate = models.PositiveIntegerField(null=True)
@@ -89,6 +93,64 @@ class User(ExportModelOperationsMixin("User"), AbstractBaseUser):
     @property
     def mfa_enabled(self):
         return self.basefactor_set.exclude(last_used__isnull=True).exists()
+
+    @property
+    def secure_domain_count(self):
+        """
+        How many of the user's domains are securely delegated to us, i.e. reach
+        us through an intact chain of trust.
+
+        Includes domains under one of our own public suffixes, which are secure
+        by construction: we host and sign every zone between them and the public
+        root. They are counted without being measured, which is why the sweep
+        does not have to look at them.
+        """
+        return self.domains.securely_delegated().count()
+
+    @property
+    def secure_external_domain_count(self):
+        """
+        The part of secure_domain_count the user actually configured: domains
+        delegated to us from a parent zone we do not operate.
+        """
+        return (
+            self.domains.securely_delegated()
+            .exclude_under_local_public_suffix()
+            .count()
+        )
+
+    @property
+    def effective_limit_domains(self):
+        """
+        The domain limit that is actually enforced: the explicit one where
+        support has set it, and otherwise one derived from the domains the user
+        has securely delegated to us.
+
+        Two terms, counting different things.
+
+        Every securely delegated domain pays for its own slot, those under our
+        own public suffixes included: they are secure by construction, and a
+        delegation that is in perfect order earns its slot like any other.
+
+        The headroom on top is how many domains may be held *without* being
+        secured. DOMAIN_LIMIT_INSECURE_HEADROOM is its floor, so an account
+        that has demonstrated nothing still gets exactly what it always got;
+        above that, headroom is earned, and only by externally delegated
+        domains. A domain under our own public suffix arrives secure, so it
+        moves both s and the limit by exactly one and earns no headroom.
+
+        Being sublinear, the headroom shrinks as a fraction of the limit, so the
+        incentive to enable DNSSEC does not dilute as a portfolio grows -- while
+        every external domain secured still raises the limit, by one or two.
+        round() never sees a tie here: sqrt(e) is an integer for square e and
+        irrational otherwise.
+        """
+        if self.limit_domains is not None:
+            return self.limit_domains
+        headroom = round(math.sqrt(self.secure_external_domain_count))
+        return self.secure_domain_count + max(
+            settings.DOMAIN_LIMIT_INSECURE_HEADROOM, headroom
+        )
 
     def activate(self):
         self.is_active = True

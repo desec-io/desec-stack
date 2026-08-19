@@ -239,7 +239,8 @@ A JSON object representing your user account will be returned::
         "email": "youremailaddress@example.com",
         "id": "9ab16e5c-805d-4ab1-9030-af3f5a541d47",
         "limit_domains": 15,
-        "outreach_preference": true
+        "outreach_preference": true,
+        "secure_domains": 3
     }
 
 Field details:
@@ -271,12 +272,29 @@ Field details:
 
     Maximum number of domains the user can create.
 
+    Unless we have set a limit for your account explicitly, this number grows
+    with the domains you have delegated to us securely (with DNSSEC enabled).
+
 ``outreach_preference``
     :Access mode: read, write
     :Type: boolean
 
     Whether the user is okay with us reaching out by email to inform about
     developments at deSEC (no ads).  Defaults to ``true``.
+
+``secure_domains``
+    :Access mode: read-only
+
+    How many of your domains are currently delegated to us with DNSSEC
+    enabled, i.e. with a valid DS record in the parent domain.
+
+    Domains you registered with us (such as those under ``dedyn.io``) always
+    count: we operate their parent domain and publish their DS records
+    ourselves, so they are secure from the moment you create them.
+
+    For all other domains, this reflects what we last measured.  Delegations we
+    were unable to check (e.g. because a parent nameserver did not respond)
+    keep their previous state and never count against you.
 
 
 Modify Account Settings

@@ -1,0 +1,53 @@
+server:
+    # This is an open recursive resolver by design; it is only reachable from
+    # the rear network and must never be exposed to the front network.
+    interface: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.11
+    port: 53
+    access-control: 0.0.0.0/0 refuse
+    access-control: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.0/24 allow
+    do-ip4: yes
+    # No IPv6: the rear networks are IPv4-only, so trying it would only buy us
+    # a timeout per authoritative server that prefers it.
+    do-ip6: no
+    do-udp: yes
+    do-tcp: yes
+
+    # One thread per core, filled in by the entrypoint: checks run concurrently
+    # (check-delegation --concurrency), and a single-threaded resolver would
+    # just queue them. The caches stay shared between the threads; what is per
+    # thread is the outgoing port range and the queries in flight.
+    num-threads: ${NPROC}
+    # ... without which those threads contend for one listening socket.
+    so-reuseport: yes
+
+    username: "unbound"
+    directory: "/opt/unbound/etc/unbound"
+    chroot: ""
+    pidfile: ""
+    logfile: ""
+    use-syslog: no
+    verbosity: 1
+    hide-identity: yes
+    hide-version: yes
+
+    # In a directory of its own, because RFC 5011 updates write a temporary
+    # file next to the anchor, and the configuration is not writable.
+    auto-trust-anchor-file: "/opt/unbound/var/root.key"
+    # Without EDE, a SERVFAIL cannot be told apart from a broken delegation.
+    ede: yes
+
+    # Answer from what is there now, not from what was there earlier. (The
+    # delegation itself is dropped explicitly before each check, see
+    # unbound-control flush_delegation.)
+    serve-expired: no
+    prefetch: no
+
+    qname-minimisation: yes
+
+remote-control:
+    control-enable: yes
+    control-interface: ${DESECSTACK_IPV4_REAR_PREFIX16}.9.11
+    control-port: 8953
+    # Plain TCP on the private rear network, so that no client certificates
+    # need to be generated and distributed into the api container.
+    control-use-cert: no

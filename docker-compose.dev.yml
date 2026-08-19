@@ -47,6 +47,10 @@ services:
     logging:
       driver: "json-file"
 
+  unbound:
+    logging:
+      driver: "json-file"
+
   rabbitmq:
     ports:
     - "15672:15672"
@@ -54,6 +58,10 @@ services:
       driver: "json-file"
 
   celery-email:
+    logging:
+      driver: "json-file"
+
+  celery-delegation:
     logging:
       driver: "json-file"
 

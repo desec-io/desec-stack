@@ -31,6 +31,10 @@ class ResetPasswordSerializer(EmailSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     domains_under_management = serializers.SerializerMethodField()
+    # Not the model field: null there means "computed", which is an
+    # implementation detail. Clients see the limit that is enforced.
+    limit_domains = serializers.SerializerMethodField()
+    secure_domains = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -41,14 +45,20 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "limit_domains",
             "outreach_preference",
+            "secure_domains",
         )
         read_only_fields = (
             "created",
             "domains_under_management",
             "email",
             "id",
-            "limit_domains",
         )
+
+    def get_limit_domains(self, obj):
+        return obj.effective_limit_domains
+
+    def get_secure_domains(self, obj):
+        return obj.secure_domain_count
 
     def get_domains_under_management(self, obj):
         return obj.domains.count() + (
@@ -93,7 +103,14 @@ class RegisterAccountSerializer(UserSerializer):
         serializer = DomainSerializer(data=dict(name=value), context=self.context)
         try:
             serializer.is_valid(raise_exception=True)
-        except serializers.ValidationError:
+        except serializers.ValidationError as e:
+            details = [
+                detail
+                for detail in e.detail.get("name", [])
+                if detail.code == "name_too_deep"
+            ]
+            if details:
+                raise serializers.ValidationError(details, code="name_too_deep")
             raise serializers.ValidationError(
                 serializer.default_error_messages["name_unavailable"],
                 code="name_unavailable",

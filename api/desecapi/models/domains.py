@@ -24,7 +24,47 @@ from .records import RRset
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
 
 
-class DomainManager(Manager):
+def under_local_public_suffix_q():
+    """
+    Domains below one of our local public suffixes, at any depth.
+
+    Deliberately broader than Domain.is_locally_registrable, which is "immediate
+    child" and is what drives auto-delegation: every zone between
+    sub.mine.dedyn.io and the public root is one we host and sign, just as for
+    mine.dedyn.io, so neither has a delegation the user could get wrong. The
+    suffix itself is excluded -- dedyn.io is delegated to us from io, which is
+    somebody else's zone.
+    """
+    q = Q()
+    for suffix in settings.LOCAL_PUBLIC_SUFFIXES:
+        q |= Q(name__endswith=f".{suffix}")
+    return q
+
+
+class DomainQuerySet(models.QuerySet):
+    def under_local_public_suffix(self):
+        return self.filter(under_local_public_suffix_q())
+
+    def exclude_under_local_public_suffix(self):
+        return self.exclude(under_local_public_suffix_q())
+
+    def securely_delegated(self):
+        """
+        Domains that are securely delegated to us.
+
+        Domains under one of our own public suffixes are included without ever
+        having been measured: every zone between them and the public root is one
+        we host and sign, so there is nothing about them a check could tell us.
+        That is also why the sweep skips them, and why this is an OR rather than
+        a union -- a `check-delegation --include-local` run sets
+        secure_delegation_since on them too, and they must not be counted twice.
+        """
+        return self.filter(
+            under_local_public_suffix_q() | Q(secure_delegation_since__isnull=False)
+        )
+
+
+class DomainManager(Manager.from_queryset(DomainQuerySet)):
     def filter_qname(self, qname: str, **kwargs) -> models.query.QuerySet:
         qs = self.annotate(
             name_length=Length("name")
@@ -63,6 +103,20 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
     renewal_changed = models.DateTimeField(auto_now_add=True)
+    # Denormalized pointer to the newest DelegationCheck, so that list views do
+    # not need a per-domain subquery on the check history.
+    current_delegation_check = models.OneToOneField(
+        "DelegationCheck",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    # When the domain was found securely delegated to us, and null when it was
+    # found not to be. Checks that could not be carried out (ERROR) leave it
+    # alone, so that an outage on our side cannot revoke what a user has
+    # demonstrated. This is what User.secure_domain_count counts.
+    secure_delegation_since = models.DateTimeField(null=True, blank=True)
 
     _keys = None
     objects = DomainManager()

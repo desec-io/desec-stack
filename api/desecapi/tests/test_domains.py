@@ -791,6 +791,16 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["name"][0].code, "registration_suspended")
 
+    def test_create_below_local_public_suffix(self):
+        suffix = next(iter(self.AUTO_DELEGATION_DOMAINS))
+        for name in (f"sub.foo.{suffix}", f"a.b.c.{suffix}"):
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data["name"][0].code, "name_too_deep")
+            # ... and says what to register instead.
+            self.assertIn(f"example.{suffix}", response.data["name"][0])
+            self.assertFalse(Domain.objects.filter(name=name).exists())
+
     def test_create_domain_under_public_suffix_with_private_parent(self):
         name = "amazonaws.com"
         with (
@@ -914,8 +924,15 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_204_NO_CONTENT)
             self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
 
+    def drop_local_domains(self):
+        # The fixture hands the owner NUM_OWNED_DOMAINS locally registrable
+        # domains, of which only one may be *created* per account. Dropping them
+        # via the ORM leaves the API free to register one.
+        self.owner.domains.under_local_public_suffix().delete()
+
     def test_create_auto_delegated_domains(self):
         for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
+            self.drop_local_domains()  # one at a time, whatever the suffix
             name = self.random_domain_name(suffix)
             with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name=name)
@@ -930,28 +947,46 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertTrue(domain.is_locally_registrable)
             self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH)
 
-    def test_domain_limit(self):
+    def test_domain_limit_local(self):
+        """
+        At most one per account. They are free and, being secured by us, count
+        towards the domain limit's base -- so without this the limit could be
+        raised indefinitely at no cost.
+        """
         url = self.reverse("v1:domain-list")
-        user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
+        name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
 
-        for i in range(user_quota):
-            name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
-            with self.assertRequests(
-                self.requests_desec_domain_creation_auto_delegation(name)
-            ):
-                response = self.client.post(url, {"name": name})
-                self.assertStatus(response, status.HTTP_201_CREATED)
+        response = self.client.post(url, {"name": name})
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        detail = response.data["name"][0]
+        self.assertIn("Only one domain under", detail)
+        # ... and says which one is in the way.
+        self.assertIn(self.my_domain.name, detail)
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+        self.assertFalse(mail.outbox)  # do not send email
 
+        # Once the account has none, it may register one again.
+        self.drop_local_domains()
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(name)
+        ):
+            response = self.client.post(url, {"name": name})
+        self.assertStatus(response, status.HTTP_201_CREATED)
+
+    def test_domain_limit_general(self):
+        """The per-account cap on local domains is not the domain limit."""
+        self.owner.limit_domains = self.owner.domains.count()
+        self.owner.save()
         response = self.client.post(
-            url, {"name": self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)}
+            self.reverse("v1:domain-list"), {"name": self.random_domain_name()}
         )
         self.assertContains(
             response, "Domain limit", status_code=status.HTTP_403_FORBIDDEN
         )
-        self.assertFalse(mail.outbox)  # do not send email
 
     def test_domain_minimum_ttl(self):
         url = self.reverse("v1:domain-list")
+        self.drop_local_domains()
         name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
         with self.assertRequests(
             self.requests_desec_domain_creation_auto_delegation(name)

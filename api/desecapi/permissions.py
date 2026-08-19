@@ -167,11 +167,11 @@ class WithinDomainLimit(permissions.BasePermission):
     """
 
     message = (
-        "Domain limit exceeded. Please contact support to create additional domains."
+        "Domain limit exceeded. The limit grows as you delegate your domains to us "
+        "securely (with DNSSEC); we are re-checking yours now."
     )
+    # Let views recognize this denial; DomainViewSet uses it to schedule a check.
+    code = "domain_limit_exceeded"
 
     def has_permission(self, request, view):
-        return (
-            request.user.limit_domains is None
-            or request.user.domains.count() < request.user.limit_domains
-        )
+        return request.user.domains.count() < request.user.effective_limit_domains
