@@ -2,9 +2,11 @@
 .env
 .env.dev
 api/venv
+api/.venv
 
 # IDE files
 .idea
+.vscode/test.env
 
 # development helper scripts
 /*.sh
