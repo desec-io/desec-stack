@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     "desecapi.apps.AppConfig",
     "corsheaders",
     "django_prometheus",
+    "django.contrib.postgres",
     "netfields",
     "pgtrigger",
 )
@@ -154,11 +155,9 @@ EMAIL_HOST_USER = os.environ["DESECSTACK_API_EMAIL_HOST_USER"]
 EMAIL_HOST_PASSWORD = os.environ["DESECSTACK_API_EMAIL_HOST_PASSWORD"]
 EMAIL_PORT = os.environ["DESECSTACK_API_EMAIL_PORT"]
 EMAIL_USE_TLS = True
+EMAIL_MESSAGE_TRANSIENT_ATTRIBUTES = ["connection"]  # not passed through the task queue
 DEFAULT_FROM_EMAIL = "deSEC <support@desec.io>"
-ADMINS = [
-    (address.split("@")[0], address)
-    for address in os.environ["DESECSTACK_API_ADMIN"].split()
-]
+ADMINS = os.environ["DESECSTACK_API_ADMIN"].split()
 
 DESECSTACK_DOMAIN = os.environ["DESECSTACK_DOMAIN"]
 
@@ -180,7 +179,6 @@ CATALOG_ZONE = "catalog.internal"
 # Celery
 # see https://docs.celeryproject.org/en/stable/history/whatsnew-4.0.html#latentcall-django-admonition
 CELERY_BROKER_URL = "amqp://rabbitmq"
-CELERY_EMAIL_MESSAGE_EXTRA_ATTRIBUTES = []  # required because djcelery_email.utils accesses it
 CELERY_TASK_TIME_LIMIT = (
     300  # as zones become larger, AXFR takes longer, this needs to be increased
 )
