@@ -1688,6 +1688,22 @@ class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
 
     ns_data = {"type": "NS", "records": ["ns.example."], "ttl": 3600}
 
+    def test_create_my_rr_sets_ip_block_below_lps(self):
+        # The IP block also applies to domains that are not direct children of the LPS
+        BlockedSubnet.from_ip("3.2.2.3").save()
+        domain = self.create_domain(
+            owner=self.owner,
+            name=f"a.{self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)}",
+        )
+        response = self.client.post_rr_set(
+            domain.name,
+            records=["3.2.2.5"],
+            ttl=3660,
+            subname="blocktest",
+            type="A",
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_ip_block(self):
         BlockedSubnet.from_ip("3.2.2.3").save()
         response = self.client.post_rr_set(

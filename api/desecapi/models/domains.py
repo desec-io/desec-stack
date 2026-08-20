@@ -251,7 +251,11 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     @property
     def is_locally_registrable(self):
-        return self.parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
+        parent_zone = self.parent_zone
+        return (
+            parent_zone is not None
+            and parent_zone.name in settings.LOCAL_PUBLIC_SUFFIXES
+        )
 
     @property
     def _owner_or_none(self):
@@ -259,10 +263,6 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             return self.owner
         except Domain.owner.RelatedObjectDoesNotExist:
             return None
-
-    @property
-    def parent_domain_name(self):
-        return self._partitioned_name[1]
 
     @property
     def parent_zone(self) -> Domain | None:
@@ -283,12 +283,12 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         super().save(*args, **kwargs)
 
     def update_delegation(self, child_domain: Domain):
-        child_subname, child_domain_name = child_domain._partitioned_name
-        if self.name != child_domain_name:
+        if not child_domain.name.endswith(f".{self.name}"):
             raise ValueError(
-                "Cannot update delegation of %s as it is not an immediate child domain of %s."
+                "Cannot update delegation of %s as it is not a child domain of %s."
                 % (child_domain.name, self.name)
             )
+        child_subname = child_domain.name.removesuffix(f".{self.name}")
 
         # Always remove delegation so that we con properly recreate it
         for rrset in self.rrset_set.filter(

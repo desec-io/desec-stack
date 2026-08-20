@@ -1199,8 +1199,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
 
         if self.DYN:
             for domain in self.my_domains + self.other_domains:
-                parent_domain = Domain.objects.get(name=domain.parent_domain_name)
-                parent_domain.update_delegation(domain)
+                domain.parent_zone.update_delegation(domain)
 
         self.my_domain = self.my_domains[0]
         self.other_domain = self.other_domains[0]

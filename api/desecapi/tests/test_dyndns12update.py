@@ -189,7 +189,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         for name in [
             self.owner.email,
             self.other_domain.name,
-            self.my_domain.parent_domain_name,
+            self.my_domain.name.split(".", 1)[1],
         ]:
             response = self.assertDynDNS12NoUpdate(
                 system="dyndns",

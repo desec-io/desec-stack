@@ -101,7 +101,7 @@ class DomainViewSet(
             raise ValidationError(
                 {
                     "name": [
-                        f"Domain registration under {domain.parent_domain_name} is currently suspended."
+                        f"Domain registration under {domain.parent_zone.name} is currently suspended."
                     ]
                 },
                 code="registration_suspended",
@@ -113,22 +113,20 @@ class DomainViewSet(
                     domain=domain, perm_write=True
                 )
 
-        # TODO this line raises if the local public suffix is not in our database!
         PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
 
     @staticmethod
     def auto_delegate(domain: Domain):
         if domain.is_locally_registrable:
-            parent_domain = Domain.objects.get(name=domain.parent_domain_name)
-            parent_domain.update_delegation(domain)
+            domain.parent_zone.update_delegation(domain)
 
     def perform_destroy(self, instance: Domain):
+        parent_zone = instance.parent_zone if instance.is_locally_registrable else None
         with PDNSChangeTracker():
             instance.delete()
-        if instance.is_locally_registrable:
-            parent_domain = Domain.objects.get(name=instance.parent_domain_name)
+        if parent_zone is not None:
             with PDNSChangeTracker():
-                parent_domain.update_delegation(instance)
+                parent_zone.update_delegation(instance)
 
     @action(detail=True, renderer_classes=[PlainTextRenderer])
     def zonefile(self, request, name=None):

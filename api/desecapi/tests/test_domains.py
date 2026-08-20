@@ -947,6 +947,37 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertTrue(domain.is_locally_registrable)
             self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH)
 
+    def test_create_domains_under_local_public_suffix(self):
+        # Domains that are not direct children of the local public suffix are subject to the
+        # same restrictions, and are delegated by it as long as no domain in between exists
+        suffix = next(iter(self.AUTO_DELEGATION_DOMAINS))
+        name = f"a.{self.random_domain_name(suffix)}"
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(name=name)
+        ):
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            self.assertStatus(response, status.HTTP_201_CREATED)
+
+        domain = Domain.objects.get(name=name)
+        self.assertTrue(domain.is_locally_registrable)
+        self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH)
+        self.assertEqual(domain.parent_zone.name, suffix)
+        self.assertRRsetDB(
+            domain.parent_zone,
+            subname=name.removesuffix(f".{suffix}"),
+            type_="NS",
+            rr_contents=set(settings.DEFAULT_NS),
+        )
+
+    @override_settings(REGISTER_LPS=False)
+    def test_create_domains_under_local_public_suffix_lps_disabled(self):
+        suffix = next(iter(self.AUTO_DELEGATION_DOMAINS))
+        name = f"a.{self.random_domain_name(suffix)}"
+        response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["name"][0].code, "registration_suspended")
+        self.assertIn(suffix, response.data["name"][0])
+
     def test_domain_limit(self):
         url = self.reverse("v1:domain-list")
         user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
