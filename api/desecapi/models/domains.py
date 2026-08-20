@@ -98,7 +98,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             # self._state.adding may be incorrect during signal processing (change tracker)
             self.pk is None
             and kwargs.get("renewal_state") is None
-            and self.is_locally_registrable
+            and self.is_under_local_public_suffix
         ):
             self.renewal_state = Domain.RenewalState.FRESH
 
@@ -251,6 +251,15 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         except ValueError:  # no RRsets (but there should be at least NS)
             return self.published  # may be None if the domain was never published
         return max(rrset_touched, self.published or rrset_touched)
+
+    @property
+    def is_under_local_public_suffix(self):
+        # Unlike is_locally_registrable, this does not depend on which domains exist, so that
+        # restrictions cannot be shed by registering a domain in between
+        return any(
+            self.name.endswith(f".{local_public_suffix}")
+            for local_public_suffix in settings.LOCAL_PUBLIC_SUFFIXES
+        )
 
     @property
     def is_locally_registrable(self):

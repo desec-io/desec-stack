@@ -512,7 +512,7 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
 
     def _validate_blocked_content(self, attrs, type_):
         # Reject IP addresses from blocked IP ranges
-        if type_ == "A" and self.domain.is_locally_registrable:
+        if type_ == "A" and self.domain.is_under_local_public_suffix:
             qs = models.BlockedSubnet.objects.values_list("subnet", flat=True).order_by(
                 Masklen(F("subnet")).desc()
             )
@@ -537,11 +537,11 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             attrs = self._validate_length(attrs)
             attrs = self._validate_blocked_content(attrs, type_)
 
-        # Disallow modification of NS RRsets for locally registrable domains
+        # Disallow modification of NS RRsets for domains under a local public suffix
         # Deletion using records=[] is allowed, except at the apex
         if (
             type_ == "NS"
-            and self.domain.is_locally_registrable
+            and self.domain.is_under_local_public_suffix
             and (
                 attrs.get("records", True)
                 or not attrs.get("subname", self.instance.subname)

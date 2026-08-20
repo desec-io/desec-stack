@@ -1688,6 +1688,22 @@ class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
 
     ns_data = {"type": "NS", "records": ["ns.example."], "ttl": 3600}
 
+    def test_create_my_rr_sets_ip_block_below_own_domain(self):
+        # The IP block applies to any domain under the Local Public Suffix, also when another
+        # domain of ours delegates it
+        BlockedSubnet.from_ip("3.2.2.3").save()
+        domain = self.create_domain(owner=self.owner, name=f"sub.{self.my_domain.name}")
+        self.assertFalse(domain.is_locally_registrable)
+        self.assertEqual(domain.renewal_state, Domain.RenewalState.FRESH)
+        response = self.client.post_rr_set(
+            domain.name,
+            records=["3.2.2.5"],
+            ttl=3660,
+            subname="blocktest",
+            type="A",
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_ip_block_below_lps(self):
         # The IP block also applies to domains that are not direct children of the LPS
         BlockedSubnet.from_ip("3.2.2.3").save()
@@ -1724,6 +1740,19 @@ class AuthenticatedRRSetLPSTestCase(AuthenticatedRRSetBaseTestCase):
                     self.client.post_rr_set(
                         domain_name=self.my_empty_domain.name, **data
                     ),
+                    "Cannot modify NS records for this domain.",
+                    ("type", 0),
+                )
+
+    def test_create_ns_rrset_below_own_domain(self):
+        # The NS lock applies to any domain under the Local Public Suffix, also when another
+        # domain of ours delegates it
+        domain = self.create_domain(owner=self.owner, name=f"sub.{self.my_domain.name}")
+        for subname in ["", "sub"]:
+            data = dict(self.ns_data, subname=subname)
+            with self.assertNoRequestsBut():
+                self.assertBadRequest(
+                    self.client.post_rr_set(domain_name=domain.name, **data),
                     "Cannot modify NS records for this domain.",
                     ("type", 0),
                 )

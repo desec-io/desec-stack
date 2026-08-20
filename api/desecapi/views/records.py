@@ -99,8 +99,8 @@ class RRsetDetail(
         return response
 
     def perform_destroy(self, instance):
-        # Disallow modification of apex NS RRset for locally registrable domains
-        if instance.type == "NS" and self.domain.is_locally_registrable:
+        # Disallow modification of apex NS RRset for domains under a local public suffix
+        if instance.type == "NS" and self.domain.is_under_local_public_suffix:
             if instance.subname == "":
                 raise ValidationError("Cannot modify NS records for this domain.")
         with PDNSChangeTracker():
