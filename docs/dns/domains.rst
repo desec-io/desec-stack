@@ -20,6 +20,7 @@ A JSON object representing a domain has the following structure::
 
     {
         "created": "2018-09-18T16:36:16.510368Z",
+        "default_ttl": 3600,
         "keys": [
             {
                 "dnskey": "257 3 13 WFRl60...",
@@ -33,7 +34,7 @@ A JSON object representing a domain has the following structure::
             },
             ...
         ],
-        "minimum_ttl": 3600,
+        "minimum_ttl": 900,
         "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z",
         "touched": "2018-09-18T17:21:38.348112Z",
@@ -47,6 +48,17 @@ Field details:
 
     Timestamp of domain creation, in ISO 8601 format (e.g.
     ``2013-01-29T12:34:56.000000Z``).
+
+``default_ttl``
+    :Access mode: read-only
+
+    TTL that we recommend for :ref:`RRsets <RRset object>` in this domain, for
+    use when no specific TTL is desired.  Our web interface pre-fills the TTL
+    field with this value; you may want to do the same in your own tooling.
+    The TTL of an RRset is not affected by this value; it always needs to be
+    given explicitly.
+
+    The value may change over time, based on operational experience.
 
 ``keys``
     :Access mode: read-only

@@ -354,7 +354,15 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(
                 response.data.keys(),
-                {"created", "keys", "minimum_ttl", "name", "published", "touched"},
+                {
+                    "created",
+                    "default_ttl",
+                    "keys",
+                    "minimum_ttl",
+                    "name",
+                    "published",
+                    "touched",
+                },
             )
             self.assertEqual(response.data["name"], self.my_domain.name)
             self.assertTrue(isinstance(response.data["keys"], list))
@@ -414,6 +422,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                             "name",
                             "keys",
                             "minimum_ttl",
+                            "default_ttl",
                             "touched",
                         ]
                     )
@@ -876,13 +885,14 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
             self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(len(mail.outbox), 0)
 
-    def test_domain_minimum_ttl(self):
+    def test_domain_ttl_settings(self):
         url = self.reverse("v1:domain-list")
         name = self.random_domain_name()
         with self.assertRequests(self.requests_desec_domain_creation(name=name)):
             response = self.client.post(url, {"name": name})
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(response.data["minimum_ttl"], settings.MINIMUM_TTL_DEFAULT)
+        self.assertEqual(response.data["default_ttl"], settings.DEFAULT_TTL)
 
 
 class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
@@ -950,7 +960,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         )
         self.assertFalse(mail.outbox)  # do not send email
 
-    def test_domain_minimum_ttl(self):
+    def test_domain_ttl_settings(self):
         url = self.reverse("v1:domain-list")
         name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
         with self.assertRequests(
@@ -959,6 +969,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             response = self.client.post(url, {"name": name})
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(response.data["minimum_ttl"], settings.MINIMUM_TTL_DEFAULT)
+        self.assertEqual(response.data["default_ttl"], settings.DEFAULT_TTL)
 
 
 class DomainManagerTestCase(DesecTestCase):

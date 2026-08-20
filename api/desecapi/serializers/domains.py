@@ -24,12 +24,14 @@ class DomainSerializer(serializers.ModelSerializer):
             "name",
             "keys",
             "minimum_ttl",
+            "default_ttl",
             "touched",
             "zonefile",
         )
         read_only_fields = (
             "published",
             "minimum_ttl",
+            "default_ttl",
         )
         extra_kwargs = {
             "name": {"trim_whitespace": False},

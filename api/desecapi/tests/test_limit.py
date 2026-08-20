@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core import management
 from django.db.models import Min
 
@@ -22,14 +23,15 @@ class LimitCommandTest(DomainOwnerTestCase):
         self.assertEqual(Domain.objects.filter(owner_id=self.owner.id).count(), 2)
 
     def test_update_minimum_ttl(self):
-        management.call_command("limit", "ttl", self.my_domain.name, "123")
+        management.call_command("limit", "minimum_ttl", self.my_domain.name, "123")
         self.my_domain.refresh_from_db()
         self.assertEqual(self.my_domain.minimum_ttl, 123)
-        management.call_command("limit", "ttl", self.my_domain.name, 567)
+        management.call_command("limit", "minimum_ttl", self.my_domain.name, 567)
         self.my_domain.refresh_from_db()
         self.assertEqual(self.my_domain.minimum_ttl, 567)
+        management.call_command("limit", "default_ttl", self.my_domain.name, "10000")
         management.call_command(
-            "limit", "ttl", self.my_domain.name, "10000"
+            "limit", "minimum_ttl", self.my_domain.name, "10000"
         )  # above the currently used ttl
         self.my_domain.refresh_from_db()
         self.assertEqual(self.my_domain.minimum_ttl, 10000)
@@ -40,3 +42,31 @@ class LimitCommandTest(DomainOwnerTestCase):
             ],
             10000,
         )
+
+    def test_update_default_ttl(self):
+        management.call_command("limit", "default_ttl", self.my_domain.name, "1234")
+        self.my_domain.refresh_from_db()
+        self.assertEqual(self.my_domain.default_ttl, 1234)
+        # did not touch the minimum TTL:
+        self.assertEqual(self.my_domain.minimum_ttl, settings.MINIMUM_TTL_DEFAULT)
+
+    def test_update_ttl_bounds(self):
+        for kind, value in [
+            ("default_ttl", self.my_domain.minimum_ttl - 1),
+            ("default_ttl", settings.MAXIMUM_TTL + 1),
+            ("minimum_ttl", self.my_domain.default_ttl + 1),
+        ]:
+            with self.subTest(kind=kind, value=value):
+                with self.assertRaises(management.CommandError):
+                    management.call_command(
+                        "limit", kind, self.my_domain.name, str(value)
+                    )
+                self.my_domain.refresh_from_db()
+                self.assertEqual(
+                    self.my_domain.minimum_ttl, settings.MINIMUM_TTL_DEFAULT
+                )
+                self.assertEqual(self.my_domain.default_ttl, settings.DEFAULT_TTL)
+
+    def test_update_unknown_kind(self):
+        with self.assertRaises(management.CommandError):
+            management.call_command("limit", "ttl", self.my_domain.name, "123")
