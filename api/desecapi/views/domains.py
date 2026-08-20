@@ -113,20 +113,13 @@ class DomainViewSet(
                     domain=domain, perm_write=True
                 )
 
-        PDNSChangeTracker.track(lambda: self.auto_delegate(domain))
-
-    @staticmethod
-    def auto_delegate(domain: Domain):
-        if domain.is_locally_registrable:
-            domain.parent_zone.update_delegation(domain)
+        PDNSChangeTracker.track(domain.auto_delegate)
 
     def perform_destroy(self, instance: Domain):
-        parent_zone = instance.parent_zone if instance.is_locally_registrable else None
+        delegation_state = instance.delegation_state()
         with PDNSChangeTracker():
             instance.delete()
-        if parent_zone is not None:
-            with PDNSChangeTracker():
-                parent_zone.update_delegation(instance)
+        PDNSChangeTracker.track(lambda: instance.auto_undelegate(delegation_state))
 
     @action(detail=True, renderer_classes=[PlainTextRenderer])
     def zonefile(self, request, name=None):

@@ -18,10 +18,13 @@ from rest_framework.exceptions import APIException
 from desecapi import logger, metrics, pdns
 
 from .base import validate_domain_name
-from .records import RRset
+from .records import RR, RRset
 
 
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
+
+DELEGATION_NS_TTL = 3600
+DELEGATION_DS_TTL = 300
 
 
 class DomainManager(Manager):
@@ -265,14 +268,27 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             return None
 
     @property
+    def delegation_parent(self) -> Domain | None:
+        """
+        Returns the domain in which this domain's delegation is maintained automatically,
+        or None if there is none.
+        """
+        parent_zone = self.parent_zone
+        if (
+            parent_zone is not None
+            and parent_zone.name in settings.LOCAL_PUBLIC_SUFFIXES
+        ):
+            return parent_zone
+        return None
+
+    @property
+    def ds_contents(self) -> list[str]:
+        return [ds for key in self.keys for ds in key["ds"]]
+
+    @property
     def parent_zone(self) -> Domain | None:
         # Not cached: creating or deleting an intermediate domain changes the result.
         return Domain.objects.parent_zone(self.name)
-
-    @property
-    def _partitioned_name(self):
-        subname, _, parent_name = self.name.partition(".")
-        return subname, parent_name or None
 
     @property
     def zonefile(self):
@@ -282,47 +298,103 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 
-    def update_delegation(self, child_domain: Domain):
-        if not child_domain.name.endswith(f".{self.name}"):
+    def _delegation_subname(self, child_name: str) -> str:
+        if not child_name.endswith(f".{self.name}"):
             raise ValueError(
-                "Cannot update delegation of %s as it is not a child domain of %s."
-                % (child_domain.name, self.name)
+                "Cannot delegate %s in %s, as it is not a child domain."
+                % (child_name, self.name)
             )
-        child_subname = child_domain.name.removesuffix(f".{self.name}")
+        return child_name.removesuffix(f".{self.name}")
 
-        # Always remove delegation so that we con properly recreate it
-        for rrset in self.rrset_set.filter(
-            subname=child_subname, type__in=["NS", "DS"]
-        ):
-            rrset.delete()
-
-        if child_domain.pk:
-            # Domain real: (re-)set delegation
-            child_keys = child_domain.keys
-            if not child_keys:
-                raise APIException(
-                    "Cannot delegate %s, as it currently has no keys."
-                    % child_domain.name
+    def _update_delegation_rrset(
+        self, subname: str, type_: str, ttl: int, *, add=(), remove=()
+    ) -> set[str]:
+        """
+        Adds and removes the given record contents at the given name, creating or deleting the
+        RRset as needed (an existing RRset keeps its TTL). Returns the resulting contents.
+        """
+        add = {RR.canonical_presentation_format(content, type_) for content in add}
+        remove = {
+            RR.canonical_presentation_format(content, type_) for content in remove
+        }
+        try:
+            rrset = self.rrset_set.get(subname=subname, type=type_)
+        except RRset.DoesNotExist:
+            if add:
+                RRset.objects.create(
+                    domain=self, subname=subname, type=type_, ttl=ttl, contents=add
                 )
+            return add
 
-            RRset.objects.create(
-                domain=self,
-                subname=child_subname,
-                type="NS",
-                ttl=3600,
-                contents=settings.DEFAULT_NS,
-            )
-            RRset.objects.create(
-                domain=self,
-                subname=child_subname,
-                type="DS",
-                ttl=300,
-                contents=[ds for k in child_keys for ds in k["ds"]],
-            )
-            metrics.get("desecapi_autodelegation_created").inc()
+        contents = ({rr.content for rr in rrset.records.all()} - remove) | add
+        if contents:
+            rrset.save_records(contents)
         else:
-            # Domain not real: that's it
-            metrics.get("desecapi_autodelegation_deleted").inc()
+            rrset.delete()
+        return contents
+
+    def add_delegation(self, child_name: str, ds: list[str]) -> None:
+        """
+        Adds our NS records and the given DS records to the delegation of the given child
+        domain, keeping any records that are there already.
+        """
+        subname = self._delegation_subname(child_name)
+        # TODO Joining a delegation that carries foreign NS/DS records makes the child domain
+        #  multi-signer (RFC 8901). Automating this requires importing the other providers'
+        #  ZSKs into the child's DNSKEY RRset (and exporting the child's ZSK to them); until
+        #  then, such setups have to be configured manually.
+        self._update_delegation_rrset(
+            subname, "NS", DELEGATION_NS_TTL, add=settings.DEFAULT_NS
+        )
+        self._update_delegation_rrset(subname, "DS", DELEGATION_DS_TTL, add=ds)
+        metrics.get("desecapi_autodelegation_created").inc()
+
+    def remove_delegation(self, child_name: str, ds: list[str]) -> None:
+        """
+        Removes our NS records and the given DS records from the delegation of the given child
+        domain, keeping any other records. If no NS records remain, the delegation is removed
+        entirely.
+        """
+        subname = self._delegation_subname(child_name)
+        ns = self._update_delegation_rrset(
+            subname, "NS", DELEGATION_NS_TTL, remove=settings.DEFAULT_NS
+        )
+        if ns:
+            self._update_delegation_rrset(subname, "DS", DELEGATION_DS_TTL, remove=ds)
+        else:
+            # DS records are only allowed at a delegation point
+            self.rrset_set.filter(subname=subname, type="DS").delete()
+        metrics.get("desecapi_autodelegation_deleted").inc()
+
+    def auto_delegate(self) -> None:
+        """
+        Creates this domain's delegation in the domain that delegates it, if any.
+        """
+        parent = self.delegation_parent
+        if parent is None:
+            return
+        if not self.keys:
+            raise APIException(
+                "Cannot delegate %s, as it currently has no keys." % self.name
+            )
+        parent.add_delegation(self.name, self.ds_contents)
+
+    def delegation_state(self):
+        """
+        Returns what is needed to withdraw this domain's delegation. Has to be called before
+        deleting the domain, while its DNSSEC keys are still available.
+        """
+        parent = self.delegation_parent
+        return parent, self.ds_contents if parent is not None else []
+
+    def auto_undelegate(self, delegation_state) -> None:
+        """
+        Removes this domain's delegation from the domain that delegated it, using the state
+        captured by delegation_state() before the domain was deleted.
+        """
+        parent, ds = delegation_state
+        if parent is not None:
+            parent.remove_delegation(self.name, ds)
 
     def delete(self, *args, **kwargs):
         ret = super().delete(*args, **kwargs)

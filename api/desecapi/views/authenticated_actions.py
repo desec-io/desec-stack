@@ -12,7 +12,6 @@ from desecapi.exceptions import AuthenticatedActionInvalidState
 from desecapi.models import Token
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
-from .domains import DomainViewSet
 from .users import AccountDeleteView
 
 
@@ -169,9 +168,8 @@ class AuthenticatedActivateUserActionView(AuthenticatedActionView):
         )
 
     def _finalize_with_domain(self, domain):
+        PDNSChangeTracker.track(domain.auto_delegate)
         if domain.is_locally_registrable:
-            # TODO the following line raises Domain.DoesNotExist under unknown conditions
-            PDNSChangeTracker.track(lambda: DomainViewSet.auto_delegate(domain))
             token = Token.objects.create(owner=domain.owner, name="dyndns")
             return Response(
                 {

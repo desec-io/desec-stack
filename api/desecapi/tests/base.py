@@ -918,6 +918,7 @@ class DesecTestCase(MockPDNSTestCase):
         return requests
 
     def requests_desec_domain_deletion(self, domain):
+        delegation_parent = domain.delegation_parent
         requests = [
             self.request_pdns_zone_delete(name=domain.name, ns="LORD"),
             self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
@@ -925,11 +926,14 @@ class DesecTestCase(MockPDNSTestCase):
             self.request_pch_zone_delete(name=domain.name),
         ]
 
-        if domain.is_locally_registrable:
-            delegate_at = self._find_auto_delegation_zone(domain.name)
+        if delegation_parent is not None:
+            # The domain's DS records are read before the domain is deleted
+            requests = [
+                self.request_pdns_zone_retrieve_crypto_keys(name=domain.name)
+            ] + requests
             requests += [
-                self.request_pdns_zone_update(name=delegate_at),
-                self.request_pdns_zone_axfr(name=delegate_at),
+                self.request_pdns_zone_update(name=delegation_parent.name),
+                self.request_pdns_zone_axfr(name=delegation_parent.name),
             ]
 
         return requests
@@ -1199,7 +1203,7 @@ class DomainOwnerTestCase(DesecTestCase, PublicSuffixMockMixin):
 
         if self.DYN:
             for domain in self.my_domains + self.other_domains:
-                domain.parent_zone.update_delegation(domain)
+                domain.auto_delegate()
 
         self.my_domain = self.my_domains[0]
         self.other_domain = self.other_domains[0]

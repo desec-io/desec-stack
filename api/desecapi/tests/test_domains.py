@@ -907,6 +907,8 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
     def test_delete_my_domain(self):
         url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+        parent = self.my_domain.delegation_parent
+        subname = self.my_domain.name.removesuffix(f".{parent.name}")
         with self.assertRequests(
             self.requests_desec_domain_deletion(domain=self.my_domain)
         ):
@@ -915,6 +917,54 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+
+        # The delegation is gone entirely
+        self.assertFalse(
+            parent.rrset_set.filter(subname=subname, type__in=["NS", "DS"]).exists()
+        )
+
+    def test_delegation_keeps_foreign_records(self):
+        parent = Domain.objects.get(name=next(iter(self.AUTO_DELEGATION_DOMAINS)))
+        name = self.random_domain_name(parent.name)
+        subname = name.removesuffix(f".{parent.name}")
+        foreign_ns = "ns1.example.org."
+        foreign_ds = f"12345 13 2 {'ab' * 32}"
+        self.create_rr_set(parent, [foreign_ns], subname=subname, type="NS", ttl=3600)
+        self.create_rr_set(parent, [foreign_ds], subname=subname, type="DS", ttl=300)
+
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(name=name)
+        ):
+            self.assertStatus(
+                self.client.post(self.reverse("v1:domain-list"), {"name": name}),
+                status.HTTP_201_CREATED,
+            )
+
+        ds = self.get_body_pdns_zone_retrieve_crypto_keys()[0]["cds"]
+        self.assertRRsetDB(
+            parent,
+            subname=subname,
+            type_="NS",
+            ttl=3600,
+            rr_contents={foreign_ns, *settings.DEFAULT_NS},
+        )
+        self.assertRRsetDB(
+            parent, subname=subname, type_="DS", ttl=300, rr_contents={foreign_ds, *ds}
+        )
+
+        domain = Domain.objects.get(name=name)
+        with self.assertRequests(self.requests_desec_domain_deletion(domain=domain)):
+            self.assertStatus(
+                self.client.delete(self.reverse("v1:domain-detail", name=name)),
+                status.HTTP_204_NO_CONTENT,
+            )
+
+        self.assertRRsetDB(
+            parent, subname=subname, type_="NS", rr_contents={foreign_ns}
+        )
+        self.assertRRsetDB(
+            parent, subname=subname, type_="DS", rr_contents={foreign_ds}
+        )
 
     def test_delete_my_domain_no_permission(self):
         self.token.perm_delete_domain = False

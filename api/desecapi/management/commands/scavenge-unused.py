@@ -7,7 +7,7 @@ from django.db.models import F, Max, OuterRef, Subquery
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
-from desecapi import models, serializers, views
+from desecapi import models, serializers
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
 
@@ -98,15 +98,18 @@ class Command(BaseCommand):
             )
         )
 
-        for domain in expired_domains:
+        delegation_states = [
+            (domain, domain.delegation_state()) for domain in expired_domains
+        ]
+        for domain, _ in delegation_states:
             with PDNSChangeTracker():
                 domain.delete()
             if not domain.owner.domains.exists():
                 domain.owner.delete()
         # Do one large delegation update
         with PDNSChangeTracker():
-            for domain in expired_domains:
-                views.DomainViewSet.auto_delegate(domain)
+            for domain, delegation_state in delegation_states:
+                domain.auto_undelegate(delegation_state)
 
     def handle(self, *args, **kwargs):
         try:
