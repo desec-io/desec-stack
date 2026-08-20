@@ -267,19 +267,41 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         except Domain.owner.RelatedObjectDoesNotExist:
             return None
 
-    @property
-    def delegation_parent(self) -> Domain | None:
-        """
-        Returns the domain in which this domain's delegation is maintained automatically,
-        or None if there is none.
-        """
-        parent_zone = self.parent_zone
+    def _delegation_parent(self, exclude=()) -> Domain | None:
+        parent_zone = Domain.objects.parent_zone(self.name, exclude=exclude)
         if parent_zone is not None and (
             parent_zone.owner_id == self.owner_id
             or parent_zone.name in settings.LOCAL_PUBLIC_SUFFIXES
         ):
             return parent_zone
         return None
+
+    @property
+    def delegation_parent(self) -> Domain | None:
+        """
+        Returns the domain in which this domain's delegation is maintained automatically,
+        or None if there is none.
+        """
+        return self._delegation_parent()
+
+    def delegated_children(self) -> list[Domain]:
+        """
+        Returns the domains whose delegation is maintained in this domain, i.e. those
+        descendant domains that are not covered by yet another domain in between, no matter
+        whom that one belongs to. Inverse of _delegation_parent(), including its condition
+        on ownership.
+        """
+        descendants = list(Domain.objects.filter(name__endswith=f".{self.name}"))
+        names = {domain.name for domain in descendants}
+        eligible = self.name in settings.LOCAL_PUBLIC_SUFFIXES
+        return [
+            domain
+            for domain in descendants
+            if (eligible or domain.owner_id == self.owner_id)
+            and not any(
+                domain.name.endswith(f".{name}") for name in names - {domain.name}
+            )
+        ]
 
     def delegation_error(self) -> str | None:
         """
@@ -289,7 +311,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         parent = self.delegation_parent
         if parent is None:
             return None
-        subname = parent._delegation_subname(self.name)
+        subname = parent.delegation_subname(self.name)
         max_length = RRset._meta.get_field("subname").max_length
         if len(subname) > max_length:
             return (
@@ -320,7 +342,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         self.full_clean(validate_unique=False)
         super().save(*args, **kwargs)
 
-    def _delegation_subname(self, child_name: str) -> str:
+    def delegation_subname(self, child_name: str) -> str:
         if not child_name.endswith(f".{self.name}"):
             raise ValueError(
                 "Cannot delegate %s in %s, as it is not a child domain."
@@ -360,7 +382,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         Adds our NS records and the given DS records to the delegation of the given child
         domain, keeping any records that are there already.
         """
-        subname = self._delegation_subname(child_name)
+        subname = self.delegation_subname(child_name)
         # TODO Joining a delegation that carries foreign NS/DS records makes the child domain
         #  multi-signer (RFC 8901). Automating this requires importing the other providers'
         #  ZSKs into the child's DNSKEY RRset (and exporting the child's ZSK to them); until
@@ -377,7 +399,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         domain, keeping any other records. If no NS records remain, the delegation is removed
         entirely.
         """
-        subname = self._delegation_subname(child_name)
+        subname = self.delegation_subname(child_name)
         ns = self._update_delegation_rrset(
             subname, "NS", DELEGATION_NS_TTL, remove=settings.DEFAULT_NS
         )
@@ -390,33 +412,52 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
 
     def auto_delegate(self) -> None:
         """
-        Creates this domain's delegation in the domain that delegates it, if any.
+        Creates this domain's delegation in the domain that delegates it, if any, and takes
+        over the delegations of the domains that this domain delegates from now on.
         """
         parent = self.delegation_parent
-        if parent is None:
-            return
-        if not self.keys:
-            raise APIException(
-                "Cannot delegate %s, as it currently has no keys." % self.name
-            )
-        parent.add_delegation(self.name, self.ds_contents)
+        if parent is not None:
+            if not self.keys:
+                raise APIException(
+                    "Cannot delegate %s, as it currently has no keys." % self.name
+                )
+            parent.add_delegation(self.name, self.ds_contents)
+
+        for child in self.delegated_children():
+            ds = child.ds_contents
+            previous_parent = child._delegation_parent(exclude=[self.name])
+            self.add_delegation(child.name, ds)
+            if previous_parent is not None:
+                previous_parent.remove_delegation(child.name, ds)
 
     def delegation_state(self):
         """
-        Returns what is needed to withdraw this domain's delegation. Has to be called before
-        deleting the domain, while its DNSSEC keys are still available.
+        Returns what is needed to withdraw this domain's delegation and to hand the domains it
+        delegates over to another domain. Has to be called before deleting the domain, while
+        its DNSSEC keys are still available.
         """
         parent = self.delegation_parent
-        return parent, self.ds_contents if parent is not None else []
+        return (
+            parent,
+            self.ds_contents if parent is not None else [],
+            [(child, child.ds_contents) for child in self.delegated_children()],
+        )
 
     def auto_undelegate(self, delegation_state) -> None:
         """
-        Removes this domain's delegation from the domain that delegated it, using the state
-        captured by delegation_state() before the domain was deleted.
+        Removes this domain's delegation from the domain that delegated it, and hands the
+        domains it delegated over to the domain that delegates them from now on, using the
+        state captured by delegation_state() before this domain was deleted.
         """
-        parent, ds = delegation_state
+        parent, ds, children = delegation_state
         if parent is not None:
             parent.remove_delegation(self.name, ds)
+        for child, child_ds in children:
+            if not Domain.objects.filter(pk=child.pk).exists():
+                continue  # child was deleted as well
+            new_parent = child.delegation_parent
+            if new_parent is not None:
+                new_parent.add_delegation(child.name, child_ds)
 
     def delete(self, *args, **kwargs):
         ret = super().delete(*args, **kwargs)

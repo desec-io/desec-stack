@@ -893,6 +893,46 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
                 ).exists()
             )
 
+    def test_delete_domain_under_my_domain(self):
+        ds = set(self.get_body_pdns_zone_retrieve_crypto_keys()[0]["cds"])
+        middle_name = f"sub.{self.my_domain.name}"
+        child_name = f"x.{middle_name}"
+        for name in [middle_name, child_name]:
+            with self.assertRequests(
+                self.requests_desec_domain_creation_auto_delegation(name)
+            ):
+                self.assertStatus(
+                    self.client.post(self.reverse("v1:domain-list"), {"name": name}),
+                    status.HTTP_201_CREATED,
+                )
+
+        middle = Domain.objects.get(name=middle_name)
+        self.assertRRsetDB(
+            middle, subname="x", type_="NS", rr_contents=set(settings.DEFAULT_NS)
+        )
+
+        with self.assertRequests(
+            self.requests_desec_domain_deletion(domain=middle), expect_order=False
+        ):
+            self.assertStatus(
+                self.client.delete(self.reverse("v1:domain-detail", name=middle_name)),
+                status.HTTP_204_NO_CONTENT,
+            )
+
+        # The domain above takes over the delegation of the remaining domain
+        self.assertRRsetDB(
+            self.my_domain,
+            subname="x.sub",
+            type_="NS",
+            rr_contents=set(settings.DEFAULT_NS),
+        )
+        self.assertRRsetDB(self.my_domain, subname="x.sub", type_="DS", rr_contents=ds)
+        self.assertFalse(
+            self.my_domain.rrset_set.filter(
+                subname="sub", type__in=["NS", "DS"]
+            ).exists()
+        )
+
     def test_create_domain_under_my_domain_cname_conflict(self):
         self.create_rr_set(
             self.my_domain, ["target.example."], subname="sub", type="CNAME", ttl=3600
@@ -902,6 +942,69 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["name"][0].code, "delegation_impossible")
         self.assertFalse(Domain.objects.filter(name=name).exists())
+
+    def test_create_domain_zonefile_cname_conflict_with_delegated_child(self):
+        # A CNAME in the zonefile at the delegation point of a domain that the new domain
+        # will delegate is rejected before the new domain is created
+        child_name = f"x.y.{self.my_domain.name}"
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(child_name)
+        ):
+            self.assertStatus(
+                self.client.post(self.reverse("v1:domain-list"), {"name": child_name}),
+                status.HTTP_201_CREATED,
+            )
+
+        name = f"y.{self.my_domain.name}"
+        response = self.client.post(
+            self.reverse("v1:domain-list"),
+            {"name": name, "zonefile": f"x.{name}. 3600 IN CNAME target.example.\n"},
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["zonefile"][0].code, "delegation_impossible")
+        self.assertIn(child_name, response.data["zonefile"][0])
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+        # The child keeps the delegation it had
+        self.assertRRsetDB(
+            self.my_domain,
+            subname="x.y",
+            type_="NS",
+            rr_contents=set(settings.DEFAULT_NS),
+        )
+
+    def test_create_domain_zonefile_at_delegated_child(self):
+        # Records other than CNAME at the delegation point are imported alongside ours
+        child_name = f"x.y.{self.my_domain.name}"
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(child_name)
+        ):
+            self.assertStatus(
+                self.client.post(self.reverse("v1:domain-list"), {"name": child_name}),
+                status.HTTP_201_CREATED,
+            )
+
+        name = f"y.{self.my_domain.name}"
+        with self.assertRequests(
+            self.requests_desec_domain_creation(name, axfr=False, keys=False)
+            + [self.request_pdns_zone_retrieve_crypto_keys(name)]
+            + [self.request_pdns_zone_retrieve_crypto_keys(child_name)]
+            + self.requests_desec_rr_sets_update(name)
+            + self.requests_desec_rr_sets_update(name)
+            + self.requests_desec_rr_sets_update(self.my_domain.name),
+            expect_order=False,
+        ):
+            self.assertStatus(
+                self.client.post(
+                    self.reverse("v1:domain-list"),
+                    {"name": name, "zonefile": f'x.{name}. 3600 IN TXT "hello"\n'},
+                ),
+                status.HTTP_201_CREATED,
+            )
+        domain = Domain.objects.get(name=name)
+        self.assertRRsetDB(
+            domain, subname="x", type_="NS", rr_contents=set(settings.DEFAULT_NS)
+        )
+        self.assertRRsetDB(domain, subname="x", type_="TXT", rr_contents={'"hello"'})
 
     def test_delegation_parent_of_foreign_domain(self):
         # Someone else's domain does not delegate ours (which is why such names can't be
@@ -986,6 +1089,58 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         # The delegation is gone entirely
         self.assertFalse(
             parent.rrset_set.filter(subname=subname, type__in=["NS", "DS"]).exists()
+        )
+
+    def test_create_intermediate_domain(self):
+        lps = Domain.objects.get(name=next(iter(self.AUTO_DELEGATION_DOMAINS)))
+        parent_name = self.random_domain_name(lps.name)
+        parent_subname = parent_name.removesuffix(f".{lps.name}")
+        child_name = f"a.{parent_name}"
+        child_subname = child_name.removesuffix(f".{lps.name}")
+        ds = set(self.get_body_pdns_zone_retrieve_crypto_keys()[0]["cds"])
+
+        # As long as the domain in between is missing, the local public suffix delegates
+        with self.assertRequests(
+            self.requests_desec_domain_creation_auto_delegation(child_name)
+        ):
+            self.assertStatus(
+                self.client.post(self.reverse("v1:domain-list"), {"name": child_name}),
+                status.HTTP_201_CREATED,
+            )
+        self.assertRRsetDB(
+            lps,
+            subname=child_subname,
+            type_="NS",
+            rr_contents=set(settings.DEFAULT_NS),
+        )
+
+        # Creating the domain in between moves the delegation there
+        with self.assertRequests(
+            self.requests_desec_domain_creation(parent_name)
+            + [self.request_pdns_zone_retrieve_crypto_keys(name=child_name)]
+            + self.requests_desec_rr_sets_update(name=lps.name)
+            + self.requests_desec_rr_sets_update(name=parent_name),
+            expect_order=False,
+        ):
+            self.assertStatus(
+                self.client.post(self.reverse("v1:domain-list"), {"name": parent_name}),
+                status.HTTP_201_CREATED,
+            )
+
+        parent = Domain.objects.get(name=parent_name)
+        self.assertRRsetDB(
+            lps,
+            subname=parent_subname,
+            type_="NS",
+            rr_contents=set(settings.DEFAULT_NS),
+        )
+        self.assertRRsetDB(lps, subname=parent_subname, type_="DS", rr_contents=ds)
+        self.assertRRsetDB(
+            parent, subname="a", type_="NS", rr_contents=set(settings.DEFAULT_NS)
+        )
+        self.assertRRsetDB(parent, subname="a", type_="DS", rr_contents=ds)
+        self.assertFalse(
+            lps.rrset_set.filter(subname=child_subname, type__in=["NS", "DS"]).exists()
         )
 
     def test_delegation_keeps_foreign_records(self):
@@ -1207,6 +1362,46 @@ class DomainManagerTestCase(DesecTestCase):
                 "sub.domain.dedyn.io", exclude=["domain.dedyn.io", "dedyn.io"]
             )
         )
+
+    @override_settings(LOCAL_PUBLIC_SUFFIXES={"dyn.example"})
+    def test_delegated_children_with_domain_in_between(self):
+        user, other = self.create_user(), self.create_user()
+        names = {
+            user: ["example", "sub.example", "deep.sub.example", "a.dyn.example"],
+            other: ["dyn.example", "b.dyn.example", "other.example.org"],
+        }
+        domains = {
+            name: Domain(name=name, owner=owner)
+            for owner, owner_names in names.items()
+            for name in owner_names
+        }
+        for domain in domains.values():
+            domain.save()
+
+        for name, expected in {
+            # deep.sub.example is delegated by sub.example, and dyn.example is a local
+            # public suffix owned by someone else, so example delegates neither it nor the
+            # domains below it
+            "example": ["sub.example"],
+            "sub.example": ["deep.sub.example"],
+            # a local public suffix delegates regardless of ownership
+            "dyn.example": ["a.dyn.example", "b.dyn.example"],
+        }.items():
+            self.assertEqual(
+                sorted(child.name for child in domains[name].delegated_children()),
+                expected,
+            )
+
+        # delegated_children() is the inverse of delegation_parent
+        for name, expected in {
+            "sub.example": "example",
+            "deep.sub.example": "sub.example",
+            "a.dyn.example": "dyn.example",
+            "b.dyn.example": "dyn.example",
+            "dyn.example": None,  # someone else's domain
+        }.items():
+            parent = domains[name].delegation_parent
+            self.assertEqual(None if parent is None else parent.name, expected)
 
     def test_filter_qname_invalid(self):
         for qname in [

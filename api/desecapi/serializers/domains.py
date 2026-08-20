@@ -98,9 +98,35 @@ class DomainSerializer(serializers.ModelSerializer):
                     {"zonefile": [f"Could not parse zonefile: {str(e)}"]}
                 )
 
+    def validate_delegation_points(self, domain_name: str):
+        """
+        Rejects an imported zone that occupies the delegation point of a domain which the
+        new domain will delegate, the counterpart of Domain.delegation_error().
+        """
+        domain = Domain(name=domain_name, owner=self.context["request"].user)
+        zone_name = dns.name.from_text(domain_name)
+        for child in domain.delegated_children():
+            subname = domain.delegation_subname(child.name)
+            node = self.import_zone.get_node(
+                dns.name.from_text(subname, origin=zone_name)
+            )
+            if node is not None and node.get_rdataset(
+                dns.rdataclass.IN, dns.rdatatype.CNAME
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "zonefile": [
+                            f"Cannot delegate {child.name} in {domain_name}: there is a "
+                            f"CNAME record at this name."
+                        ]
+                    },
+                    code="delegation_impossible",
+                )
+
     def validate(self, attrs):
         if attrs.get("zonefile") is not None:
             self.parse_zonefile(attrs.get("name"), attrs.pop("zonefile"))
+            self.validate_delegation_points(attrs["name"])
         return super().validate(attrs)
 
     def create(self, validated_data):

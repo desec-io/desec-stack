@@ -912,7 +912,13 @@ class DesecTestCase(MockPDNSTestCase):
 
     def requests_desec_domain_deletion(self, domain):
         delegation_parent = domain.delegation_parent
+        # DS records are read before the domain is deleted
         requests = [
+            self.request_pdns_zone_retrieve_crypto_keys(name=name)
+            for name in ([domain.name] if delegation_parent is not None else [])
+            + [child.name for child in domain.delegated_children()]
+        ]
+        requests += [
             self.request_pdns_zone_delete(name=domain.name, ns="LORD"),
             self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
             self.request_pdns_update_catalog(),
@@ -920,10 +926,6 @@ class DesecTestCase(MockPDNSTestCase):
         ]
 
         if delegation_parent is not None:
-            # The domain's DS records are read before the domain is deleted
-            requests = [
-                self.request_pdns_zone_retrieve_crypto_keys(name=domain.name)
-            ] + requests
             requests += [
                 self.request_pdns_zone_update(name=delegation_parent.name),
                 self.request_pdns_zone_axfr(name=delegation_parent.name),
