@@ -40,6 +40,19 @@ class DomainManager(Manager):
             dotted_qname=Value(f".{qname}", output_field=CharField()),
         ).filter(dotted_qname__endswith=F("dotted_name"), **kwargs)
 
+    def parent_zone(self, name: str, *, exclude=()) -> Domain | None:
+        """
+        Returns the closest ancestor domain of the given name that exists in the database,
+        ignoring the domains given by `exclude`, or None if there is none. No ownership check
+        is performed; callers who need one have to do it themselves.
+        """
+        return (
+            self.filter_qname(name)
+            .exclude(name__in=[name, *exclude])
+            .order_by("-name_length")
+            .first()
+        )
+
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @staticmethod
@@ -238,6 +251,11 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @property
     def parent_domain_name(self):
         return self._partitioned_name[1]
+
+    @property
+    def parent_zone(self) -> Domain | None:
+        # Not cached: creating or deleting an intermediate domain changes the result.
+        return Domain.objects.parent_zone(self.name)
 
     @property
     def _partitioned_name(self):

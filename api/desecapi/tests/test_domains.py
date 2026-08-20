@@ -1005,6 +1005,46 @@ class DomainManagerTestCase(DesecTestCase):
                     ).values_list("name", flat=True)
                     self.assertListEqual(list(qs), expected)
 
+    def test_parent_zone(self):
+        user1, user2 = self.create_user(), self.create_user()
+        domains = {
+            user1: ["domain.dedyn.io", "foobar.example"],
+            user2: ["dedyn.io", "desec.io"],
+        }
+        for user, names in domains.items():
+            for name in names:
+                Domain(name=name, owner=user).save()
+
+        for qname, expected in {
+            "dedyn.io": None,
+            "domain.dedyn.io": "dedyn.io",
+            "sub.domain.dedyn.io": "domain.dedyn.io",
+            "deep.sub.domain.dedyn.io": "domain.dedyn.io",
+            "foobar.example": None,
+            "foo.bar.baz.foobar.example": "foobar.example",
+            "unrelated.example": None,
+            "foo@bar.com": None,
+        }.items():
+            for parent_zone in [
+                Domain.objects.parent_zone(qname),
+                Domain(name=qname).parent_zone,
+            ]:
+                self.assertEqual(
+                    None if parent_zone is None else parent_zone.name, expected
+                )
+
+        self.assertEqual(
+            Domain.objects.parent_zone(
+                "sub.domain.dedyn.io", exclude=["domain.dedyn.io"]
+            ).name,
+            "dedyn.io",
+        )
+        self.assertIsNone(
+            Domain.objects.parent_zone(
+                "sub.domain.dedyn.io", exclude=["domain.dedyn.io", "dedyn.io"]
+            )
+        )
+
     def test_filter_qname_invalid(self):
         for qname in [
             "foo@bar.com",
