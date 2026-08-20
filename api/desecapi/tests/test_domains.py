@@ -773,11 +773,14 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
     def test_create_api_known_domain(self):
         url = self.reverse("v1:domain-list")
 
-        for name in [
-            self.random_domain_name(),
-            "www." + self.my_domain.name,
+        for name, requests in [
+            (self.random_domain_name(), self.requests_desec_domain_creation),
+            (
+                "www." + self.my_domain.name,
+                self.requests_desec_domain_creation_auto_delegation,
+            ),
         ]:
-            with self.assertRequests(self.requests_desec_domain_creation(name)):
+            with self.assertRequests(requests(name)):
                 response = self.client.post(url, {"name": name})
                 self.assertStatus(response, status.HTTP_201_CREATED)
             response = self.client.post(url, {"name": name})
@@ -844,6 +847,68 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
                 "Domain names must be labels separated by dots. Labels"
                 in response.data["name"][0]
             )
+
+    def test_create_domain_under_my_domain(self):
+        ds = self.get_body_pdns_zone_retrieve_crypto_keys()[0]["cds"]
+        for name in [
+            f"sub.{self.my_domain.name}",
+            f"deep.sub2.{self.my_domain.name}",
+        ]:
+            with self.assertRequests(
+                self.requests_desec_domain_creation_auto_delegation(name)
+            ):
+                response = self.client.post(
+                    self.reverse("v1:domain-list"), {"name": name}
+                )
+                self.assertStatus(response, status.HTTP_201_CREATED)
+
+            subname = name.removesuffix(f".{self.my_domain.name}")
+            self.assertRRsetDB(
+                self.my_domain,
+                subname=subname,
+                type_="NS",
+                ttl=3600,
+                rr_contents=set(settings.DEFAULT_NS),
+            )
+            self.assertRRsetDB(
+                self.my_domain,
+                subname=subname,
+                type_="DS",
+                ttl=300,
+                rr_contents=set(ds),
+            )
+
+            domain = Domain.objects.get(name=name)
+            self.assertEqual(domain.delegation_parent, self.my_domain)
+            with self.assertRequests(
+                self.requests_desec_domain_deletion(domain=domain)
+            ):
+                self.assertStatus(
+                    self.client.delete(self.reverse("v1:domain-detail", name=name)),
+                    status.HTTP_204_NO_CONTENT,
+                )
+            self.assertFalse(
+                self.my_domain.rrset_set.filter(
+                    subname=subname, type__in=["NS", "DS"]
+                ).exists()
+            )
+
+    def test_create_domain_under_my_domain_cname_conflict(self):
+        self.create_rr_set(
+            self.my_domain, ["target.example."], subname="sub", type="CNAME", ttl=3600
+        )
+        name = f"sub.{self.my_domain.name}"
+        response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["name"][0].code, "delegation_impossible")
+        self.assertFalse(Domain.objects.filter(name=name).exists())
+
+    def test_delegation_parent_of_foreign_domain(self):
+        # Someone else's domain does not delegate ours (which is why such names can't be
+        # registered in the first place)
+        domain = Domain(name=f"sub.{self.other_domain.name}", owner=self.owner)
+        self.assertEqual(domain.parent_zone, self.other_domain)
+        self.assertIsNone(domain.delegation_parent)
 
     def test_create_domain_other_parent(self):
         name = "something." + self.other_domain.name

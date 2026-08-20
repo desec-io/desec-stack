@@ -274,11 +274,33 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         or None if there is none.
         """
         parent_zone = self.parent_zone
-        if (
-            parent_zone is not None
-            and parent_zone.name in settings.LOCAL_PUBLIC_SUFFIXES
+        if parent_zone is not None and (
+            parent_zone.owner_id == self.owner_id
+            or parent_zone.name in settings.LOCAL_PUBLIC_SUFFIXES
         ):
             return parent_zone
+        return None
+
+    def delegation_error(self) -> str | None:
+        """
+        Returns why this domain cannot be delegated by the domain that would delegate it, or
+        None if nothing stands in the way (or if there is no such domain).
+        """
+        parent = self.delegation_parent
+        if parent is None:
+            return None
+        subname = parent._delegation_subname(self.name)
+        max_length = RRset._meta.get_field("subname").max_length
+        if len(subname) > max_length:
+            return (
+                f"Cannot delegate {self.name} in {parent.name}: the name of the delegation "
+                f"point exceeds {max_length} characters."
+            )
+        if parent.rrset_set.filter(subname=subname, type="CNAME").exists():
+            return (
+                f"Cannot delegate {self.name} in {parent.name}: there is a CNAME RRset at "
+                f"this name."
+            )
         return None
 
     @property

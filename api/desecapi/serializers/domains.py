@@ -48,9 +48,15 @@ class DomainSerializer(serializers.ModelSerializer):
         return fields
 
     def validate_name(self, value):
-        if not Domain(name=value, owner=self.context["request"].user).is_registrable():
+        domain = Domain(name=value, owner=self.context["request"].user)
+        if not domain.is_registrable():
             raise serializers.ValidationError(
                 self.default_error_messages["name_unavailable"], code="name_unavailable"
+            )
+        delegation_error = domain.delegation_error()
+        if delegation_error is not None:
+            raise serializers.ValidationError(
+                delegation_error, code="delegation_impossible"
             )
         return value
 

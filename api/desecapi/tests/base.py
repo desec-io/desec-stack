@@ -891,17 +891,10 @@ class DesecTestCase(MockPDNSTestCase):
     def _find_auto_delegation_zone(cls, name):
         if not name:
             return None
-        parents = [
-            parent
-            for parent in cls.AUTO_DELEGATION_DOMAINS
-            if name.endswith("." + parent)
-        ]
-        if not parents:
-            raise ValueError(
-                "Could not find auto delegation zone for zone %s; searched in %s"
-                % (name, cls.AUTO_DELEGATION_DOMAINS)
-            )
-        return parents[0]
+        parent_zone = Domain.objects.parent_zone(name)
+        if parent_zone is None:
+            raise ValueError("Could not find auto delegation zone for zone %s" % name)
+        return parent_zone.name
 
     def requests_desec_domain_creation(self, name=None, axfr=True, keys=True):
         soa_content = "get.desec.io. get.desec.io. 1 86400 3600 2419200 3600"
