@@ -177,6 +177,40 @@ to enforce our `Terms of Use`_.
 .. _Terms of Use: https://desec.io/terms
 
 
+.. _`automatic delegation`:
+
+Automatic Delegation
+~~~~~~~~~~~~~~~~~~~~
+
+For a domain to work, the domain above it has to point to our nameservers.
+Whenever we can take care of that for you, we do.
+
+That is the case when the domain above is in your deSEC account, too.  It does
+not have to be exactly one level up; we use the nearest one you have.  When you
+create ``www.example.com`` while your account holds ``example.com``, we add the
+``NS`` and ``DS`` records for ``www.example.com`` to ``example.com``, and your
+new domain starts working right away, with no further setup.  The same happens
+for the domains you register under ``dedyn.io``.
+
+We keep these records up to date when things change:
+
+- When you delete a domain, we remove its ``NS`` and ``DS`` records again.
+- When you create a domain that sits in between two of your domains, we move
+  the records to the new domain.
+- When you delete a domain that sits in between, we move them back up to the
+  next domain above.
+
+If there are already ``NS`` or ``DS`` records at that name which do not belong
+to deSEC, we keep them and only add ours (and later on remove only ours).  Your
+domain is then served by more than one provider at the same time, which needs
+additional configuration on both sides to keep DNSSEC working.  Please contact
+our support for details.
+
+If we cannot add the records because another record is in the way (such as a
+``CNAME`` record at that name), the domain is not created, and the API responds
+with ``400 Bad Request``.
+
+
 Listing Domains
 ~~~~~~~~~~~~~~~
 

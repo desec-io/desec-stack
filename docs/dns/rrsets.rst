@@ -669,6 +669,9 @@ Record types with priority field
     - The record value must be terminated by a dot ``.`` (as in
       ``ns1.desec.io.``).
 
+    - ``NS`` and ``DS`` records that delegate a domain of yours to deSEC are
+      maintained for you, see :ref:`automatic delegation`.
+
     - The use of wildcard RRsets (with one component of ``subname`` being equal
       to ``*``) of type ``NS`` is **discouraged**.  This is because the
       behavior of wildcard ``NS`` records in conjunction with DNSSEC is

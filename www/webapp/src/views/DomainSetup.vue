@@ -1,5 +1,8 @@
 <template>
-  <div v-if="hasAutomaticDelegationMaintenance">
+  <div v-if="hasAutomaticDelegationMaintenance === null" class="mt-4 text-center">
+    <v-progress-circular align="center" indeterminate></v-progress-circular>
+  </div>
+  <div v-else-if="hasAutomaticDelegationMaintenance">
     <p class="mt-4">
       Your domain is fully configured.
     </p>
@@ -167,6 +170,7 @@
 
 <script>
 import RecordList from '@/components/Field/RecordList.vue';
+import {HTTP} from '@/utils';
 import {useUserStore} from "@/store/user";
 import {mdiContentCopy, mdiAlert, mdiInformation, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
 
@@ -206,20 +210,42 @@ export default {
     snackbar: false,
     snackbar_icon: '',
     snackbar_text: '',
+    ownsParentDomain: null,
     LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
   }),
   computed: {
+    // true, false, or null while we do not know yet
     hasAutomaticDelegationMaintenance: function () {
       let self = this;
-      return self.LOCAL_PUBLIC_SUFFIXES.some(
-          (suffix) => (
-              self.domain.split('.').length == suffix.split('.').length + 1
-              && self.domain.endsWith('.' + suffix)
-          )
-      )
+      if (self.LOCAL_PUBLIC_SUFFIXES.some((suffix) => self.domain.endsWith('.' + suffix))) {
+        return true
+      }
+      return self.ownsParentDomain
     },
   },
+  watch: {
+    domain: {immediate: true, handler: 'checkParentDomain'},
+  },
   methods: {
+    checkParentDomain: async function () {
+      // We delegate the domain ourselves if the user owns one of the domains above it. Asking
+      // for the parent name answers that with a single request, and without pagination.
+      this.ownsParentDomain = null;
+      const parent = this.domain.split('.').slice(1).join('.');
+      if (!this.user.authenticated || !parent) {
+        this.ownsParentDomain = false;
+        return;
+      }
+      const self = this;
+      try {
+        await HTTP
+            .get('domains/', {params: {owns_qname: parent}})
+            .then(r => self.ownsParentDomain = r.data.length > 0);
+      } catch (e) {
+        // Show the setup instructions if we cannot tell
+        self.ownsParentDomain = false;
+      }
+    },
     copyToClipboard: async function (text) {
       try {
         await navigator.clipboard.writeText(text).then(
