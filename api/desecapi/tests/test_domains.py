@@ -108,7 +108,7 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
     def test_cant_register_descendants_of_children_of_public_suffixes(self):
         with self.mock(
             global_public_suffixes={"public.suffix"},
-            local_public_suffixes={"public.suffix"},
+            local_public_suffixes={"another.suffix"},
         ):
             # let A own a.public.suffix
             user_a = self.create_user()
@@ -118,6 +118,21 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
             user_b = self.create_user()
             self.assertNotRegistrable("b.a.public.suffix", user_b)
             self.assertRegistrable("b.a.public.suffix", user_a)
+
+    def test_cant_register_descendants_of_children_of_local_public_suffixes(self):
+        with self.mock(
+            global_public_suffixes={"public.suffix"},
+            local_public_suffixes={"public.suffix"},
+        ):
+            # a.public.suffix is registered under a local public suffix, so nobody may
+            # register anything below it -- not even its owner
+            user_a = self.create_user()
+            self.create_domain(owner=user_a, name="a.public.suffix")
+            for user in [user_a, self.create_user()]:
+                self.assertNotRegistrable("b.a.public.suffix", user)
+                self.assertNotRegistrable("c.b.a.public.suffix", user)
+            # as long as no domain in between exists, deep names remain registrable
+            self.assertRegistrable("c.b.public.suffix", user_a)
 
     def test_cant_register_ancestors_of_registered_domains(self):
         user_a = self.create_user()
@@ -175,7 +190,9 @@ class IsRegistrableTestCase(DesecTestCase, PublicSuffixMockMixin):
                 "long.silly.prefix.another.public.suffix.private.public.suffix", user_c
             )
             self.assertNotRegistrable("b.private.public.suffix", user_c)
-            self.assertRegistrable("b.private.public.suffix", user_b)
+            # private.public.suffix itself is registered under a local public suffix, so
+            # not even its owner may register anything below it
+            self.assertNotRegistrable("b.private.public.suffix", user_b)
 
     def test_cant_register_internal(self):
         self.assertNotRegistrable("internal")

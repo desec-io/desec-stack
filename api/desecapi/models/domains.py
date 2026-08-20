@@ -180,6 +180,18 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         ):
             return False
 
+        # Domains registered under a local public suffix can't have subdomains registered
+        if (
+            private_generation > 1
+            and self.public_suffix in settings.LOCAL_PUBLIC_SUFFIXES
+        ):
+            parent_zone = self.parent_zone
+            # Both names are suffixes of self.name, so the longer one is the deeper one
+            if parent_zone is not None and len(parent_zone.name) > len(
+                self.public_suffix
+            ):
+                return False
+
         # Domains covered by another user's zone can't be registered
         if self.is_covered_by_foreign_zone():
             return False
