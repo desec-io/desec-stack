@@ -362,7 +362,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
         Finally, you can manage Django using the `manage.py` CLI.
         As an example, to run the tests, use
 
-           python3 manage.py test
+           python3 manage.py test --parallel auto
 
     1. Open the project root directory `desec-stack` in PyCharm and select File › Settings.
         1. In Project: desec-stack › Project Structure, mark the `api/` folder as a source folder.
