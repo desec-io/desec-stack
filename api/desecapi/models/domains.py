@@ -46,6 +46,10 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     def _minimum_ttl_default():
         return settings.MINIMUM_TTL_DEFAULT
 
+    @staticmethod
+    def _default_ttl_default():
+        return settings.DEFAULT_TTL
+
     class RenewalState(models.IntegerChoices):
         IMMORTAL = 0
         FRESH = 1
@@ -59,6 +63,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     owner = models.ForeignKey("User", on_delete=models.PROTECT, related_name="domains")
     published = models.DateTimeField(null=True, blank=True)
     minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
+    default_ttl = models.PositiveIntegerField(default=_default_ttl_default.__func__)
     renewal_state = models.IntegerField(
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
@@ -247,6 +252,20 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @property
     def zonefile(self):
         return pdns.get_zonefile(self)
+
+    def clean(self):
+        if self.default_ttl < self.minimum_ttl:
+            raise ValidationError(
+                {
+                    "default_ttl": f"Default TTL must not be smaller than the minimum TTL ({self.minimum_ttl})."
+                }
+            )
+        if self.default_ttl > settings.MAXIMUM_TTL:
+            raise ValidationError(
+                {
+                    "default_ttl": f"Default TTL must not be greater than the maximum TTL ({settings.MAXIMUM_TTL})."
+                }
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean(validate_unique=False)

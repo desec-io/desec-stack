@@ -55,6 +55,7 @@ Although most configuration is contained in this repository, some external depen
       - `DESECSTACK_API_PSL_RESOLVER`: Resolver IP address to use for PSL lookups. If empty, the system's default resolver is used.
       - `DESECSTACK_DBAPI_PASSWORD_desec`: database password for desecapi
       - `DESECSTACK_MINIMUM_TTL_DEFAULT`: minimum TTL users can set for RRsets. The setting is per domain, and the default defined here is used on domain creation.
+        (The TTL suggested to users when they do not choose one explicitly is a separate, per-domain setting; its default is hardcoded as `DEFAULT_TTL` in the API settings.)
     - nslord-related
       - `DESECSTACK_DBLORD_PASSWORD_pdns`: mysql password for pdns on nslord
       - `DESECSTACK_NSLORD_APIKEY`: pdns API key on nslord

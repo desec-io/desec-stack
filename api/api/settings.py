@@ -207,6 +207,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 MINIMUM_TTL_DEFAULT = int(os.environ["DESECSTACK_MINIMUM_TTL_DEFAULT"])
+# TTL suggested to users when they do not choose one explicitly (per-domain setting).
+# Never below the minimum TTL, so that domains are creatable with any configured minimum.
+DEFAULT_TTL = max(3600, MINIMUM_TTL_DEFAULT)
 MAXIMUM_TTL = 86400
 AUTH_USER_MODEL = "desecapi.User"
 LIMIT_USER_DOMAIN_COUNT_DEFAULT = int(

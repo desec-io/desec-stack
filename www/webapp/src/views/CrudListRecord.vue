@@ -14,6 +14,7 @@ export default {
     const self = this;
     return {
       minimumTTL: 60,
+      defaultTTL: 3600,
       fullWidth: true,
       creatable: true,
       updatable: true,
@@ -110,7 +111,7 @@ export default {
         update: 'domains/::{domain}/rrsets/:{subname}.../:{type}/',
       },
       itemDefaults: () => ({
-        type: 'A', subname: '', records: [''], ttl: 3600,
+        type: 'A', subname: '', records: [''], ttl: self.defaultTTL,
       }),
     }
   },
@@ -119,8 +120,13 @@ export default {
     const url = self.resourcePath('domains/::{domain}/', self.$route.params, '::');
     await withWorking(this.error, () => HTTP
         .get(url)
-        .then(r => self.minimumTTL = r.data['minimum_ttl'])
+        .then(r => {
+          self.minimumTTL = r.data['minimum_ttl'];
+          self.defaultTTL = r.data['default_ttl'];
+        })
     );
+    // CrudList.created() snapshots the defaults before this request completes
+    self.createDialogItem = Object.assign({}, self.itemDefaults());
   },
 };
 </script>
