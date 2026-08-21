@@ -10,10 +10,10 @@
     </p>
 
     <div v-if="!user.authenticated">
-      <div class="my-2 text-h6">
+      <h2 class="my-2 text-h6">
         <v-icon class="text-primary" :icon="mdiNumeric0Circle" />
         Configure your DNS records
-      </div>
+      </h2>
       <p>Before delegating your domain, you might want to take the following steps:</p>
       <ul>
         <li><router-link :to="{name: 'reset-password'}" target="_blank">Set up a password for your deSEC account</router-link>,</li>
@@ -22,10 +22,10 @@
       </ul>
     </div>
 
-    <div class="mb-2 mt-5 text-h6">
+    <h2 class="mb-2 mt-5 text-h6">
       <v-icon class="text-primary" :icon="mdiNumeric1Circle" />
       Delegate your domain
-    </div>
+    </h2>
     <p>
       Forward the following information to the organization/person where you bought the domain
       <strong>{{ domain }}</strong> (usually your provider or technical administrator).
@@ -73,10 +73,10 @@
     </v-card>
     <p>Once your provider processes this information, the Internet will start directing DNS queries to deSEC.</p>
 
-    <div class="mb-2 mt-5 text-h6">
+    <h2 class="mb-2 mt-5 text-h6">
       <v-icon class="text-primary" :icon="mdiNumeric2Circle" />
       Enable DNSSEC
-    </div>
+    </h2>
     <div v-if="user.authenticated">
       <p>
         You also need to forward the following DNSSEC information to your domain provider.
@@ -130,10 +130,10 @@
         <v-alert type="error" v-else>Parameters could not be retrieved. (Are you logged in?)</v-alert>
       </v-card>
 
-      <div class="mb-2 mt-5 text-h6">
+      <h2 class="mb-2 mt-5 text-h6">
         <v-icon class="text-primary" :icon="mdiNumeric3Circle" />
         Check Setup
-      </div>
+      </h2>
       <p>
         All set up correctly? <a :href="`https://dnssec-analyzer.verisignlabs.com/${domain}`" target="_blank">Take a
         look at DNSSEC Analyzer</a> to check the status of your domain.

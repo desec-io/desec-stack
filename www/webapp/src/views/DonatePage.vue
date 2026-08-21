@@ -18,7 +18,7 @@
                   color="primary"
                   flat
           >
-            <v-toolbar-title>Donate</v-toolbar-title>
+            <v-toolbar-title tag="h2">Donate</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <v-expansion-panels class="mb-4">
@@ -158,7 +158,7 @@
               <strong>Based in Europe?</strong> You almost certainly can donate via direct debit or bank transfer (you
               only need your IBAN). <strong>No fees</strong> will be subtracted, so you can do more good!
             </p>
-            <div class="text-h6">Donation Receipts</div>
+            <h2 class="text-h6">Donation Receipts</h2>
             <p>
               deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
               tax-deductible, and we're happy to provide you with a donation receipt for that purpose. Note that for
@@ -173,7 +173,7 @@
                   color="primary"
                   flat
           >
-            <v-toolbar-title>Support our Quest</v-toolbar-title>
+            <v-toolbar-title tag="h2">Support our Quest</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <p>

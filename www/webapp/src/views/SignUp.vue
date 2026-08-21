@@ -23,7 +23,7 @@
                     color="primary"
                     flat
             >
-              <v-toolbar-title>Create new Account</v-toolbar-title>
+              <v-toolbar-title tag="h1">Create new Account</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
               <error-alert :errors="errors"></error-alert>

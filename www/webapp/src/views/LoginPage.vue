@@ -22,7 +22,7 @@
                     color="primary"
                     flat
             >
-              <v-toolbar-title>Log In</v-toolbar-title>
+              <v-toolbar-title tag="h1">Log In</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
               <error-alert :errors="errors"></error-alert>
