@@ -6,10 +6,23 @@ import GenericCheckbox from "@/components/Field/GenericCheckbox.vue";
 import RecordList from "@/components/Field/RecordList.vue";
 import GenericSwitchbox from "@/components/Field/GenericSwitchbox.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
+import {mdiShieldLock} from "@mdi/js";
 
 export default {
   name: 'CrudListToken',
   extends: CrudList,
+  computed: {
+    actions() {
+      return {
+        policies: {
+          go: (item) => this.$router.push({ name: 'tokenPolicies', params: { tokenId: item.id }, query: item.name ? { name: item.name } : {} }),
+          if: this.showAdvanced,
+          icon: mdiShieldLock,
+          tooltip: 'Policies',
+        },
+      };
+    },
+  },
   data() {
     return {
         creatable: true,
