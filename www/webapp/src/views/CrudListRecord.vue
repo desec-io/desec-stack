@@ -7,6 +7,8 @@ import TTL from "@/components/Field/TTL.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
 import RRSetType from "@/components/Field/RRSetType.vue";
 
+const DEFAULT_TTL = Number.parseInt(import.meta.env.VITE_APP_DEFAULT_TTL || '3600', 10) || 3600;
+
 export default {
   name: 'CrudListRecord',
   extends: CrudList,
@@ -14,6 +16,8 @@ export default {
     const self = this;
     return {
       minimumTTL: 60,
+      defaultTTL: DEFAULT_TTL,
+      domainTTLLoaded: false,
       fullWidth: true,
       creatable: true,
       updatable: true,
@@ -110,17 +114,29 @@ export default {
         update: 'domains/::{domain}/rrsets/:{subname}.../:{type}/',
       },
       itemDefaults: () => ({
-        type: 'A', subname: '', records: [''], ttl: 3600,
+        type: 'A', subname: '', records: [''], ttl: self.defaultTTL,
       }),
     }
+  },
+  computed: {
+    createInhibited() {
+      return !this.domainTTLLoaded;
+    },
   },
   async created() {
     const self = this;
     const url = self.resourcePath('domains/::{domain}/', self.$route.params, '::');
-    await withWorking(this.error, () => HTTP
-        .get(url)
-        .then(r => self.minimumTTL = r.data['minimum_ttl'])
-    );
+    const response = await withWorking(this.error, () => HTTP.get(url));
+    if (!response) {
+      return;
+    }
+    self.minimumTTL = response.data['minimum_ttl'];
+    self.defaultTTL = Math.max(DEFAULT_TTL, self.minimumTTL);
+    self.domainTTLLoaded = true;
+    if (!self.createDialog) {
+      // CrudList.created() snapshots the defaults before this request completes.
+      self.createDialogItem = Object.assign({}, self.itemDefaults());
+    }
   },
 };
 </script>

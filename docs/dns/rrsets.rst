@@ -129,6 +129,9 @@ Field details:
     the domain's :ref:`minimum TTL <domain object>` setting.  The maximum value
     is 86400 (one day).
 
+    This field is mandatory when creating an RRset.  If you have no specific
+    TTL in mind, 3600 seconds is a common choice.
+
 ``type``
     :Access mode: read, write-once (upon RRset creation)
 
