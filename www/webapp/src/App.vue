@@ -122,7 +122,8 @@
               color="secondary"
               style="z-index: 3"
       ></v-progress-linear>
-      <router-view/>
+      <!-- key by path so that views are re-created when only route params change -->
+      <router-view :key="$route.path"/>
     </v-main>
     <v-footer
       class="d-flex flex-column align-stretch pa-0 text-white elevation-12"
