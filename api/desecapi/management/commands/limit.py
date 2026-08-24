@@ -16,7 +16,11 @@ class Command(BaseCommand):
             help="Identifies the entity to be updated. Users are identified by email address; "
             "domains by their name.",
         )
-        parser.add_argument("new_limit", help="New value for the limit.")
+        parser.add_argument(
+            "new_limit",
+            help='New value for the limit. For kind=ttl, "auto" unsets the '
+            "domain's minimum TTL so that the global default applies.",
+        )
 
     def handle(self, *args, **options):
         if options["kind"] == "domains":
@@ -38,7 +42,15 @@ class Command(BaseCommand):
                 raise CommandError(
                     f'Domain with name "{options["id"]}" could not be found.'
                 )
-            domain.minimum_ttl = options["new_limit"]
+            if str(options["new_limit"]).lower() == "auto":
+                domain.minimum_ttl = None
+            else:
+                try:
+                    domain.minimum_ttl = int(options["new_limit"])
+                except ValueError:
+                    raise CommandError(
+                        f'Invalid TTL limit "{options["new_limit"]}" specified.'
+                    )
             domain.save()
             print(f"Updated {domain.name}: set minimum TTL to {domain.minimum_ttl}.")
         else:

@@ -15,6 +15,9 @@ class DomainSerializer(serializers.ModelSerializer):
         "name_unavailable": "This domain name conflicts with an existing domain, or is disallowed by policy.",
     }
     zonefile = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    minimum_ttl = serializers.IntegerField(
+        read_only=True, source="effective_minimum_ttl"
+    )
 
     class Meta:
         model = Domain
@@ -27,10 +30,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "touched",
             "zonefile",
         )
-        read_only_fields = (
-            "published",
-            "minimum_ttl",
-        )
+        read_only_fields = ("published",)
         extra_kwargs = {
             "name": {"trim_whitespace": False},
         }
@@ -105,7 +105,7 @@ class DomainSerializer(serializers.ModelSerializer):
         nodes = getattr(self.import_zone, "nodes", None)
         if nodes:
             zone_name = dns.name.from_text(validated_data["name"])
-            min_ttl, max_ttl = domain.minimum_ttl, settings.MAXIMUM_TTL
+            min_ttl, max_ttl = domain.effective_minimum_ttl, settings.MAXIMUM_TTL
             data = [
                 {
                     "type": dns.rdatatype.to_text(rrset.rdtype),

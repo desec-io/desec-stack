@@ -1189,7 +1189,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             self.my_empty_domain.name, records=["1.2.3.4"], ttl=ttl, type="A"
         )
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
-        detail = f"Ensure this value is greater than or equal to {self.my_empty_domain.minimum_ttl}."
+        detail = f"Ensure this value is greater than or equal to {self.my_empty_domain.effective_minimum_ttl}."
         self.assertEqual(response.data["ttl"][0], detail)
 
         ttl += 1

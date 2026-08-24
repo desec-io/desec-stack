@@ -389,7 +389,9 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
             raise ValueError(
                 "RRsetSerializer() must be given a domain object (to validate uniqueness constraints)."
             )
-        self.minimum_ttl = self.context.get("minimum_ttl", self.domain.minimum_ttl)
+        self.minimum_ttl = self.context.get(
+            "minimum_ttl", self.domain.effective_minimum_ttl
+        )
 
     def get_fields(self):
         fields = super().get_fields()

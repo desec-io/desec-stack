@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.core import management
+from django.core.management import CommandError
 from django.db.models import Min
 
 from desecapi.models import Domain, RRset
@@ -40,3 +42,22 @@ class LimitCommandTest(DomainOwnerTestCase):
             ],
             10000,
         )
+
+    def test_update_minimum_ttl_auto(self):
+        management.call_command("limit", "ttl", self.my_domain.name, "auto")
+        self.my_domain.refresh_from_db()
+        self.assertIsNone(self.my_domain.minimum_ttl)
+        self.assertEqual(
+            self.my_domain.effective_minimum_ttl, settings.MINIMUM_TTL_DEFAULT
+        )
+
+        management.call_command("limit", "ttl", self.my_domain.name, "123")
+        self.my_domain.refresh_from_db()
+        self.assertEqual(self.my_domain.minimum_ttl, 123)
+
+    def test_update_minimum_ttl_invalid(self):
+        management.call_command("limit", "ttl", self.my_domain.name, "123")
+        with self.assertRaises(CommandError):
+            management.call_command("limit", "ttl", self.my_domain.name, "not a number")
+        self.my_domain.refresh_from_db()
+        self.assertEqual(self.my_domain.minimum_ttl, 123)

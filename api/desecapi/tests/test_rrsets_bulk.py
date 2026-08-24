@@ -198,7 +198,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
                 {"type": ["This field is required."]},
                 {
                     "ttl": [
-                        f"Ensure this value is greater than or equal to {self.my_empty_domain.minimum_ttl}."
+                        f"Ensure this value is greater than or equal to {self.my_empty_domain.effective_minimum_ttl}."
                     ]
                 },
                 {"subname": ["This field is required."]},

@@ -681,7 +681,7 @@ class MultipleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
 
         # Test that dynDNS updates work both under a local public suffix (self.my_domain) and for a custom domains
         for domain in [self.my_domain, self.create_domain(owner=self.owner)]:
-            self.assertGreater(domain.minimum_ttl, 60)
+            self.assertGreater(domain.effective_minimum_ttl, 60)
             self.client.set_credentials_basic_auth(
                 domain.name.lower(), self.token.plain
             )

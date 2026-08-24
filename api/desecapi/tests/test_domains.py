@@ -8,6 +8,7 @@ from rest_framework import status
 
 from desecapi.models import Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
+from desecapi.serializers import DomainSerializer
 from desecapi.tests.base import (
     DesecTestCase,
     DomainOwnerTestCase,
@@ -883,6 +884,25 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
             response = self.client.post(url, {"name": name})
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertEqual(response.data["minimum_ttl"], settings.MINIMUM_TTL_DEFAULT)
+        self.assertIsNone(Domain.objects.get(name=name).minimum_ttl)
+
+    def test_domain_minimum_ttl_unset_follows_default(self):
+        self.my_domain.minimum_ttl = None
+        self.my_domain.save()
+        self.assertEqual(
+            DomainSerializer(self.my_domain).data["minimum_ttl"],
+            settings.MINIMUM_TTL_DEFAULT,
+        )
+        with override_settings(MINIMUM_TTL_DEFAULT=settings.MINIMUM_TTL_DEFAULT + 1):
+            self.assertEqual(
+                DomainSerializer(self.my_domain).data["minimum_ttl"],
+                settings.MINIMUM_TTL_DEFAULT,
+            )
+
+    def test_domain_minimum_ttl_set(self):
+        self.my_domain.minimum_ttl = 123
+        self.my_domain.save()
+        self.assertEqual(DomainSerializer(self.my_domain).data["minimum_ttl"], 123)
 
 
 class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):

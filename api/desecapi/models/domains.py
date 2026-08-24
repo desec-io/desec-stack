@@ -43,7 +43,7 @@ class DomainManager(Manager):
 
 class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     @staticmethod
-    def _minimum_ttl_default():
+    def _minimum_ttl_default():  # unused; referenced by migration 0001
         return settings.MINIMUM_TTL_DEFAULT
 
     class RenewalState(models.IntegerChoices):
@@ -58,7 +58,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
     )
     owner = models.ForeignKey("User", on_delete=models.PROTECT, related_name="domains")
     published = models.DateTimeField(null=True, blank=True)
-    minimum_ttl = models.PositiveIntegerField(default=_minimum_ttl_default.__func__)
+    minimum_ttl = models.PositiveIntegerField(null=True, blank=True, default=None)
     renewal_state = models.IntegerField(
         choices=RenewalState.choices, db_index=True, default=RenewalState.IMMORTAL
     )
@@ -223,6 +223,12 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         except ValueError:  # no RRsets (but there should be at least NS)
             return self.published  # may be None if the domain was never published
         return max(rrset_touched, self.published or rrset_touched)
+
+    @property
+    def effective_minimum_ttl(self):
+        if self.minimum_ttl is None:
+            return settings.MINIMUM_TTL_DEFAULT
+        return self.minimum_ttl
 
     @property
     def is_locally_registrable(self):
