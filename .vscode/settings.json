@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/api/.venv/bin/python3",
+  "python.envFile": "${workspaceFolder}/.vscode/test.env",
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["desecapi"],
+  "python.testing.cwd": "${workspaceFolder}/api"
+}

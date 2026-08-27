@@ -139,7 +139,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
     However, many other Linux distributions will also do fine.
     For desec-stack, [docker and docker compose v2](https://docs.docker.com/engine/install/ubuntu/) are required.
     Further tools that are required to start hacking are git and curl.
-    Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and PyCharm.
+    Recommended, but not strictly required for desec-stack development is to use certbot along with Let's Encrypt and VSCode.
     jq, httpie, libmariadbclient-dev, libpq-dev, python3-dev (>= 3.12) and python3-venv (>= 3.12) are useful if you want to follow this guide.
     The webapp requires Node.js. To install everything you need for this guide except docker and docker compose, use
 
@@ -322,74 +322,53 @@ While there are certainly many ways to get started hacking desec-stack, here is 
 
     to see if the nameserver is behaving as expected.
 
-1. **(Optional) Configure PyCharm for API Development.** As a docker compose application, desec-stack takes a while to start.
+1. **(Optional) Configure VSCode for API Development.** As a docker compose application, desec-stack takes a while to start.
     Additionally, it is hard to connect a debugger to the docker containers.
     Our recommended solution is to develop the API using Django tests running outside the docker compose application.
-    This will dramatically decrease the time required for running the Django tests and enable just-in-time debugging in PyCharm.
-    Also, it will enable you to browse dependencies and code within PyCharm and thus ease debugging.
+    This will dramatically decrease the time required for running the Django tests and enable just-in-time debugging in VSCode.
+    This repository ships `.vscode/settings.json`, `.vscode/tasks.json`, and `.vscode/extensions.json` to set this up with minimal manual configuration.
 
     1. To get started, we create a virtual python environment that (to some extent) mimics the python environment in the docker container.
+        `.vscode/settings.json` expects it at `api/.venv`, so create it there.
         In the project root,
 
            cd api
-           python3 -m venv venv  # Python >= 3.12
-           source venv/bin/activate
+           python3 -m venv .venv  # Python >= 3.12
+           source .venv/bin/activate
            pip install wheel
-           pip install -r requirements.txt
+           pip install -r requirements-dev.txt
+           cd -
 
-    1. At this point, Django is ready to run in the virtual environment created above.
-        There are two things to consider when running Django outside the container.
-        First, the environment variables as defined in the `.env` file need to be made available in the shell.
-        This can be done with
+        `requirements-dev.txt` pulls in `requirements.txt` plus the pytest test runner used by VSCode (the API container itself does not need it,
+        as it runs the tests via `manage.py test`).
 
-           set -a && source ../.env && set +a
+    1. Open the project root directory `desec-stack` in VSCode. When prompted, install the recommended extension (`ms-python.python`);
+        if you are not prompted, install it manually from the Extensions view.
+        VSCode should then automatically pick `api/.venv/bin/python3` as the interpreter, as configured in `.vscode/settings.json`;
+        if it does not, select it manually via the "Python: Select Interpreter" command.
 
-        Second, to make the tests run efficiently, a couple of settings are different from the production system:
-        passwords are hashed using a fast (but insecure!) method, rate limits are switched off, and so on.
-        To use the fast settings in your shell, run
+    1. Running the tests outside the container requires the environment variables from the `.env` file, plus a couple of settings that make
+        Django run with fast (but insecure!) test settings and point it at a locally reachable test database.
+        These are supplied via `.vscode/test.env`, which is referenced by `python.envFile` in `.vscode/settings.json`.
+        Because it contains secrets, `.vscode/test.env` is not part of the repository (it's ignored by git) and needs to be created manually:
+        copy the contents of your `.env`/`.env.dev` file and add
 
-           export DJANGO_SETTINGS_MODULE=api.settings_quick_test
+           DJANGO_SETTINGS_MODULE=api.settings_quick_test
+           DESECSTACK_DJANGO_TEST=1
 
-        Third, the API needs a postgres database to run the tests. To serve as a test database,
-        the `dbapi` container can be started using a test configuration which exposes the database at
-        `127.0.0.1`. In order to let Django know that the database is at `127.0.0.1` instead of the
-        usual `dbapi`, set an additional environment variable:
+        The latter tells Django that the test database is reachable at `127.0.0.1` instead of the usual `dbapi` hostname.
 
-           export DESECSTACK_DJANGO_TEST=1
-
-        Fourth, run the database:
+    1. The API needs a postgres database to run the tests. To serve as a test database, the `dbapi` container can be started using a test
+        configuration which exposes the database at `127.0.0.1`. `.vscode/tasks.json` defines a task that does exactly this, and it is
+        configured to run automatically whenever the folder is opened in VSCode. To start (or restart) it manually, run the
+        "Start API Test Database" task (Terminal › Run Task…), or from a shell:
 
            docker compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi
 
-        Finally, you can manage Django using the `manage.py` CLI.
-        As an example, to run the tests, use
-
-           python3 manage.py test
-
-    1. Open the project root directory `desec-stack` in PyCharm and select File › Settings.
-        1. In Project: desec-stack › Project Structure, mark the `api/` folder as a source folder.
-        2. In Project: desec-stack › Project Interpreter, add a new interpreter. Choose "existing environment" and select `api/venv/bin/python3` from the project root.
-        3. In Languages & Frameworks › Django, enable the Django support and set the Django project root to `api/`.
-
-    1. From the PyCharm menu, select Run › Edit Configurations and click on "Edit configuration templates"; select the "Django tests" template from the list.
-        1. Open the Environment Variables dialog. Copy the contents of the `.env` file and paste it here.
-        2. Add an environment variable with the name `DESECSTACK_DJANGO_TEST` and the value `1`.
-        3. Fill the Custom Settings field with the path to the `settings_quick_test` module.
-        4. At the bottom in the "Before launch" sections, add an "External tool" with the following settings:
-           - Name: `Postgres Test Container`
-           - Program: `docker`
-           - Arguments: `compose -f docker-compose.yml -f docker-compose.test-api.yml up -d dbapi`
-
-    1. To see if the test configuration is working, right-click on the api folder in the project view and select Run Test.
-       (Note that the first attempt may fail in case the `dbapi` container does not start up fast enough. In that case, just try again.)
-
-    1. To use code inspection, click on Inspect Code… in PyCharm's Code menu and add a local custom scope with the following pattern:
-
-           file:api//*.py&&!file:api/venv//*&&!file:api/manage.py&&!file:api/api/wsgi.py&&!file:api/desecapi/migrations//*
-
-    From this point on, you are set up to use most of PyCharm's convenience features.
-
-    1. For PyCharm's Python Console, the environment variables of your `.env` file and `DJANGO_SETTINGS_MODULE=api.settings_quick_test` need to be configured in Settings › Build, Execution, Deployment › Console › Django Console. (Note that if you need to work with the database, you need to initialize it first by running all migrations; otherwise, the model tables will be missing from the database.)
+    1. With the above in place, VSCode's Testing view auto-discovers the Django tests under `api/desecapi` (as configured by
+        `python.testing.pytestArgs` and `python.testing.cwd`) via pytest. Use it to run or debug individual tests, files, or the entire
+        suite; breakpoints set in your code will be hit when debugging.
+        (Note that the first attempt may fail in case the `dbapi` container does not start up fast enough. In that case, just try again.)
 
 1. **Code quality.** We use [Ruff](https://docs.astral.sh/ruff/) to ensure formatting consistency and minimal diffs. Before you commit Python code into the `api/` directory, please run `ruff format api/desecapi/`.
 
