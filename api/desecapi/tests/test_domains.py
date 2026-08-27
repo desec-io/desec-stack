@@ -984,37 +984,38 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
 class DomainManagerTestCase(DesecTestCase):
     def test_filter_qname(self):
         user1, user2 = self.create_user(), self.create_user()
+        # Domain names must not collide with the local public suffixes created in setUp()
         domains = {
-            user1: ["domain.dedyn.io", "foobar.example"],
-            user2: ["dedyn.io", "desec.io"],
+            user1: ["domain.parent.example", "foobar.example"],
+            user2: ["parent.example", "desec.example"],
         }
         for user, names in domains.items():
             for name in names:
                 Domain(name=name, owner=user).save()
 
         config = {
-            "domain.dedyn.io": {
-                None: ["domain.dedyn.io", "dedyn.io"],
-                user1: ["domain.dedyn.io"],
-                user2: ["dedyn.io"],
+            "domain.parent.example": {
+                None: ["domain.parent.example", "parent.example"],
+                user1: ["domain.parent.example"],
+                user2: ["parent.example"],
             },
             "foo.bar.baz.foobar.example": {
                 None: ["foobar.example"],
                 user1: ["foobar.example"],
                 user2: [],
             },
-            "dedyn.io": {
-                None: ["dedyn.io"],
+            "parent.example": {
+                None: ["parent.example"],
                 user1: [],
-                user2: ["dedyn.io"],
+                user2: ["parent.example"],
             },
-            "foobar.desec.io": {
-                None: ["desec.io"],
+            "foobar.desec.example": {
+                None: ["desec.example"],
                 user1: [],
-                user2: ["desec.io"],
+                user2: ["desec.example"],
             },
         }
-        config["sub.domain.dedyn.io"] = config["domain.dedyn.io"]
+        config["sub.domain.parent.example"] = config["domain.parent.example"]
 
         for qname, cases in config.items():
             for qname in [qname, f"*.{qname}"]:

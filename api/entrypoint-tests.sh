@@ -9,5 +9,6 @@ echo "waiting for dependencies ..."
 /root/cronhook/start-cron.sh &
 
 echo Starting API tests ...
-coverage run --source='.' manage.py test -v 3 --noinput
+coverage run manage.py test -v 3 --noinput --parallel auto
+coverage combine
 coverage report

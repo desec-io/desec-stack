@@ -35,8 +35,9 @@ def forwards_func(apps, schema_editor):
         type__isnull=True,
     )
     queryset.filter(
-        domain__isnull=False, perm_write=Subquery(default_policy.values("perm_write"))
-    ).exclude(perm_dyndns=Subquery(default_policy.values("perm_dyndns"))).delete()
+        domain__isnull=False,
+        perm_write=Subquery(default_policy.values("perm_write")[:1]),
+    ).exclude(perm_dyndns=Subquery(default_policy.values("perm_dyndns")[:1])).delete()
 
 
 class Migration(migrations.Migration):
