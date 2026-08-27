@@ -5,14 +5,12 @@ location / {
     root   /usr/share/nginx/html/;
     error_page 403 =503 /503.html;
 
-    # advertise HTTP/3
-    add_header Alt-Svc 'h3=":443"; ma=86400' always;
-
     gzip on;
     gzip_types *;
 
     location /index.html {
         expires epoch;
+        add_header Alt-Svc 'h3=":443"; ma=86400' always;
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
         # CSP hashes are for legacy browser support.
         # Source: https://github.com/vitejs/vite/tree/v5.0.10/packages/plugin-legacy#content-security-policy
