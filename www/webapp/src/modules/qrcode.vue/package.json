@@ -56,7 +56,7 @@
     "pretty-quick": "^1.11.1",
     "qr.js": "^0.0.0",
     "rimraf": "^3.0.0",
-    "rollup": "^1.20.3",
+    "rollup": "^4.62.4",
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-node-resolve": "^5.0.0",
@@ -66,7 +66,7 @@
     "vue": "^2.6.10",
     "webpack": "^4.39.3",
     "webpack-cli": "^3.3.7",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^6.0.0"
   },
   "husky": {
     "hooks": {
