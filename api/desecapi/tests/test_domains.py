@@ -285,6 +285,44 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
         response = self.client.get(url)
         self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
+    def test_delete_my_domain_retry_after_partial_pdns_failure(self):
+        # A retried deletion must succeed against a zone the first attempt already removed,
+        # or the domain stays stranded and keeps occupying a slot against limit_domains.
+        url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+        self.client.raise_request_exception = False
+
+        with self.assertRequests(
+            self.request_pdns_zone_delete(name=self.my_domain.name, ns="LORD"),
+            self.request_pdns_zone_delete_500(name=self.my_domain.name, ns="MASTER"),
+        ):
+            response = self.client.delete(url)
+            self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            self.assertTrue(Domain.objects.filter(pk=self.my_domain.pk).exists())
+
+        with self.assertRequests(
+            self.request_pdns_zone_delete_404(name=self.my_domain.name, ns="LORD"),
+            self.request_pdns_zone_delete(name=self.my_domain.name, ns="MASTER"),
+            self.request_pdns_update_catalog(),
+            self.request_pch_zone_delete(name=self.my_domain.name),
+        ):
+            response = self.client.delete(url)
+            self.assertStatus(response, status.HTTP_204_NO_CONTENT)
+            self.assertFalse(Domain.objects.filter(pk=self.my_domain.pk).exists())
+
+    def test_delete_my_domain_pdns_failure_renders_json(self):
+        # A failed commit must stay within the API's JSON error contract rather than falling
+        # through to Django's HTML error page.
+        url = self.reverse("v1:domain-detail", name=self.my_domain.name)
+        self.client.raise_request_exception = False
+
+        with self.assertRequests(
+            self.request_pdns_zone_delete_500(name=self.my_domain.name, ns="LORD"),
+        ):
+            response = self.client.delete(url)
+
+        self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response["Content-Type"], "application/json")
+
     def test_delete_my_domain_policy_constraints(self):
         policy_sets = [
             ([dict(domain=None, subname=None, type=None, perm_write=True)], True),
@@ -838,8 +876,8 @@ import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6Zr
     def test_create_domain_atomicity(self):
         name = self.random_domain_name()
         with self.assertRequests(self.request_pdns_zone_create_422()):
-            with self.assertRaises(ValueError):
-                self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            response = self.client.post(self.reverse("v1:domain-list"), {"name": name})
+            self.assertStatus(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
             self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_punycode(self):

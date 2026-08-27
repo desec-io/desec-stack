@@ -34,6 +34,10 @@ class PCHException(ExternalAPIException):
     pass
 
 
+class ChangeTrackerException(Exception):
+    """A change could not be committed to pdns/PCH; the database has been rolled back."""
+
+
 class ConcurrencyException(APIException):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = "Too many concurrent requests."
