@@ -499,6 +499,26 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             str(response.data),
         )
 
+    def test_update_my_rr_sets_too_large_rrset(self):
+        # subname is not in attrs on the RRsetDetail endpoint
+        self.create_rr_set(
+            self.my_empty_domain, ["127.0.0.1"], subname="name", type="A", ttl=3600
+        )
+
+        network = IPv4Network("127.0.0.0/20")  # size: 4096 IP addresses
+        response = self.client.patch_rr_set(
+            self.my_empty_domain.name,
+            "name",
+            "A",
+            {"records": [str(ip) for ip in network]},
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+        excess_length = 28743 + len(self.my_empty_domain.name)
+        self.assertIn(
+            f"Total length of RRset exceeds limit by {excess_length} bytes.",
+            str(response.data),
+        )
+
     def test_create_my_rr_sets_twice(self):
         data = {"records": ["1.2.3.4"], "ttl": 3660, "type": "A"}
         with self.assertRequests(
