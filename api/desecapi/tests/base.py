@@ -434,7 +434,7 @@ class MockPDNSTestCase(APITestCase):
                             )
                         )
             finally:
-                return [200, {}, ""]
+                return [200, {}, ""]  # noqa: B012
 
         request = self.request_pdns_zone_update(name)
         request.pop("status")

@@ -329,7 +329,7 @@ class RRsetListSerializer(serializers.ListSerializer):
         nonempty = everything - empty
 
         # noinspection PyUnusedLocal
-        noop = unknown & empty
+        noop = unknown & empty  # noqa: F841
         created = unknown & nonempty
         updated = known & nonempty
         deleted = known & empty

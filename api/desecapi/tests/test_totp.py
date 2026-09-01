@@ -162,7 +162,7 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         self.assertResponse(response, status.HTTP_401_UNAUTHORIZED)
 
         # Token has not yet passed MFA, but GET'ing TOTP list is allowed
-        self.assertTrue(self.token.mfa == False)  # assertFalse also allows None
+        self.assertIs(self.token.mfa, False)  # assertFalse would allow None
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
         response = self.client.get(self.reverse("v1:totp-list"))
         self.assertResponse(response, status.HTTP_200_OK)
