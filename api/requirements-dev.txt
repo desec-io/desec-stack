@@ -1,0 +1,2 @@
+coverage~=7.15.4
+responses~=0.26.2

@@ -21,9 +21,16 @@ updates:
       time: "05:00"
     groups:
       pip-api:
-        update-types:
-          - "minor"
-          - "patch"
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "django"
+          - "djangorestframework"
+        dependency-type: "production"
+      pip-api-dev:
+        patterns:
+          - "*"
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "docs/"
     schedule:

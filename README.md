@@ -340,7 +340,7 @@ While there are certainly many ways to get started hacking desec-stack, here is 
            python3 -m venv venv  # Python >= 3.12
            source venv/bin/activate
            pip install wheel
-           pip install -r requirements.txt
+           pip install -r requirements.txt -r requirements-dev.txt
 
     1. At this point, Django is ready to run in the virtual environment created above.
         There are two things to consider when running Django outside the container.
