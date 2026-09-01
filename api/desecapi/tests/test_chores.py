@@ -2,7 +2,7 @@ from unittest import mock
 
 from django.conf import settings
 from django.core import management
-from django.test import override_settings, TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from desecapi.models import Captcha, User

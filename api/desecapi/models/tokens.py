@@ -21,7 +21,6 @@ from netfields import CidrAddressField, NetManager
 
 from desecapi.models import RRset
 
-
 # No 0OIl characters, non-alphanumeric only (select by double-click no line-break)
 # https://github.com/bitcoin/bitcoin/blob/master/src/base58.h
 ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"

@@ -17,13 +17,17 @@ import itertools
 import random
 from dataclasses import dataclass, field
 
+import dns.edns
+import dns.exception
+import dns.flags
+import dns.name
+import dns.rcode
+import dns.rdatatype
 from django.conf import settings
-import dns.edns, dns.exception, dns.flags, dns.name, dns.rcode, dns.rdatatype
 
 from desecapi import logger, unbound
 from desecapi.dns import query_server
 from desecapi.models import DelegationCheck
-
 
 # EDE codes (RFC 8914) that tell us a SERVFAIL is about DNSSEC, i.e. that the
 # delegation is broken -- as opposed to us being unable to check it. Everything

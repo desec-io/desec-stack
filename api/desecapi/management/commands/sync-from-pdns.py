@@ -2,7 +2,7 @@ from django.core.management import BaseCommand, CommandError
 from django.db import transaction
 
 from desecapi import pdns
-from desecapi.models import Domain, RRset, RR, RR_SET_TYPES_AUTOMATIC
+from desecapi.models import RR, RR_SET_TYPES_AUTOMATIC, Domain, RRset
 
 
 class Command(BaseCommand):

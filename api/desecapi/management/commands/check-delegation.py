@@ -12,7 +12,6 @@ from desecapi import delegation, tasks, unbound
 from desecapi.models import DelegationCheck, Domain, User
 from desecapi.models.domains import under_local_public_suffix_q
 
-
 # Domains are handled in batches, so that a bulk run neither loads the whole
 # inventory into memory nor creates one pending future per domain up front.
 BATCH_SIZE = 1000

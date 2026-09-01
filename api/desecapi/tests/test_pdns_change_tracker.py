@@ -1,7 +1,7 @@
 from django.utils import timezone
 
 from desecapi.exceptions import ConcurrencyException
-from desecapi.models import RRset, RR, Domain
+from desecapi.models import RR, Domain, RRset
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase
 

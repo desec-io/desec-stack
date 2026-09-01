@@ -10,7 +10,6 @@ from django.utils import timezone
 from desecapi import models, serializers, views
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
-
 fresh_days = 183
 notice_days_notify = 28
 notice_days_warn = 7

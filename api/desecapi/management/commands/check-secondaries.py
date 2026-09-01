@@ -2,11 +2,14 @@ from datetime import timedelta
 from socket import gethostbyname
 from time import sleep
 
+import dns.exception
+import dns.message
+import dns.query
+import dns.rdatatype
 from django.conf import settings
 from django.core.mail import get_connection, mail_admins
 from django.core.management import BaseCommand
 from django.utils import timezone
-import dns.exception, dns.message, dns.query, dns.rdatatype
 
 from desecapi import pdns
 from desecapi.models import Domain

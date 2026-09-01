@@ -5,15 +5,20 @@ import threading
 from contextlib import contextmanager, redirect_stdout
 from unittest import mock
 
+import dns.edns
+import dns.exception
+import dns.flags
+import dns.message
+import dns.rcode
+import dns.rdatatype
+import dns.rrset
 from django.apps import apps as global_apps
 from django.conf import settings
 from django.core.management import CommandError, call_command
 from django.test import SimpleTestCase, TestCase, override_settings
-import dns.edns, dns.exception, dns.flags, dns.message, dns.rcode, dns.rdatatype, dns.rrset
 
 from desecapi import delegation, tasks, unbound
 from desecapi.models import DelegationCheck, Domain, User
-
 
 OUR_NS = ["ns1.example.net", "ns2.example.net"]
 QNAME = "example.com."

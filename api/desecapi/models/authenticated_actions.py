@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from desecapi.exceptions import AuthenticatedActionInvalidState
+
 from .domains import Domain
 from .mfa import TOTPFactor
 

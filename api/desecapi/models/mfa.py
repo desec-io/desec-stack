@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import base64
-from functools import cached_property
 import secrets
 import uuid
+from functools import cached_property
 
 from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
-from pyotp import TOTP, utils as pyotp_utils
+from pyotp import TOTP
+from pyotp import utils as pyotp_utils
 
 
 class BaseFactor(models.Model):

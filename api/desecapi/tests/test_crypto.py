@@ -1,5 +1,5 @@
-from math import log
 import time
+from math import log
 
 from django.test import TestCase
 

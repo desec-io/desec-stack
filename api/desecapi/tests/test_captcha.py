@@ -2,10 +2,10 @@ from base64 import b64decode
 from io import BytesIO
 from unittest import mock
 
-from PIL import Image
 from django.conf import settings
 from django.test import TestCase
 from django.utils import timezone
+from PIL import Image
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient

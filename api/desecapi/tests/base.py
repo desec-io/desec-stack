@@ -2,28 +2,29 @@ import base64
 import operator
 import random
 import re
-import responses
 import socket
 import string
 from contextlib import nullcontext
 from functools import partial, reduce
 from unittest import mock
 
+import responses
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core import mail
 from rest_framework import status
 from rest_framework.reverse import reverse
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework.utils import json
 
-from desecapi.models import User, Domain, Token, RRset, RR
+from desecapi.models import RR, Domain, RRset, Token, User
 from desecapi.models.domains import psl
 from desecapi.models.records import (
     RR_SET_TYPES_AUTOMATIC,
-    RR_SET_TYPES_UNSUPPORTED,
     RR_SET_TYPES_MANAGEABLE,
+    RR_SET_TYPES_UNSUPPORTED,
 )
+
 from .matchers import body_matcher
 
 

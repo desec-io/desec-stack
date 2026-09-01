@@ -8,7 +8,6 @@ from django.core.mail.backends.base import BaseEmailBackend
 
 from desecapi import metrics
 
-
 logger = logging.getLogger(__name__)
 
 

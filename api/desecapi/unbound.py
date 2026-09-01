@@ -8,9 +8,10 @@ with interpreting responses only.
 
 import socket
 
+import dns.flags
+import dns.message
+import dns.query
 from django.conf import settings
-import dns.flags, dns.message, dns.query
-
 
 # unbound's remote control is a line protocol: send "UBCT1 <command>\n" and read
 # the response, which is "ok" on success (send_ok() in daemon/remote.c) and

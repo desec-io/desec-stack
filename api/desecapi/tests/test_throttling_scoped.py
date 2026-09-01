@@ -1,13 +1,13 @@
+import time
 from contextlib import contextmanager
 from unittest import mock
-import time
 
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 
 
 @contextmanager

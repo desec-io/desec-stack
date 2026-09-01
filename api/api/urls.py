@@ -1,6 +1,5 @@
 from django.urls import include, path
 
-
 #
 # On Reversing URLs
 # =================

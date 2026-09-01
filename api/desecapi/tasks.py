@@ -23,7 +23,6 @@ from django.utils import timezone
 from desecapi import delegation, logger, unbound
 from desecapi.models import DelegationCheck, Domain, User
 
-
 BULK_QUEUE = "delegation_bulk"
 ADHOC_QUEUE = "delegation_adhoc"
 
