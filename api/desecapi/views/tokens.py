@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from desecapi import permissions, serializers
-from desecapi.models import Token, User
+from desecapi.models import Token
 from desecapi.serializers import TokenDomainPolicySerializer, TokenSerializer
 
 from .base import IdempotentDestroyMixin
