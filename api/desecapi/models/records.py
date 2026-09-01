@@ -227,12 +227,7 @@ class RRset(ExportModelOperationsMixin("RRset"), models.Model):
         RR.objects.bulk_create(rrs)  # One INSERT
 
     def __str__(self):
-        return "<RRSet %s domain=%s type=%s subname=%s>" % (
-            self.pk,
-            self.domain.name,
-            self.type,
-            self.subname,
-        )
+        return f"<RRSet {self.pk} domain={self.domain.name} type={self.type} subname={self.subname}>"
 
 
 class RRManager(Manager):
@@ -362,4 +357,4 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
             raise e
 
     def __str__(self):
-        return "<RR %s %s rr_set=%s>" % (self.pk, self.content, self.rrset.pk)
+        return f"<RR {self.pk} {self.content} rr_set={self.rrset.pk}>"

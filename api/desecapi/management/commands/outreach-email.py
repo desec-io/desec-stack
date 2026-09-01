@@ -54,7 +54,7 @@ class Command(BaseCommand):
             subject = None
 
         base_file = f"emails/{reason}/content.txt"
-        template_code = '{%% extends "%s" %%}' % base_file
+        template_code = f'{{% extends "{base_file}" %}}'
         if content:
             template_code += "{% block content %}" + content + "{% endblock %}"
         template = engines["django"].from_string(template_code)

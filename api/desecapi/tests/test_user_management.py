@@ -85,7 +85,7 @@ class UserManagementClient(APIClient):
         return self.post(
             reverse("v1:account-change-email"),
             payload,
-            HTTP_AUTHORIZATION="Token {}".format(token),
+            HTTP_AUTHORIZATION=f"Token {token}",
         )
 
     def delete_account(self, email, password):
@@ -98,9 +98,7 @@ class UserManagementClient(APIClient):
         )
 
     def view_account(self, token):
-        return self.get(
-            reverse("v1:account"), HTTP_AUTHORIZATION="Token {}".format(token)
-        )
+        return self.get(reverse("v1:account"), HTTP_AUTHORIZATION=f"Token {token}")
 
     def verify(self, url, data=None, **kwargs):
         return self.post(url, data, **kwargs)
@@ -149,7 +147,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
     def assertContains(
         self, response, text, count=None, status_code=200, msg_prefix="", html=False
     ):
-        msg_prefix += "\nResponse: %s" % response.data
+        msg_prefix += f"\nResponse: {response.data}"
         super().assertContains(response, text, count, status_code, msg_prefix, html)
 
     def assertPassword(self, email, password):
@@ -160,15 +158,14 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
         password = password.strip()
         self.assertTrue(
             User.objects.get(email=email).check_password(password),
-            'Expected user password to be "%s" (potentially trimmed), but check failed.'
-            % password,
+            f'Expected user password to be "{password}" (potentially trimmed), but check failed.',
         )
 
     def assertUserExists(self, email):
         try:
             User.objects.get(email=email)
         except User.DoesNotExist:
-            self.fail("Expected user %s to exist, but did not." % email)
+            self.fail(f"Expected user {email} to exist, but did not.")
 
     def assertUserDoesNotExist(self, email):
         # noinspection PyTypeChecker
@@ -544,7 +541,7 @@ class UserManagementTestCase(DesecTestCase, PublicSuffixMockMixin):
 
     def _test_change_email(self):
         old_email = self.email
-        new_email = " {} ".format(self.random_username())  # test trimming
+        new_email = f" {self.random_username()} "  # test trimming
         self.assertChangeEmailSuccessResponse(self.change_email(new_email))
         new_email = new_email.strip()
         confirmation_link = self.assertChangeEmailVerificationEmail(new_email)
@@ -623,7 +620,7 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
             self._test_registration(password=self.random_password(), **kwargs)
 
     def test_registration_trim_email(self):
-        user_email = " {} ".format(self.random_username())
+        user_email = f" {self.random_username()} "
         email, _ = self._test_registration(user_email)
         self.assertEqual(email, user_email.strip())
 
@@ -968,7 +965,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
             response = method(
                 reverse("v1:account"),
                 {"limit_domains": 99},
-                HTTP_AUTHORIZATION="Token {}".format(self.token),
+                HTTP_AUTHORIZATION=f"Token {self.token}",
             )
             self.assertResponse(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -996,7 +993,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
                     "password": self.random_password(),
                     "outreach_preference": outreach_preference,
                 },
-                HTTP_AUTHORIZATION="Token {}".format(self.token),
+                HTTP_AUTHORIZATION=f"Token {self.token}",
             )
             self.assertResponse(response, status.HTTP_200_OK)
             user = User.objects.get(email=self.email)
@@ -1199,7 +1196,7 @@ class HasUserAccountTestCase(UserManagementTestCase):
         self._finish_delete_account(confirmation_link)
 
     def test_reset_password_password_strip(self):
-        password = " %s " % self.random_password()
+        password = f" {self.random_password()} "
         self._test_reset_password(self.email, password)
         self.assertPassword(self.email, password.strip())
         self.assertPassword(self.email, password)

@@ -122,9 +122,7 @@ class RRsetList(
                     filter_field == "type"
                     and value in models.records.RR_SET_TYPES_AUTOMATIC
                 ):
-                    raise PermissionDenied(
-                        "You cannot tinker with the %s RRset." % value
-                    )
+                    raise PermissionDenied(f"You cannot tinker with the {value} RRset.")
 
                 rrsets = rrsets.filter(**{filter_field: value})
 

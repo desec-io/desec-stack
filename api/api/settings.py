@@ -21,9 +21,9 @@ if os.environ.get("DESECSTACK_API_DEBUG", "").upper() == "TRUE":
 
 ALLOWED_HOSTS = [
     "api",
-    "desec.%s" % os.environ["DESECSTACK_DOMAIN"],
-    "update.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
-    "update6.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
+    "desec.{}".format(os.environ["DESECSTACK_DOMAIN"]),
+    "update.dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"]),
+    "update6.dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"]),
 ]
 
 DEFAULT_EXCEPTION_REPORTER = "desecapi.debug.PayloadExceptionReporter"
@@ -168,7 +168,7 @@ DEFAULT_NS_TTL = int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"])
 
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get("DESECSTACK_API_PSL_RESOLVER")
-LOCAL_PUBLIC_SUFFIXES = {"dedyn.%s" % os.environ["DESECSTACK_DOMAIN"]}
+LOCAL_PUBLIC_SUFFIXES = {"dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"])}
 
 # PowerDNS-related
 NSLORD_PDNS_API = "http://nslord:8081/api/v1/servers/localhost"

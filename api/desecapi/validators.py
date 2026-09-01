@@ -105,7 +105,7 @@ class Validator:
         raise NotImplementedError
 
     def __repr__(self):
-        return "<%s>" % self.__class__.__name__
+        return f"<{self.__class__.__name__}>"
 
 
 class ReadOnlyOnUpdateValidator(Validator):

@@ -1,4 +1,4 @@
-from datetime import timezone, datetime
+from datetime import timezone, datetime, UTC
 
 from django.conf import settings
 from django.core.cache import cache
@@ -133,7 +133,7 @@ class DomainViewSet(
     @action(detail=True, renderer_classes=[PlainTextRenderer])
     def zonefile(self, request, name=None):
         instance = self.get_object()
-        prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
+        prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(UTC)}\n".encode()
         return Response(prefix + instance.zonefile, content_type="text/dns")
 
 

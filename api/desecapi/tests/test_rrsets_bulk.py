@@ -83,7 +83,7 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
     def test_bulk_post_rr_sets_empty_records(self):
         expected_response_data = [copy.deepcopy(self.data_empty_records[0]), None]
         expected_response_data[0]["domain"] = self.my_empty_domain.name
-        expected_response_data[0]["name"] = "%s.%s." % (
+        expected_response_data[0]["name"] = "{}.{}.".format(
             self.data_empty_records[0]["subname"],
             self.my_empty_domain.name,
         )
