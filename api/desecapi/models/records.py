@@ -62,7 +62,7 @@ def replace_ip_subnet(records, subnet):
     """
     return [
         str(
-            ip_address(int(subnet.network_address))  # prefix
+            subnet.network_address  # prefix
             + (int(ip_address(record.content)) & int(subnet.hostmask))  # suffix
         )
         for record in records

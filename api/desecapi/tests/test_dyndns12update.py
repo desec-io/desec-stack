@@ -319,6 +319,31 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertEqual(response.data, "good")
         self.assertIP(ipv6="2a01::f12:7233", subname="foo")
 
+    def test_subnet_with_low_ipv6_prefix(self):
+        self.create_rr_set(
+            self.my_domain,
+            ["2a02:8109:9283:8800::f12:7233"],
+            type="AAAA",
+            subname="foo",
+            ttl=60,
+        )
+        qname = f"foo.{self.my_domain.name}"
+
+        # Prefix of all zeros: the address is kept, so nothing changes
+        response = self.assertDynDNS12NoUpdate(hostname=qname, myipv4="", myipv6="::/0")
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="2a02:8109:9283:8800::f12:7233", subname="foo")
+
+        response = self.assertDynDNS12Update(hostname=qname, myipv4="", myipv6="::/64")
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="::f12:7233", subname="foo")
+
+        response = self.assertDynDNS12Update(
+            hostname=qname, myipv4="", myipv6="::1.2.3.4/120"
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="::102:333", subname="foo")
+
     def test_update_multiple_v4(self):
         # /nic/update?hostname=a.io,sub.a.io&myip=1.2.3.4
         new_ip = "1.2.3.4"
