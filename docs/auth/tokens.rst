@@ -101,7 +101,7 @@ Field details:
 
 ``max_age``
     :Access mode: read, write
-    :Type: string (time duration: ``[DD] [HH:[MM:]]ss[.uuuuuu]``) or ``null``
+    :Type: string (time duration: ``[DD] [[HH:]MM:]ss[.uuuuuu]``) or ``null``
 
     Maximum token age.  If ``created + max_age`` is less than the current time,
     the token is invalidated.  Invalidated tokens are not automatically deleted
@@ -112,7 +112,7 @@ Field details:
 
 ``max_unused_period``
     :Access mode: read, write
-    :Type: string (time duration: ``[DD] [HH:[MM:]]ss[.uuuuuu]``) or ``null``
+    :Type: string (time duration: ``[DD] [[HH:]MM:]ss[.uuuuuu]``) or ``null``
 
     Maximum allowed time period of disuse without invalidating the token.  If
     ``max(created, last_used) + max_unused_period`` is less than the current

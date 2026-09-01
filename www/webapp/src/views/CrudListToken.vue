@@ -106,7 +106,7 @@ export default {
             writeOnCreate: true,
             datatype: GenericText.name,
             searchable: false,
-            fieldProps: () => ({ hint: 'Format: [DD] [HH:[MM:]]ss' }),
+            fieldProps: () => ({ hint: 'Format: [DD] [[HH:]MM:]ss, e.g. 365 00:00:00' }),
             advanced: true,
           },
           max_unused_period: {
@@ -119,7 +119,7 @@ export default {
             writeOnCreate: true,
             datatype: GenericText.name,
             searchable: false,
-            fieldProps: () => ({ hint: 'Format: [DD] [HH:[MM:]]ss' }),
+            fieldProps: () => ({ hint: 'Format: [DD] [[HH:]MM:]ss, e.g. 7 00:00:00' }),
             advanced: true,
           },
           is_valid: {
