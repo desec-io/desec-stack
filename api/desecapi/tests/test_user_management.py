@@ -32,6 +32,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
+from desecapi import authentication
 from desecapi.models import Captcha, Domain, Token, User
 from desecapi.exceptions import AuthenticatedActionInvalidState
 from desecapi.tests.base import (
@@ -925,6 +926,19 @@ class HasUserAccountTestCase(UserManagementTestCase):
             self.assertIn(token2, token_set)
             self.assertIn(token3, token_set)
             self.assertEqual(Token.objects.filter(owner=token1.user).count(), 2)
+
+    def test_logout_with_concurrently_deleted_token(self):
+        authenticate = authentication.TokenAuthentication.authenticate
+
+        def authenticate_and_delete(auth, request):
+            user, token = authenticate(auth, request)
+            Token.objects.filter(pk=token.pk).delete()
+            return user, token
+
+        with mock.patch.object(
+            authentication.TokenAuthentication, "authenticate", authenticate_and_delete
+        ):
+            self.assertLogoutSuccessResponse(self.logout(self.token))
 
     def test_view_account(self):
         response = self.client.view_account(self.token)
