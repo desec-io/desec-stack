@@ -538,56 +538,44 @@ class MockPDNSTestCase(APITestCase):
 
     def request_pch_zone_create(self, name):
         def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone creation request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    201,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) ADDED",
-                            "zones": [name],
-                        }
-                    ),
-                ]
+            return [
+                201,
+                {},
+                json.dumps(
+                    {
+                        "status": True,
+                        "message": "Zone(s) ADDED",
+                        "zones": [name],
+                    }
+                ),
+            ]
 
         return {
             "method": "POST",
             "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_CREATE),
             "callback": request_callback,
+            "match": [body_matcher(json.dumps({"zones": [name]}))] if name else [],
         }
 
     def request_pch_zone_delete(self, name):
         def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone deletion request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    200,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) deleted",
-                            "zones": [name],
-                        }
-                    ),
-                ]
+            return [
+                200,
+                {},
+                json.dumps(
+                    {
+                        "status": True,
+                        "message": "Zone(s) deleted",
+                        "zones": [name],
+                    }
+                ),
+            ]
 
         return {
             "method": "DELETE",
             "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_DELETE),
             "callback": request_callback,
+            "match": [body_matcher(json.dumps({"zones": [name]}))] if name else [],
         }
 
     def assertRequests(self, *expected_requests, expect_order=True):
