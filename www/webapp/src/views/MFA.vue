@@ -50,6 +50,7 @@
                       length="6"
                       type="number"
                       required
+                      :autofocus="factors.length === 1"
                       :disabled="working"
                       tabindex="2"
                       @finish="verify"

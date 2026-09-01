@@ -61,6 +61,7 @@
                     length="6"
                     type="number"
                     required
+                    autofocus
                     :disabled="working"
                     tabindex="2"
                     @finish="verify"
