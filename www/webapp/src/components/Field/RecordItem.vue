@@ -136,10 +136,20 @@ export default {
         mirror.className = 'mirror-hint'
         el.after(mirror);
       }
-      mirror = createMirror(el);
+      const inputEl = el.getElementsByTagName("input")[0] || el;
+      mirror = createMirror(inputEl);
       mirror.style.paddingTop = '0px';
       mirror.style.whiteSpace = 'pre';
       mirror.className = 'mirror-input'
+      el.after(mirror);
+      // Measures the text before the caret. Absolutely positioned, so that it
+      // shrinks to the text instead of filling the field, and takes no part in
+      // sizing it.
+      mirror = createMirror(inputEl);
+      mirror.style.padding = '0';
+      mirror.style.position = 'absolute';
+      mirror.style.whiteSpace = 'pre';
+      mirror.className = 'mirror-caret'
       el.after(mirror);
       let label = el.getElementsByClassName("v-label")[0];
       if(label) {
@@ -390,6 +400,53 @@ export default {
       input.focus();
       await this.$nextTick();
       input.setSelectionRange(pos, pos);
+      this.scrollCaretIntoView(input);
+    },
+    /** *
+     * Scroll the caret into view. The browser does this by itself while the
+     * caret moves, but not when we place it with setSelectionRange, as we do
+     * for Home, End, and when moving across field boundaries.
+     */
+    scrollCaretIntoView(input) {
+      const scroller = input.closest('.record-list-scroller');
+      const mirror = input.closest('td')?.getElementsByClassName('mirror-caret')[0];
+      if (!scroller || !mirror) {
+        return;
+      }
+
+      // At the ends of the record value, show its ends, whatever the measurement says
+      if (input === this.getInputEl(0) && input.selectionStart === 0) {
+        input.scrollLeft = 0;
+        scroller.scrollLeft = 0;
+        return;
+      }
+      if (input === this.getInputEl(this.fields.length - 1) && input.selectionStart === input.value.length) {
+        input.scrollLeft = input.scrollWidth;
+        scroller.scrollLeft = scroller.scrollWidth;
+        return;
+      }
+
+      // The mirror carries the input's font, so it can measure the text before the caret
+      mirror.textContent = input.value.slice(0, input.selectionStart);
+      const style = window.getComputedStyle(input);
+      const offset = parseFloat(style.paddingLeft) + mirror.getBoundingClientRect().width;
+
+      // The input scrolls its own content when the text does not fit into the
+      // field, and the cell cannot scroll that part of the text into view
+      if (offset < input.scrollLeft) {
+        input.scrollLeft = offset;
+      } else if (offset > input.scrollLeft + input.clientWidth) {
+        input.scrollLeft = offset - input.clientWidth;
+      }
+
+      const caret = input.getBoundingClientRect().left - scroller.getBoundingClientRect().left
+          + scroller.scrollLeft - input.scrollLeft + parseFloat(style.borderLeftWidth) + offset;
+      const margin = 24;  // keep a bit of context next to the caret
+      if (caret - margin < scroller.scrollLeft) {
+        scroller.scrollLeft = caret - margin;
+      } else if (caret + margin > scroller.scrollLeft + scroller.clientWidth) {
+        scroller.scrollLeft = caret + margin - scroller.clientWidth;
+      }
     },
     async select(i) {
       await this.$nextTick();

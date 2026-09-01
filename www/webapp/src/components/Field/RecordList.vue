@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
+    <div class="record-list-scroller" style="overflow: auto hidden; padding-bottom: 1px; width: 100%">
       <table class="record-list-values" style="border-spacing: 0; width: 100%" @keydown="keydownHandler($event)" @paste.prevent="pasteHandler($event)">
         <component
                 :is="getRecordComponentName(type)"
