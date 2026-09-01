@@ -81,6 +81,7 @@ export default {
           datatype: RecordList.name,
           fieldProps: rrSet => ({ type: rrSet.type || 'A' }),
           searchable: true,
+          maxWidth: '35vw',  // long values scroll inside the cell instead of widening the table
         },
         ttl: {
           name: 'item.ttl',
@@ -145,22 +146,6 @@ export default {
 <style scoped>
     ::v-deep tr:not(.v-data-table__empty-wrapper) td {
         vertical-align: top;
-    }
-    ::v-deep .v-data-table .v-data-table__mobile-row {
-        height: auto;
-        margin: -11px 0;
-    }
-    ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr:not(:last-child).v-data-table__mobile-table-row > td:last-child {
-        border-bottom-width: 4px;
-    }
-    ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table {
-      width: 100%;
-    }
-    @media screen and (min-width: 600px) {
-      ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3),
-      ::v-deep .theme--light.v-data-table > .v-data-table__wrapper > table > tbody > tr > td:nth-child(3) > div{
-        width: 45vw;
-      }
     }
     ::v-deep tr.successFade > td {
         animation: successFade 1s;
