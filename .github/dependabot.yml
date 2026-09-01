@@ -12,6 +12,25 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: "npm"
+    directory: "www/webapp/"
+    schedule:
+      interval: "monthly"
+      timezone: "Europe/Berlin"
+      day: "monday"
+      time: "05:00"
+    ignore:
+      # eslint 9 defaults to flat config; .eslintrc.cjs must be migrated first
+      - dependency-name: "eslint"
+    groups:
+      npm-webapp:
+        patterns:
+          - "*"
+        dependency-type: "production"
+      npm-webapp-dev:
+        patterns:
+          - "*"
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "api/"
     schedule:
