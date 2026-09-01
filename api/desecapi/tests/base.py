@@ -117,8 +117,8 @@ class AssertRequestsContextManager:
     """
 
     @classmethod
-    def _flatten_nested_lists(cls, l):
-        for i in l:
+    def _flatten_nested_lists(cls, items):
+        for i in items:
             if isinstance(i, list) or isinstance(i, tuple):
                 yield from cls._flatten_nested_lists(i)
             else:
@@ -1067,7 +1067,7 @@ class DesecTestCase(MockPDNSTestCase):
             subject_contains in email.subject,
             f"Expected '{subject_contains}' in the email subject, but found '{email.subject}'",
         )
-        if type(body_contains) != list:
+        if not isinstance(body_contains, list):
             body_contains = [] if body_contains is None else [body_contains]
         for elem in body_contains:
             self.assertTrue(
@@ -1238,7 +1238,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
         return self._assertDynDNS12Update(requests, mock_remote_addr, **kwargs)
 
     def assertDynDNS12NoUpdate(self, *args, **kwargs):
-        return self.assertDynDNS12Update(expect_update=False, *args, **kwargs)
+        return self.assertDynDNS12Update(*args, expect_update=False, **kwargs)
 
     def setUp(self):
         super().setUp()

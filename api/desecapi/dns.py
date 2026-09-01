@@ -96,9 +96,9 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):
         for long_s in self.strings:
             for s in [long_s[i : i + 255] for i in range(0, max(len(long_s), 1), 255)]:
-                l = len(s)
-                assert l < 256
-                file.write(struct.pack("!B", l))
+                length = len(s)
+                assert length < 256
+                file.write(struct.pack("!B", length))
                 file.write(s)
 
 

@@ -935,7 +935,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
 
     def test_create_auto_delegated_domains(self):
-        for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
+        for suffix in self.AUTO_DELEGATION_DOMAINS:
             name = self.random_domain_name(suffix)
             with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name=name)
@@ -954,7 +954,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         url = self.reverse("v1:domain-list")
         user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
 
-        for i in range(user_quota):
+        for _ in range(user_quota):
             name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
             with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name)
@@ -1017,12 +1017,12 @@ class DomainManagerTestCase(DesecTestCase):
         config["sub.domain.dedyn.io"] = config["domain.dedyn.io"]
 
         for qname, cases in config.items():
-            for qname in [qname, f"*.{qname}"]:
+            for name in [qname, f"*.{qname}"]:
                 for owner, expected in cases.items():
                     filter_kwargs = dict(owner=owner) if owner is not None else {}
-                    qs = Domain.objects.filter_qname(
-                        qname, **filter_kwargs
-                    ).values_list("name", flat=True)
+                    qs = Domain.objects.filter_qname(name, **filter_kwargs).values_list(
+                        "name", flat=True
+                    )
                     self.assertListEqual(list(qs), expected)
 
     def test_filter_qname_invalid(self):

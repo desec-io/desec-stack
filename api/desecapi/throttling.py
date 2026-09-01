@@ -45,13 +45,13 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
             self.scope += ":" + sha1(bucket.encode()).hexdigest()
 
         self.now = self.timer()
-        self.num_requests, self.duration = zip(*self.parse_rate(self.rate))
+        self.num_requests, self.duration = zip(*self.parse_rate(self.rate), strict=True)
         self.key = self.get_cache_key(request, view)
         self.history = {key: [] for key in self.key}
         self.history.update(self.cache.get_many(self.key))
 
         for num_requests, duration, key in zip(
-            self.num_requests, self.duration, self.key
+            self.num_requests, self.duration, self.key, strict=True
         ):
             history = self.history[key]
             # Drop any requests from the history which have now passed the

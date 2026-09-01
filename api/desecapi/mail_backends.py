@@ -6,7 +6,6 @@ from django.core.mail import get_connection
 from django.core.mail.backends.base import BaseEmailBackend
 from djcelery_email.utils import dict_to_email, email_to_dict
 
-
 logger = logging.getLogger(__name__)
 
 

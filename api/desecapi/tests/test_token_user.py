@@ -220,6 +220,7 @@ class TokenViewTestCase(DomainOwnerTestCase):
                     (self.client.delete, None),
                 ),
                 get_patch_put_delete_codes,
+                strict=True,
             ):
                 self.assertStatus(method(url_detail, data=data), code)
 

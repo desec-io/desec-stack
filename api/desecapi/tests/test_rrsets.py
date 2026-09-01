@@ -81,7 +81,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             return mapping
 
         def assertPaginationResponse(
-            response, expected_length, expected_directional_links=[]
+            response, expected_length, expected_directional_links=()
         ):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), expected_length)
@@ -424,20 +424,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
         }
 
     def test_create_my_rr_sets_chunk_too_long(self):
-        for l, t in product([1, 255, 256, 498], ["TXT", "SPF"]):
+        for length, t in product([1, 255, 256, 498], ["TXT", "SPF"]):
             with self.assertRequests(
                 self.requests_desec_rr_sets_update(self.my_empty_domain.name)
             ):
                 response = self.client.post_rr_set(
                     self.my_empty_domain.name,
-                    **self._create_test_txt_record(f'"{"A" * l}"', t),
+                    **self._create_test_txt_record(f'"{"A" * length}"', t),
                 )
                 self.assertStatus(response, status.HTTP_201_CREATED)
             with self.assertRequests(
                 self.requests_desec_rr_sets_update(self.my_empty_domain.name)
             ):
                 self.client.delete_rr_set(
-                    self.my_empty_domain.name, type_=t, subname=f"name{l + 2}"
+                    self.my_empty_domain.name, type_=t, subname=f"name{length + 2}"
                 )
 
     def test_create_my_rr_sets_too_long_content(self):
@@ -1171,12 +1171,12 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
 
     def test_create_my_rr_sets_txt_splitting(self):
         for t in ["TXT", "SPF"]:
-            for l in [200, 255, 256, 300, 400]:
+            for length in [200, 255, 256, 300, 400]:
                 data = {
-                    "records": [f'"{"a" * l}"'],
+                    "records": [f'"{"a" * length}"'],
                     "ttl": 3660,
                     "type": t,
-                    "subname": f"x{l}",
+                    "subname": f"x{length}",
                 }
                 with self.assertRequests(
                     self.requests_desec_rr_sets_update(name=self.my_empty_domain.name)
@@ -1185,17 +1185,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                         self.my_empty_domain.name, **data
                     )
                     self.assertStatus(response, status.HTTP_201_CREATED)
-                response = self.client.get_rr_set(self.my_empty_domain.name, f"x{l}", t)
+                response = self.client.get_rr_set(
+                    self.my_empty_domain.name, f"x{length}", t
+                )
                 num_tokens = response.data["records"][0].count(" ") + 1
-                num_tokens_expected = l // 256 + 1
+                num_tokens_expected = length // 256 + 1
                 self.assertEqual(
                     num_tokens,
                     num_tokens_expected,
-                    f"For a {t} record with a token of length of {l}, expected to see "
+                    f"For a {t} record with a token of length of {length}, expected to see "
                     f"{num_tokens_expected} tokens in the canonical format, but saw {num_tokens}.",
                 )
                 self.assertEqual(
-                    "".join(r.strip('" ') for r in response.data["records"][0]), "a" * l
+                    "".join(r.strip('" ') for r in response.data["records"][0]),
+                    "a" * length,
                 )
 
     def test_create_my_rr_sets_unknown_type(self):
