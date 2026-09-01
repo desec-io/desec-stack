@@ -3,7 +3,7 @@ from django.db.models.signals import post_delete, post_save
 from django.db.transaction import atomic
 from django.utils import timezone
 
-from desecapi import pch, pdns
+from desecapi import pdns
 from desecapi.exceptions import ConcurrencyException
 from desecapi.models import RR, Domain, RRset
 
@@ -60,9 +60,6 @@ class PDNSChangeTracker:
         def api_do(self):
             raise NotImplementedError()
 
-        def pch_do(self):
-            raise NotImplementedError()
-
     class CreateDomain(PDNSChange):
         @property
         def axfr_required(self):
@@ -85,9 +82,6 @@ class PDNSChangeTracker:
             rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
-        def pch_do(self):
-            pch.create_domains([self.domain_name])
-
         def __str__(self):
             return f"Create Domain {self.domain_name}"
 
@@ -103,9 +97,6 @@ class PDNSChangeTracker:
 
         def api_do(self):
             pass
-
-        def pch_do(self):
-            pch.delete_domains([self.domain_name])
 
         def __str__(self):
             return f"Delete Domain {self.domain_name}"
@@ -159,9 +150,6 @@ class PDNSChangeTracker:
                 pdns.update_zone(self.domain_name, data)
 
         def api_do(self):
-            pass
-
-        def pch_do(self):
             pass
 
         def __str__(self):
@@ -237,8 +225,6 @@ class PDNSChangeTracker:
             try:
                 change.pdns_do()
                 change.api_do()
-                if settings.PCH_API and not settings.DEBUG:
-                    change.pch_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
             except Exception as e:

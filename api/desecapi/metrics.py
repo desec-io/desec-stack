@@ -78,18 +78,6 @@ set_counter(
 )
 set_counter("desecapi_pdns_keys_fetched", "number of times pdns keys were fetched")
 
-# pch.py metrics
-set_counter(
-    "desecapi_pch_request_success",
-    "number of times PCH request was successful",
-    ["method", "status"],
-)
-set_counter(
-    "desecapi_pch_request_failure",
-    "number of times PCH request failed",
-    ["method", "path", "status"],
-)
-
 # gatekeeper.py metrics
 set_counter(
     "desecapi_gatekeeper_verdict",
@@ -106,7 +94,6 @@ set_histogram(
     "duration of gatekeeper requests",
     ["event"],
 )
-
 
 # pdns_change_tracker.py metrics
 set_counter(

@@ -230,10 +230,6 @@ CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
 # Watchdog
 WATCHDOG_SECONDARIES = os.environ.get("DESECSTACK_WATCHDOG_SECONDARIES", "").split()
 
-# PCH
-PCH_API = os.environ.get("DESECSTACK_API_PCH_API", "")
-PCH_API_TOKEN = os.environ.get("DESECSTACK_API_PCH_API_TOKEN", "")
-
 # Gatekeeper (see gatekeeper/README.md)
 GATEKEEPER_API = "http://gatekeeper:8000/"
 GATEKEEPER_TIMEOUT = 2

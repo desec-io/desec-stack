@@ -43,5 +43,4 @@ CELERY_BROKER_URL = "memory://"
 
 DOMAIN_LIMIT_INSECURE_HEADROOM = 15
 
-PCH_API = "http://api.invalid"
 GATEKEEPER_API = "http://gatekeeper.invalid/"

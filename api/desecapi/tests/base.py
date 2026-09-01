@@ -271,8 +271,6 @@ class MockPDNSTestCase(APITestCase):
     PDNS_ZONE = r"/zones/(?P<id>[^/]+)"
     PDNS_ZONE_AXFR = r"/zones/(?P<id>[^/]+)/axfr-retrieve"
     PDNS_ZONE_EXPORT = r"/zones/(?P<id>[^/]+)/export"
-    PCH_ZONE_CREATE = r"/zones"
-    PCH_ZONE_DELETE = r"/zones"
 
     @classmethod
     def get_full_pdns_url(cls, path_regex, ns="LORD", **kwargs):
@@ -534,60 +532,6 @@ class MockPDNSTestCase(APITestCase):
             "body": "",
         }
 
-    def request_pch_zone_create(self, name):
-        def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone creation request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    201,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) ADDED",
-                            "zones": [name],
-                        }
-                    ),
-                ]
-
-        return {
-            "method": "POST",
-            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_CREATE),
-            "callback": request_callback,
-        }
-
-    def request_pch_zone_delete(self, name):
-        def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone deletion request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    200,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) deleted",
-                            "zones": [name],
-                        }
-                    ),
-                ]
-
-        return {
-            "method": "DELETE",
-            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_DELETE),
-            "callback": request_callback,
-        }
-
     def request_gatekeeper(self, verdict="allow", reason=None, **kwargs):
         """
         Response to a gatekeeper request. By default, the gatekeeper allows the request; to
@@ -628,33 +572,6 @@ class MockPDNSTestCase(APITestCase):
             expected_requests=expected_requests,
             single_expectation_single_request=False,
             expect_order=False,
-        )
-
-    def assertZoneCreation(self, name):
-        """
-        Asserts that nslord, nsmaster and PCH are contacted for zone creation.
-        Name is only asserted for requests to PCH.
-        """
-        return AssertRequestsContextManager(
-            test_case=self,
-            expected_requests=[
-                self.request_pdns_zone_create(ns="LORD"),
-                self.request_pdns_zone_create(ns="MASTER"),
-                self.request_pch_zone_create(name=name),
-            ],
-        )
-
-    def assertZoneDeletion(self, name):
-        """
-        Asserts that nslord, nsmaster and PCH are contacted for zone deletion.
-        """
-        return AssertRequestsContextManager(
-            test_case=self,
-            expected_requests=[
-                self.request_pdns_zone_delete(ns="LORD", name=name),
-                self.request_pdns_zone_delete(ns="MASTER", name=name),
-                self.request_pch_zone_delete(name=name),
-            ],
         )
 
     def assertStatus(self, response, status):
@@ -921,7 +838,6 @@ class DesecTestCase(MockPDNSTestCase):
             self.request_pdns_zone_create("LORD", body_matcher(soa_content)),
             self.request_pdns_zone_create(ns="MASTER"),
             self.request_pdns_update_catalog(),
-            self.request_pch_zone_create(name=name),
         ]
         if axfr:
             requests.append(self.request_pdns_zone_axfr(name=name))
@@ -934,7 +850,6 @@ class DesecTestCase(MockPDNSTestCase):
             self.request_pdns_zone_delete(name=domain.name, ns="LORD"),
             self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
             self.request_pdns_update_catalog(),
-            self.request_pch_zone_delete(name=domain.name),
         ]
 
         if domain.is_locally_registrable:

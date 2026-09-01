@@ -23,7 +23,7 @@ class RegistrationDenied(APIException):
     default_code = "registration_denied"
 
 
-class ExternalAPIException(APIException):
+class PDNSException(APIException):
     def __init__(self, response=None):
         self.response = response
         detail = (
@@ -32,14 +32,6 @@ class ExternalAPIException(APIException):
             else None
         )
         return super().__init__(detail)
-
-
-class PDNSException(ExternalAPIException):
-    pass
-
-
-class PCHException(ExternalAPIException):
-    pass
 
 
 class ConcurrencyException(APIException):
