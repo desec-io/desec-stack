@@ -13,6 +13,10 @@ expected to come with a ``Content-Type: application/json`` header field and to
 be sent via HTTPS using state-of-the-art encryption. (Outdated setups, e.g.
 TLS < 1.2, are not supported.)
 
+Every API endpoint URL ends with a slash, immediately preceding the query
+string if one is given, such as ``https://desec.io/api/v1/domains/`` or
+``https://desec.io/api/v1/domains/?owns_qname=www.example.com``.
+
 API functionality is demonstrated using the command line tool ``curl``.  To
 pretty-print JSON output, process the data through ``jq``:  ``curl ... | jq .``.
 
