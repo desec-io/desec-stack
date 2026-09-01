@@ -50,9 +50,11 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Install Ruff
-      run: python3 -m pip install ruff
+      run: python3 -m pip install ruff==0.16.5
     - name: Test desecapi formatting
       run: ruff format --check api/
+    - name: Lint desecapi
+      run: ruff check api/
 
   test-webapp:
     # runs webapp unit tests

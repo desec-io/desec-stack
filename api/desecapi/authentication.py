@@ -186,7 +186,7 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
 
         # When user.is_active is None, activation is pending.  We need to admit them to finish activation, so only
         # reject strictly False.  There are permissions to make sure that such accounts can't do anything else.
-        if user.is_active == False:
+        if user.is_active == False:  # noqa: E712
             raise exceptions.AuthenticationFailed("User inactive.")
         return user, None
 
