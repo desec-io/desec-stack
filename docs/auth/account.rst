@@ -253,6 +253,10 @@ A JSON object representing your user account will be returned::
         "secure_domains": 3
     }
 
+This operation requires the ``perm_manage_tokens`` permission on the token
+(see :ref:`token object`).  Otherwise, the server responds with
+``403 Forbidden``.
+
 Field details:
 
 ``created``
@@ -317,6 +321,9 @@ endpoint.
 Currently, this only allows changing the ``outreach_preference`` field.
 Other fields are either read-only (such as ``limit_domains``) or can be
 changed through a special procedure only (see e.g. `Password Reset`_).
+
+Like retrieving account information, this operation requires the
+``perm_manage_tokens`` permission on the token (see :ref:`token object`).
 
 
 Password Reset

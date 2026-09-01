@@ -166,7 +166,9 @@ Field details:
     :Type: boolean
 
     Permission to manage tokens (this one and also all others).  A token which
-    does not have this flag set cannot access the ``auth/tokens/`` endpoints.
+    does not have this flag set cannot access the ``auth/tokens/`` endpoints,
+    nor the :ref:`account endpoint <retrieve-account-information>`
+    (``auth/account/``).
 
 ``token``
     :Access mode: read-once
