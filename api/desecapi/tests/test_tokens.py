@@ -124,7 +124,7 @@ class TokenPermittedTestCase(DomainOwnerTestCase):
             for data in datas:
                 response = method(url, data=data)
                 self.assertStatus(response, status.HTTP_200_OK)
-                for k, v in data.items():
+                for k in data:
                     self.assertEqual(response.data[k], orig_data[k])
 
         # Revoke token management permission

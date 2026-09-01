@@ -111,7 +111,7 @@ class EffectiveLimitTestCase(TestCase):
     @override_settings(DOMAIN_LIMIT_INSECURE_HEADROOM=1)
     def test_limit_is_monotone_in_small_steps(self):
         limits = [self.limit_for(s) for s in range(101)]
-        for s, (before, after) in enumerate(zip(limits, limits[1:])):
+        for s, (before, after) in enumerate(zip(limits, limits[1:], strict=False)):
             with self.subTest(s=s):
                 self.assertIn(after - before, (1, 2))
 

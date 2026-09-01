@@ -143,14 +143,14 @@ class Command(BaseCommand):
         domains = self.get_domains(options).iterator(chunk_size=BATCH_SIZE)
         try:
             with ThreadPoolExecutor(max_workers=options["concurrency"]) as pool:
-                for batch in itertools.batched(domains, BATCH_SIZE):
+                for batch in itertools.batched(domains, BATCH_SIZE, strict=False):
                     # Measuring happens in the pool, recording does not:
                     # delegation.check() touches no database, so keeping every
                     # ORM call on this thread spares us per-thread connections
                     # and their lifecycle. map() keeps the order, so results
                     # are still recorded and printed sorted by name.
                     results = pool.map(delegation.check, (d.name for d in batch))
-                    for domain, result in zip(batch, results):
+                    for domain, result in zip(batch, results, strict=True):
                         if not options["dry_run"]:
                             DelegationCheck.objects.record(domain, result)
 

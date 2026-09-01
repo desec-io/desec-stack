@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.mail import EmailMessage, get_connection
 from django.core.mail.backends.base import BaseEmailBackend
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -951,7 +951,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         self.owner.domains.under_local_public_suffix().delete()
 
     def test_create_auto_delegated_domains(self):
-        for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
+        for suffix in self.AUTO_DELEGATION_DOMAINS:
             self.drop_local_domains()  # one at a time, whatever the suffix
             name = self.random_domain_name(suffix)
             with self.assertRequests(
@@ -1064,12 +1064,12 @@ class DomainManagerTestCase(DesecTestCase):
         config["sub.domain.parent.example"] = config["domain.parent.example"]
 
         for qname, cases in config.items():
-            for qname in [qname, f"*.{qname}"]:
+            for name in [qname, f"*.{qname}"]:
                 for owner, expected in cases.items():
                     filter_kwargs = dict(owner=owner) if owner is not None else {}
-                    qs = Domain.objects.filter_qname(
-                        qname, **filter_kwargs
-                    ).values_list("name", flat=True)
+                    qs = Domain.objects.filter_qname(name, **filter_kwargs).values_list(
+                        "name", flat=True
+                    )
                     self.assertListEqual(list(qs), expected)
 
     def test_filter_qname_invalid(self):
