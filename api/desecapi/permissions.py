@@ -2,8 +2,6 @@ from ipaddress import IPv4Address, IPv4Network
 
 from rest_framework import permissions
 
-from desecapi.models import RRset
-
 
 class IsActiveUser(permissions.BasePermission):
     """

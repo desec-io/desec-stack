@@ -293,7 +293,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertEqual(response.data[0].code, "multiple-subnet")
 
         # Only allow syntactically valid subnets
-        response = self.assertDynDNS12Update(myip=f"127.0.0.1//", expect_update=False)
+        response = self.assertDynDNS12Update(myip="127.0.0.1//", expect_update=False)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0].code, "invalid-subnet")
 

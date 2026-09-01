@@ -73,7 +73,7 @@ class TokenSerializer(serializers.ModelSerializer):
 
     def validate_user_override(self, value):
         if self.instance and value != self.instance.user_override:
-            raise serializers.ValidationError(f"Cannot alter this field once set.")
+            raise serializers.ValidationError("Cannot alter this field once set.")
         return value
 
     def save(self, **kwargs):

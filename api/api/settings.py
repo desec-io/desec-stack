@@ -2,14 +2,10 @@
 Django settings for desecapi project.
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 from datetime import timedelta
 
 from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HASHERS
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DESECSTACK_API_SECRETKEY"]

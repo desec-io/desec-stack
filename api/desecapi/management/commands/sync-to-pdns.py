@@ -34,7 +34,7 @@ class Command(BaseCommand):
             try:
                 created = self._sync_domain(domain)
                 if created:
-                    self.stdout.write(f" created (was missing) ...", ending="")
+                    self.stdout.write(" created (was missing) ...", ending="")
                     catalog_alignment = True
                 self.stdout.write(" synced")
             except Exception as e:
