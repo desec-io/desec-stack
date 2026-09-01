@@ -197,8 +197,15 @@
               v-for="(column, id) in columns"
               #[column.name]="itemFieldProps"
             >
+              <router-link
+                v-if="cellUsesPlainText(column, rawItem(itemFieldProps.item)) && column.link"
+                :key="`${id}-link`"
+                class="crud-readonly-value crud-link"
+                :to="column.link(rawItem(itemFieldProps.item))"
+                @click.stop
+              >{{ readonlyDisplayValue(column, rawItem(itemFieldProps.item)) }}</router-link>
               <div
-                v-if="cellUsesPlainText(column, rawItem(itemFieldProps.item))"
+                v-else-if="cellUsesPlainText(column, rawItem(itemFieldProps.item))"
                 :key="`${id}-readonly`"
                 class="crud-readonly-value"
                 v-text="readonlyDisplayValue(column, rawItem(itemFieldProps.item))"
@@ -840,6 +847,12 @@ export default {
   line-height: 1.5;
   min-height: 56px;
   padding: 20px 0 4px;
+}
+/* a real link, so that it can be opened in a new tab, but looking like the rest
+   of the row (App.vue underlines it on hover, like any other link) */
+.v-application a.crud-link {
+  color: inherit !important;
+  text-decoration: none;
 }
 </style>
 
