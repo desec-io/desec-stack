@@ -8,7 +8,6 @@ from djcelery_email.utils import dict_to_email, email_to_dict
 
 from desecapi import metrics
 
-
 logger = logging.getLogger(__name__)
 
 

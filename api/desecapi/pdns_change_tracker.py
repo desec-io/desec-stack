@@ -1,11 +1,11 @@
 from django.conf import settings
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.db.transaction import atomic
 from django.utils import timezone
 
 from desecapi import pch, pdns
 from desecapi.exceptions import ConcurrencyException
-from desecapi.models import RRset, RR, Domain
+from desecapi.models import RR, Domain, RRset
 
 
 class PDNSChangeTracker:

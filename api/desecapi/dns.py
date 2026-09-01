@@ -1,14 +1,18 @@
 import re
 import struct
-
 from ipaddress import IPv6Address
 
 import dns
 import dns.dnssec
 import dns.name
-import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
-import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
+import dns.rdtypes.ANY.CERT
+import dns.rdtypes.ANY.CNAME
+import dns.rdtypes.ANY.MX
+import dns.rdtypes.ANY.NS
+import dns.rdtypes.IN.AAAA
+import dns.rdtypes.IN.SRV
+import dns.rdtypes.svcbbase
+import dns.rdtypes.txtbase
 
 
 def _strip_quotes_decorator(func):

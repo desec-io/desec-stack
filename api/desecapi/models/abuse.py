@@ -1,10 +1,10 @@
 from datetime import date
 from ipaddress import IPv4Address, IPv4Network
 
+import dns.resolver
 from django.contrib.postgres.indexes import GistIndex
 from django.core.validators import MaxValueValidator
 from django.db import models
-import dns.resolver
 from netfields import CidrAddressField, NetManager
 
 

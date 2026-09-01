@@ -1,11 +1,13 @@
 import time
 from socket import gethostbyname
 
+import dns.message
+import dns.query
+import dns.rdatatype
 from django.conf import settings
 from django.core.mail import get_connection, mail_admins
 from django.core.management import BaseCommand
 from django.utils import timezone
-import dns.message, dns.rdatatype, dns.query
 
 from desecapi import models
 from desecapi.pdns_change_tracker import PDNSChangeTracker

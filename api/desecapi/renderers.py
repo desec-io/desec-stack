@@ -1,6 +1,6 @@
 import json
-import yaml
 
+import yaml
 from rest_framework import renderers
 
 

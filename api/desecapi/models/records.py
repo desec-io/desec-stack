@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import binascii
 import uuid
-from ipaddress import ip_address, ip_network, IPv4Network, IPv6Network
+from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 
 import dns
 from django.contrib.postgres.constraints import ExclusionConstraint
@@ -17,10 +17,9 @@ from dns import rdataclass, rdatatype
 from dns.rdtypes import ANY, IN
 
 from desecapi import pdns
-from desecapi.dns import AAAA, CERT, CNAME, LongQuotedTXT, MX, NS, SRV
+from desecapi.dns import AAAA, CERT, CNAME, MX, NS, SRV, LongQuotedTXT
 
 from .base import validate_lower, validate_upper
-
 
 # RR set types: the good, the bad, and the ugly
 # known, but unsupported types

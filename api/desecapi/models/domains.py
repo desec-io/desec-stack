@@ -20,7 +20,6 @@ from desecapi import logger, metrics, pdns
 from .base import validate_domain_name
 from .records import RRset
 
-
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
 
 

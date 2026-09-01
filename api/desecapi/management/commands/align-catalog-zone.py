@@ -3,13 +3,13 @@ from django.core.management import BaseCommand
 
 from desecapi.exceptions import PDNSException
 from desecapi.pdns import (
+    NSLORD,
+    NSMASTER,
     _pdns_delete,
     _pdns_get,
     _pdns_post,
-    NSLORD,
-    NSMASTER,
-    pdns_id,
     construct_catalog_rrset,
+    pdns_id,
 )
 
 

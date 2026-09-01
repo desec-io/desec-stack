@@ -7,11 +7,10 @@ from .donation import Donation
 from .mfa import BaseFactor, TOTPFactor
 from .records import (
     RR,
-    RRset,
     RR_SET_TYPES_AUTOMATIC,
     RR_SET_TYPES_MANAGEABLE,
     RR_SET_TYPES_UNSUPPORTED,
-    RR_SET_TYPES_UNSUPPORTED,
+    RRset,
     replace_ip_subnet,
 )
 from .tokens import Token, TokenDomainPolicy

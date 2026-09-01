@@ -1,15 +1,17 @@
 import base64
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from ipaddress import ip_address
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.utils import timezone
-from rest_framework import exceptions, HTTP_HEADER_ENCODING
+from rest_framework import HTTP_HEADER_ENCODING, exceptions
 from rest_framework.authentication import (
     BaseAuthentication,
-    get_authorization_header,
-    TokenAuthentication as RestFrameworkTokenAuthentication,
     BasicAuthentication,
+    get_authorization_header,
+)
+from rest_framework.authentication import (
+    TokenAuthentication as RestFrameworkTokenAuthentication,
 )
 
 from desecapi.models import Domain, Token

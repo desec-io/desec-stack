@@ -12,9 +12,9 @@ from django.db import IntegrityError
 from psycopg.errors import UniqueViolation
 from rest_framework import status
 
-from desecapi.models import BlockedSubnet, Domain, RR, RRset
+from desecapi.models import RR, BlockedSubnet, Domain, RRset
 from desecapi.models.records import RR_SET_TYPES_AUTOMATIC, RR_SET_TYPES_UNSUPPORTED
-from desecapi.tests.base import DesecTestCase, AuthenticatedRRSetBaseTestCase
+from desecapi.tests.base import AuthenticatedRRSetBaseTestCase, DesecTestCase
 
 
 class UnauthenticatedRRSetTestCase(DesecTestCase):

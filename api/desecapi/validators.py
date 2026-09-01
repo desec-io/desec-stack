@@ -2,7 +2,7 @@ from django.db import DataError
 from django.db.models import Model
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, qs_exists, qs_filter
 
 from desecapi.permissions import TokenHasRRsetPermission
 

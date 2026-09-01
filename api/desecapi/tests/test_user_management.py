@@ -15,14 +15,14 @@ This involves testing five separate endpoints:
 Furthermore, domain renewals and unused domain/account scavenging are tested.
 """
 
-from datetime import timedelta
 import random
 import time
+from datetime import timedelta
 from unittest import mock
 from urllib.parse import urlparse
 
-from django.contrib.auth.hashers import is_password_usable
 from django.conf import settings
+from django.contrib.auth.hashers import is_password_usable
 from django.core import mail
 from django.core.management import call_command
 from django.test import override_settings
@@ -33,8 +33,8 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from desecapi import authentication
-from desecapi.models import Captcha, Domain, Token, User
 from desecapi.exceptions import AuthenticatedActionInvalidState
+from desecapi.models import Captcha, Domain, Token, User
 from desecapi.tests.base import (
     DesecTestCase,
     DomainOwnerTestCase,

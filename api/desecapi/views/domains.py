@@ -1,11 +1,11 @@
-from datetime import timezone, datetime, UTC
+from datetime import UTC, datetime, timezone
 
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Subquery
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
