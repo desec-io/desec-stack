@@ -872,8 +872,13 @@ export default {
   tr.crud-item.bg-red-lighten-5 .button-save .v-icon {
     color: forestgreen;
   }
-  tr.crud-item:focus-within :focus {
-    background-color: #FFFFFF;
+  /* App.vue paints fields white, which would cover the row coloring and the
+     save flash. In the tables, the row is the background. */
+  tr.crud-item .v-field,
+  tr.crud-item .v-field--variant-plain,
+  tr.crud-item .v-input--disabled .v-field,
+  tr.crud-item .v-field--disabled {
+    background-color: transparent;
   }
   tbody tr.crud-item--clickable {
     cursor: pointer;
