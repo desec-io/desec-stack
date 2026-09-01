@@ -319,6 +319,19 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertEqual(response.data, "good")
         self.assertIP(ipv6="2a01::f12:7233", subname="foo")
 
+        # Both families at the same name, each replaced with its own subnet
+        self.create_rr_set(
+            self.my_domain, ["10.0.0.1"], type="A", subname="foo", ttl=60
+        )
+
+        response = self.assertDynDNS12Update(
+            hostname=f"foo.{self.my_domain.name}",
+            myip=subnet_v4,
+            myipv6="2a03:1234::/64",
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv4="6.7.0.1", ipv6="2a03:1234::f12:7233", subname="foo")
+
     def test_subnet_with_low_ipv6_prefix(self):
         self.create_rr_set(
             self.my_domain,
