@@ -68,9 +68,12 @@ DATABASES = {
 
 CACHES = {
     "default": {
-        # TODO 'BACKEND': 'django_prometheus.cache.backends.memcached.PyLibMCCache' not supported
-        "BACKEND": "django.core.cache.backends.memcached.PyLibMCCache",
+        # Django closes cache connections at the end of each request, so this backend
+        # reconnects to memcached per request.  Subclassing it with a no-op close()
+        # keeps the connection open, should the reconnects ever become noticeable.
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": "memcached:11211",
+        "OPTIONS": {"no_delay": True},
     }
 }
 
