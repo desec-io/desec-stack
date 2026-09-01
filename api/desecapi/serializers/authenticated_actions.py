@@ -29,9 +29,7 @@ class CustomFieldNameUniqueValidator(UniqueValidator):
         """
         Filter the queryset to all instances matching the given value on the specified lookup field.
         """
-        filter_kwargs = {
-            "%s__%s" % (self.lookup_field or field_name, self.lookup): value
-        }
+        filter_kwargs = {f"{self.lookup_field or field_name}__{self.lookup}": value}
         return qs_filter(queryset, **filter_kwargs)
 
 

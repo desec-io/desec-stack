@@ -147,7 +147,7 @@ def get_keys(domain):
     """
     Retrieves a dict representation of the DNSSEC key information
     """
-    r = _pdns_get(NSLORD, "/zones/%s/cryptokeys" % pdns_id(domain.name))
+    r = _pdns_get(NSLORD, f"/zones/{pdns_id(domain.name)}/cryptokeys")
     metrics.get("desecapi_pdns_keys_fetched").inc()
     field_map = {
         "dnskey": "dnskey",
@@ -275,7 +275,7 @@ def update_zone(name, data):
 
 
 def axfr_to_master(zone):
-    _pdns_put(NSMASTER, "/zones/%s/axfr-retrieve" % pdns_id(zone))
+    _pdns_put(NSMASTER, f"/zones/{pdns_id(zone)}/axfr-retrieve")
 
 
 def construct_catalog_rrset(

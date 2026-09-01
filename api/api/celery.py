@@ -23,7 +23,7 @@ class CeleryFormatter(logging.Formatter):
 
 @app.task(bind=True)
 def debug_task(self):
-    print("Request: {0!r}".format(self.request))
+    print(f"Request: {self.request!r}")
 
 
 @task_failure.connect()

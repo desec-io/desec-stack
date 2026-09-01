@@ -92,7 +92,7 @@ class NonBulkOnlyDefault:
         return self.default
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.default))
+        return f"{self.__class__.__name__}({repr(self.default)})"
 
 
 class RRSerializer(serializers.ModelSerializer):
@@ -219,8 +219,9 @@ class RRsetListSerializer(serializers.ListSerializer):
                     raise serializers.ValidationError(
                         {
                             api_settings.NON_FIELD_ERRORS_KEY: [
-                                "Same subname and type as in position(s) %s, but must be unique."
-                                % ", ".join(map(str, data_indices - {idx}))
+                                "Same subname and type as in position(s) {}, but must be unique.".format(
+                                    ", ".join(map(str, data_indices - {idx}))
+                                )
                             ]
                         }
                     )

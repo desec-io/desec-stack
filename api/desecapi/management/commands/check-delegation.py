@@ -51,8 +51,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--include-local",
             action="store_true",
-            help="When selecting domains in bulk, also check domains under %s."
-            % ", ".join(sorted(settings.LOCAL_PUBLIC_SUFFIXES)),
+            help="When selecting domains in bulk, also check domains under "
+            f"{', '.join(sorted(settings.LOCAL_PUBLIC_SUFFIXES))}.",
         )
         parser.add_argument(
             "--dry-run",

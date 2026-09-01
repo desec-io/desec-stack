@@ -89,7 +89,7 @@ class PDNSChangeTracker:
             pch.create_domains([self.domain_name])
 
         def __str__(self):
-            return "Create Domain %s" % self.domain_name
+            return f"Create Domain {self.domain_name}"
 
     class DeleteDomain(PDNSChange):
         @property
@@ -108,7 +108,7 @@ class PDNSChangeTracker:
             pch.delete_domains([self.domain_name])
 
         def __str__(self):
-            return "Delete Domain %s" % self.domain_name
+            return f"Delete Domain {self.domain_name}"
 
     class CreateUpdateDeleteRRSets(PDNSChange):
         def __init__(self, domain_name, additions, modifications, deletions):
@@ -165,15 +165,7 @@ class PDNSChangeTracker:
             pass
 
         def __str__(self):
-            return (
-                "Update RRsets of %s: additions=%s, modifications=%s, deletions=%s"
-                % (
-                    self.domain_name,
-                    list(self._additions),
-                    list(self._modifications),
-                    list(self._deletions),
-                )
-            )
+            return f"Update RRsets of {self.domain_name}: additions={list(self._additions)}, modifications={list(self._modifications)}, deletions={list(self._deletions)}"
 
     def __init__(self):
         self._domain_additions = set()
@@ -218,7 +210,7 @@ class PDNSChangeTracker:
     def __enter__(self):
         PDNSChangeTracker._active_change_trackers += 1
         assert PDNSChangeTracker._active_change_trackers == 1, (
-            "Nesting %s is not supported." % self.__class__.__name__
+            f"Nesting {self.__class__.__name__} is not supported."
         )
         self._domain_additions = set()
         self._domain_deletions = set()
@@ -436,6 +428,6 @@ class PDNSChangeTracker:
         )
         all_domains = self._domain_additions | self._domain_deletions
         return (
-            "<%s: %i added or deleted domains; %i added, modified or deleted RR sets>"
-            % (self.__class__.__name__, len(all_domains), len(all_rr_sets))
+            f"<{self.__class__.__name__}: {len(all_domains):d} added or deleted domains; "
+            f"{len(all_rr_sets):d} added, modified or deleted RR sets>"
         )
