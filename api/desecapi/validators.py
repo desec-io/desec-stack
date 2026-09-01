@@ -72,9 +72,17 @@ class PermissionValidator:
         # On the RRsetDetail apex endpoint, subname is not in attrs
         subname = attrs.get("subname")
         if subname is None:
-            subname = serializer.context["view"].kwargs["subname"]
+            subname = serializer.context["view"].kwargs.get("subname")
         # On the RRsetDetail endpoint, the type is not in attrs
-        type_ = attrs.get("type") or serializer.instance.type
+        type_ = attrs.get("type") or getattr(serializer.instance, "type", None)
+
+        missing = {
+            field: serializer.fields[field].error_messages["required"]
+            for field, value in (("subname", subname), ("type", type_))
+            if value is None
+        }
+        if missing:
+            raise ValidationError(missing, code="required")
 
         rrset = serializer.Meta.model(
             domain=serializer.domain, subname=subname, type=type_
