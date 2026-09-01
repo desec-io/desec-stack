@@ -292,6 +292,25 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, [{}, {"type": ["This field is required."]}])
 
+    def test_bulk_patch_deletion_needs_subname_and_type(self):
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=self.data_no_subname_empty_records,
+            ),
+            status.HTTP_400_BAD_REQUEST,
+            [{"subname": ["This field is required."]}, {}],
+        )
+
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[{"subname": "my-bulk", "records": []}],
+            ),
+            status.HTTP_400_BAD_REQUEST,
+            [{"type": ["This field is required."]}],
+        )
+
     def test_bulk_patch_does_not_accept_single_objects(self):
         response = self.client.bulk_patch_rr_sets(
             domain_name=self.my_empty_domain.name, payload=self.data[0]
