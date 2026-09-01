@@ -222,7 +222,7 @@
         try {
           this.ips = this.ips.concat(await this.retrieveRecords('A') || []);
           this.ips = this.ips.concat(await this.retrieveRecords('AAAA') || []);
-        } catch (e) {
+        } catch {
           this.ips = undefined;
         }
         this.working = false;

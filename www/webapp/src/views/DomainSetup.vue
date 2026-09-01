@@ -230,7 +230,7 @@ export default {
               this.showSnackbar("Copy to clipboard not allowed. Please try again manually.", mdiAlert);
             },
         );
-      } catch (e) {
+      } catch {
         this.showSnackbar("Copy to clipboard failed. Please try again manually.", mdiAlert);
       }
     },

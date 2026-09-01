@@ -145,7 +145,7 @@ export default {
 <style scoped>
     /* Unlike in the other lists, the save button is highlighted as soon as the
        row is focused, not only once it is dirty. */
-    ::v-deep tr:focus-within .button-save .v-icon {
+    :deep(tr:focus-within .button-save .v-icon) {
         color: forestgreen;
     }
 </style>
