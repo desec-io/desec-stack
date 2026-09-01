@@ -1,5 +1,6 @@
 from django.utils import timezone
 
+from desecapi.exceptions import ConcurrencyException
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase
@@ -36,6 +37,24 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         tracker._rr_set_updated(RRset(domain=self.empty_domain, subname="", type="A"))
         with self.assertRaises(ValueError):
             tracker.__exit__(None, None, None)
+
+    def test_rr_set_deleted_by_concurrent_request(self):
+        rr_set = RRset.objects.create(
+            domain=self.empty_domain, subname="", type="A", ttl=3600
+        )
+        RR.objects.create(rrset=rr_set, content="1.2.3.4")
+
+        with self.assertRaises(ConcurrencyException), PDNSChangeTracker():
+            rr_set.records.all().delete()
+            # Simulate a concurrent request deleting the RR set, without signals
+            RRset.objects.filter(pk=rr_set.pk)._raw_delete(RRset.objects.db)
+            rr_set.save_records(["5.6.7.8"])
+
+        # The transaction was rolled back, so the RR set was not resurrected
+        self.assertEqual(
+            list(RR.objects.filter(rrset=rr_set).values_list("content", flat=True)),
+            ["1.2.3.4"],
+        )
 
 
 class RRTestCase(PdnsChangeTrackerTestCase):

@@ -4,6 +4,7 @@ from django.db.transaction import atomic
 from django.utils import timezone
 
 from desecapi import pch, pdns
+from desecapi.exceptions import ConcurrencyException
 from desecapi.models import RRset, RR, Domain
 
 
@@ -328,9 +329,12 @@ class PDNSChangeTracker:
         item = (rr_set.type, rr_set.subname)
         match (created, deleted):
             case (True, False):  # created
+                if item in modifications:
+                    # The RR set was deleted by a concurrent request, and Django
+                    # re-inserted it instead of updating it. Give up so that the
+                    # transaction is rolled back and no changes are sent to pdns.
+                    raise ConcurrencyException
                 additions.add(item)
-                # can fail with concurrent deletion request
-                assert item not in modifications
                 deletions.discard(item)
             case (False, True):  # deleted
                 if item in additions:
