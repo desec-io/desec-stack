@@ -322,9 +322,19 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
                 dns.rdatatype.EUI64,
             )
             if rdtype in chunksize_exception_types:
-                return rdata.to_text()
+                text = rdata.to_text()
             else:
-                return rdata.to_text(chunksize=0)
+                text = rdata.to_text(chunksize=0)
+
+            # Not everything dnspython renders can be parsed back (e.g. empty SVCB params)
+            try:
+                cls.to_wire(type_, text, digestable=False)
+            except dns.exception.SyntaxError:
+                raise ValueError(
+                    f"Record content for type {type_} malformed. Contact support if you think this is a bug."
+                )
+
+            return text
         except binascii.Error:
             # e.g., odd-length string
             raise ValueError("Cannot parse hexadecimal or base64 record contents")

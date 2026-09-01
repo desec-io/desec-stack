@@ -1122,6 +1122,18 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     response, "Duplicate", status_code=status.HTTP_400_BAD_REQUEST
                 )
 
+    def test_create_my_rr_sets_unrepresentable_content(self):
+        # dnspython accepts an empty SVCB parameter value, but cannot parse back the
+        # canonical format it renders for it
+        response = self.client.post_rr_set(
+            self.my_empty_domain.name,
+            records=['1 . key1=""', "2 . alpn=h2"],
+            ttl=3660,
+            type="HTTPS",
+            subname="subname",
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
     def test_create_my_rr_sets_no_ip_block_unless_lps(self):
         # IP block should not be effective unless domain is under Local Public Suffix
         BlockedSubnet.from_ip("3.2.2.3").save()
