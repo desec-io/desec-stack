@@ -410,6 +410,8 @@ export default {
     valid: null,
     dirty: new Set(),
     dirtyError: new Set(),
+    flashing: new Set(),
+    flashTimers: new Map(),
     /* to be overwritten */
     // features
     creatable: true,
@@ -596,6 +598,9 @@ export default {
       if (this.rowsClickable) {
         classes.push('crud-item--clickable');
       }
+      if (this.flashing.has(item)) {
+        classes.push('successFade');
+      }
       if (this.itemIsReadOnly(item)) {
         return classes.join(' ');
       }
@@ -699,19 +704,13 @@ export default {
      * The item is given by this.dialogIndex and this.dialogItem.
      * Errors are handled by calling the error function.
      */
-    async save(item, event) {
+    async save(item) {
       for (const c in this.columns) {
         this.columns[c].createErrors = [];
       }
       const self = this;
       if (item) {
         // edit item
-        if (event) {
-          // TODO do not tamper with the DOM directly -- bad things will happen (see commit msg)
-          const tr = event.target.closest('tr.crud-item');
-          tr.addEventListener("animationend", () => tr.classList.remove('successFade'), true);
-          tr.classList.add('successFade');
-        }
         this.preupdate(item);
         const url = this.resourcePath(
                 this.resourcePath(this.paths.update, this.$route.params, '::'),
@@ -724,6 +723,7 @@ export default {
                   Object.assign(self.rows[self.rows.indexOf(item)], r.data);
                   self.dirty.delete(item);
                   self.dirtyError.delete(item);
+                  self.flash(item);
                 })
                 .catch(function (error) {
                   self.dirtyError.add(item);
@@ -761,6 +761,17 @@ export default {
         }
       }
       this.createDialogWorking = false;
+    },
+    /** *
+     * Briefly highlight a row, to confirm that it was saved.
+     */
+    flash(item) {
+      clearTimeout(this.flashTimers.get(item));
+      this.flashing.delete(item);  // restart the animation if the row is still flashing
+      this.$nextTick(() => {
+        this.flashing.add(item);
+        this.flashTimers.set(item, setTimeout(() => this.flashing.delete(item), 1000));
+      });
     },
     /** *
      * Close the dialog and clean up state.
@@ -854,9 +865,6 @@ export default {
   tr.crud-item.successFade > td {
     animation: successFade 1s;
   }
-  tr.crud-item.successFade:focus-within > td {
-    animation: none;
-  }
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
@@ -870,7 +878,7 @@ export default {
   tbody tr.crud-item--clickable {
     cursor: pointer;
   }
-  tbody tr.crud-item--clickable:hover > td {
+  tbody tr.crud-item:hover > td {
     background-color: rgba(var(--v-theme-on-surface), 0.04);
   }
 </style>
