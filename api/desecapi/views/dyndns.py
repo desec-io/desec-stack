@@ -211,7 +211,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         # only domain associated with this user account
         try:
             return {self.request.user.domains.get().name}
-        except Domain.MultipleObjectsReturned:
+        except (Domain.DoesNotExist, Domain.MultipleObjectsReturned):
             raise ValidationError(
                 detail={
                     "detail": "Request does not properly specify domain for update.",
