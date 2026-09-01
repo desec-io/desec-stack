@@ -843,38 +843,34 @@ export default {
 }
 </style>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+<!-- Not scoped: the rows are rendered by the data table, and subclasses such as
+     CrudListDomain render this template under their own scope id, so a scope
+     attribute would match nothing. The .crud-item row class takes its place. -->
 <style>
-  ::v-deep tr:not(.v-data-table__empty-wrapper) td {
+  tr.crud-item > td {
     vertical-align: top;
   }
   /* If this is on tr instead of td, it doesn't work for the first one */
-  ::v-deep tr.successFade > td {
+  tr.crud-item.successFade > td {
     animation: successFade 1s;
   }
-  ::v-deep tr.successFade:focus-within > td {
+  tr.crud-item.successFade:focus-within > td {
     animation: none;
   }
   @keyframes successFade {
     from { background-color: forestgreen; }
   }
-  ::v-deep tr.bg-orange-lighten-5 .button-save .v-icon,
-  ::v-deep tr.bg-red-lighten-5 .button-save .v-icon {
+  tr.crud-item.bg-orange-lighten-5 .button-save .v-icon,
+  tr.crud-item.bg-red-lighten-5 .button-save .v-icon {
     color: forestgreen;
   }
-  ::v-deep tr:focus-within :focus {
+  tr.crud-item:focus-within :focus {
     background-color: #FFFFFF;
   }
-  ::v-deep tbody tr.crud-item--clickable {
+  tbody tr.crud-item--clickable {
     cursor: pointer;
   }
-  ::v-deep tbody tr.crud-item--clickable:hover > td {
+  tbody tr.crud-item--clickable:hover > td {
     background-color: rgba(var(--v-theme-on-surface), 0.04);
-  }
-  ::v-deep tbody tr.text-disabled {
-    cursor: auto;
-  }
-  ::v-deep tbody tr.text-disabled:hover > td {
-    background-color: initial;
   }
 </style>

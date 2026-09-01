@@ -142,24 +142,10 @@ export default {
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-    ::v-deep tr:not(.v-data-table__empty-wrapper) td {
-        vertical-align: top;
-    }
-    ::v-deep tr.successFade > td {
-        animation: successFade 1s;
-    }
-    ::v-deep tr.successFade:focus-within > td {
-        animation: none;
-    }
-    @keyframes successFade {
-        from { background-color: forestgreen; }
-    }
+    /* Unlike in the other lists, the save button is highlighted as soon as the
+       row is focused, not only once it is dirty. */
     ::v-deep tr:focus-within .button-save .v-icon {
         color: forestgreen;
-    }
-    ::v-deep tr:focus-within :focus {
-        background-color: #FFFFFF;
     }
 </style>
