@@ -1,6 +1,6 @@
 <template>
-  <v-row dense align="start" class="captcha-row">
-    <v-col cols="12" sm="7">
+  <v-row dense align="center" class="captcha-row">
+    <v-col cols="12" sm>
       <v-text-field
           v-model="inputSolution"
           :label="l.inputSolution"
@@ -19,39 +19,41 @@
       ></v-text-field>
     </v-col>
     <v-col cols="12" sm="auto" class="text-center">
-      <v-progress-circular
-          v-if="working"
-          indeterminate
-      ></v-progress-circular>
-      <img
-          v-if="captcha
-          && !working
-          && kind === 'image'"
-          :src="'data:'+mimeImage+';base64,'+captcha.challenge"
-          :alt="l.altImage"
-      >
-      <audio controls
-             v-if="captcha
-             && !working
-             && kind === 'audio'"
-      >
-        <source :src="'data:'+mimeAudio+';base64,'+captcha.challenge" :type="mimeAudio">
-      </audio>
-      <br>
-      <v-btn-toggle>
-        <v-btn variant="outlined" @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
-          <v-icon :icon="mdiRefresh" />
-        </v-btn>
-      </v-btn-toggle>
-      &nbsp;
-      <v-btn-toggle v-model="kind">
-        <v-btn variant="outlined" value="image" :aria-label="l.switchImage" :disabled="working">
-          <v-icon :icon="mdiEye" />
-        </v-btn>
-        <v-btn variant="outlined" value="audio" :aria-label="l.switchAudio" :disabled="working">
-          <v-icon :icon="mdiEarHearing" />
-        </v-btn>
-      </v-btn-toggle>
+      <div class="captcha-block">
+        <v-progress-circular
+            v-if="working"
+            indeterminate
+        ></v-progress-circular>
+        <img
+            v-if="captcha
+            && !working
+            && kind === 'image'"
+            :src="'data:'+mimeImage+';base64,'+captcha.challenge"
+            :alt="l.altImage"
+        >
+        <audio controls
+               v-if="captcha
+               && !working
+               && kind === 'audio'"
+        >
+          <source :src="'data:'+mimeAudio+';base64,'+captcha.challenge" :type="mimeAudio">
+        </audio>
+        <div class="captcha-controls">
+          <v-btn-toggle density="compact">
+            <v-btn variant="outlined" size="small" @click="getCaptcha(true)" :aria-label="l.newCaptcha" :disabled="working">
+              <v-icon :icon="mdiRefresh" />
+            </v-btn>
+          </v-btn-toggle>
+          <v-btn-toggle density="compact" v-model="kind">
+            <v-btn variant="outlined" size="small" value="image" :aria-label="l.switchImage" :disabled="working">
+              <v-icon :icon="mdiEye" />
+            </v-btn>
+            <v-btn variant="outlined" size="small" value="audio" :aria-label="l.switchAudio" :disabled="working">
+              <v-icon :icon="mdiEarHearing" />
+            </v-btn>
+          </v-btn-toggle>
+        </div>
+      </div>
     </v-col>
   </v-row>
 </template>
@@ -160,7 +162,29 @@ export default {
 </script>
 
 <style scoped>
-.captcha-row img {
+.captcha-row img,
+.captcha-row audio {
+  display: block;
   max-width: 100%;
+}
+/* the solution field takes the width the captcha leaves */
+@media (min-width: 600px) {
+  .captcha-row {
+    flex-wrap: nowrap;
+  }
+}
+/* shrink to the captcha, so that the buttons below can take up its width */
+.captcha-block {
+  display: inline-block;
+}
+.captcha-controls {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.captcha-controls :deep(.v-btn-toggle),
+.captcha-controls :deep(.v-btn) {
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>
