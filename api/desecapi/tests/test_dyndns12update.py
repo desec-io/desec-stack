@@ -700,6 +700,14 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         self.assertEqual(response.data, "good")
         self.assertIP(ipv4="10.5.5.6")
 
+    def test_identification_by_token_without_domain(self):
+        self.owner.domains.all().delete()
+        self.client.set_credentials_basic_auth("", self.token.plain)
+        response = self.client.get(
+            self.reverse("v1:dyndns12update"), REMOTE_ADDR="10.5.5.7"
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
+
     def test_identification_by_email(self):
         self.client.set_credentials_basic_auth(self.owner.email, self.token.plain)
         response = self.assertDynDNS12Update(
