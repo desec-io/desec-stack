@@ -301,7 +301,12 @@
           if (this.domainType === 'none') {
             this.domain = '';
           }
-          this.$refs.domainField.validate();
+          if (this.domain) {
+            this.$refs.domainField.validate();
+          } else {
+            // an empty field is not wrong yet, it is unanswered
+            this.$refs.domainField.resetValidation();
+          }
         })
       },
     },
