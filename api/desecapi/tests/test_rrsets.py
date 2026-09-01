@@ -329,6 +329,21 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+    def test_create_my_rr_sets_no_wildcard_ns(self):
+        for subname in ["*", "*.foo"]:
+            data = {
+                "subname": subname,
+                "ttl": 3600,
+                "type": "NS",
+                "records": ["ns1.example."],
+            }
+            r = self.client.post_rr_set(self.my_empty_domain.name, **data)
+            self.assertContains(
+                r,
+                "NS RRset cannot have a wildcard subname",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
     def test_create_my_rr_sets_restricted_at_apex(self):
         for type_, records in {
             "CNAME": ["foobar.com."],

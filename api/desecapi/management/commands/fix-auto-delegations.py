@@ -101,6 +101,8 @@ class Command(BaseCommand):
             for subname in (
                 parent.rrset_set.filter(type="NS")
                 .exclude(subname="")
+                # Wildcards cannot be delegations; leave grandfathered ones alone
+                .exclude(subname__startswith="*")
                 .values_list("subname", flat=True)
             ):
                 if not default_ns & cls._contents(parent, subname, "NS"):

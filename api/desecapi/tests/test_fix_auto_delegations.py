@@ -95,6 +95,24 @@ class FixAutoDelegationsCommandTest(DomainOwnerTestCase):
             self.my_domain, subname="gone", type_="DS", rr_contents={self.FOREIGN_DS}
         )
 
+    def test_wildcard_ns_is_left_alone(self):
+        # Wildcard NS RRsets cannot delegate a domain, so ours are not stale there. Such
+        # RRsets can no longer be created, but may predate that restriction.
+        self.create_rr_set(
+            self.my_domain,
+            [*settings.DEFAULT_NS, self.FOREIGN_NS],
+            subname="*",
+            type="NS",
+            ttl=3600,
+        )
+        management.call_command("fix-auto-delegations", "--apply")
+        self.assertRRsetDB(
+            self.my_domain,
+            subname="*",
+            type_="NS",
+            rr_contents={*settings.DEFAULT_NS, self.FOREIGN_NS},
+        )
+
     def test_names_limit_the_scope(self):
         in_scope = f"sub.{self.my_domain.name}"
         out_of_scope = f"sub.{self.my_domains[1].name}"

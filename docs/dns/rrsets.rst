@@ -672,10 +672,9 @@ Record types with priority field
     - ``NS`` and ``DS`` records that delegate a domain of yours to deSEC are
       maintained for you, see :ref:`automatic delegation`.
 
-    - The use of wildcard RRsets (with one component of ``subname`` being equal
-      to ``*``) of type ``NS`` is **discouraged**.  This is because the
-      behavior of wildcard ``NS`` records in conjunction with DNSSEC is
-      undefined, per RFC 4592, Sec. 4.2.
+    - Wildcard ``NS`` RRsets (with ``subname`` starting with ``*``) **cannot be
+      created**.  This is because the behavior of wildcard ``NS`` records in
+      conjunction with DNSSEC is undefined, per RFC 4592, Sec. 4.2.
 
 ``TXT`` record
     - The contents of the ``TXT`` record must be enclosed in double quotes.

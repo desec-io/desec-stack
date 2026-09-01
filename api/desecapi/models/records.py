@@ -170,6 +170,11 @@ class RRset(ExportModelOperationsMixin("RRset"), models.Model):
             if self.subname != "":
                 errors.append(f"{self.type} RRset must have empty subname.")
 
+        # Wildcard, as the behavior in conjunction with DNSSEC is undefined (RFC 4592, Sec. 4.2)
+        if self.type in ("NS",):
+            if self.subname.startswith("*"):
+                errors.append(f"{self.type} RRset cannot have a wildcard subname.")
+
         def _error_msg(record, detail):
             return f"Record content of {self.type} {self.name} invalid: '{record}': {detail}"
 
