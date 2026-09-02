@@ -373,6 +373,12 @@ export default {
 .v-expansion-panel-text__wrapper > :last-child {
   margin-bottom: 0;
 }
+/* Vuetify gives alerts `flex: 1 1 0`, so an alert sitting directly in a card is
+   a shrinkable flex item: once a dialog is taller than the viewport, the alert
+   is squeezed into its own padding, and the text ends up against the edge. */
+.v-card > .v-alert {
+  flex: none;
+}
 .v-application .text-primary {
   color: #ffa000 !important;
 }
