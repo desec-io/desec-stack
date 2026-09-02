@@ -6,4 +6,4 @@ class AppConfig(DjangoAppConfig):
     name = "desecapi"
 
     def ready(self):
-        from desecapi import signals  # connect signals
+        from desecapi import signals  # noqa: F401 (connect signals)

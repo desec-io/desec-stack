@@ -2,7 +2,7 @@ from django.db import DataError
 from django.db.models import Model
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import qs_exists, qs_filter, UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, qs_exists, qs_filter
 
 from desecapi.permissions import TokenHasRRsetPermission
 
@@ -72,9 +72,13 @@ class PermissionValidator:
         # On the RRsetDetail apex endpoint, subname is not in attrs
         subname = attrs.get("subname")
         if subname is None:
-            subname = serializer.context["view"].kwargs["subname"]
+            subname = serializer.context["view"].kwargs.get("subname")
         # On the RRsetDetail endpoint, the type is not in attrs
-        type_ = attrs.get("type") or serializer.instance.type
+        type_ = attrs.get("type") or getattr(serializer.instance, "type", None)
+
+        if subname is None or type_ is None:
+            # Bulk request without RRset identification, rejected by UniqueTogetherValidator
+            return
 
         rrset = serializer.Meta.model(
             domain=serializer.domain, subname=subname, type=type_
@@ -101,7 +105,7 @@ class Validator:
         raise NotImplementedError
 
     def __repr__(self):
-        return "<%s>" % self.__class__.__name__
+        return f"<{self.__class__.__name__}>"
 
 
 class ReadOnlyOnUpdateValidator(Validator):

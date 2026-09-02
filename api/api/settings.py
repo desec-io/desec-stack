@@ -2,14 +2,10 @@
 Django settings for desecapi project.
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 from datetime import timedelta
 
 from django.conf.global_settings import PASSWORD_HASHERS as DEFAULT_PASSWORD_HASHERS
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DESECSTACK_API_SECRETKEY"]
@@ -21,9 +17,9 @@ if os.environ.get("DESECSTACK_API_DEBUG", "").upper() == "TRUE":
 
 ALLOWED_HOSTS = [
     "api",
-    "desec.%s" % os.environ["DESECSTACK_DOMAIN"],
-    "update.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
-    "update6.dedyn.%s" % os.environ["DESECSTACK_DOMAIN"],
+    "desec.{}".format(os.environ["DESECSTACK_DOMAIN"]),
+    "update.dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"]),
+    "update6.dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"]),
 ]
 
 DEFAULT_EXCEPTION_REPORTER = "desecapi.debug.PayloadExceptionReporter"
@@ -168,7 +164,7 @@ DEFAULT_NS_TTL = int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"])
 
 # Public Suffix settings
 PSL_RESOLVER = os.environ.get("DESECSTACK_API_PSL_RESOLVER")
-LOCAL_PUBLIC_SUFFIXES = {"dedyn.%s" % os.environ["DESECSTACK_DOMAIN"]}
+LOCAL_PUBLIC_SUFFIXES = {"dedyn.{}".format(os.environ["DESECSTACK_DOMAIN"])}
 
 # PowerDNS-related
 NSLORD_PDNS_API = "http://nslord:8081/api/v1/servers/localhost"
@@ -223,10 +219,6 @@ CAPTCHA_VALIDITY_PERIOD = timedelta(hours=24)
 
 # Watchdog
 WATCHDOG_SECONDARIES = os.environ.get("DESECSTACK_WATCHDOG_SECONDARIES", "").split()
-
-# PCH
-PCH_API = os.environ.get("DESECSTACK_API_PCH_API", "")
-PCH_API_TOKEN = os.environ.get("DESECSTACK_API_PCH_API_TOKEN", "")
 
 # Prometheus (see https://github.com/korfuri/django-prometheus/blob/master/documentation/exports.md)
 #  TODO Switch to PROMETHEUS_METRICS_EXPORT_PORT_RANGE instead of this workaround, which currently necessary to due

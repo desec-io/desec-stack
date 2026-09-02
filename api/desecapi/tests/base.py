@@ -2,28 +2,29 @@ import base64
 import operator
 import random
 import re
-import responses
 import socket
 import string
 from contextlib import nullcontext
 from functools import partial, reduce
 from unittest import mock
 
+import responses
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core import mail
 from rest_framework import status
 from rest_framework.reverse import reverse
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework.utils import json
 
-from desecapi.models import User, Domain, Token, RRset, RR
+from desecapi.models import RR, Domain, RRset, Token, User
 from desecapi.models.domains import psl
 from desecapi.models.records import (
     RR_SET_TYPES_AUTOMATIC,
-    RR_SET_TYPES_UNSUPPORTED,
     RR_SET_TYPES_MANAGEABLE,
+    RR_SET_TYPES_UNSUPPORTED,
 )
+
 from .matchers import body_matcher
 
 
@@ -39,7 +40,7 @@ class DesecAPIClient(APIClient):
         if not part_1 and not part_2:
             self.set_credentials("")
         else:
-            s = part_1 if not part_2 else "%s:%s" % (part_1, part_2)
+            s = part_1 if not part_2 else f"{part_1}:{part_2}"
             self.set_credentials("Basic " + self._http_header_base64_conversion(s))
 
     def set_credentials_token_auth(self, token):
@@ -116,8 +117,8 @@ class AssertRequestsContextManager:
     """
 
     @classmethod
-    def _flatten_nested_lists(cls, l):
-        for i in l:
+    def _flatten_nested_lists(cls, items):
+        for i in items:
             if isinstance(i, list) or isinstance(i, tuple):
                 yield from cls._flatten_nested_lists(i)
             else:
@@ -238,10 +239,9 @@ class AssertRequestsContextManager:
         # see if any requests were unexpected
         if unmatched_requests and self.single_expectation_single_request:
             self.test_case.fail(
-                "While waiting for %i request(s), we saw %i unexpected request(s). The unexpected "
-                "request(s) was/were:\n\n%s\n\nAll recorded requests:\n\n%s\n\nAll expected requests:"
-                "\n\n%s"
-                % (
+                "While waiting for {:d} request(s), we saw {:d} unexpected request(s). The unexpected "
+                "request(s) was/were:\n\n{}\n\nAll recorded requests:\n\n{}\n\nAll expected requests:"
+                "\n\n{}".format(
                     len(self.expected_requests),
                     len(unmatched_requests),
                     "\n".join(map(str, unmatched_requests)),
@@ -271,12 +271,10 @@ class MockPDNSTestCase(APITestCase):
     PDNS_ZONE = r"/zones/(?P<id>[^/]+)"
     PDNS_ZONE_AXFR = r"/zones/(?P<id>[^/]+)/axfr-retrieve"
     PDNS_ZONE_EXPORT = r"/zones/(?P<id>[^/]+)/export"
-    PCH_ZONE_CREATE = r"/zones"
-    PCH_ZONE_DELETE = r"/zones"
 
     @classmethod
     def get_full_pdns_url(cls, path_regex, ns="LORD", **kwargs):
-        api = getattr(settings, "NS%s_PDNS_API" % ns)
+        api = getattr(settings, f"NS{ns}_PDNS_API")
         return re.compile("^" + api + cls.fill_regex_groups(path_regex, **kwargs) + "$")
 
     @classmethod
@@ -285,11 +283,10 @@ class MockPDNSTestCase(APITestCase):
         for name, value in kwargs.items():
             if value is None:
                 continue
-            pattern = r"\(\?P\<%s\>[^\)]+\)" % name
+            pattern = rf"\(\?P\<{name}\>[^\)]+\)"
             if not re.search(pattern, s):
                 raise ValueError(
-                    "Tried to fill field %s in template %s, but it does not exist."
-                    % (name, template)
+                    f"Tried to fill field {name} in template {template}, but it does not exist."
                 )
             s = re.sub(
                 pattern=pattern,
@@ -399,8 +396,8 @@ class MockPDNSTestCase(APITestCase):
                 self.assertEqual(
                     len(updated_rr_sets_dict),
                     len(body["rrsets"]),
-                    "Saw an unexpected number of RR set updates: expected %i, intercepted %i."
-                    % (len(updated_rr_sets_dict), len(body["rrsets"])),
+                    f"Saw an unexpected number of RR set updates: "
+                    f"expected {len(updated_rr_sets_dict):d}, intercepted {len(body['rrsets']):d}.",
                 )
                 for (
                     exp_type,
@@ -424,10 +421,9 @@ class MockPDNSTestCase(APITestCase):
                     else:
                         # we did not break out, i.e. we did not find a matching RR set in body['rrsets']
                         self.fail(
-                            "Expected to see an pdns zone update request for RR set of domain `%s` with name "
-                            "`%s` and type `%s`, but did not see one. Seen update request on %s for RR sets:"
-                            "\n\n%s"
-                            % (
+                            "Expected to see an pdns zone update request for RR set of domain `{}` with name "
+                            "`{}` and type `{}`, but did not see one. Seen update request on {} for RR sets:"
+                            "\n\n{}".format(
                                 name,
                                 expected_name,
                                 exp_type,
@@ -436,7 +432,7 @@ class MockPDNSTestCase(APITestCase):
                             )
                         )
             finally:
-                return [200, {}, ""]
+                return [200, {}, ""]  # noqa: B012
 
         request = self.request_pdns_zone_update(name)
         request.pop("status")
@@ -536,60 +532,6 @@ class MockPDNSTestCase(APITestCase):
             "body": "",
         }
 
-    def request_pch_zone_create(self, name):
-        def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone creation request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    201,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) ADDED",
-                            "zones": [name],
-                        }
-                    ),
-                ]
-
-        return {
-            "method": "POST",
-            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_CREATE),
-            "callback": request_callback,
-        }
-
-    def request_pch_zone_delete(self, name):
-        def request_callback(request):
-            try:
-                self.assertEqual(
-                    request.body,
-                    {"zones": [name]},
-                    f"Expected PCH zone deletion request for {name}, but got '{request.body}'.",
-                )
-            finally:
-                return [
-                    200,
-                    {},
-                    json.dumps(
-                        {
-                            "status": True,
-                            "message": "Zone(s) deleted",
-                            "zones": [name],
-                        }
-                    ),
-                ]
-
-        return {
-            "method": "DELETE",
-            "url": re.compile("^" + settings.PCH_API + self.PCH_ZONE_DELETE),
-            "callback": request_callback,
-        }
-
     def assertRequests(self, *expected_requests, expect_order=True):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
@@ -616,33 +558,6 @@ class MockPDNSTestCase(APITestCase):
             expected_requests=expected_requests,
             single_expectation_single_request=False,
             expect_order=False,
-        )
-
-    def assertZoneCreation(self, name):
-        """
-        Asserts that nslord, nsmaster and PCH are contacted for zone creation.
-        Name is only asserted for requests to PCH.
-        """
-        return AssertRequestsContextManager(
-            test_case=self,
-            expected_requests=[
-                self.request_pdns_zone_create(ns="LORD"),
-                self.request_pdns_zone_create(ns="MASTER"),
-                self.request_pch_zone_create(name=name),
-            ],
-        )
-
-    def assertZoneDeletion(self, name):
-        """
-        Asserts that nslord, nsmaster and PCH are contacted for zone deletion.
-        """
-        return AssertRequestsContextManager(
-            test_case=self,
-            expected_requests=[
-                self.request_pdns_zone_delete(ns="LORD", name=name),
-                self.request_pdns_zone_delete(ns="MASTER", name=name),
-                self.request_pch_zone_delete(name=name),
-            ],
         )
 
     def assertStatus(self, response, status):
@@ -820,11 +735,11 @@ class DesecTestCase(MockPDNSTestCase):
             return ".".join([str(random.randrange(256)) for _ in range(4)])
         elif proto == 6:
             return "2001:" + ":".join(
-                ["%x" % random.randrange(16**4) for _ in range(7)]
+                [f"{random.randrange(16**4):x}" for _ in range(7)]
             )
         else:
             raise ValueError(
-                "Unknown IP protocol version %s. Expected int 4 or int 6." % str(proto)
+                f"Unknown IP protocol version {str(proto)}. Expected int 4 or int 6."
             )
 
     @classmethod
@@ -898,8 +813,7 @@ class DesecTestCase(MockPDNSTestCase):
         ]
         if not parents:
             raise ValueError(
-                "Could not find auto delegation zone for zone %s; searched in %s"
-                % (name, cls.AUTO_DELEGATION_DOMAINS)
+                f"Could not find auto delegation zone for zone {name}; searched in {cls.AUTO_DELEGATION_DOMAINS}"
             )
         return parents[0]
 
@@ -909,7 +823,6 @@ class DesecTestCase(MockPDNSTestCase):
             self.request_pdns_zone_create("LORD", body_matcher(soa_content)),
             self.request_pdns_zone_create(ns="MASTER"),
             self.request_pdns_update_catalog(),
-            self.request_pch_zone_create(name=name),
         ]
         if axfr:
             requests.append(self.request_pdns_zone_axfr(name=name))
@@ -922,7 +835,6 @@ class DesecTestCase(MockPDNSTestCase):
             self.request_pdns_zone_delete(name=domain.name, ns="LORD"),
             self.request_pdns_zone_delete(name=domain.name, ns="MASTER"),
             self.request_pdns_update_catalog(),
-            self.request_pch_zone_delete(name=domain.name),
         ]
 
         if domain.is_locally_registrable:
@@ -967,8 +879,7 @@ class DesecTestCase(MockPDNSTestCase):
                 self.assertEqual(
                     response_rr[key],
                     value,
-                    'RR set did not have the expected %s: Expected "%s" but was "%s" in %s'
-                    % (key, value, response_rr[key], response_rr),
+                    f'RR set did not have the expected {key}: Expected "{value}" but was "{response_rr[key]}" in {response_rr}',
                 )
 
     def assertRRsetDB(
@@ -1031,15 +942,14 @@ class DesecTestCase(MockPDNSTestCase):
         actual_counts = self._count_occurrences_by_mask(rr_sets, masks)
         if not all([actual_count == count for actual_count in actual_counts]):
             self.fail(
-                "Expected to find %i RR set(s) for each of %s, but distribution is %s in %s."
-                % (count, masks, actual_counts, rr_sets)
+                f"Expected to find {count:d} RR set(s) for each of {masks}, "
+                f"but distribution is {actual_counts} in {rr_sets}."
             )
 
     def assertContainsRRSets(self, rr_sets_haystack, rr_sets_needle):
         if not all(self._count_occurrences_by_mask(rr_sets_haystack, rr_sets_needle)):
             self.fail(
-                "Expected to find RR sets with %s, but only got %s."
-                % (rr_sets_needle, rr_sets_haystack)
+                f"Expected to find RR sets with {rr_sets_needle}, but only got {rr_sets_haystack}."
             )
 
     def assertContains(
@@ -1077,16 +987,14 @@ class DesecTestCase(MockPDNSTestCase):
         self.assertEqual(
             len(mail.outbox),
             total,
-            "Expected %i message in the outbox, but found %i."
-            % (total, len(mail.outbox)),
+            f"Expected {total:d} message in the outbox, but found {len(mail.outbox):d}.",
         )
         email = mail.outbox[-1]
         self.assertTrue(
             subject_contains in email.subject,
-            "Expected '%s' in the email subject, but found '%s'"
-            % (subject_contains, email.subject),
+            f"Expected '{subject_contains}' in the email subject, but found '{email.subject}'",
         )
-        if type(body_contains) != list:
+        if not isinstance(body_contains, list):
             body_contains = [] if body_contains is None else [body_contains]
         for elem in body_contains:
             self.assertTrue(
@@ -1114,8 +1022,8 @@ class DesecTestCase(MockPDNSTestCase):
     def assertNoEmailSent(self):
         self.assertFalse(
             mail.outbox,
-            "Expected no email to be sent, but %i were sent. First subject line is '%s'."
-            % (len(mail.outbox), mail.outbox[0].subject if mail.outbox else "<n/a>"),
+            f"Expected no email to be sent, but {len(mail.outbox):d} were sent. "
+            f"First subject line is '{mail.outbox[0].subject if mail.outbox else '<n/a>'}'.",
         )
 
 
@@ -1127,7 +1035,7 @@ class PublicSuffixMockMixin:
         suffixes = [
             suffix
             for suffix in public_suffixes
-            if ".{}".format(domain_name).endswith(".{}".format(suffix))
+            if f".{domain_name}".endswith(f".{suffix}")
         ]
         # Also, consider TLD.
         suffixes += [domain_name.rsplit(".")[-1]]
@@ -1257,7 +1165,7 @@ class DynDomainOwnerTestCase(DomainOwnerTestCase):
         return self._assertDynDNS12Update(requests, mock_remote_addr, **kwargs)
 
     def assertDynDNS12NoUpdate(self, *args, **kwargs):
-        return self.assertDynDNS12Update(expect_update=False, *args, **kwargs)
+        return self.assertDynDNS12Update(*args, expect_update=False, **kwargs)
 
     def setUp(self):
         super().setUp()

@@ -7,6 +7,6 @@ class PayloadExceptionReporter(ExceptionReporter):
         if self.request is not None:
             try:
                 data["request_meta"]["_body"] = self.request.body
-            except:
+            except Exception:
                 data["request_meta"]["_body"] = None
         return data

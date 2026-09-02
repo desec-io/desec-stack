@@ -20,7 +20,6 @@ from desecapi import logger, metrics, pdns
 from .base import validate_domain_name
 from .records import RRset
 
-
 psl = psl_dns.PSL(resolver=settings.PSL_RESOLVER, timeout=0.5)
 
 
@@ -262,8 +261,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         child_subname, child_domain_name = child_domain._partitioned_name
         if self.name != child_domain_name:
             raise ValueError(
-                "Cannot update delegation of %s as it is not an immediate child domain of %s."
-                % (child_domain.name, self.name)
+                f"Cannot update delegation of {child_domain.name} as it is not an immediate child domain of {self.name}."
             )
 
         # Always remove delegation so that we con properly recreate it
@@ -277,8 +275,7 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
             child_keys = child_domain.keys
             if not child_keys:
                 raise APIException(
-                    "Cannot delegate %s, as it currently has no keys."
-                    % child_domain.name
+                    f"Cannot delegate {child_domain.name}, as it currently has no keys."
                 )
 
             RRset.objects.create(

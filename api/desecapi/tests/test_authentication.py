@@ -1,5 +1,5 @@
-from datetime import timedelta
 import json
+from datetime import timedelta
 from unittest import mock
 
 from django.utils import timezone

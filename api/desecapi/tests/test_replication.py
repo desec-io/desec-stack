@@ -23,7 +23,7 @@ class ReplicationTest(DesecTestCase):
         ]
 
         # Run twice to make sure cache output varies on remote address
-        for i in range(2):
+        for _ in range(2):
             response = self.client.get(path=url, REMOTE_ADDR="123.8.0.2")
             self.assertStatus(response, status.HTTP_401_UNAUTHORIZED)
 

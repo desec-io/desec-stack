@@ -1,4 +1,3 @@
-from .domains import DomainViewSet, SerialListView
 from .authenticated_actions import (
     AuthenticatedActivateUserActionView,
     AuthenticatedActivateUserWithOverrideTokenActionView,
@@ -12,6 +11,7 @@ from .authenticated_actions import (
 )
 from .base import IdempotentDestroyMixin, Root
 from .captcha import CaptchaView
+from .domains import DomainViewSet, SerialListView
 from .donation import DonationList
 from .dyndns import DynDNS12UpdateView
 from .mfa import TOTPViewSet

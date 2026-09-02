@@ -92,7 +92,7 @@ class NonBulkOnlyDefault:
         return self.default
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.default))
+        return f"{self.__class__.__name__}({repr(self.default)})"
 
 
 class RRSerializer(serializers.ModelSerializer):
@@ -219,8 +219,9 @@ class RRsetListSerializer(serializers.ListSerializer):
                     raise serializers.ValidationError(
                         {
                             api_settings.NON_FIELD_ERRORS_KEY: [
-                                "Same subname and type as in position(s) %s, but must be unique."
-                                % ", ".join(map(str, data_indices - {idx}))
+                                "Same subname and type as in position(s) {}, but must be unique.".format(
+                                    ", ".join(map(str, data_indices - {idx}))
+                                )
                             ]
                         }
                     )
@@ -328,7 +329,7 @@ class RRsetListSerializer(serializers.ListSerializer):
         nonempty = everything - empty
 
         # noinspection PyUnusedLocal
-        noop = unknown & empty
+        noop = unknown & empty  # noqa: F841
         created = unknown & nonempty
         updated = known & nonempty
         deleted = known & empty
@@ -497,7 +498,9 @@ class RRsetSerializer(ConditionalExistenceModelSerializer):
         # There also seems to be a 32 byte (?) baseline requirement per RRset, plus the qname length, see
         # https://lists.isc.org/pipermail/bind-users/2008-April/070148.html
         # The binary length of the record depends actually on the type, but it's never longer than vanilla len()
-        qname = models.RRset.construct_name(attrs.get("subname", ""), self.domain.name)
+        # subname not in attrs on RRsetDetail; .get() default fails on POST (no instance)
+        subname = attrs["subname"] if "subname" in attrs else self.instance.subname
+        qname = models.RRset.construct_name(subname, self.domain.name)
         conservative_total_length = (
             (32 + len(qname) + sum(12 + len(rr["content"]) for rr in attrs["records"]))
             + 256  # some leeway for RRSIG record (really ~110 bytes) and other data we have not thought of

@@ -1,11 +1,11 @@
-from datetime import timezone, datetime
+from datetime import UTC, datetime
 
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Subquery
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
@@ -133,7 +133,7 @@ class DomainViewSet(
     @action(detail=True, renderer_classes=[PlainTextRenderer])
     def zonefile(self, request, name=None):
         instance = self.get_object()
-        prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(timezone.utc)}\n".encode()
+        prefix = f"; Zonefile for {instance.name} exported from desec.{settings.DESECSTACK_DOMAIN} at {datetime.now(UTC)}\n".encode()
         return Response(prefix + instance.zonefile, content_type="text/dns")
 
 

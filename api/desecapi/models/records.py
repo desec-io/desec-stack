@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import binascii
 import uuid
-from ipaddress import ip_address, ip_network, IPv4Network, IPv6Network
+from ipaddress import ip_address
 
 import dns
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import RangeOperators
 from django.core import validators
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Func, Manager, Value
 from django.db.models.expressions import RawSQL
@@ -17,10 +17,9 @@ from dns import rdataclass, rdatatype
 from dns.rdtypes import ANY, IN
 
 from desecapi import pdns
-from desecapi.dns import AAAA, CERT, CNAME, LongQuotedTXT, MX, NS, SRV
+from desecapi.dns import AAAA, CERT, CNAME, MX, NS, SRV, LongQuotedTXT
 
 from .base import validate_lower, validate_upper
-
 
 # RR set types: the good, the bad, and the ugly
 # known, but unsupported types
@@ -62,7 +61,7 @@ def replace_ip_subnet(records, subnet):
     """
     return [
         str(
-            ip_address(int(subnet.network_address))  # prefix
+            subnet.network_address  # prefix
             + (int(ip_address(record.content)) & int(subnet.hostmask))  # suffix
         )
         for record in records
@@ -227,12 +226,7 @@ class RRset(ExportModelOperationsMixin("RRset"), models.Model):
         RR.objects.bulk_create(rrs)  # One INSERT
 
     def __str__(self):
-        return "<RRSet %s domain=%s type=%s subname=%s>" % (
-            self.pk,
-            self.domain.name,
-            self.type,
-            self.subname,
-        )
+        return f"<RRSet {self.pk} domain={self.domain.name} type={self.type} subname={self.subname}>"
 
 
 class RRManager(Manager):
@@ -322,9 +316,19 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
                 dns.rdatatype.EUI64,
             )
             if rdtype in chunksize_exception_types:
-                return rdata.to_text()
+                text = rdata.to_text()
             else:
-                return rdata.to_text(chunksize=0)
+                text = rdata.to_text(chunksize=0)
+
+            # Not everything dnspython renders can be parsed back (e.g. empty SVCB params)
+            try:
+                cls.to_wire(type_, text, digestable=False)
+            except dns.exception.SyntaxError:
+                raise ValueError(
+                    f"Record content for type {type_} malformed. Contact support if you think this is a bug."
+                )
+
+            return text
         except binascii.Error:
             # e.g., odd-length string
             raise ValueError("Cannot parse hexadecimal or base64 record contents")
@@ -352,4 +356,4 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
             raise e
 
     def __str__(self):
-        return "<RR %s %s rr_set=%s>" % (self.pk, self.content, self.rrset.pk)
+        return f"<RR {self.pk} {self.content} rr_set={self.rrset.pk}>"

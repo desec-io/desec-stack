@@ -424,9 +424,8 @@ just one), like this::
         ]
     EOF
 
-Each given RRset is uniquely identified by its ``subname`` and ``type`` (with
-``subname``  defaulting to the empty string if omitted). For ``ttl`` and
-``records``, the usual validation rules apply.
+Each given RRset is uniquely identified by its ``subname`` and ``type``. For
+``ttl`` and ``records``, the usual validation rules apply.
 
 For details about input validation and return status codes, please refer to
 `Bulk Operations`_.
@@ -505,8 +504,7 @@ both creating new RRsets and modifying existing ones.
 
 For the ``PATCH`` method, only ``subname`` and ``type`` is required; if you
 want to modify only ``ttl`` or ``records``, you can skip the other field.  To
-create a new RRset using ``PATCH``, all fields but ``subname`` must be
-specified.
+create a new RRset using ``PATCH``, all fields must be specified.
 
 To delete an RRset during a bulk operation, use ``PATCH`` or ``PUT`` and set
 ``records`` to ``[]``.

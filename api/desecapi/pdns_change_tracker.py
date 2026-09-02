@@ -1,10 +1,11 @@
 from django.conf import settings
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.db.transaction import atomic
 from django.utils import timezone
 
-from desecapi import pch, pdns
-from desecapi.models import RRset, RR, Domain
+from desecapi import pdns
+from desecapi.exceptions import ConcurrencyException
+from desecapi.models import RR, Domain, RRset
 
 
 class PDNSChangeTracker:
@@ -59,9 +60,6 @@ class PDNSChangeTracker:
         def api_do(self):
             raise NotImplementedError()
 
-        def pch_do(self):
-            raise NotImplementedError()
-
     class CreateDomain(PDNSChange):
         @property
         def axfr_required(self):
@@ -84,11 +82,8 @@ class PDNSChangeTracker:
             rrs = [RR(rrset=rr_set, content=ns) for ns in settings.DEFAULT_NS]
             RR.objects.bulk_create(rrs)  # One INSERT
 
-        def pch_do(self):
-            pch.create_domains([self.domain_name])
-
         def __str__(self):
-            return "Create Domain %s" % self.domain_name
+            return f"Create Domain {self.domain_name}"
 
     class DeleteDomain(PDNSChange):
         @property
@@ -103,11 +98,8 @@ class PDNSChangeTracker:
         def api_do(self):
             pass
 
-        def pch_do(self):
-            pch.delete_domains([self.domain_name])
-
         def __str__(self):
-            return "Delete Domain %s" % self.domain_name
+            return f"Delete Domain {self.domain_name}"
 
     class CreateUpdateDeleteRRSets(PDNSChange):
         def __init__(self, domain_name, additions, modifications, deletions):
@@ -160,19 +152,8 @@ class PDNSChangeTracker:
         def api_do(self):
             pass
 
-        def pch_do(self):
-            pass
-
         def __str__(self):
-            return (
-                "Update RRsets of %s: additions=%s, modifications=%s, deletions=%s"
-                % (
-                    self.domain_name,
-                    list(self._additions),
-                    list(self._modifications),
-                    list(self._deletions),
-                )
-            )
+            return f"Update RRsets of {self.domain_name}: additions={list(self._additions)}, modifications={list(self._modifications)}, deletions={list(self._deletions)}"
 
     def __init__(self):
         self._domain_additions = set()
@@ -217,7 +198,7 @@ class PDNSChangeTracker:
     def __enter__(self):
         PDNSChangeTracker._active_change_trackers += 1
         assert PDNSChangeTracker._active_change_trackers == 1, (
-            "Nesting %s is not supported." % self.__class__.__name__
+            f"Nesting {self.__class__.__name__} is not supported."
         )
         self._domain_additions = set()
         self._domain_deletions = set()
@@ -244,8 +225,6 @@ class PDNSChangeTracker:
             try:
                 change.pdns_do()
                 change.api_do()
-                if settings.PCH_API and not settings.DEBUG:
-                    change.pch_do()
                 if change.axfr_required:
                     axfr_required.add(change.domain_name)
             except Exception as e:
@@ -328,9 +307,12 @@ class PDNSChangeTracker:
         item = (rr_set.type, rr_set.subname)
         match (created, deleted):
             case (True, False):  # created
+                if item in modifications:
+                    # The RR set was deleted by a concurrent request, and Django
+                    # re-inserted it instead of updating it. Give up so that the
+                    # transaction is rolled back and no changes are sent to pdns.
+                    raise ConcurrencyException
                 additions.add(item)
-                # can fail with concurrent deletion request
-                assert item not in modifications
                 deletions.discard(item)
             case (False, True):  # deleted
                 if item in additions:
@@ -432,6 +414,6 @@ class PDNSChangeTracker:
         )
         all_domains = self._domain_additions | self._domain_deletions
         return (
-            "<%s: %i added or deleted domains; %i added, modified or deleted RR sets>"
-            % (self.__class__.__name__, len(all_domains), len(all_rr_sets))
+            f"<{self.__class__.__name__}: {len(all_domains):d} added or deleted domains; "
+            f"{len(all_rr_sets):d} added, modified or deleted RR sets>"
         )

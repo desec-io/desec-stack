@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-import sys
-
 import os
-
+import sys
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")

@@ -583,7 +583,7 @@ www.import-me.example A asdf
         self.assertResponse(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {"zonefile": [f"Zonefile contains syntax error in line 6."]},
+            {"zonefile": ["Zonefile contains syntax error in line 6."]},
         )
 
     def test_create_domain_zonefile_import_foreign_rrset(self):
@@ -609,7 +609,7 @@ inject.{self.other_domain.name}. CNAME a.example.
         )
 
     def test_create_domain_zonefile_import_no_soa(self):
-        zonefile = f"""$ORIGIN .
+        zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
 import-me.example A 127.0.0.1
 import-me.example A 127.0.0.2
@@ -662,7 +662,7 @@ example.net. 3600 PTR mail.example.org."""
         )
 
     def test_create_domain_zonefile_import_non_canonical(self):
-        zonefile = f"""$ORIGIN .
+        zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
 import-me.example AAAA 0000::1
 """
@@ -685,7 +685,7 @@ import-me.example AAAA 0000::1
         )
 
     def test_create_domain_zonefile_import_validation(self):
-        zonefile = f"""$ORIGIN .
+        zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
 import-me.example MX 10 $url.
 """
@@ -705,7 +705,7 @@ import-me.example MX 10 $url.
         self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_zonefile_import_unsupported_type(self):
-        zonefile = f"""$ORIGIN .
+        zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
 import-me.example WKS 10.0.0.1 6 0 1 2 21 23
 """
@@ -725,7 +725,7 @@ import-me.example WKS 10.0.0.1 6 0 1 2 21 23
         self.assertFalse(Domain.objects.filter(name=name).exists())
 
     def test_create_domain_zonefile_ignore_automatically_managed_rrsets(self):
-        zonefile = f"""$ORIGIN .
+        zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
 import-me.example A 127.0.0.1
 import-me.example RRSIG A 13 2 3600 20220324000000 20220303000000 40316 @ 4wj6ZrLLLm6ZpvCh/vyqWCEkf2Krwkt8 Fi1/VJgfLMoXZSj6koOzJBMYYCiMm0JP WgQwG54fcw6YJQaOfWX1BA==
@@ -935,7 +935,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
             self.assertTrue(Domain.objects.filter(pk=self.other_domain.pk).exists())
 
     def test_create_auto_delegated_domains(self):
-        for i, suffix in enumerate(self.AUTO_DELEGATION_DOMAINS):
+        for suffix in self.AUTO_DELEGATION_DOMAINS:
             name = self.random_domain_name(suffix)
             with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name=name)
@@ -954,7 +954,7 @@ class AutoDelegationDomainOwnerTests(DomainOwnerTestCase):
         url = self.reverse("v1:domain-list")
         user_quota = settings.LIMIT_USER_DOMAIN_COUNT_DEFAULT - self.NUM_OWNED_DOMAINS
 
-        for i in range(user_quota):
+        for _ in range(user_quota):
             name = self.random_domain_name(self.AUTO_DELEGATION_DOMAINS)
             with self.assertRequests(
                 self.requests_desec_domain_creation_auto_delegation(name)
@@ -1017,12 +1017,12 @@ class DomainManagerTestCase(DesecTestCase):
         config["sub.domain.dedyn.io"] = config["domain.dedyn.io"]
 
         for qname, cases in config.items():
-            for qname in [qname, f"*.{qname}"]:
+            for name in [qname, f"*.{qname}"]:
                 for owner, expected in cases.items():
                     filter_kwargs = dict(owner=owner) if owner is not None else {}
-                    qs = Domain.objects.filter_qname(
-                        qname, **filter_kwargs
-                    ).values_list("name", flat=True)
+                    qs = Domain.objects.filter_qname(name, **filter_kwargs).values_list(
+                        "name", flat=True
+                    )
                     self.assertListEqual(list(qs), expected)
 
     def test_filter_qname_invalid(self):

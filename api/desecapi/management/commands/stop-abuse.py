@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from desecapi.models import BlockedSubnet, Domain, RR, RRset, User
+from desecapi.models import RR, BlockedSubnet, Domain, RRset, User
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 
 

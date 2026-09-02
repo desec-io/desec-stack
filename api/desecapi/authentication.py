@@ -1,15 +1,17 @@
 import base64
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from ipaddress import ip_address
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.utils import timezone
-from rest_framework import exceptions, HTTP_HEADER_ENCODING
+from rest_framework import HTTP_HEADER_ENCODING, exceptions
 from rest_framework.authentication import (
     BaseAuthentication,
-    get_authorization_header,
-    TokenAuthentication as RestFrameworkTokenAuthentication,
     BasicAuthentication,
+    get_authorization_header,
+)
+from rest_framework.authentication import (
+    TokenAuthentication as RestFrameworkTokenAuthentication,
 )
 
 from desecapi.models import Domain, Token
@@ -184,7 +186,7 @@ class AuthenticatedBasicUserActionAuthentication(BaseAuthentication):
 
         # When user.is_active is None, activation is pending.  We need to admit them to finish activation, so only
         # reject strictly False.  There are permissions to make sure that such accounts can't do anything else.
-        if user.is_active == False:
+        if user.is_active == False:  # noqa: E712
             raise exceptions.AuthenticationFailed("User inactive.")
         return user, None
 

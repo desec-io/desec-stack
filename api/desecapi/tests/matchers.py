@@ -1,10 +1,11 @@
-from typing import Any, Callable, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from requests import PreparedRequest
 
 
 def body_matcher(params: str) -> Callable[..., Any]:
-    def match(request: PreparedRequest) -> Tuple[bool, str]:
+    def match(request: PreparedRequest) -> tuple[bool, str]:
         try:
             body = request.body.decode("utf-8")
         except AttributeError:

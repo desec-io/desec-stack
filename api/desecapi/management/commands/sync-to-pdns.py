@@ -26,20 +26,20 @@ class Command(BaseCommand):
 
             for domain_name in options["domain-name"]:
                 if domain_name not in domain_names:
-                    raise CommandError("{} is not a known domain".format(domain_name))
+                    raise CommandError(f"{domain_name} is not a known domain")
 
         catalog_alignment = False
         for domain in domains:
-            self.stdout.write("%s ..." % domain.name, ending="")
+            self.stdout.write(f"{domain.name} ...", ending="")
             try:
                 created = self._sync_domain(domain)
                 if created:
-                    self.stdout.write(f" created (was missing) ...", ending="")
+                    self.stdout.write(" created (was missing) ...", ending="")
                     catalog_alignment = True
                 self.stdout.write(" synced")
             except Exception as e:
                 self.stdout.write(" failed")
-                msg = "Error while processing {}: {}".format(domain.name, e)
+                msg = f"Error while processing {domain.name}: {e}"
                 raise CommandError(msg)
 
         if catalog_alignment:
@@ -76,7 +76,7 @@ class Command(BaseCommand):
             domain.name, set(), modifications, deletions
         ).pdns_do()
         pdns._pdns_put(
-            pdns.NSMASTER, "/zones/{}/axfr-retrieve".format(pdns.pdns_id(domain.name))
+            pdns.NSMASTER, f"/zones/{pdns.pdns_id(domain.name)}/axfr-retrieve"
         )
 
         return created

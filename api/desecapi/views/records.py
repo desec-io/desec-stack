@@ -1,7 +1,7 @@
 from django.http import Http404
 from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 
 from desecapi import models, permissions
 from desecapi.pdns_change_tracker import PDNSChangeTracker
@@ -122,9 +122,7 @@ class RRsetList(
                     filter_field == "type"
                     and value in models.records.RR_SET_TYPES_AUTOMATIC
                 ):
-                    raise PermissionDenied(
-                        "You cannot tinker with the %s RRset." % value
-                    )
+                    raise PermissionDenied(f"You cannot tinker with the {value} RRset.")
 
                 rrsets = rrsets.filter(**{filter_field: value})
 

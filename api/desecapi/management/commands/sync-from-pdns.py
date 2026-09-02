@@ -2,7 +2,7 @@ from django.core.management import BaseCommand, CommandError
 from django.db import transaction
 
 from desecapi import pdns
-from desecapi.models import Domain, RRset, RR, RR_SET_TYPES_AUTOMATIC
+from desecapi.models import RR, RR_SET_TYPES_AUTOMATIC, Domain, RRset
 
 
 class Command(BaseCommand):
@@ -24,16 +24,16 @@ class Command(BaseCommand):
 
             for domain_name in options["domain-name"]:
                 if domain_name not in domain_names:
-                    raise CommandError("{} is not a known domain".format(domain_name))
+                    raise CommandError(f"{domain_name} is not a known domain")
 
         for domain in domains:
-            self.stdout.write("%s ..." % domain.name, ending="")
+            self.stdout.write(f"{domain.name} ...", ending="")
             try:
                 self._sync_domain(domain)
                 self.stdout.write(" synced")
             except Exception as e:
                 self.stdout.write(" failed")
-                msg = "Error while processing {}: {}".format(domain.name, e)
+                msg = f"Error while processing {domain.name}: {e}"
                 raise CommandError(msg)
 
     @staticmethod

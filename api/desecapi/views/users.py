@@ -131,8 +131,8 @@ class AccountLogoutView(APIView, mixins.DestroyModelMixin):
     throttle_classes = []  # always allow people to log out
 
     def get_object(self):
-        # self.request.auth contains the hashed key as it is stored in the database
-        return Token.objects.get(key=self.request.auth)
+        # self.request.auth is the token that was used to authenticate this request
+        return self.request.auth
 
     def post(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

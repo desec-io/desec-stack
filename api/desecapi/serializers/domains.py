@@ -3,7 +3,7 @@ import dns.zone
 from django.conf import settings
 from rest_framework import serializers
 
-from desecapi.models import Domain, RR_SET_TYPES_AUTOMATIC
+from desecapi.models import RR_SET_TYPES_AUTOMATIC, Domain
 from desecapi.validators import ReadOnlyOnUpdateValidator
 
 from .records import RRsetSerializer

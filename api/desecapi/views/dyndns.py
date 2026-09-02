@@ -1,7 +1,9 @@
 import base64
 import binascii
 from collections import defaultdict
+from dataclasses import dataclass
 from functools import cached_property
+from ipaddress import IPv4Network, IPv6Network, ip_network
 
 from rest_framework import generics
 from rest_framework.authentication import get_authorization_header
@@ -16,15 +18,11 @@ from desecapi.authentication import (
     URLParamAuthentication,
 )
 from desecapi.exceptions import ConcurrencyException
-from desecapi.models import Domain, RR, replace_ip_subnet
+from desecapi.models import RR, Domain, replace_ip_subnet
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.permissions import IsDomainOwner
 from desecapi.renderers import PlainTextRenderer
 from desecapi.serializers import RRsetSerializer
-
-
-from dataclasses import dataclass
-from ipaddress import ip_network, IPv4Network, IPv6Network
 
 
 @dataclass
@@ -211,7 +209,7 @@ class DynDNS12UpdateView(generics.GenericAPIView):
         # only domain associated with this user account
         try:
             return {self.request.user.domains.get().name}
-        except Domain.MultipleObjectsReturned:
+        except (Domain.DoesNotExist, Domain.MultipleObjectsReturned):
             raise ValidationError(
                 detail={
                     "detail": "Request does not properly specify domain for update.",

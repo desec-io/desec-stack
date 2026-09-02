@@ -1,6 +1,6 @@
 import json
-import yaml
 
+import yaml
 from rest_framework import renderers
 
 
@@ -17,7 +17,7 @@ class PlainTextRenderer(renderers.BaseRenderer):
             response["Content-Type"] = "text/plain"
             try:
                 return data["detail"]
-            except:
+            except Exception:
                 data = json.loads(
                     json.dumps(data)
                 )  # stringify exception objects in potentially nested data structure

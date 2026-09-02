@@ -1,14 +1,18 @@
 import re
 import struct
-
 from ipaddress import IPv6Address
 
 import dns
 import dns.dnssec
 import dns.name
-import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
-import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
+import dns.rdtypes.ANY.CERT
+import dns.rdtypes.ANY.CNAME
+import dns.rdtypes.ANY.MX
+import dns.rdtypes.ANY.NS
+import dns.rdtypes.IN.AAAA
+import dns.rdtypes.IN.SRV
+import dns.rdtypes.svcbbase
+import dns.rdtypes.txtbase
 
 
 def _strip_quotes_decorator(func):
@@ -45,11 +49,9 @@ class CERT(dns.rdtypes.ANY.CERT.CERT):
         algorithm = str(
             self.algorithm
         )  # upstream implementation calls dns.dnssec.algorithm_to_text
-        return "%s %d %s %s" % (
-            certificate_type,
-            self.key_tag,
-            algorithm,
-            dns.rdata._base64ify(self.certificate, **kw),
+        return (
+            f"{certificate_type} {self.key_tag:d} {algorithm} "
+            f"{dns.rdata._base64ify(self.certificate, **kw)}"
         )
 
 
@@ -94,9 +96,9 @@ class LongQuotedTXT(dns.rdtypes.txtbase.TXTBase):
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):
         for long_s in self.strings:
             for s in [long_s[i : i + 255] for i in range(0, max(len(long_s), 1), 255)]:
-                l = len(s)
-                assert l < 256
-                file.write(struct.pack("!B", l))
+                length = len(s)
+                assert length < 256
+                file.write(struct.pack("!B", length))
                 file.write(s)
 
 

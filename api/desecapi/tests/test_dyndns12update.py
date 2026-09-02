@@ -293,7 +293,7 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         self.assertEqual(response.data[0].code, "multiple-subnet")
 
         # Only allow syntactically valid subnets
-        response = self.assertDynDNS12Update(myip=f"127.0.0.1//", expect_update=False)
+        response = self.assertDynDNS12Update(myip="127.0.0.1//", expect_update=False)
         self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data[0].code, "invalid-subnet")
 
@@ -318,6 +318,44 @@ class DynDNS12UpdateTest(DynDomainOwnerTestCase):
         )
         self.assertEqual(response.data, "good")
         self.assertIP(ipv6="2a01::f12:7233", subname="foo")
+
+        # Both families at the same name, each replaced with its own subnet
+        self.create_rr_set(
+            self.my_domain, ["10.0.0.1"], type="A", subname="foo", ttl=60
+        )
+
+        response = self.assertDynDNS12Update(
+            hostname=f"foo.{self.my_domain.name}",
+            myip=subnet_v4,
+            myipv6="2a03:1234::/64",
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv4="6.7.0.1", ipv6="2a03:1234::f12:7233", subname="foo")
+
+    def test_subnet_with_low_ipv6_prefix(self):
+        self.create_rr_set(
+            self.my_domain,
+            ["2a02:8109:9283:8800::f12:7233"],
+            type="AAAA",
+            subname="foo",
+            ttl=60,
+        )
+        qname = f"foo.{self.my_domain.name}"
+
+        # Prefix of all zeros: the address is kept, so nothing changes
+        response = self.assertDynDNS12NoUpdate(hostname=qname, myipv4="", myipv6="::/0")
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="2a02:8109:9283:8800::f12:7233", subname="foo")
+
+        response = self.assertDynDNS12Update(hostname=qname, myipv4="", myipv6="::/64")
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="::f12:7233", subname="foo")
+
+        response = self.assertDynDNS12Update(
+            hostname=qname, myipv4="", myipv6="::1.2.3.4/120"
+        )
+        self.assertEqual(response.data, "good")
+        self.assertIP(ipv6="::102:333", subname="foo")
 
     def test_update_multiple_v4(self):
         # /nic/update?hostname=a.io,sub.a.io&myip=1.2.3.4
@@ -661,6 +699,14 @@ class SingleDomainDynDNS12UpdateTest(DynDNS12UpdateTest):
         self.assertStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data, "good")
         self.assertIP(ipv4="10.5.5.6")
+
+    def test_identification_by_token_without_domain(self):
+        self.owner.domains.all().delete()
+        self.client.set_credentials_basic_auth("", self.token.plain)
+        response = self.client.get(
+            self.reverse("v1:dyndns12update"), REMOTE_ADDR="10.5.5.7"
+        )
+        self.assertStatus(response, status.HTTP_400_BAD_REQUEST)
 
     def test_identification_by_email(self):
         self.client.set_credentials_basic_auth(self.owner.email, self.token.plain)
