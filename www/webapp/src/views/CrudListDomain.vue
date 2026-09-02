@@ -20,7 +20,7 @@ export default {
         updatable: false,
         destroyable: true,
         rowsClickable: true,
-        limit_domains: 0,
+        limit_domains: null,  // unknown until auth/account/ has been retrieved
         headlines: {
           table: 'Domains',
           create: 'Create New Domain',
