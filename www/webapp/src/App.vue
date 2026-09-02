@@ -301,16 +301,24 @@ export default {
 .v-application {
   color: rgba(0, 0, 0, 0.87);
 }
-.v-application p {
+/* Overlays (dialogs, menus, ...) are teleported into .v-overlay-container, which
+   Vuetify appends to the body, next to .v-application. App-wide rules therefore
+   have to name both, or they stop at the dialog boundary. */
+.v-application p,
+.v-overlay-container p {
   margin-bottom: 16px;
 }
 .v-application ul,
-.v-application ol {
+.v-application ol,
+.v-overlay-container ul,
+.v-overlay-container ol {
   padding-left: 24px;
   margin-bottom: 16px;
 }
 .v-application li > ul,
-.v-application li > ol {
+.v-application li > ol,
+.v-overlay-container li > ul,
+.v-overlay-container li > ol {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -379,7 +387,8 @@ export default {
 .v-card > .v-alert {
   flex: none;
 }
-.v-application .text-primary {
+.v-application .text-primary,
+.v-overlay-container .text-primary {
   color: #ffa000 !important;
 }
 .v-application .v-field {
