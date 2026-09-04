@@ -5,17 +5,24 @@ Reference arbiter for the deSEC gatekeeping interface (see README.md).
 The API POSTs a JSON object describing a request it does not want to decide on its own, and this
 service answers with a JSON object carrying the verdict. All decision making lives in decide().
 
-This arbiter allows everything.
+This arbiter drops registrations for blocklisted email addresses, and allows everything else.
 """
 
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import blocklist
 
 ADDRESS = ("", 8000)
 MAX_CONTENT_LENGTH = 64 * 1024
 
 
 def decide(request):
+    if request.get("event") == "account_create":
+        email = request.get("email")
+        line = blocklist.match(email if isinstance(email, str) else "")
+        if line is not None:
+            return {"verdict": "drop", "reason": f"email address matches {line}"}
     return {"verdict": "allow"}
 
 

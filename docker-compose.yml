@@ -252,6 +252,8 @@ services:
     build: gatekeeper
     image: desec/dedyn-gatekeeper:latest
     init: true
+    volumes:
+    - ${DESECSTACK_GATEKEEPER_CONF:-./gatekeeper/conf}:/etc/gatekeeper:ro
     networks:
       # The arbiter is deliberately not on any other network: it answers api's
       # questions, and has no business talking to the rest of the stack.

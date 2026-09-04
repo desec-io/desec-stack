@@ -1,0 +1,24 @@
+# Email addresses matching any of the patterns below cannot be used to register
+# an account. Matching is case-insensitive; blank lines and lines starting with
+# '#' are ignored. Patterns are shell-style globs (fnmatch), not regexes:
+#
+#   *       matches any sequence of characters (including '@' and '.')
+#   ?       matches any single character
+#   [seq]   matches any character in seq
+#   [!seq]  matches any character not in seq
+#
+# A pattern starting with '!' is an exception: if it matches, the address is not
+# blocked. Lines are processed top to bottom and the first match decides, so
+# exceptions must be listed before the pattern they carve out.
+#
+# The file is read on every registration attempt, so changes take effect without
+# a restart. It is mounted into the gatekeeper container by directory (not by
+# file), so replacing it (as editors, sed -i and git do) works as well as editing
+# it in place; the container path is fixed at /etc/gatekeeper/email-blocklist.txt.
+#
+# Examples:
+#
+#   !smith+ok@gmail.com
+#   *@outlook.com
+#   *@*.foobar.example
+#   smith+*@gmail.com

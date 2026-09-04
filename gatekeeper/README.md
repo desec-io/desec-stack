@@ -43,6 +43,22 @@ Failure to obtain a verdict — service down, timeout, or an answer the API cann
 allows the request. Gatekeeping is an abuse control, not an authorization mechanism, and an arbiter
 that is unavailable must not take registrations down with it.
 
+Email blocklist
+---------------
+
+The arbiter shipped here drops registrations whose email address matches a pattern in
+`email-blocklist.txt`, and allows everything else. Patterns are shell-style globs matched
+case-insensitively, a line starting with `!` is an exception, and the first matching line decides;
+`conf/email-blocklist.txt.template` documents the syntax. The file is read on every request, so
+changes take effect without a restart. The directory holding it is mounted at `/etc/gatekeeper` in
+the container, configured by `DESECSTACK_GATEKEEPER_CONF`. To start from the template:
+
+    cp gatekeeper/conf/email-blocklist.txt{.template,}
+
+The blocklist itself is not tracked by git, so that pulling neither overwrites your rules nor
+conflicts with them. A blocklist that is absent blocks nothing, and neither does one that cannot be
+read, so make sure the file is readable by `nobody`, the user this container runs as.
+
 Replacing this arbiter
 ----------------------
 
