@@ -39,7 +39,7 @@ class DomainViewSet(
     def permission_classes(self):
         ret = [
             IsAuthenticated,
-            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+            permissions.MFARequiredIfEnabledOrAPIToken,
             permissions.IsOwner,
         ]
         if self.request.method not in SAFE_METHODS:

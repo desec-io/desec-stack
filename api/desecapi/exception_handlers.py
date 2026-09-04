@@ -46,4 +46,14 @@ def exception_handler(exc, context):
             metrics.get("desecapi_exception").labels(class_path).inc()
             return handler()
 
-    return drf_exception_handler(exc, context)
+    response = drf_exception_handler(exc, context)
+
+    # DRF renders only the human-readable detail, dropping the machine-readable
+    # code that tells denials apart (e.g. an MFA challenge from a used-up domain
+    # limit). Clients need it to know what to do next, so put it on the wire.
+    if response is not None and isinstance(response.data, dict):
+        code = getattr(response.data.get("detail"), "code", None)
+        if code is not None:
+            response.data["code"] = code
+
+    return response

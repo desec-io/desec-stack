@@ -72,7 +72,7 @@ class AccountCreateView(generics.CreateAPIView):
 class AccountView(generics.RetrieveUpdateAPIView):
     permission_classes = (
         IsAuthenticated,
-        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+        permissions.MFARequiredIfEnabledOrAPIToken,
         permissions.HasManageTokensPermission,
     )
     serializer_class = serializers.UserSerializer
