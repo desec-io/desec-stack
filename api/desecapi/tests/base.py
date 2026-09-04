@@ -87,24 +87,24 @@ class DesecAPIClient(APIClient):
 
     def get_rr_set(self, domain_name, subname, type_):
         return self.get(
-            self.reverse("v1:rrset@", name=domain_name, subname=subname, type=type_)
+            self.reverse("v1:rrset", name=domain_name, subname=subname, type=type_)
         )
 
     def put_rr_set(self, domain_name, subname, type_, data):
         return self.put(
-            self.reverse("v1:rrset@", name=domain_name, subname=subname, type=type_),
+            self.reverse("v1:rrset", name=domain_name, subname=subname, type=type_),
             data,
         )
 
     def patch_rr_set(self, domain_name, subname, type_, data):
         return self.patch(
-            self.reverse("v1:rrset@", name=domain_name, subname=subname, type=type_),
+            self.reverse("v1:rrset", name=domain_name, subname=subname, type=type_),
             data,
         )
 
     def delete_rr_set(self, domain_name, subname, type_):
         return self.delete(
-            self.reverse("v1:rrset@", name=domain_name, subname=subname, type=type_)
+            self.reverse("v1:rrset", name=domain_name, subname=subname, type=type_)
         )
 
     # TODO add and use {post,get,delete,...}_domain

@@ -1389,6 +1389,28 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             )
             self.assertStatus(response, status.HTTP_404_NOT_FOUND)
 
+    def test_rr_set_url_forms(self):
+        # A subname can be written plainly or terminated with `...`. The zone
+        # apex has no plain form (`rrsets//{type}/` does not survive URL
+        # normalization) and is written as `@` or as `...`. Every spelling
+        # available for a subname addresses the same RRset.
+        base = self.reverse("v1:rrsets", name=self.my_rr_set_domain.name)
+        for subname in ["", "test", "*", "bar.baz", "_bar"]:
+            with self.subTest(subname=subname):
+                urls = [f"{base}{subname}.../A/"]
+                urls.append(f"{base}@/A/" if not subname else f"{base}{subname}/A/")
+                responses = [self.client.get(url) for url in urls]
+                for response in responses:
+                    self.assertStatus(response, status.HTTP_200_OK)
+                    self.assertEqual(response.data["subname"], subname)
+                self.assertEqual(responses[0].data, responses[1].data)
+
+    def test_rr_set_url_subname_at_form_removed(self):
+        # `{subname}@` was never documented and is no longer routed; it falls
+        # through to the plain form, where it is not a valid subname.
+        base = self.reverse("v1:rrsets", name=self.my_rr_set_domain.name)
+        self.assertStatus(self.client.get(f"{base}test@/A/"), status.HTTP_404_NOT_FOUND)
+
     def test_update_essential_properties(self):
         # Changing the subname is expected to cause an error
         url = self.reverse(
