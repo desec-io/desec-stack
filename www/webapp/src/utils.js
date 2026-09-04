@@ -48,15 +48,11 @@ async function _digestError(error, app) {
         } else {
           return ['You are not logged in.'];
         }
-      } else if (error.response.status === 403) {
-          if (useUserStore().authenticated && !['change-email', 'delete-account'].includes(app.$route.name)) { // MFA
-            if (app.$route.name !== 'mfa') {
-              app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
-            }
-            return [];
-          } else { // unauthenticated 403, i.e. login failure
-            return [error.response.data.detail]
-          }
+      } else if (error.response.status === 403 && error.response.data?.code === 'mfa_required' && app !== undefined) {
+        if (app.$route.name !== 'mfa') {
+          app.$router.push({name: 'mfa', query: {redirect: app.$route.fullPath}});
+        }
+        return [];
       } else if (error.response.status === 413) {
         return ['Too much data. Try to reduce the length of your inputs.'];
       } else if ('data' in error.response) {

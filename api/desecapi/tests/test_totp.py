@@ -34,6 +34,12 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         factor.save()
 
     def _test_MFA_permission_status(self, assertion):
+        def assert_status(response):
+            assertion(response.status_code, status.HTTP_403_FORBIDDEN)
+            if response.status_code == status.HTTP_403_FORBIDDEN:
+                # Clients need to tell this apart from other denials
+                self.assertEqual(response.data["code"], "mfa_required")
+
         for method, view_names in {
             self.client.get: [
                 "v1:account",
@@ -48,19 +54,19 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
         }.items():
             for view_name in view_names:
                 response = method(self.reverse(view_name))
-                assertion(response.status_code, status.HTTP_403_FORBIDDEN)
+                assert_status(response)
         for view_name in [
             "v1:domain-detail",
             "v1:rrsets",
         ]:
             for method in [self.client.get, self.client.post]:
                 response = method(self.reverse(view_name, name=self.my_domain))
-                assertion(response.status_code, status.HTTP_403_FORBIDDEN)
+                assert_status(response)
         for method in [self.client.get, self.client.post]:
             response = method(
                 self.reverse("v1:rrset@", name=self.my_domain, subname="", type="NS")
             )
-            assertion(response.status_code, status.HTTP_403_FORBIDDEN)
+            assert_status(response)
 
     def test_workflow(self):
         # Request setting up TOTP factor
