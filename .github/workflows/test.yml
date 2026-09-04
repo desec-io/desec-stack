@@ -52,7 +52,7 @@ jobs:
     - name: Install Ruff
       run: python3 -m pip install ruff
     - name: Test desecapi formatting
-      run: ruff format --check api/
+      run: ruff format --check api/ gatekeeper/
 
   test-webapp:
     # runs webapp unit tests
@@ -71,6 +71,15 @@ jobs:
       run: npm test
       working-directory: www/webapp
 
+  test-gatekeeper:
+    # runs gatekeeper unit tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v7
+    - name: Run gatekeeper tests
+      run: python3 -m unittest discover -s gatekeeper -v
+
   test-missing-migrations:
     # test if Django migrations are missing
     runs-on: ubuntu-latest
@@ -80,7 +89,7 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
       with:
-        images: api dbapi nslord nsmaster dblord dbmaster
+        images: api dbapi nslord nsmaster dblord dbmaster gatekeeper
     - name: Check for missing migrations
       run: docker compose run -T api sh -c "./wait-dbapi && python manage.py makemigrations --check"
 
@@ -110,7 +119,7 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
       with:
-        images: api dbapi nslord nsmaster dblord dbmaster
+        images: api dbapi nslord nsmaster dblord dbmaster gatekeeper
     - name: Run API Tests
       run: docker compose -f docker-compose.yml -f docker-compose.test-api.yml run -T api bash -c "./entrypoint-tests.sh"
     - name: API Tests Logs and Cleanup

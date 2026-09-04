@@ -132,6 +132,7 @@ services:
     - nslord
     - nsmaster
     - celery-email
+    - gatekeeper
     - memcached
     tmpfs:
     - /var/local/django_metrics:size=500m
@@ -163,6 +164,7 @@ services:
     networks:
       rearapi_celery:
       rearapi_dbapi:
+      rearapi_gatekeeper:
       rearapi_ns:
         ipv4_address: ${DESECSTACK_IPV4_REAR_PREFIX16}.1.10
       rearapi_unbound:
@@ -244,6 +246,20 @@ services:
       driver: "syslog"
       options:
         tag: "desec/unbound"
+    restart: unless-stopped
+
+  gatekeeper:
+    build: gatekeeper
+    image: desec/dedyn-gatekeeper:latest
+    init: true
+    networks:
+      # The arbiter is deliberately not on any other network: it answers api's
+      # questions, and has no business talking to the rest of the stack.
+      rearapi_gatekeeper:
+    logging:
+      driver: "syslog"
+      options:
+        tag: "desec/gatekeeper"
     restart: unless-stopped
 
   rabbitmq:
@@ -462,6 +478,13 @@ networks:
       config:
       - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.0/24
         gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.5.1
+  rearapi_gatekeeper:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: ${DESECSTACK_IPV4_REAR_PREFIX16}.10.0/24
+        gateway: ${DESECSTACK_IPV4_REAR_PREFIX16}.10.1
   rearapi_ns:
     driver: bridge
     ipam:

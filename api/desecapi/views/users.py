@@ -8,7 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from desecapi import authentication, permissions, serializers
+from desecapi import authentication, gatekeeper, permissions, serializers
+from desecapi.exceptions import RegistrationDenied
 from desecapi.models import Token, User
 
 
@@ -35,15 +36,31 @@ class AccountCreateView(generics.CreateAPIView):
             if e.detail:
                 raise e
         else:
-            # create user
-            user = serializer.save(is_active=None if activation_required else True)
-
-            # send email if needed
             domain = serializer.validated_data.get("domain")
-            if domain or activation_required:
-                serializers.AuthenticatedActivateUserActionSerializer.build_and_save(
-                    user=user, domain=domain
-                )
+            verdict = gatekeeper.ask(
+                "account_create",
+                email=serializer.validated_data["email"],
+                ip=request.META.get("REMOTE_ADDR"),
+                user_agent=request.META.get("HTTP_USER_AGENT"),
+                domain=domain,
+                captcha_solved="captcha" in serializer.validated_data,
+            )
+            match verdict:
+                case gatekeeper.REJECT:
+                    raise RegistrationDenied
+                case gatekeeper.DROP:
+                    pass
+                case gatekeeper.ALLOW:
+                    # create user
+                    user = serializer.save(
+                        is_active=None if activation_required else True
+                    )
+
+                    # send email if needed
+                    if domain or activation_required:
+                        serializers.AuthenticatedActivateUserActionSerializer.build_and_save(
+                            user=user, domain=domain
+                        )
 
         # This request is unauthenticated, so don't expose whether we did anything.
         message = (

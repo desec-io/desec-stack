@@ -101,6 +101,16 @@ human-readable error message that may look like::
         ]
     }
 
+Registration requests are also subject to abuse prevention measures. If a
+request is denied on those grounds, the server replies with ``400 Bad
+Request``::
+
+    HTTP/1.1 400 Bad Request
+
+    {
+        "detail": "Registration denied. If you believe this is an error, please contact support."
+    }
+
 
 Domain Creation during Account Registration
 *******************************************

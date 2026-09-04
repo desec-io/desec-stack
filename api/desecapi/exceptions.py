@@ -15,6 +15,14 @@ class RequestEntityTooLarge(APIException):
     default_code = "too_large"
 
 
+class RegistrationDenied(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = (
+        "Registration denied. If you believe this is an error, please contact support."
+    )
+    default_code = "registration_denied"
+
+
 class ExternalAPIException(APIException):
     def __init__(self, response=None):
         self.response = response

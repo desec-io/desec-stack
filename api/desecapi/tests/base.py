@@ -590,6 +590,20 @@ class MockPDNSTestCase(APITestCase):
             "callback": request_callback,
         }
 
+    def request_gatekeeper(self, verdict="allow", reason=None, **kwargs):
+        """
+        Response to a gatekeeper request. By default, the gatekeeper allows the request; to
+        simulate a gatekeeper that cannot be reached or does not answer properly, pass `body` or
+        `status` instead.
+        """
+        if "body" not in kwargs:
+            kwargs.setdefault("json", {"verdict": verdict, "reason": reason})
+        return {
+            "method": "POST",
+            "url": re.compile("^" + re.escape(settings.GATEKEEPER_API)),
+            **kwargs,
+        }
+
     def assertRequests(self, *expected_requests, expect_order=True):
         """
         Assert the given requests are made. To build requests, use the `MockPDNSTestCase.request_*` functions.
@@ -707,6 +721,7 @@ class MockPDNSTestCase(APITestCase):
             self.request_pdns_zone_update(),
             self.request_pdns_zone_retrieve_crypto_keys(),
             self.request_pdns_zone_retrieve(),
+            self.request_gatekeeper(),
         ]:
             if "callback" in request:
                 self.responses.add_callback(**request)

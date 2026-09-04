@@ -90,6 +90,23 @@ set_counter(
     ["method", "path", "status"],
 )
 
+# gatekeeper.py metrics
+set_counter(
+    "desecapi_gatekeeper_verdict",
+    "number of verdicts obtained from the gatekeeper",
+    ["event", "verdict"],
+)
+set_counter(
+    "desecapi_gatekeeper_request_failure",
+    "number of times no gatekeeper verdict could be obtained",
+    ["event"],
+)
+set_histogram(
+    "desecapi_gatekeeper_request_duration_seconds",
+    "duration of gatekeeper requests",
+    ["event"],
+)
+
 
 # pdns_change_tracker.py metrics
 set_counter(

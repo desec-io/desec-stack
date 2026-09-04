@@ -51,6 +51,10 @@ services:
     logging:
       driver: "json-file"
 
+  gatekeeper:
+    logging:
+      driver: "json-file"
+
   rabbitmq:
     ports:
     - "15672:15672"

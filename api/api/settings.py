@@ -237,6 +237,10 @@ WATCHDOG_SECONDARIES = os.environ.get("DESECSTACK_WATCHDOG_SECONDARIES", "").spl
 PCH_API = os.environ.get("DESECSTACK_API_PCH_API", "")
 PCH_API_TOKEN = os.environ.get("DESECSTACK_API_PCH_API_TOKEN", "")
 
+# Gatekeeper (see gatekeeper/README.md)
+GATEKEEPER_API = "http://gatekeeper:8000/"
+GATEKEEPER_TIMEOUT = 2
+
 # Prometheus (see https://github.com/korfuri/django-prometheus/blob/master/documentation/exports.md)
 #  TODO Switch to PROMETHEUS_METRICS_EXPORT_PORT_RANGE instead of this workaround, which currently necessary to due
 #  https://github.com/korfuri/django-prometheus/issues/215

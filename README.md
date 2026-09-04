@@ -13,6 +13,7 @@ This is a docker compose application providing the basic stack for deSEC name se
 - `rabbitmq`: `celery`'s queue
 - `memcached`: `api`-wide in-memory cache, currently used to keep API throttling state
 - `unbound`: Validating recursive resolver used by `api` and `celery-delegation` to check how domains are delegated and secured (`manage.py check-delegation`). Reachable only from those two, as it is an open resolver by design.
+- `gatekeeper`: Arbiter that `api` consults about incoming account registrations, applying whatever rules the operator sees fit (see `gatekeeper/README.md`). Reachable only from `api`, and with no access to the rest of the stack.
 - `openvpn-server`: OpenVPN server used to tunnel replication traffic between this stack and frontend DNS secondaries
 - `prometheus`: Prometheus server for monitoring
 

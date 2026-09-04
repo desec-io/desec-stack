@@ -15,12 +15,15 @@ This involves testing five separate endpoints:
 Furthermore, domain renewals and unused domain/account scavenging are tested.
 """
 
+import contextlib
 from datetime import timedelta
+import json
 import random
 import time
 from unittest import mock
 from urllib.parse import urlparse
 
+import requests
 from django.contrib.auth.hashers import is_password_usable
 from django.conf import settings
 from django.core import mail
@@ -691,6 +694,136 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
         with self.get_psl_context_manager("."):
             self._test_registration_with_domain(tampered_domain="evil.com")
 
+    @contextlib.contextmanager
+    def gatekeeper(self, verdict="allow", **kwargs):
+        self.responses.reset()
+        self.responses.add(**self.request_gatekeeper(verdict, **kwargs))
+        yield
+
+    def test_registration_gatekeeper_request(self):
+        email = self.random_username()
+        captcha_id, captcha_solution = self.get_captcha()
+        response = self.client.post(
+            reverse("v1:register"),
+            {
+                "email": email,
+                "password": self.random_password(),
+                "captcha": {"id": captcha_id, "solution": captcha_solution},
+            },
+            REMOTE_ADDR="198.51.100.7",
+            HTTP_USER_AGENT="test-agent/1.0",
+        )
+        self.assertRegistrationSuccessResponse(response)
+        request = self.responses.calls[-1].request
+        self.assertEqual(request.headers["User-Agent"], "desecapi")
+        self.assertEqual(
+            json.loads(request.body),
+            {
+                "event": "account_create",
+                "email": email,
+                "ip": "198.51.100.7",
+                "user_agent": "test-agent/1.0",
+                "domain": None,
+                "captcha_solved": True,
+            },
+        )
+
+    def test_registration_gatekeeper_request_with_domain(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        email = self.random_username()
+        domain = self.random_domain_name()
+        with self.get_psl_context_manager("."):
+            _, _, response = self.register_user(
+                email, self.random_password(), late_captcha=True, domain=domain
+            )
+        self.assertRegistrationSuccessResponse(response)
+        self.assertEqual(
+            json.loads(self.responses.calls[-1].request.body),
+            {
+                "event": "account_create",
+                "email": email,
+                "ip": "127.0.0.1",
+                "user_agent": None,
+                "domain": domain,
+                "captcha_solved": False,
+            },
+        )
+
+    def test_registration_gatekeeper_not_consulted_when_invalid(self):
+        response = self.register_user(self.random_username(), "")[2]
+        self.assertRegistrationFailurePasswordRequiredResponse(response)
+        self.assertEqual(len(self.responses.calls), 0)
+
+    def test_registration_gatekeeper_drop(self):
+        email = self.random_username()
+        with self.gatekeeper("drop", reason="known spammer"):
+            with self.assertLogs("desecapi", "WARNING") as logs:
+                _, _, response = self.register_user(email, self.random_password())
+        self.assertRegistrationSuccessResponse(response)
+        self.assertNoEmailSent()
+        self.assertUserDoesNotExist(email)
+        # The address is dropped without a trace anywhere else, so it is logged.
+        self.assertIn(email, "\n".join(logs.output))
+        self.assertIn("known spammer", "\n".join(logs.output))
+
+    def test_registration_gatekeeper_drop_with_domain(self):
+        PublicSuffixMockMixin.setUpMockPatch(self)
+        email = self.random_username()
+        with self.get_psl_context_manager("."):
+            with self.gatekeeper("drop"):
+                with self.assertLogs("desecapi", "WARNING"):
+                    _, _, response = self.register_user(
+                        email, self.random_password(), domain=self.random_domain_name()
+                    )
+        self.assertRegistrationSuccessResponse(response)
+        self.assertNoEmailSent()
+        self.assertUserDoesNotExist(email)
+
+    def test_registration_gatekeeper_reject(self):
+        email = self.random_username()
+        with self.gatekeeper("reject", reason="known spammer"):
+            with self.assertLogs("desecapi", "WARNING") as logs:
+                _, _, response = self.register_user(email, self.random_password())
+        self.assertContains(
+            response,
+            "Registration denied.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertNoEmailSent()
+        self.assertUserDoesNotExist(email)
+        # The gatekeeper's reasoning is logged, but not disclosed to the client.
+        self.assertIn(email, "\n".join(logs.output))
+        self.assertIn("known spammer", "\n".join(logs.output))
+        self.assertNotIn("known spammer", str(response.data))
+
+    def test_registration_gatekeeper_unreachable(self):
+        with self.gatekeeper(body=requests.exceptions.ConnectionError()):
+            with self.assertLogs("desecapi", "WARNING"):
+                self._test_registration(password=self.random_password())
+
+    def test_registration_gatekeeper_timeout(self):
+        with self.gatekeeper(body=requests.exceptions.ConnectTimeout()):
+            with self.assertLogs("desecapi", "WARNING"):
+                self._test_registration(password=self.random_password())
+
+    def test_registration_gatekeeper_error(self):
+        # A verdict that comes with an error status is not honored.
+        with self.gatekeeper("drop", status=status.HTTP_500_INTERNAL_SERVER_ERROR):
+            with self.assertLogs("desecapi", "WARNING"):
+                self._test_registration(password=self.random_password())
+
+    def test_registration_gatekeeper_unintelligible(self):
+        for kwargs in [
+            {"body": "not json"},
+            {"json": {}},
+            {"json": {"verdict": "maybe"}},
+            {"json": ["drop"]},
+        ]:
+            with self.subTest(**kwargs):
+                with self.gatekeeper(**kwargs):
+                    with self.assertLogs("desecapi", "WARNING"):
+                        self._test_registration(password=self.random_password())
+
     def test_registration_known_account(self):
         email, _ = self._test_registration(
             self.random_username(), self.random_password()
@@ -773,7 +906,8 @@ class NoUserAccountTestCase(UserLifeCycleTestCase):
                 override_settings(REGISTER_LPS=register_lps),
                 self.get_psl_context_manager(local_public_suffix),
                 self.assertRequests(
-                    self.requests_desec_domain_creation_auto_delegation(domain)
+                    self.request_gatekeeper(),
+                    self.requests_desec_domain_creation_auto_delegation(domain),
                 ),
             ):
                 self._test_registration(domain=domain, late_captcha=True)
