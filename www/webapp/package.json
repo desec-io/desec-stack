@@ -23,10 +23,10 @@
     "@vuelidate/validators": "^2.0.4",
     "axios": "^1.19.0",
     "date-fns": "^4.1.0",
-    "pinia": "^2.0.30",
+    "pinia": "^4.0.3",
     "vue": "^3.4.19",
-    "vue-router": "^4.3.0",
-    "vuetify": "^3.7.5"
+    "vue-router": "^5.3.0",
+    "vuetify": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
