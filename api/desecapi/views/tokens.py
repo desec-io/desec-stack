@@ -24,7 +24,7 @@ class TokenViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     def permission_classes(self):
         ret = [
             IsAuthenticated,
-            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+            permissions.MFARequiredIfEnabledOrAPIToken,
             permissions.HasManageTokensPermission,
         ]
         # The effective user may manage the token; its owner can only delete it
@@ -86,7 +86,7 @@ class TokenPoliciesRoot(RetrieveAPIView):
     throttle_scope = "account_management_passive"
     permission_classes = [
         IsAuthenticated,
-        permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+        permissions.MFARequiredIfEnabledOrAPIToken,
         permissions.HasManageTokensPermission
         | permissions.AuthTokenCorrespondsToViewToken,
     ]
@@ -113,7 +113,7 @@ class TokenDomainPolicyViewSet(IdempotentDestroyMixin, viewsets.ModelViewSet):
     def permission_classes(self):
         ret = [
             IsAuthenticated,
-            permissions.IsAPIToken | permissions.MFARequiredIfEnabled,
+            permissions.MFARequiredIfEnabledOrAPIToken,
         ]
         if self.request.method in SAFE_METHODS:
             ret.append(

@@ -78,7 +78,7 @@ class TokenAuthenticationTestCase(DynDomainOwnerTestCase):
 
         response = self.client.get(self.reverse("v1:root"), **kwargs)
         body = (
-            json.dumps({"detail": "Invalid token."})
+            json.dumps({"detail": "Invalid token.", "code": "authentication_failed"})
             if code == HTTP_401_UNAUTHORIZED
             else None
         )

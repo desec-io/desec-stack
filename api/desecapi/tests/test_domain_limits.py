@@ -168,6 +168,8 @@ class DomainLimitEnforcementTestCase(DomainOwnerTestCase):
         self.assertContains(
             response, "Domain limit", status_code=status.HTTP_403_FORBIDDEN
         )
+        # Clients need to tell this apart from an MFA challenge
+        self.assertEqual(response.data["code"], "domain_limit_exceeded")
 
         # Two secure domains pay for their own slots, and the headroom floor
         # of 2 sits on top: 2 + max(2, round(sqrt(2))) = 4.
