@@ -28,8 +28,8 @@ export default {
         },
         texts: {
           banner: () => 'To edit your DNS records, click on one of your domains.',
-          create: () => self.limit_domains != null ? `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>Contact support to apply for a higher limit.</small>` : '',
-          createWarning: () => (self.availableCount <= 0 ? 'You have reached your maximum number of domains. Please contact support to apply for a higher limit.' : ''),
+          create: () => self.limit_domains != null ? `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>The limit grows as you delegate your domains to us securely (with DNSSEC).</small>` : '',
+          createWarning: () => (self.availableCount <= 0 ? 'Domain limit exceeded. Delegate all of your domains to us securely (with DNSSEC) to make the limit grow.' : ''),
           destroy: d => (`Delete domain ${d.name}?`),
           destroyInfo: () => 'This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet.',
         },
