@@ -1,5 +1,6 @@
 from django.utils import timezone
 
+from desecapi.exceptions import ChangeTrackerException
 from desecapi.models import RRset, RR, Domain
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.tests.base import DesecTestCase
@@ -34,7 +35,7 @@ class PdnsChangeTrackerTestCase(DesecTestCase):
         tracker = PDNSChangeTracker()
         tracker.__enter__()
         tracker._rr_set_updated(RRset(domain=self.empty_domain, subname="", type="A"))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ChangeTrackerException):
             tracker.__exit__(None, None, None)
 
 

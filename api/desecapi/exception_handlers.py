@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from desecapi import metrics
-from desecapi.exceptions import PDNSException
+from desecapi.exceptions import ChangeTrackerException, PCHException, PDNSException
 
 
 def exception_handler(exc, context):
@@ -39,6 +39,8 @@ def exception_handler(exc, context):
         IntegrityError: _409,
         OSError: _500,  # OSError happens on system-related errors, like full disk or getaddrinfo() failure.
         PDNSException: _500,  # nslord/nsmaster returned an error
+        PCHException: _500,  # PCH returned an error
+        ChangeTrackerException: _500,  # commit to nslord/nsmaster/PCH failed
     }
 
     for exception_class, handler in handlers.items():
