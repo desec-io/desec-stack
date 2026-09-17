@@ -17,7 +17,7 @@ from dns import rdataclass, rdatatype
 from dns.rdtypes import ANY, IN
 
 from desecapi import pdns
-from desecapi.dns import AAAA, CERT, CNAME, LongQuotedTXT, MX, NS, SRV
+from desecapi.dns import AAAA, CERT, CNAME, LOC, LongQuotedTXT, MX, NS, SRV
 
 from .base import validate_lower, validate_upper
 
@@ -258,6 +258,7 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
         dns.rdatatype.AAAA: AAAA,  # TODO remove when https://github.com/PowerDNS/pdns/issues/8182 is fixed
         dns.rdatatype.CERT: CERT,  # do DNS name validation the same way as pdns
         dns.rdatatype.CNAME: CNAME,  # do DNS name validation the same way as pdns
+        dns.rdatatype.LOC: LOC,  # do DNS name validation the same way as pdns
         dns.rdatatype.MX: MX,  # do DNS name validation the same way as pdns
         dns.rdatatype.NS: NS,  # do DNS name validation the same way as pdns
         dns.rdatatype.SRV: SRV,  # do DNS name validation the same way as pdns

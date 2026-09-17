@@ -709,6 +709,13 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                     "23 12 59.000 N 42 22 48.500 W 65.00m 20.00m 10.00m 10.00m",
                 ),
             ),
+            (
+                "LOC",
+                (
+                    "23 N 42 W 65",
+                    "23 0 0.000 N 42 0 0.000 W 65.00m 1.00m 10000.00m 10.00m",
+                ),
+            ),
             ("LP", ("010   l64-subnet1.example.com.", "10 l64-subnet1.example.com.")),
             ("MX", ("10 010.1.1.1.", "10 010.1.1.1.")),
             ("MX", ("010 010.1.1.2.", "10 010.1.1.2.")),

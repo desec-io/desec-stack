@@ -10,7 +10,7 @@ import dns.message
 import dns.name
 import dns.query
 import dns.rdtypes.txtbase, dns.rdtypes.svcbbase
-import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
+import dns.rdtypes.ANY.CERT, dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.LOC, dns.rdtypes.ANY.MX, dns.rdtypes.ANY.NS
 import dns.rdtypes.IN.AAAA, dns.rdtypes.IN.SRV
 
 
@@ -146,6 +146,18 @@ class NS(_NameMixin("target", allow_root=False), dns.rdtypes.ANY.NS.NS):
 @dns.immutable.immutable
 class SRV(_NameMixin("target", allow_root=True), dns.rdtypes.IN.SRV.SRV):
     pass
+
+
+@dns.immutable.immutable
+class LOC(dns.rdtypes.ANY.LOC.LOC):
+    def to_text(self, *args, **kwargs):
+        text = super().to_text(*args, **kwargs)
+        if len(text.split()) == 9:
+            # Add missing default-valued fields.
+            # Dnspython omits the last three fields (size, hprec, vprec) if they are
+            # all set to their default values.  Pdns wants all the fields, all the time.
+            text += " 1.00m 10000.00m 10.00m"
+        return text
 
 
 # Authoritative servers are asked directly, with no resolver in between to
