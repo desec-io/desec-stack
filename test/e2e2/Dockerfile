@@ -19,6 +19,7 @@ COPY requirements.txt .
 RUN python3 -m pip install -r requirements.txt
 
 COPY apiwait .
+COPY pytest.ini .
 COPY *.py .
 COPY ./spec .
 

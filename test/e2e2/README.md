@@ -12,6 +12,8 @@ The tests can be run from the **CLI** using
 
 If you had any changes to other containers (say `api`), then also rebuild them.
 
+The suite stops at the first failure or error. To run all tests regardless, pass `--maxfail=0` to pytest.
+
 To run the test in **pycharm**, make sure that pytest is installed in the Python environment that pycharm is using.
 Then add the docker compose environment to your pycharm build configuration. Note that you need to update the pycharm
 environment configuration when you update the corresponding variables in your `.env`.
