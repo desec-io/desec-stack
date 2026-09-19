@@ -105,7 +105,7 @@ jobs:
     - name: Build images
       uses: ./.github/workflows/build
     - name: Run e2e2 Tests
-      run: docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --skip-performance-tests ."
+      run: docker compose -f docker-compose.yml -f docker-compose.test-e2e2.yml run -T test-e2e2 sh -c "./apiwait 300 && python3 -m pytest -vv --exitfirst --skip-performance-tests ."
     - name: e2e2 Tests Logs and Cleanup
       if: always()
       run: |

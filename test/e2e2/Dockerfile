@@ -22,4 +22,4 @@ COPY apiwait .
 COPY *.py .
 COPY ./spec .
 
-CMD ./apiwait 300 && python3 -m pytest -vv .
+CMD ./apiwait 300 && python3 -m pytest -vv --exitfirst .
