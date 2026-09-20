@@ -144,6 +144,12 @@ const routes = [
     meta: {guest: false},
   },
   {
+    path: '/tokens/:tokenId/policies',
+    name: 'tokenPolicies',
+    component: () => import('@/views/CrudListTokenPolicy.vue'),
+    meta: {guest: false},
+  },
+  {
     path: '/domains',
     name: 'domains',
     component: lazy(() => import('@/views/CrudListDomain.vue')),
