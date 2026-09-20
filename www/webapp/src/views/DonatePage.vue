@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <v-row align="center">
+    <v-row class="align-center">
       <v-col cols="12" md="6" class="py-8">
-        <h1 class="text-h4 font-weight-bold">Donate to Support our Mission</h1>
-        <div class="text-subtitle-1 mt-6 font-weight-regular">
+        <h1 class="text-headline-large font-weight-bold">Donate to Support our Mission</h1>
+        <div class="text-body-large mt-6 font-weight-regular">
           <p>
             Like our community service? Your donation shows us we're on the right track.
             All donations are used in accordance with <router-link :to="{name: 'about'}">our statutes</router-link>.
@@ -23,7 +23,7 @@
           <v-card-text>
             <v-expansion-panels class="mb-4">
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBankTransferIn" /> Direct Debit – Let us Take your Money (Europe)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text class="pt-4">
@@ -36,7 +36,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBankTransferOut" /> Bank Transfer – Send us Money (Europe)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -66,7 +66,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiCreditCardOutline" /> Credit Card
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -83,7 +83,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiGithub" /> GitHub Sponsors
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -95,7 +95,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiGiftOutline" /> PayPal
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -112,7 +112,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiBitcoin" /> Crypto Currency (BTC, ETH, LTC)
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -138,7 +138,7 @@
               </v-expansion-panel>
 
               <v-expansion-panel>
-                <v-expansion-panel-title class="text-subtitle-1">
+                <v-expansion-panel-title class="text-body-large">
                   <v-icon class="mr-2" :icon="mdiHeartMultipleOutline" /> Double-up with Your Employer
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
@@ -158,7 +158,7 @@
               <strong>Based in Europe?</strong> You almost certainly can donate via direct debit or bank transfer (you
               only need your IBAN). <strong>No fees</strong> will be subtracted, so you can do more good!
             </p>
-            <div class="text-h6">Donation Receipts</div>
+            <div class="text-title-large">Donation Receipts</div>
             <p>
               deSEC e.V. is registered as a charitable organization in Germany. If you pay taxes here, your donation is
               tax-deductible, and we're happy to provide you with a donation receipt for that purpose. Note that for
@@ -205,7 +205,7 @@
 <script>
   import DonateDirectDebitForm from '@/components/DonateDirectDebitForm.vue';
   import {mdiBankTransferIn, mdiBankTransferOut, mdiBitcoin, mdiCreditCardOutline, mdiGiftOutline, mdiGithub, mdiHeartMultipleOutline} from "@mdi/js";
-  import QrcodeVue from '@/components/QrcodeVue.vue';
+  import QrcodeVue from '@/modules/qrcode-vue/dist/qrcode.vue.esm.js';
 
   export default {
     name: 'DonatePage',

@@ -8,7 +8,7 @@
   >
     <v-card>
       <v-card-title class="domain-setup-title">
-        <div class="text-h6">
+        <div class="text-title-large">
           Setup Instructions for <b>{{ domain }}</b>
         </div>
         <v-spacer/>
