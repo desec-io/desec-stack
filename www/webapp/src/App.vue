@@ -89,16 +89,22 @@
     </v-app-bar>
 
     <v-main>
-      <v-banner v-for="alert in user.alerts" :key="alert.id">
-        <template #icon>
+      <v-alert
+        v-for="alert in user.alerts"
+        :key="alert.id"
+        type="info"
+        variant="tonal"
+        rounded="0"
+      >
+        <template #prepend>
           <v-icon
             color="warning"
             size="36"
             :icon="alert.icon"
           />
         </template>
-        {{ alert.teaser }}
-        <template #actions>
+        <span v-html="alert.teaser"></span>
+        <template #append>
           <v-btn
             color="primary"
             variant="flat"
@@ -115,7 +121,7 @@
             Hide
           </v-btn>
         </template>
-      </v-banner>
+      </v-alert>
       <v-progress-linear
               :active="user.working"
               :indeterminate="user.working"
