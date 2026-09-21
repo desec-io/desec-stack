@@ -52,8 +52,8 @@
                         label="Do you want to set up a domain right away?"
                         persistent-hint
                 >
-                  <v-radio label="Configure your own domain (Managed DNS or dynDNS)." value="custom" tabindex="2"></v-radio>
-                  <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2"></v-radio>
+                  <v-radio label="Configure your own domain (Managed DNS)." value="custom" tabindex="2"></v-radio>
+                  <v-radio :label="`Register a new domain under ${LOCAL_PUBLIC_SUFFIXES[0]} (dynDNS).`" value="dynDNS" tabindex="2" disabled="disabled"></v-radio>
                   <v-radio label="No, I'll add one later." value="none" tabindex="2"></v-radio>
                 </v-radio-group>
               </div>
