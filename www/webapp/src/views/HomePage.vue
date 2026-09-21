@@ -1,6 +1,6 @@
 <template>
   <div>
-  <v-card variant="outlined" tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+  <v-card rounded="0" class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
     <div class="d-none d-md-block triangle-bg"></div>
     <v-container class="pa-0">
       <v-row align="center">
@@ -28,7 +28,7 @@
                             inline
                             @update:modelValue="$router.push({query: {domainType}})"
                     >
-                      <v-radio label="dynDNS domain" value="dynDNS"></v-radio>
+                      <v-radio disabled="disabled" label="dynDNS domain" value="dynDNS"></v-radio>
                       <v-radio label="Managed domain" value="custom"></v-radio>
                     </v-radio-group>
                   </div>
@@ -301,7 +301,7 @@ export default {
   created() {
     this.domainType = this.$route.query.domainType || 'none';
     for (let news of this.breaking_news) {
-      if (new Date() >= news.start && new Date() < news.end) {
+      if (new Date() >= news.start && (!news.end || new Date() < news.end)) {
         useUserStore().alert(news);
       }
     }
@@ -561,6 +561,15 @@ export default {
         icon: mdiHeartBroken,
         teaser: "Due to a recent spike in abusive domain registrations, new accounts need manual verification before " +
             "domains can be created. Please contact support explaining your use case to enable domain creation.",
+      },
+      {
+        id: 'news-20260921001',
+        start: new Date(Date.UTC(2026, 9 - 1, 21)),  // first day of showing
+        end: null,  // first day of not showing
+        icon: mdiHeartBroken,
+        teaser: "A recent spike with 5-digit numbers of abusive domain registrations required excessive manual " +
+            "handling, which was not sustainable.<br/> " +
+            "<b>.dedyn.io registration is now suspended</b> until further notice. <b>Do NOT email us for exceptions.</b>",
       },
     ],
     mdiMapMarker,

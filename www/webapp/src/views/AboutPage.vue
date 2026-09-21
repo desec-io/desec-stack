@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card outline tile class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
+    <v-card rounded="0" class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
       <div class="d-md-block logo-bg pt-4">
         <v-img
                   src="../assets/logo.notext.svg"
