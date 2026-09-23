@@ -19,6 +19,7 @@ location / {
         add_header Content-Security-Policy "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; img-src 'self' data:; media-src data:; script-src 'self' 'unsafe-eval' 'sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=' 'sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=' 'sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=' 'sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc='; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; block-all-mixed-content; form-action 'none';" always;
         add_header X-Frame-Options "deny" always;
         add_header X-Content-Type-Options "nosniff" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
         add_header X-XSS-Protection "1; mode=block" always;
     }

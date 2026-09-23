@@ -99,6 +99,7 @@ def test_security_headers(api_anon, url):
                                    "block-all-mixed-content; form-action 'none';",
         'X-Frame-Options': 'deny',
         'X-Content-Type-Options': 'nosniff',
+        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'X-XSS-Protection': '1; mode=block',
     }
