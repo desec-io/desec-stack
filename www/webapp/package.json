@@ -41,7 +41,7 @@
     "eslint-plugin-vuetify": "^2.1.1",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
-    "sass": "~1.83.4",
+    "sass": "^1.104.1",
     "vite": "^6.0.11",
     "vite-plugin-vuetify": "^2.0.4",
     "vitest": "^3.2.4",
