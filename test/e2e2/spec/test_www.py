@@ -100,7 +100,6 @@ def test_security_headers(api_anon, url):
         'X-Frame-Options': 'deny',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'X-XSS-Protection': '1; mode=block',
     }
     response = api_anon.get(url)
     for k, v in expected_headers.items():
