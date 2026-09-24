@@ -15,6 +15,7 @@ const lazy = (loader) => () => loader().catch((error) => {
   throw error;
 });
 
+/** @type {import('vue-router').RouteRecordRaw[]} */
 const routes = [
   {
     path: '/',
@@ -169,7 +170,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   // see if there are credentials in the session store that we don't know of
   let recovered = false;
   const user = useUserStore();
@@ -184,28 +185,36 @@ router.beforeEach((to, from, next) => {
     // this route requires auth, check if logged in
     // if not, redirect to login page.
     if (!user.authenticated) {
-      next({
+      return {
         name: 'login',
         query: { redirect: to.fullPath }
-      })
-    } else {
-      next()
+      }
     }
   } else {
     if (user.authenticated) {
       if (to.name === 'login') {
-        next({name: 'domains'})
-        return;
+        return {name: 'domains'};
       }
       // Log in state was present, but not needed for the current page
       if (recovered && to.name === 'home') {
         // User restored a previous session. If navigation to home, divert to home page for authorized users
-        next({name: 'domains'})
-        return;
+        return {name: 'domains'};
       }
     }
-    next() // make sure to always call next()!
   }
+});
+
+router.onError((err, to, from) => {
+  if (
+      err?.message?.includes('Failed to fetch dynamically imported module') ||
+      err?.message?.includes('Loading chunk')
+  ) {
+    console.error('[router error] Force a full reload to get fresh assets.')
+    window.location.assign(to.fullPath)
+    return
+  }
+
+  console.error('[router error]', err, { to: to.fullPath, from: from.fullPath })
 });
 
 export default router
