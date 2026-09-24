@@ -129,7 +129,7 @@
   };
 </script>
 
-<style lang="scss">
+<style>
   .fixed-width {
     font-family: monospace;
   }
