@@ -313,7 +313,7 @@
   };
 </script>
 
-<style lang="scss">
+<style>
   .signup-form-row {
     align-items: flex-start;
     display: flex;
