@@ -15,7 +15,7 @@ export default [
   // ...pluginVue.configs['flat/recommended'],
   ...pluginVuetify.configs['flat/base'],
   importX.flatConfigs.recommended,
-  ...pluginVueScopedCss.configs['flat/recommended'],
+  ...pluginVueScopedCss.configs['recommended'],
   js.configs.recommended,
   {
     files: ['**/*.{js,vue}'],
