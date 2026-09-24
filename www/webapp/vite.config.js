@@ -37,7 +37,7 @@ export default defineConfig({
     },
     resolve: {
         alias: [{
-            find: '@', replacement: resolve(__dirname, 'src')
+            find: '@', replacement: resolve(import.meta.dirname, 'src'),
         }],
         extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
     },
