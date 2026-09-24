@@ -1,7 +1,6 @@
 /* eslint-env node */
 import {defineConfig} from 'vite'
 import {resolve} from 'node:path';
-import legacy from '@vitejs/plugin-legacy'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 
@@ -32,7 +31,6 @@ export default defineConfig({
             },
         }),
         vuetify({ autoImport: true }),
-        legacy(), // Build for old browser.
     ],
     server: {
         port: 8080,
