@@ -17,7 +17,7 @@
                   color="primary"
                   flat
           >
-            <v-toolbar-title class="capitalize">{{ actionName }} Confirmation</v-toolbar-title>
+            <v-toolbar-title class="capitalize" tag="h1">{{ actionName }} Confirmation</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <error-alert :errors="errors"></error-alert>

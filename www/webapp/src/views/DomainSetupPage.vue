@@ -7,7 +7,7 @@
               color="primary"
               flat
           >
-            <v-toolbar-title>Setup Instructions for <b>{{ domain }}</b></v-toolbar-title>
+            <v-toolbar-title tag="h1">Setup Instructions for <b>{{ domain }}</b></v-toolbar-title>
           </v-toolbar>
 
           <v-card-text>
@@ -20,7 +20,7 @@
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="3">
         <v-card>
-          <v-card-title><div class="text-h6">Find Help</div></v-card-title>
+          <v-card-title><h2 class="text-h6">Find Help</h2></v-card-title>
           <v-card-text>
             In our forum <router-link :to="{name: 'talk'}">talk.desec.io</router-link>, members of the community
             discuss ideas and applications of deSEC. If you have a question, chances are that you may be able to find
@@ -33,7 +33,7 @@
       </v-col>
       <v-col cols="12" sm="8" md="3">
         <v-card>
-          <v-card-title><div class="text-h6">Keep deSEC Going</div></v-card-title>
+          <v-card-title><h2 class="text-h6">Keep deSEC Going</h2></v-card-title>
           <v-card-text>
             To offer free DNS hosting for everyone, deSEC relies on donations only.
             If you like our service, please consider donating.

@@ -36,7 +36,7 @@
             <template #top>
               <!-- Headline & Toolbar, Including New Form -->
               <v-toolbar class="bg-white" flat>
-                <v-toolbar-title>{{ headlines.table }}</v-toolbar-title>
+                <v-toolbar-title tag="h1">{{ headlines.table }}</v-toolbar-title>
                 <v-spacer />
                 <v-text-field
                         v-model="search"
@@ -61,6 +61,7 @@
                         size="small"
                         icon
                         variant="flat"
+                        :aria-label="headlines.create"
                         :disabled="user.working"
                 >
                   <v-icon :icon="mdiPlus" />
@@ -86,9 +87,17 @@
                   <v-card>
                     <v-form ref="createForm" v-model="valid" @submit.prevent="save()">
                       <v-card-title>
-                        <span class="text-h5">{{ headlines.create }}</span>
+                        <!-- d-inline keeps the previous <span> layout; only the semantics change -->
+                        <h2 class="text-h5 d-inline">{{ headlines.create }}</h2>
                         <v-spacer />
-                        <v-icon :icon="mdiClose" @click.stop="close" />
+                        <v-btn
+                                icon
+                                variant="text"
+                                aria-label="Close dialog"
+                                @click.stop="close"
+                        >
+                          <v-icon :icon="mdiClose" />
+                        </v-btn>
                       </v-card-title>
                       <v-divider />
                       <v-progress-linear
@@ -280,7 +289,7 @@
             <v-card>
               <v-form @submit.prevent="destroy(destroyDialogItem)">
                 <v-card-title>
-                  <span class="text-h5">{{ headlines.destroy }}</span>
+                  <h2 class="text-h5 d-inline">{{ headlines.destroy }}</h2>
                 </v-card-title>
 
                 <v-divider />

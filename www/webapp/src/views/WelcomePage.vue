@@ -17,7 +17,7 @@
                   color="primary"
                   flat
           >
-            <v-toolbar-title>Welcome to deSEC</v-toolbar-title>
+            <v-toolbar-title tag="h1">Welcome to deSEC</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <v-alert type="success">

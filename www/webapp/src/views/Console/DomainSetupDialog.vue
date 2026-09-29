@@ -8,11 +8,18 @@
   >
     <v-card>
       <v-card-title class="domain-setup-title">
-        <div class="text-h6">
+        <h2 class="text-h6">
           Setup Instructions for <b>{{ domain }}</b>
-        </div>
+        </h2>
         <v-spacer/>
-        <v-icon :icon="mdiClose" @click.stop="close" />
+        <v-btn
+            icon
+            variant="text"
+            aria-label="Close dialog"
+            @click.stop="close"
+        >
+          <v-icon :icon="mdiClose" />
+        </v-btn>
       </v-card-title>
       <v-divider/>
 

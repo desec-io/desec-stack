@@ -17,7 +17,7 @@
                   color="primary"
                   flat
           >
-            <v-toolbar-title>Domain Registration Completed</v-toolbar-title>
+            <v-toolbar-title tag="h1">Domain Registration Completed</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <error-alert :errors="errors"></error-alert>

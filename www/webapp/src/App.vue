@@ -47,7 +47,12 @@
       <v-btn class="mx-4" color="primary" variant="flat" :to="{name: 'signup', query: $route.query}" v-if="!authenticated">Create Account</v-btn>
       <v-btn class="mx-4 ml-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!authenticated">Log In</v-btn>
       <v-btn class="mx-4 ml-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
-      <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
+      <v-app-bar-nav-icon
+              class="d-md-none"
+              aria-label="Navigation menu"
+              :aria-expanded="String(drawer)"
+              @click.stop="drawer = !drawer"
+      />
       <template #extension v-if="authenticated">
         <div class="authenticated-tabs d-flex align-center w-100 bg-primary text-white">
           <v-tabs v-model="activeTab" class="flex-grow-1 text-white" bg-color="primary" color="white" slider-color="white" grow>
@@ -116,11 +121,17 @@
           </v-btn>
         </template>
       </v-banner>
+      <!--
+        Purely decorative: it appears on every request, and announcing that is
+        more noise than help. Screen reader users learn the outcome from the
+        result itself (or from an error alert).
+      -->
       <v-progress-linear
               :active="user.working"
               :indeterminate="user.working"
               color="secondary"
               style="z-index: 3"
+              aria-hidden="true"
       ></v-progress-linear>
       <!-- key by path so that views are re-created when only route params change -->
       <router-view :key="$route.path"/>

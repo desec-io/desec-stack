@@ -22,7 +22,7 @@
                                 color="primary"
                                 flat
                         >
-                            <v-toolbar-title>Change Account Email Address</v-toolbar-title>
+                            <v-toolbar-title tag="h1">Change Account Email Address</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
                             <error-alert :errors="errors"></error-alert>

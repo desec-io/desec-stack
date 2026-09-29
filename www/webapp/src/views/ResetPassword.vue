@@ -22,7 +22,7 @@
                                 color="primary"
                                 flat
                         >
-                            <v-toolbar-title>Reset Account Password</v-toolbar-title>
+                            <v-toolbar-title tag="h1">Reset Account Password</v-toolbar-title>
                         </v-toolbar>
                         <v-card-text>
                             <error-alert :errors="errors"></error-alert>
