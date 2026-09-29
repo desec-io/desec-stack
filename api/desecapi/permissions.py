@@ -58,6 +58,18 @@ class MFARequiredIfEnabled(permissions.BasePermission):
         )
 
 
+class MFARequiredIfEnabledOrAPIToken(permissions.OR):
+    """
+    Allows access to API tokens, and to human tokens as per MFARequiredIfEnabled.
+    """
+
+    message = MFARequiredIfEnabled.message
+    code = MFARequiredIfEnabled.code
+
+    def __init__(self):
+        super().__init__(IsAPIToken(), MFARequiredIfEnabled())
+
+
 class IsOwner(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object to view or edit it.

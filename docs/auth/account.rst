@@ -108,7 +108,8 @@ Request``::
     HTTP/1.1 400 Bad Request
 
     {
-        "detail": "Registration denied. If you believe this is an error, please contact support."
+        "detail": "Registration denied. If you believe this is an error, please contact support.",
+        "code": "registration_denied"
     }
 
 
