@@ -58,7 +58,7 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
                 assertion(response.status_code, status.HTTP_403_FORBIDDEN)
         for method in [self.client.get, self.client.post]:
             response = method(
-                self.reverse("v1:rrset@", name=self.my_domain, subname="", type="NS")
+                self.reverse("v1:rrset", name=self.my_domain, subname="", type="NS")
             )
             assertion(response.status_code, status.HTTP_403_FORBIDDEN)
 

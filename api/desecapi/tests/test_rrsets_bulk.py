@@ -372,6 +372,33 @@ class AuthenticatedRRSetBulkTestCase(AuthenticatedRRSetBaseTestCase):
             self.assertEqual(response.data[0]["records"], ["5.4.2.1"])
             self.assertEqual(response.data[0]["ttl"], 3600)
 
+    def test_bulk_patch_is_atomic(self):
+        # A rejected bulk request must not apply the parts that were valid.
+        self.assertResponse(
+            self.client.bulk_patch_rr_sets(
+                domain_name=self.my_empty_domain.name,
+                payload=[
+                    {
+                        "subname": "valid",
+                        "type": "A",
+                        "ttl": 3620,
+                        "records": ["1.2.3.4"],
+                    },
+                    {
+                        "subname": "invalid",
+                        "type": "A",
+                        "ttl": -50,
+                        "records": ["1.2.3.4"],
+                    },
+                ],
+            ),
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertStatus(
+            self.client.get_rr_set(self.my_empty_domain.name, "valid", "A"),
+            status.HTTP_404_NOT_FOUND,
+        )
+
     def test_bulk_patch_full_on_empty_domain(self):
         # Full patch always works
         with self.assertRequests(
