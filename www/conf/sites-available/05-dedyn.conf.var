@@ -23,14 +23,13 @@ server {
 	ssl_certificate_key ${CERT_PATH}dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000" always;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
 	}
 
         location =/check {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		root /var/www/html;
 		try_files /check.html =404;
         }
@@ -45,9 +44,9 @@ server {
 	ssl_certificate_key ${CERT_PATH}www.dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000" always;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		return 301 https://dedyn.$DESECSTACK_DOMAIN$request_uri;
 	}
 }
