@@ -33,6 +33,8 @@ server {
 	#	etag on;
 	#}
 
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
     # include api and static locations, these files may be overridden for debugging
     include sites-available/90-desec.api.location;
     include sites-available/90-desec.prometheus.location;
