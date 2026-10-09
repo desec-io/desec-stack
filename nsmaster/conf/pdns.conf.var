@@ -9,6 +9,7 @@ secondary=yes
 secondary-do-renotify=yes
 send-signed-notify=no
 max-tcp-connections=200
+axfr-fetch-timeout=60
 version-string=powerdns
 webserver=yes
 webserver-address=${DESECSTACK_IPV4_REAR_PREFIX16}.1.12
