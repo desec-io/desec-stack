@@ -6,6 +6,7 @@ server {
 	server_name localhost;
 	access_log off;
 
+	add_header_inherit off;
 	default_type text/plain;
 	return 200 $http_x_real_ip;
 }
@@ -32,9 +33,9 @@ server {
 	ssl_certificate_key ${CERT_PATH}checkipv4.dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000" always;
 	
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;
@@ -63,9 +64,9 @@ server {
 	ssl_certificate_key ${CERT_PATH}checkipv6.dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000" always;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;
@@ -96,9 +97,9 @@ server {
 	ssl_certificate_key ${CERT_PATH}checkip.dedyn.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000" always;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000" always;
 		limit_req zone=perip-checkip burst=3 nodelay;
 		proxy_set_header X-Real-IP $remote_addr;
 		proxy_pass http://localhost:8000/;

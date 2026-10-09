@@ -28,9 +28,9 @@ server {
 	ssl_certificate_key ${CERT_PATH}www.desec.${DESECSTACK_DOMAIN}.key;
 
 	include global.conf;
+	add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
 	location / {
-		add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 		return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
 	}
 }
@@ -48,9 +48,9 @@ server {
         ssl_certificate_key ${CERT_PATH}get.desec.${DESECSTACK_DOMAIN}.key;
 
         include global.conf;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 
         location / {
-                add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
                 return 301 https://desec.$DESECSTACK_DOMAIN$request_uri;
         }
 }
