@@ -688,13 +688,13 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ("HINFO", ('"cpu" "os"', '"cpu" "os"')),
             (
                 "HTTPS",
-                ("01 h3POOL.exaMPLe. aLPn=h2,h3", "1 h3POOL.exaMPLe. alpn=h2,h3"),
+                ("01 h3POOL.exaMPLe. alpn=h2,h3", "1 h3POOL.exaMPLe. alpn=h2,h3"),
             ),
             (
                 "HTTPS",
                 (
-                    "01 h3POOL.exaMPLe. aLPn=h2,h3 ECH=MTIzLi4uCg==",
-                    '1 h3POOL.exaMPLe. alpn=h2,h3 ech="MTIzLi4uCg=="',
+                    "01 h3POOL.exaMPLe. alpn=h2,h3 ech=AAQBAgME",
+                    '1 h3POOL.exaMPLe. alpn=h2,h3 ech="AAQBAgME"',
                 ),
             ),
             # ('IPSECKEY', ('01 00 02 . ASDFAF==', '1 0 2 . ASDFAA==')),
@@ -754,15 +754,15 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             (
                 "SVCB",
                 (
-                    "2 sVc2.example.NET. IPV6hint=2001:db8:00:0::2 port=01234",
+                    "2 sVc2.example.NET. ipv6hint=2001:db8:00:0::2 port=01234",
                     "2 sVc2.example.NET. port=1234 ipv6hint=2001:db8::2",
                 ),
             ),
             (
                 "SVCB",
                 (
-                    "2 sVc2.example.NET. ECH=MjIyLi4uCg== IPV6hint=2001:db8:00:0::2 port=01234",
-                    '2 sVc2.example.NET. port=1234 ech="MjIyLi4uCg==" ipv6hint=2001:db8::2',
+                    "2 sVc2.example.NET. ech=AAQBAgME ipv6hint=2001:db8:00:0::2 port=01234",
+                    '2 sVc2.example.NET. port=1234 ech="AAQBAgME" ipv6hint=2001:db8::2',
                 ),
             ),
             (
@@ -904,14 +904,14 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             "EUI64": ["aa-bb-cc-dd-ee-ff-00-11", "AA-BB-CC-DD-EE-FF-00-11"],
             "HINFO": ['"ARMv8-A" "Linux"'],
             "HTTPS": [
-                # from https://www.ietf.org/archive/id/draft-ietf-dnsop-svcb-https-06.html#name-examples, with ech base64'd
+                # from https://www.ietf.org/archive/id/draft-ietf-dnsop-svcb-https-06.html#name-examples, with a dummy ECHConfigList
                 "1 . alpn=h3",
                 "0 pool.svc.example.",
-                '1 h3pool.example. alpn=h2,h3 ech="MTIzLi4uCg=="',
-                '2 .      alpn=h2 ech="YWJjLi4uCg=="',
+                '1 h3pool.example. alpn=h2,h3 ech="AAQBAgME"',
+                '2 .      alpn=h2 ech="AAQBAgME"',
                 # made-up (not from RFC)
                 "1 pool.svc.example. no-default-alpn alpn=h2 port=1234 ipv4hint=192.168.123.1",
-                "2 . ech=... key65333=ex1 key65444=ex2 mandatory=key65444,ech",  # see #section-7
+                "2 . ech=AAQBAgME key65333=ex1 key65444=ex2 mandatory=key65444,ech",  # see #section-7
             ],
             # 'IPSECKEY': [
             #     '12 0 2 . asdfdf==',
@@ -945,7 +945,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             "SVCB": [
                 "0 svc4-baz.example.net.",
                 "1 . key65333=...",
-                '2 svc2.example.net. ech="MjIyLi4uCg==" ipv6hint=2001:db8::2 port=1234',
+                '2 svc2.example.net. ech="AAQBAgME" ipv6hint=2001:db8::2 port=1234',
             ],
             "TLSA": [
                 "3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -1056,8 +1056,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             "EUI64": ["aa-bb-cc-dd-ee-ff-gg-11", "AA-BB-C C-DD-EE-FF-00-11"],
             "HINFO": ['"ARMv8-A"', f'"a" "{"b" * 256}"'],
             "HTTPS": [
-                # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with ech base64'd
-                '1 h3pool alpn=h2,h3 ech="MTIzLi4uCg=="',
+                # from https://tools.ietf.org/html/draft-ietf-dnsop-svcb-https-02#section-10.3, with a dummy ECHConfigList
+                '1 h3pool alpn=h2,h3 ech="AAQBAgME"',
                 # made-up (not from RFC)
                 "0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1",  # no keys in alias mode
                 "1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2",  # dup
@@ -1106,7 +1106,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             "SVCB": [
                 "0 svc4-baz.example.net. keys=val",
                 "1 not.fully.qualified key65333=...",
-                '2 duplicate.key. ech="MjIyLi4uCg==" ech="MjIyLi4uCg=="',
+                '2 duplicate.key. ech="AAQBAgME" ech="AAQBAgME"',
             ],
             "TLSA": ["3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
             "TXT": [
