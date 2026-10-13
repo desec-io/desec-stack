@@ -11,11 +11,11 @@ WORKDIR /usr/src/app
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_NO_CACHE_DIR=1
 
-COPY requirements.txt requirements-dev.txt /usr/src/app/
+COPY requirements.txt /usr/src/app/
 # freetype-dev is needed for captcha generation
 RUN apk add --no-cache gcc freetype-dev libffi-dev musl-dev postgresql-dev jpeg-dev zlib-dev
 RUN pip install --upgrade pip \
-    && pip install -r requirements.txt -r requirements-dev.txt \
+    && pip install -r requirements.txt \
     && pip freeze
 
 RUN mkdir /root/cronhook

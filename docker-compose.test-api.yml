@@ -1,6 +1,8 @@
 # mostly extending from main .yml
 services:
   api:
+    # The image carries production dependencies only, see api/Dockerfile
+    entrypoint: ["/bin/bash", "-c", "pip install -q --root-user-action=ignore -r requirements-dev.txt && exec \"$$@\"", "--"]
     environment:
       - DJANGO_SETTINGS_MODULE=api.settings_quick_test
     logging:
