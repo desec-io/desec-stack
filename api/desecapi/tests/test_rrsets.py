@@ -1061,6 +1061,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 # made-up (not from RFC)
                 "0 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1",  # no keys in alias mode
                 "1 pool.svc.example. no-default-alpn port=1234 ipv4hint=192.168.123.1 ipv4hint=192.168.123.2",  # dup
+                '1 . key1=""',  # empty parameter value
             ],
             # 'IPSECKEY': [],
             "KX": ["-1 example.com", "10 example.com"],
