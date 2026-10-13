@@ -10,6 +10,21 @@ https_url = "https://desec." + os.environ["DESECSTACK_DOMAIN"] + "/"
 ipv4 = os.environ['DESECSTACK_IPV4_REAR_PREFIX16'] + '.0.128'
 ipv6 = os.environ['DESECSTACK_IPV6_ADDRESS']
 
+alt_svc = 'h3=":443"; ma=86400'
+hsts_preload = 'max-age=31536000; includeSubDomains; preload'
+hsts = {  # only the desec.* names are in the preload list
+    'desec': hsts_preload,
+    'www.desec': hsts_preload,
+    'get.desec': hsts_preload,
+    'dedyn': 'max-age=31536000',
+    'www.dedyn': 'max-age=31536000',
+    'checkip.dedyn': 'max-age=31536000',
+    'checkipv4.dedyn': 'max-age=31536000',
+    'checkipv6.dedyn': 'max-age=31536000',
+    'update.dedyn': 'max-age=31536000',
+    'update6.dedyn': 'max-age=31536000',
+}
+
 
 class HostsOverride:
     def __init__(self, host, ip):
@@ -88,10 +103,13 @@ def test_unknown_hosts(api_anon, protocol, hostname):
 @pytest.mark.parametrize("url", [https_url + relpath for relpath in ('', 'signup')])
 def test_security_headers(api_anon, url):
     api_anon.headers = {}
+    # These come from the http (Alt-Svc), server (HSTS) and location (CSP) level, which only end
+    # up in the same response because of add_header_inherit.
     # CSP hashes are for legacy browser support.
     # Source: https://github.com/vitejs/vite/tree/v5.0.10/packages/plugin-legacy#content-security-policy
     expected_headers = {
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+        'Strict-Transport-Security': hsts_preload,
+        'Alt-Svc': alt_svc,
         'Content-Security-Policy': "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; "
                                    "img-src 'self' data:; media-src data:; "
                                    "script-src 'self' 'unsafe-eval' 'sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=' 'sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=' 'sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=' 'sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc='; "
@@ -105,6 +123,27 @@ def test_security_headers(api_anon, url):
     response = api_anon.get(url)
     for k, v in expected_headers.items():
         assert response.headers[k] == v
+
+
+@pytest.mark.parametrize("subname,expected_hsts", hsts.items())
+@pytest.mark.parametrize("protocol", ['http', 'https'])
+def test_headers(api_anon, protocol, subname, expected_hsts):
+    api_anon.headers = {}
+    hostname = f'{subname}.{os.environ["DESECSTACK_DOMAIN"]}'
+    headers = api_anon.get(f'{protocol}://{hostname}/', allow_redirects=False).headers
+    # Strict-Transport-Security is for TLS connections only
+    assert headers.get('Strict-Transport-Security') == (None if protocol == 'http' else expected_hsts)
+    # Comparing for equality also catches a duplicate header, which requests joins by comma
+    assert headers['Alt-Svc'] == alt_svc
+
+
+@pytest.mark.parametrize("path", ['api/v1/', 'prometheus/'])
+def test_headers_in_locations(api_anon, path):
+    # Both locations are proxied, and /prometheus/ answers 401, so the headers are owed to `always`
+    api_anon.headers = {}
+    headers = api_anon.get(https_url + path, allow_redirects=False).headers
+    assert headers['Strict-Transport-Security'] == hsts_preload
+    assert headers['Alt-Svc'] == alt_svc
 
 
 def test_compression(api_anon):
