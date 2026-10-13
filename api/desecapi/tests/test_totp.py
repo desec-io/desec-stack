@@ -64,7 +64,7 @@ class TOTPFactorTestCase(DomainOwnerTestCase):
                 assert_status(response)
         for method in [self.client.get, self.client.post]:
             response = method(
-                self.reverse("v1:rrset@", name=self.my_domain, subname="", type="NS")
+                self.reverse("v1:rrset", name=self.my_domain, subname="", type="NS")
             )
             assert_status(response)
 
