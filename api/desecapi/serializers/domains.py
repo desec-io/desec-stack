@@ -75,6 +75,7 @@ class DomainSerializer(serializers.ModelSerializer):
                 allow_include=False,
                 check_origin=False,
                 relativize=False,
+                rfc2308_ttl=True,
             )
         except dns.zonefile.CNAMEAndOtherData:
             raise serializers.ValidationError(

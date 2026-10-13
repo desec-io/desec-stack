@@ -558,6 +558,35 @@ localhost.import-me.example A 127.0.0.1
             domain, subname="localhost", type_="A", ttl=43200, rr_contents={"127.0.0.1"}
         )
 
+    def test_create_domain_zonefile_import_ttl_inheritance(self):
+        """records without TTL inherit the last stated TTL, not the SOA minimum (RFC 2308 Section 4)"""
+        zonefile = """$ORIGIN import-me.example.
+@ 7777 IN SOA ns1.example.com. hostmaster.example.com. 1 10800 3600 2419000 9999
+@ IN A 10.1.1.1
+www 7800 IN A 10.1.1.2
+www IN AAAA 2001:db8::1
+"""
+        name = "import-me.example"
+        with self.assertRequests(
+            self.requests_desec_domain_creation(name, axfr=False, keys=False)
+            + self.requests_desec_rr_sets_update(name)
+            + [self.request_pdns_zone_retrieve_crypto_keys(name)]
+        ):
+            response = self.client.post(
+                self.reverse("v1:domain-list"), {"name": name, "zonefile": zonefile}
+            )
+        self.assertStatus(response, status.HTTP_201_CREATED)
+        domain = Domain.objects.get(name=name)
+        self.assertRRsetDB(
+            domain, subname="", type_="A", ttl=7777, rr_contents={"10.1.1.1"}
+        )
+        self.assertRRsetDB(
+            domain, subname="www", type_="A", ttl=7800, rr_contents={"10.1.1.2"}
+        )
+        self.assertRRsetDB(
+            domain, subname="www", type_="AAAA", ttl=7800, rr_contents={"2001:db8::1"}
+        )
+
     def test_create_domain_zonefile_import_cname_exclusivity(self):
         zonefile = """$ORIGIN .
 $TTL 43200 ; 12 hours
