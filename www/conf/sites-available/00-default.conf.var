@@ -9,9 +9,16 @@ server {
 	return 444; # see https://httpstatuses.com/444
 }
 server {
+	# TCP HTTP/1.1 HTTP/2
 	listen 443 ssl default_server;
 	listen [::]:443 ipv6only=on ssl default_server;
 	http2 on;
+
+	# QUIC/UDP HTTP/3
+	listen 443 quic default_server;
+	listen [::]:443 quic default_server;
+	http3 on;
+
 	server_name _;
 
 	ssl_certificate ${CERT_PATH}desec.${DESECSTACK_DOMAIN}.cer;

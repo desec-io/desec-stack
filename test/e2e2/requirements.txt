@@ -1,3 +1,4 @@
+aioquic
 pytest
 pytest-schema
 pytest-xdist

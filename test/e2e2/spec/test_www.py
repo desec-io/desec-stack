@@ -1,9 +1,15 @@
+import asyncio
 import ipaddress
 import os
 import socket
 
 import pytest
+from aioquic.asyncio import QuicConnectionProtocol, connect
+from aioquic.h3.connection import H3_ALPN, H3Connection
+from aioquic.h3.events import DataReceived, HeadersReceived
+from aioquic.quic.configuration import QuicConfiguration
 from requests import exceptions
+from requests.structures import CaseInsensitiveDict
 
 
 https_url = "https://desec." + os.environ["DESECSTACK_DOMAIN"] + "/"
@@ -24,6 +30,51 @@ hsts = {  # only the desec.* names are in the preload list
     'update.dedyn': 'max-age=31536000',
     'update6.dedyn': 'max-age=31536000',
 }
+
+
+class H3Client(QuicConnectionProtocol):
+    """As much of an HTTP/3 client as one GET request needs."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._h3 = H3Connection(self._quic)
+        self.headers = CaseInsensitiveDict()
+        self.body = b''
+        self.response_complete = asyncio.Event()
+
+    def get(self, authority, path):
+        stream_id = self._quic.get_next_available_stream_id()
+        self._h3.send_headers(stream_id, [
+            (b':method', b'GET'),
+            (b':scheme', b'https'),
+            (b':authority', authority.encode()),
+            (b':path', path.encode()),
+        ], end_stream=True)
+        self.transmit()
+
+    def quic_event_received(self, event):
+        for h3_event in self._h3.handle_event(event):
+            if isinstance(h3_event, HeadersReceived):
+                for name, value in h3_event.headers:
+                    name, value = name.decode(), value.decode()
+                    # join repeated headers like requests does, so that duplicates are visible
+                    self.headers[name] = f'{self.headers[name]}, {value}' if name in self.headers else value
+            elif isinstance(h3_event, DataReceived):
+                self.body += h3_event.data
+            if getattr(h3_event, 'stream_ended', False):
+                self.response_complete.set()
+
+
+async def http3_get(hostname, path):
+    # Without the idle timeout, a server that does not speak HTTP/3 keeps us waiting for a minute
+    configuration = QuicConfiguration(is_client=True, alpn_protocols=H3_ALPN, idle_timeout=5)
+    cafile = f'/autocert/{hostname}.cer'  # self-signed certificate, if there is one (see conftest)
+    if os.path.exists(cafile):
+        configuration.load_verify_locations(cafile=cafile)
+    async with connect(hostname, 443, configuration=configuration, create_protocol=H3Client) as client:
+        client.get(hostname, path)
+        await asyncio.wait_for(client.response_complete.wait(), 5)
+        return client.headers, client.body
 
 
 class HostsOverride:
@@ -126,14 +177,17 @@ def test_security_headers(api_anon, url):
 
 
 @pytest.mark.parametrize("subname,expected_hsts", hsts.items())
-@pytest.mark.parametrize("protocol", ['http', 'https'])
+@pytest.mark.parametrize("protocol", ['http', 'https', 'h3'])
 def test_headers(api_anon, protocol, subname, expected_hsts):
-    api_anon.headers = {}
     hostname = f'{subname}.{os.environ["DESECSTACK_DOMAIN"]}'
-    headers = api_anon.get(f'{protocol}://{hostname}/', allow_redirects=False).headers
+    if protocol == 'h3':
+        headers, _ = asyncio.run(http3_get(hostname, '/'))
+    else:
+        api_anon.headers = {}
+        headers = api_anon.get(f'{protocol}://{hostname}/', allow_redirects=False).headers
     # Strict-Transport-Security is for TLS connections only
     assert headers.get('Strict-Transport-Security') == (None if protocol == 'http' else expected_hsts)
-    # Comparing for equality also catches a duplicate header, which requests joins by comma
+    # Comparing for equality also catches a duplicate header, which both clients join by comma
     assert headers['Alt-Svc'] == alt_svc
 
 
@@ -144,6 +198,14 @@ def test_headers_in_locations(api_anon, path):
     headers = api_anon.get(https_url + path, allow_redirects=False).headers
     assert headers['Strict-Transport-Security'] == hsts_preload
     assert headers['Alt-Svc'] == alt_svc
+
+
+@pytest.mark.parametrize("path", ['/', '/api/v1/'])
+def test_http3(path):
+    # The headers are covered above; what matters here is that the service is actually there.
+    headers, body = asyncio.run(http3_get(f'desec.{os.environ["DESECSTACK_DOMAIN"]}', path))
+    assert headers[':status'] == '200'
+    assert body
 
 
 def test_compression(api_anon):
