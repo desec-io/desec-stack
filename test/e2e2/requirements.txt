@@ -1,6 +1,6 @@
-aioquic
-pytest
-pytest-schema
-pytest-xdist
-requests
-dnspython~=2.8.0
+aioquic~=1.6.1
+pytest~=9.1.1
+pytest-schema~=0.1.2
+pytest-xdist~=3.8.0
+requests~=2.34.2
+dnspython~=2.9.0
