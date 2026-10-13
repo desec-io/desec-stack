@@ -337,7 +337,8 @@ class RR(ExportModelOperationsMixin("RR"), models.Model):
             raise ValueError("Hostname must be no longer than 255 characters")
         except dns.name.NeedAbsoluteNameOrOrigin:
             raise ValueError(
-                'Hostname must be fully qualified (i.e., end in a dot: "example.com.")'
+                f"Record content for type {type_} requires fully qualified names "
+                '(i.e., ending in a dot: "example.com.")'
             )
         except ValueError as ex:
             # e.g., string ("asdf") cannot be parsed into int on base 10
