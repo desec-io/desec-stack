@@ -1,2 +1,12 @@
 user-agent: *
 disallow: /api/
+
+user-agent: *
+disallow: /login
+
+user-agent: *
+disallow: /signup
+
+user-agent: *
+disallow: /reset-password
+
