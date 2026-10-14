@@ -7,15 +7,6 @@ import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig({
     cacheDir: '.vite',
-    css: {
-        preprocessorOptions: {
-            sass: {
-                api: 'modern-compiler',
-                /** @type {import('sass').Options.silenceDeprecations } */
-                silenceDeprecations: ['global-builtin', 'import', 'slash-div'],
-            },
-        },
-    },
     plugins: [
         vue({
             template: {
