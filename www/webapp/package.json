@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
-    "@vitejs/plugin-legacy": "^6.0.0",
     "@vitejs/plugin-vue": "^5.2.0",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^9.0.0",
