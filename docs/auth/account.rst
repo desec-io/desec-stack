@@ -155,7 +155,7 @@ management requests. To obtain such a token, send a ``POST`` request with your
 email address and password to the ``/auth/login/`` endpoint::
 
     curl https://desec.io/api/v1/auth/login/ \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
 If email address and password match our records, the server will reply with
@@ -354,7 +354,7 @@ send a ``POST`` request to this URL, with the new password in
 the payload::
 
     curl https://desec.io/api/v1/v/reset-password/<code>/ \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"new_password": "yournewpassword"}'
 
 This URL expires after 12 hours. It is also invalidated by certain other
@@ -410,7 +410,7 @@ To delete your (empty) account, send a ``POST`` request with your email
 address and password to the ``/auth/account/delete/`` endpoint::
 
     curl https://desec.io/api/v1/auth/account/delete/ \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
 If the correct password has been provided, the server will reply with ``202
