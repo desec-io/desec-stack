@@ -146,7 +146,7 @@ endpoint, like this::
 
     curl https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {secret}" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"name": "example.com"}'
 
 This operation requires the ``perm_create_domain`` permission on the token.

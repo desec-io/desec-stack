@@ -197,7 +197,7 @@ To create a new token, issue a ``POST`` request to the tokens endpoint::
 
     curl https://desec.io/api/v1/auth/tokens/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"name": "my new token"}'
 
 Note that the name and other fields are optional.  The server will reply with
@@ -273,7 +273,7 @@ To modify a token, send a ``PATCH`` or ``PUT`` request to the
 
     curl -X PATCH https://desec.io/api/v1/auth/tokens/{id}/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"name": "my new token"}'
 
 The ID given in the URL is the ID of the token that will be modified.  Upon
@@ -487,7 +487,7 @@ To create the default policy, send a ``POST`` request like::
 
     curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"domain": null, "subname": null, "type": null}'
 
 This will create a default policy.  If the ``perm_write`` permission flag is
@@ -498,7 +498,7 @@ records for a specific domain::
 
     curl https://desec.io/api/v1/auth/tokens/{id}/policies/rrsets/ \
         --header "Authorization: Token mu4W4MHuSc0Hy-GD1h_dnKuZBond" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"domain": "example.dedyn.io", "subname": null, "type": "A", "perm_write": true}'
 
 **Tip:** To authorize dual-stack dynDNS updates, create two policies (for

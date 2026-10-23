@@ -37,7 +37,7 @@ Here's a quick intro how to get started:
 #. :ref:`log-in`::
 
     curl https://desec.io/api/v1/auth/login/ \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"email": "youremailaddress@example.com", "password": "yourpassword"}'
 
    The response body will contain a ``token`` secret which is used to
@@ -52,7 +52,7 @@ Here's a quick intro how to get started:
 
     curl https://desec.io/api/v1/domains/ \
         --header "Authorization: Token {secret}" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"name": "example.com"}'
 
 #. Yay! Keep browsing the :ref:`domain-management` section of the docs to see how
