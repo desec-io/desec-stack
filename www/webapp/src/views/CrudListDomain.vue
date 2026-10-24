@@ -3,14 +3,17 @@ import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList.vue';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog.vue';
 import {mdiDownload, mdiInformation} from "@mdi/js";
+import DelegationStatus from "@/components/Field/DelegationStatus.vue";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
+import {compareBySecurity} from "@/delegation";
 
 export default {
   name: 'CrudListDomain',
   extends: CrudList,
   components: {
+    DelegationStatus,
     DomainSetupDialog,
   },
   data() {
@@ -47,6 +50,19 @@ export default {
             datatype: GenericText.name,
             searchable: true,
           },
+          status: {
+            name: 'item.status',
+            text: 'Delegation',
+            align: 'left',
+            sortable: true,
+            sortRaw: compareBySecurity,
+            value: 'status',
+            readonly: true,
+            richReadonly: true,
+            datatype: DelegationStatus.name,
+            searchable: false,
+            fieldProps: item => ({domain: item.name}),
+          },
           published: {
             name: 'item.published',
             text: 'Published',
@@ -56,6 +72,7 @@ export default {
             readonly: true,
             datatype: TimeAgo.name,
             searchable: false,
+            hideOnXs: true,  // leaves room for the delegation status
           },
           zonefile: {
             name: 'item.zonefile',

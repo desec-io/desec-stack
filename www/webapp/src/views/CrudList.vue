@@ -29,9 +29,12 @@
                   :loading="user.working || createDialogWorking || destroyDialogWorking"
                   :items-per-page="itemsPerPage"
                   :items-per-page-options="[10, 20, 30, 50, 100, -1]"
+                  :sort-by="sortBy"
+                  multi-sort
                   class="elevation-1"
                   v-bind="rowEventProps"
                   @update:options="updatePagination"
+                  @update:sort-by="updateSortBy"
           >
             <template #top>
               <!-- Headline & Toolbar, Including New Form -->
@@ -407,6 +410,7 @@ export default {
     showAdvanced: false,
     search: '',
     rows: [],
+    sortBy: [],
     valid: null,
     dirty: new Set(),
     dirtyError: new Set(),
@@ -493,6 +497,10 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
+      if (this.display.xs) {
+        // Columns that are not worth pushing the actions out of view on phones
+        cols = cols.filter(col => !(col.hideOnXs || false));
+      }
       cols = cols.map(col => ({
         ...col,
         title: col.title || col.text,
@@ -630,7 +638,9 @@ export default {
       return column.readonly || this.itemIsReadOnly(item);
     },
     cellUsesPlainText(column, item) {
-      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name;
+      // Read-only cells are plain text, except for display components (TimeAgo,
+      // or any column with richReadonly), which render themselves.
+      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name && !column.richReadonly;
     },
     readonlyDisplayValue(column, item) {
       const value = item[column.value];
@@ -660,6 +670,27 @@ export default {
     },
     updatePagination(options) {
       this.user.updateComponentArg(`${this.$options.name}/itemsPerPage`, options.itemsPerPage);
+    },
+    /** *
+     * Makes the clicked column the primary sort, followed by the previous sort
+     * columns, so that rows tying on it keep their previous order. Clicking
+     * the primary sort column again reverses it.
+     *
+     * The table reports its sort columns after its own update, so the clicked
+     * column is the one that it added, reversed, or removed.
+     */
+    updateSortBy(next) {
+      const previous = this.sortBy;
+      const clicked = next.find(n => !previous.some(p => p.key === n.key && p.order === n.order))
+          ?? previous.find(p => !next.some(n => n.key === p.key));
+      if (!clicked) {
+        return;
+      }
+      const reverse = previous[0]?.key === clicked.key && previous[0].order === 'asc';
+      this.sortBy = [
+        {key: clicked.key, order: reverse ? 'desc' : 'asc'},
+        ...previous.filter(p => p.key !== clicked.key),
+      ];
     },
     /** *
      * Ask the user to delete the given item.
@@ -827,6 +858,9 @@ export default {
       return value != null &&
               search != null &&
               typeof value !== 'boolean' &&
+              // Objects would match "object" via "[object Object]"; arrays
+              // (record contents) are searched as their joined values.
+              (typeof value !== 'object' || Array.isArray(value)) &&
               value.toString().toLocaleLowerCase().indexOf(search.toLocaleLowerCase()) !== -1
     },
   },
