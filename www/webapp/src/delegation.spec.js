@@ -7,6 +7,7 @@ import {
   isRecheckable,
   isSecure,
   isUnderLocalPublicSuffix,
+  registrarRequest,
 } from './delegation';
 
 const SUFFIXES = ['dedyn.io'];
@@ -161,5 +162,14 @@ describe('compareBySecurity', () => {
         ['a.example', 'c.example', 'b.example', 'mine.dedyn.io'],
     );
     vi.unstubAllEnvs();
+  });
+});
+
+describe('registrarRequest', () => {
+  it('lists the DS records', () => {
+    const text = registrarRequest('example.com', ['1 13 2 abc', '1 13 4 def']);
+    expect(text).toContain('Please publish the following DS records for example.com:');
+    expect(text).toContain('1 13 2 abc\n1 13 4 def');
+    expect(text).toContain('please add support');
   });
 });

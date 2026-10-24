@@ -176,3 +176,17 @@ export function delegationSummary(status, name = 'This domain') {
     details: ['We could not complete the most recent check of this domain, and will retry automatically.'],
   };
 }
+
+/**
+ * A message for the registrar, asking them to publish the DS records, so that
+ * asking costs the user one paste.
+ */
+export function registrarRequest(name, ds) {
+  return [
+    `Please publish the following DS records for ${name}:`,
+    '',
+    ...ds,
+    '',
+    'If you do not support DNSSEC for this domain yet, please add support.',
+  ].join('\n');
+}

@@ -159,7 +159,17 @@ export default {
           let ds = d.keys.map(key => key.ds);
           ds = ds.concat.apply([], ds).filter(v => v.split(" ")[2] == 2)
           let dnskey = d.keys.map(key => key.dnskey).filter(v => v.split(" ")[0] == 257);
-          this.extraComponentBind = {'domain': d.name, 'ds': ds, 'dnskey': dnskey, 'is-new': isNew};
+          this.extraComponentBind = {
+            'domain': d.name,
+            'ds': ds,
+            'dnskey': dnskey,
+            'is-new': isNew,
+            // The row itself and the shared map, so that the dialog follows a
+            // re-check started from either place.
+            'item': d,
+            'checking': this.checking,
+            'onRecheck': () => this.recheckStatus(d),
+          };
           this.extraComponentName = 'DomainSetupDialog';
         },
         handleRowClick: (value) => {
