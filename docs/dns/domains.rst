@@ -118,7 +118,8 @@ Field details:
     :Access mode: read-only
 
     What we found when checking how the domain is delegated.  We check every
-    domain at least once a day.  The object has the following fields:
+    domain at least once a day, and you can ask for a re-check (see
+    `Checking a Domain's Delegation`_).  The object has the following fields:
 
     ``checked``
         Timestamp of the most recent check, or ``null`` if the domain has not
@@ -285,6 +286,49 @@ This will return only one domain (i.e., the response is not a JSON array).
 If you own a domain with that name, the API responds with ``200 OK`` and
 returns the domain object in the response body.  Otherwise, the return status
 code is ``404 Not Found``.
+
+
+Checking a Domain's Delegation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The domain's ``status`` field (see :ref:`domain status`) is also available on
+its own, by issuing a ``GET`` request to the domain's ``status/`` endpoint::
+
+    curl https://desec.io/api/v1/domains/{name}/status/ \
+        --header "Authorization: Token {secret}"
+
+The response body is the status object.  Unlike retrieving the domain, this is
+cheap enough to repeat while waiting for a check to finish (see below).
+
+After changing your domain's delegation or its DNSSEC setup (e.g. after giving
+the DS records to your registrar), you can ask for a re-check by issuing a
+``POST`` request to the same endpoint::
+
+    curl -X POST https://desec.io/api/v1/domains/{name}/status/ \
+        --header "Authorization: Token {secret}"
+
+If a check is needed, the API responds with ``202 Accepted``, and the domain
+will be checked within a few seconds.  The response body is the current status
+object, with an additional ``requested`` field holding the server's time of
+the request.  Once the check is done, the status object's ``checked`` field
+is at least that value.  This includes checks that could not be completed:
+their statuses are ``error``.
+
+If no check is needed, the API responds with ``200 OK`` and the current status
+object.  This is the case when the domain was checked during the last minute,
+and for domains under domains that we offer for registration ourselves (such
+as ``dedyn.io``), which are securely delegated by construction.
+
+Re-checks are meant for interactive use, such as confirming a change you just
+made, and thus require a login token (see :ref:`log-in`); the web interface
+offers them next to each domain.  For automation, please read the status
+(``GET``) instead, which works with any token: our daily checks keep it up to
+date.  We appreciate feedback about use cases where this isn't ideal.
+
+Re-checks are subject to rate limiting (see :ref:`rate-limits`).  Every
+``POST`` request counts, including those answered with ``200 OK``.  If our
+checking service is temporarily unavailable, the API responds with
+``503 Service Unavailable``.
 
 
 Identifying the Responsible Domain for a DNS Name

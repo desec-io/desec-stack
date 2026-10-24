@@ -445,3 +445,21 @@ class CheckDomainDelegationTaskTestCase(TestCase):
             tasks.check_domain_delegation(self.domain.pk)
         self.domain.refresh_from_db()
         self.assertIsNone(self.domain.current_delegation_check)
+
+    def test_records_an_unavailable_resolver_when_asked(self):
+        """A user waiting for the check learns that it failed."""
+        secure(self.domain)
+        self.domain.refresh_from_db()
+        since = self.domain.secure_delegation_since
+        with mock.patch(
+            "desecapi.delegation.check",
+            side_effect=unbound.UnboundControlException("down"),
+        ):
+            tasks.check_domain_delegation(self.domain.pk, record_failure=True)
+        self.domain.refresh_from_db()
+        check = self.domain.current_delegation_check
+        self.assertEqual(check.security_status, DelegationCheck.SecurityStatus.ERROR)
+        self.assertEqual(
+            check.nameserver_status, DelegationCheck.NameserverStatus.ERROR
+        )
+        self.assertEqual(self.domain.secure_delegation_since, since)

@@ -90,6 +90,16 @@ class ScopedRatesThrottle(throttling.ScopedRateThrottle):
         return [f"{key}_{duration}" for duration in self.duration]
 
 
+class AccountScopedRatesThrottle(ScopedRatesThrottle):
+    """
+    A second ScopedRatesThrottle, for views that need an account-wide rate on
+    top of a bucketed one: it reads its scope from `throttle_scope_account`
+    (and a bucket, if any, from `throttle_scope_account_bucket`).
+    """
+
+    scope_attr = "throttle_scope_account"
+
+
 class UserRateThrottle(throttling.UserRateThrottle):
     """
     Like DRF's UserRateThrottle, but supports individual rates per user.

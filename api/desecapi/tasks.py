@@ -38,6 +38,11 @@ ADHOC_COOLDOWN = 60
 # How fresh a check has to be for an ad-hoc request to leave it alone.
 ADHOC_MAX_AGE = 900
 
+# How fresh a check has to be for a user's explicit re-check of that domain to
+# be answered from it. Covers the check that domain creation has usually just
+# triggered, which a second one would only interfere with.
+STATUS_CHECK_MIN_AGE = 60
+
 
 def stale_q(max_age):
     """Q object for domains not checked within the last max_age seconds."""
@@ -54,6 +59,43 @@ def enqueue_checks(domain_ids, queue, max_age):
         check_domain_delegation.apply_async((domain_id, max_age), queue=queue)
         count += 1
     return count
+
+
+def status_check_wanted(domain):
+    """
+    Whether a user's request to re-check this domain calls for a check, or is
+    answered by what is already known.
+
+    Secure domains are re-checked too, although a check can then only lower the
+    limit: after changing their DNSSEC setup (a key rollover, new DS records, a
+    new registrar), users want to see that it is still in order. Domains under
+    a local public suffix are secure by construction, so a check could not tell
+    anything new about them.
+    """
+    if domain.is_under_local_public_suffix:
+        return False
+    check = domain.current_delegation_check
+    return check is None or check.checked < timezone.now() - timedelta(
+        seconds=STATUS_CHECK_MIN_AGE
+    )
+
+
+def enqueue_domain_delegation_check(domain):
+    """
+    Asks for one domain to be checked now, on the user's explicit request.
+
+    Ad hoc, so that the wait is one check rather than a bulk run, and with
+    max_age=0, as the user asked for a fresh measurement. Duplicates are bounded
+    by throttling at the endpoint.
+
+    Unlike enqueue_user_delegation_check(), this raises if the broker is
+    unavailable: here the check is the request, not a side effect of another.
+    For the same reason, a check that our resolver cannot carry out is recorded
+    as failed, so that the user waiting for it gets an answer.
+    """
+    check_domain_delegation.apply_async(
+        (domain.pk, 0), {"record_failure": True}, queue=ADHOC_QUEUE
+    )
 
 
 def enqueue_user_delegation_check(user, max_age=ADHOC_MAX_AGE):
@@ -104,13 +146,18 @@ def plan_user_delegation_checks(user_id, max_age=ADHOC_MAX_AGE):
 
 
 @shared_task(queue=BULK_QUEUE, acks_late=True, ignore_result=True)
-def check_domain_delegation(domain_id, max_age=0):
+def check_domain_delegation(domain_id, max_age=0, record_failure=False):
     """
     Checks one domain, unless it has been checked within the last max_age
     seconds. That test is repeated here and not only where the task was
     enqueued, because the domain may have been checked in between -- which is
     what makes a duplicate message cost a query instead of a check, and lets a
     bulk run be re-planned while its backlog is still draining.
+
+    With record_failure, a check that our resolver cannot carry out is recorded
+    as one that could not be completed (ERROR for both statuses), which keeps
+    secure_delegation_since. That is for checks a user is waiting for: the
+    recorded outcome bumps `checked`, which is what they wait for.
     """
     try:
         domain = (
@@ -126,8 +173,18 @@ def check_domain_delegation(domain_id, max_age=0):
     except unbound.UnboundException as e:
         # Our resolver is broken, which says nothing about the domain. Failing
         # the task would mail admins once per domain in the backlog, so log and
-        # leave the domain for the next bulk run instead.
+        # leave the domain for the next bulk run instead. Recording the failure
+        # is only for a single requested check: in a bulk run, it would write a
+        # state per domain and make each look freshly checked to re-plans.
         logger.warning("Resolver unavailable, skipping %s: %s", domain.name, e)
+        if record_failure:
+            DelegationCheck.objects.record(
+                domain,
+                delegation.DelegationCheckResult(
+                    DelegationCheck.SecurityStatus.ERROR,
+                    DelegationCheck.NameserverStatus.ERROR,
+                ),
+            )
         return
 
     DelegationCheck.objects.record(domain, result)

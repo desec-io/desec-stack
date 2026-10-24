@@ -89,6 +89,7 @@ REST_FRAMEWORK = {
     "ALLOWED_VERSIONS": ["v1", "v2"],
     "DEFAULT_THROTTLE_CLASSES": [
         "desecapi.throttling.ScopedRatesThrottle",
+        "desecapi.throttling.AccountScopedRatesThrottle",
         "desecapi.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {  # When changing rate limits, make sure to keep docs/rate-limits.rst consistent
@@ -118,6 +119,16 @@ REST_FRAMEWORK = {
             "100/h",
             "300/d",
         ],  # DNS API requests affecting RRset(s) of a single domain
+        "dns_api_per_domain_status_check": [
+            "1/min",
+            "10/h",
+            "30/d",
+        ],  # delegation re-checks of a single domain; each queries third-party nameservers
+        # AccountScopedRatesThrottle
+        "dns_api_status_check": [
+            "30/h",
+            "100/d",
+        ],  # delegation re-checks across an account; bounds its share of the ad-hoc check queue
         # UserRateThrottle
         "user": "2000/d",  # hard limit on requests by a) an authenticated user, b) an unauthenticated IP address
     },
