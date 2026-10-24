@@ -575,12 +575,14 @@ rather than by enabling `task_always_eager`, which would run real checks inside
   affordable in a sweep, not in a request.
 - A user-triggered "re-check now" endpoint (`PLAN.md` §7.1). §7.2 and §7.3
   cover the cases that matter for the limit; an explicit endpoint mainly serves
-  the status display.
-- Surfacing per-domain delegation status on the domain serializer.
+  the status display. Picked up by `PLAN-delegation_status.md`.
+- Surfacing per-domain delegation status on the domain serializer. Picked up
+  by `PLAN-delegation_status.md`.
 - Observability for the checks themselves (§9): either an exporter and a
   monitoring network for `celery-delegation`, or a summary row the api container
   can serve. Until then, "did the sweep run" is a question for the logs and for
   `DelegationCheck.checked`.
 - The webapp still says "Contact support to apply for a higher limit"
   (`CrudListDomain.vue`) and does not use `secure_domains`. The API half of the
-  incentive is complete; the UI half is not, and the two now disagree.
+  incentive is complete; the UI half is not, and the two now disagree. Picked
+  up by `PLAN-delegation_status.md`.
