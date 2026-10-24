@@ -26,7 +26,7 @@
             multi-line
             :timeout="10000"
           >
-            {{ notification }}
+            <span v-html="notification"></span>
             <template #actions>
               <v-btn variant="text" @click="notificationShown = false">
                 Dismiss
@@ -129,7 +129,7 @@
                               :model-value="!!createWarningText"
                               type="warning"
                       >
-                        {{ createWarningText }}
+                        <span v-html="createWarningText"></span>
                       </v-alert>
 
                       <v-card-text v-if="createDialog">
@@ -694,7 +694,7 @@ export default {
       );
     },
     /** *
-     * Show a message that is not an error.
+     * Show a message that is not an error. The text is rendered as HTML.
      */
     notify(text, color = 'success') {
       this.notification = text;

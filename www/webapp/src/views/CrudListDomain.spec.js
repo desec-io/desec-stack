@@ -104,7 +104,7 @@ describe('CrudListDomain', () => {
     expect(post).toHaveBeenCalledWith('domains/insecure.example/status/');
     expect(row(wrapper, 'insecure.example').text()).toContain('Secure');
     expect(wrapper.vm.limit_domains).toBe(7);
-    expect(wrapper.vm.notification).toBe('insecure.example is now securely delegated. Your domain limit has grown to 7.');
+    expect(wrapper.vm.notification).toBe('<b>insecure.example</b> is now securely delegated. Your domain limit has grown to <b>7</b>.');
     expect(wrapper.vm.notificationColor).toBe('success');
   });
 
@@ -114,7 +114,7 @@ describe('CrudListDomain', () => {
 
     expect(row(wrapper, 'secure.example').text()).toContain('No DNSSEC');
     expect(wrapper.vm.limit_domains).toBe(4);
-    expect(wrapper.vm.notification).toBe('secure.example is no longer securely delegated. Your domain limit has dropped to 4.');
+    expect(wrapper.vm.notification).toBe('<b>secure.example</b> is no longer securely delegated. Your domain limit has dropped to <b>4</b>.');
     expect(wrapper.vm.notificationColor).toBe('warning');
   });
 
@@ -122,7 +122,7 @@ describe('CrudListDomain', () => {
     // As for accounts whose limit support has set.
     const {wrapper, get} = await mount();
     await recheck(wrapper, get, 'insecure.example', SECURE, {limit_domains: 5, secure_domains: 3});
-    expect(wrapper.vm.notification).toBe('insecure.example is now securely delegated.');
+    expect(wrapper.vm.notification).toBe('<b>insecure.example</b> is now securely delegated.');
   });
 
   it('tells when a re-check could not be completed', async () => {
@@ -147,6 +147,20 @@ describe('CrudListDomain', () => {
     expect(wrapper.vm.notificationColor).toBe('info');
     expect(wrapper.vm.snackbar).toBe(false);
     expect(wrapper.vm.checking).toEqual({});
+  });
+
+  it('explains the limit with the number of securely delegated domains', async () => {
+    const {wrapper} = await mount();
+    expect(wrapper.vm.createText).toContain('You have 2 of 5 domains left.');
+    expect(wrapper.vm.createText).toContain('<b>2</b> of your <b>3</b> domains are correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column). Each domain you secure raises your limit.');
+    expect(wrapper.vm.createWarningText).toBe('');
+  });
+
+  it('says what raises the limit once it is reached', async () => {
+    const {wrapper} = await mount({account: {limit_domains: 3, secure_domains: 1}});
+    expect(wrapper.vm.createWarningText).toBe(
+        'Domain limit reached. <b>1</b> of your <b>3</b> domains is correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column). Securing another one will raise your limit.',
+    );
   });
 
   it('does not match every row when searching for "object"', async () => {
