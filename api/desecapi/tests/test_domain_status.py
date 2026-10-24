@@ -1,14 +1,24 @@
+from contextlib import contextmanager
+from datetime import timedelta
+from unittest import mock
+
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
+from kombu.exceptions import OperationalError
 from rest_framework import serializers, status
 
+from desecapi import tasks
 from desecapi.models import DelegationCheck, Domain, User
 from desecapi.models.domains import under_local_public_suffix_q
 from desecapi.serializers import DomainStatusSerializer
 from desecapi.tests.base import DomainOwnerTestCase
 from desecapi.tests.test_delegation import result, secure
+from desecapi.throttling import AccountScopedRatesThrottle, ScopedRatesThrottle
+from desecapi.views import DomainViewSet
 
 SecurityStatus = DelegationCheck.SecurityStatus
 NameserverStatus = DelegationCheck.NameserverStatus
@@ -216,3 +226,183 @@ class DomainStatusFieldTestCase(DomainOwnerTestCase):
         self.assertStatus(response, status.HTTP_201_CREATED)
         self.assertIsNone(response.data["status"]["secure_since"])
         self.assertIsNone(Domain.objects.get(name=name).secure_delegation_since)
+
+
+@mock.patch.object(tasks.check_domain_delegation, "apply_async")
+class DomainStatusEndpointTestCase(DomainOwnerTestCase):
+    NUM_OWNED_DOMAINS = 5
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()  # throttle histories
+
+    def url(self, domain=None):
+        return self.reverse("v1:domain-status", name=(domain or self.my_domain).name)
+
+    def record(self, domain=None, age=None, **kwargs):
+        domain = domain or self.my_domain
+        check = DelegationCheck.objects.record(domain, result(**kwargs))
+        if age is not None:
+            DelegationCheck.objects.filter(pk=check.pk).update(
+                checked=timezone.now() - timedelta(seconds=age)
+            )
+        return check
+
+    def record_insecure(self, domain=None, age=300):
+        return self.record(domain, age=age, security_status=SecurityStatus.INSECURE)
+
+    def status_of(self, domain=None):
+        domain = Domain.objects.get(pk=(domain or self.my_domain).pk)
+        return DomainStatusSerializer(domain).data
+
+    def assertChecked(self, response, apply_async, domain=None):
+        domain = domain or self.my_domain
+        self.assertStatus(response, status.HTTP_202_ACCEPTED)
+        apply_async.assert_called_once_with((domain.pk, 0), queue=tasks.ADHOC_QUEUE)
+        apply_async.reset_mock()
+
+    def assertNotChecked(self, response, apply_async, domain=None):
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, self.status_of(domain))
+        self.assertNotIn("requested", response.data)
+        apply_async.assert_not_called()
+
+    def test_get_returns_status_without_asking_pdns(self, apply_async):
+        self.record()
+        with self.assertRequests():
+            response = self.client.get(self.url())
+        self.assertStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data, self.status_of())
+        self.assertEqual(response.data["security_status"], "secure")
+        apply_async.assert_not_called()
+
+    def test_post_checks_an_unchecked_domain(self, apply_async):
+        before = timezone.now()
+        response = self.client.post(self.url())
+        self.assertChecked(response, apply_async)
+        self.assertIsNone(response.data["checked"])
+        requested = serializers.DateTimeField().to_internal_value(
+            response.data["requested"]
+        )
+        self.assertTrue(before <= requested <= timezone.now())
+
+    def test_post_checks_a_stale_insecure_domain(self, apply_async):
+        self.record_insecure(age=tasks.STATUS_CHECK_MIN_AGE + 1)
+        response = self.client.post(self.url())
+        self.assertChecked(response, apply_async)
+        self.assertEqual(response.data["security_status"], "insecure")
+
+    def test_post_answers_from_a_fresh_check(self, apply_async):
+        self.record_insecure(age=tasks.STATUS_CHECK_MIN_AGE - 10)
+        self.assertNotChecked(self.client.post(self.url()), apply_async)
+
+    def test_post_does_not_recheck_a_secure_domain(self, apply_async):
+        self.record(age=86400)
+        self.assertNotChecked(self.client.post(self.url()), apply_async)
+
+    def test_post_does_not_recheck_a_secure_domain_whose_check_failed(
+        self, apply_async
+    ):
+        self.record()
+        self.record(
+            age=86400,
+            security_status=SecurityStatus.ERROR,
+            nameserver_status=NameserverStatus.ERROR,
+            nameservers=[],
+        )
+        self.assertNotChecked(self.client.post(self.url()), apply_async)
+
+    def test_post_does_not_check_a_local_domain(self, apply_async):
+        suffix = next(iter(settings.LOCAL_PUBLIC_SUFFIXES))
+        for name in [f"mine.{suffix}", f"sub.mine.{suffix}"]:
+            with self.subTest(name=name):
+                domain = self.create_domain(name=name, owner=self.owner)
+                self.assertNotChecked(
+                    self.client.post(self.url(domain)), apply_async, domain
+                )
+
+    def test_foreign_domain(self, apply_async):
+        for method in (self.client.get, self.client.post):
+            with self.subTest(method=method.__name__):
+                response = method(self.url(self.other_domain))
+                self.assertStatus(response, status.HTTP_404_NOT_FOUND)
+        apply_async.assert_not_called()
+
+    def test_post_requires_perm_create_domain(self, apply_async):
+        token = self.create_token(owner=self.owner)
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
+        response = self.client.post(self.url())
+        self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+        apply_async.assert_not_called()
+
+        response = self.client.get(self.url())
+        self.assertStatus(response, status.HTTP_200_OK)
+
+    def test_post_with_broker_down(self, apply_async):
+        apply_async.side_effect = OperationalError("broker down")
+        response = self.client.post(self.url())
+        self.assertStatus(response, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    def test_other_methods_not_allowed(self, apply_async):
+        for method in (self.client.put, self.client.patch, self.client.delete):
+            with self.subTest(method=method.__name__):
+                response = method(self.url(), {}, format="json")
+                self.assertStatus(response, status.HTTP_405_METHOD_NOT_ALLOWED)
+        apply_async.assert_not_called()
+
+    @contextmanager
+    def throttle_settings(self, per_domain, per_account):
+        # Views bind their throttle classes at import, when the test settings
+        # have disabled scoped throttling, so they are patched in here.
+        rates = {
+            "dns_api_cheap": ["1000/min"],
+            "dns_api_per_domain_status_check": per_domain,
+            "dns_api_status_check": per_account,
+        }
+        throttle_classes = [ScopedRatesThrottle, AccountScopedRatesThrottle]
+        with (
+            mock.patch.object(DomainViewSet, "throttle_classes", throttle_classes),
+            self.settings(
+                REST_FRAMEWORK={
+                    **settings.REST_FRAMEWORK,
+                    "DEFAULT_THROTTLE_RATES": rates,
+                }
+            ),
+        ):
+            yield
+
+    def test_throttle_per_domain(self, apply_async):
+        domain_a, domain_b = self.my_domains[:2]
+        with self.throttle_settings(["1/min"], ["100/h"]):
+            self.assertChecked(
+                self.client.post(self.url(domain_a)), apply_async, domain_a
+            )
+            response = self.client.post(self.url(domain_a))
+            self.assertStatus(response, status.HTTP_429_TOO_MANY_REQUESTS)
+            self.assertIn("Retry-After", response)
+            # Another domain has its own budget, and reading is not limited.
+            self.assertChecked(
+                self.client.post(self.url(domain_b)), apply_async, domain_b
+            )
+            self.assertStatus(self.client.get(self.url(domain_a)), status.HTTP_200_OK)
+        apply_async.assert_not_called()
+
+    def test_throttle_per_account(self, apply_async):
+        with self.throttle_settings(["100/min"], ["3/h"]):
+            for domain in self.my_domains[:3]:
+                self.assertChecked(
+                    self.client.post(self.url(domain)), apply_async, domain
+                )
+            response = self.client.post(self.url(self.my_domains[3]))
+            self.assertStatus(response, status.HTTP_429_TOO_MANY_REQUESTS)
+        apply_async.assert_not_called()
+
+    def test_forbidden_requests_do_not_use_up_the_budget(self, apply_async):
+        token = self.create_token(owner=self.owner)
+        with self.throttle_settings(["1/min"], ["1/h"]):
+            self.client.credentials(HTTP_AUTHORIZATION="Token " + token.plain)
+            for _ in range(3):
+                response = self.client.post(self.url())
+                self.assertStatus(response, status.HTTP_403_FORBIDDEN)
+            self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token.plain)
+            self.assertChecked(self.client.post(self.url()), apply_async)

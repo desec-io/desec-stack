@@ -38,6 +38,11 @@ ADHOC_COOLDOWN = 60
 # How fresh a check has to be for an ad-hoc request to leave it alone.
 ADHOC_MAX_AGE = 900
 
+# How fresh a check has to be for a user's explicit re-check of that domain to
+# be answered from it. Covers the check that domain creation has usually just
+# triggered, which a second one would only interfere with.
+STATUS_CHECK_MIN_AGE = 60
+
 
 def stale_q(max_age):
     """Q object for domains not checked within the last max_age seconds."""
@@ -54,6 +59,39 @@ def enqueue_checks(domain_ids, queue, max_age):
         check_domain_delegation.apply_async((domain_id, max_age), queue=queue)
         count += 1
     return count
+
+
+def status_check_wanted(domain):
+    """
+    Whether a user's request to re-check this domain calls for a check, or is
+    answered by what is already known.
+
+    Secure domains are not re-checked: a check could only lower the limit, and
+    losing secure status is the sweep's business (as for the planner below).
+    Domains under a local public suffix are secure by construction.
+    """
+    if domain.secure_delegation_since is not None:
+        return False
+    if domain.is_under_local_public_suffix:
+        return False
+    check = domain.current_delegation_check
+    return check is None or check.checked < timezone.now() - timedelta(
+        seconds=STATUS_CHECK_MIN_AGE
+    )
+
+
+def enqueue_domain_delegation_check(domain):
+    """
+    Asks for one domain to be checked now, on the user's explicit request.
+
+    Ad hoc, so that the wait is one check rather than a bulk run, and with
+    max_age=0, as the user asked for a fresh measurement. Duplicates are bounded
+    by throttling at the endpoint.
+
+    Unlike enqueue_user_delegation_check(), this raises if the broker is
+    unavailable: here the check is the request, not a side effect of another.
+    """
+    check_domain_delegation.apply_async((domain.pk, 0), queue=ADHOC_QUEUE)
 
 
 def enqueue_user_delegation_check(user, max_age=ADHOC_MAX_AGE):

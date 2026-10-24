@@ -4,7 +4,9 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Subquery
-from rest_framework import mixins, status, viewsets
+from django.utils import timezone
+from kombu.exceptions import OperationalError
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
@@ -12,13 +14,17 @@ from rest_framework.serializers import ValidationError
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from desecapi import permissions
+from desecapi import logger, permissions
 from desecapi.models import Domain
 from desecapi.pdns import get_serials
 from desecapi.pdns_change_tracker import PDNSChangeTracker
 from desecapi.renderers import PlainTextRenderer
-from desecapi.serializers import DomainSerializer
-from desecapi.tasks import enqueue_user_delegation_check
+from desecapi.serializers import DomainSerializer, DomainStatusSerializer
+from desecapi.tasks import (
+    enqueue_domain_delegation_check,
+    enqueue_user_delegation_check,
+    status_check_wanted,
+)
 
 from .base import IdempotentDestroyMixin
 
@@ -42,6 +48,13 @@ class DomainViewSet(
             permissions.MFARequiredIfEnabledOrAPIToken,
             permissions.IsOwner,
         ]
+        if self.action == "status":
+            # Reading is open to any token. A re-check is about the limit,
+            # which concerns only tokens that can create domains; others thus
+            # cannot use up the account's re-check budget as a side effect.
+            if self.request.method == "POST":
+                ret.append(permissions.HasCreateDomainPermission)
+            return ret
         match self.request.method:
             case "POST":
                 ret.append(permissions.HasCreateDomainPermission)
@@ -59,12 +72,26 @@ class DomainViewSet(
         if self.action == "zonefile":
             self.throttle_scope_bucket = self.kwargs["name"]
             return "dns_api_per_domain_expensive"
+        elif self._is_status_check:
+            # Each check queries third-party nameservers.
+            self.throttle_scope_bucket = self.kwargs["name"]
+            return "dns_api_per_domain_status_check"
         else:
             return (
                 "dns_api_cheap"
                 if self.request.method in SAFE_METHODS
                 else "dns_api_expensive"
             )
+
+    @property
+    def throttle_scope_account(self):
+        # Re-checks share one queue across users, so one account's burst would
+        # delay everyone else's.
+        return "dns_api_status_check" if self._is_status_check else None
+
+    @property
+    def _is_status_check(self):
+        return self.action == "status" and self.request.method == "POST"
 
     @property
     def pagination_class(self):
@@ -167,6 +194,31 @@ class DomainViewSet(
             parent_domain = Domain.objects.get(name=instance.parent_domain_name)
             with PDNSChangeTracker():
                 parent_domain.update_delegation(instance)
+
+    @action(detail=True, methods=["get", "post"])
+    def status(self, request, name=None):
+        """
+        GET returns what the delegation checks found. POST asks for a re-check,
+        unless what is known already answers it (status_check_wanted()): 202
+        when a check is coming, 200 when it is not.
+        """
+        domain = self.get_object()
+        if request.method == "POST" and status_check_wanted(domain):
+            requested = timezone.now()
+            try:
+                enqueue_domain_delegation_check(domain)
+            except OperationalError:
+                logger.exception("Could not enqueue delegation check for %s", domain)
+                return Response(
+                    {"detail": "Checks are currently unavailable. Please try later."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            data = DomainStatusSerializer(domain).data
+            # Server time, so that clients can tell when the result is in
+            # (checked >= requested) without comparing against their own clock.
+            data["requested"] = serializers.DateTimeField().to_representation(requested)
+            return Response(data, status=status.HTTP_202_ACCEPTED)
+        return Response(DomainStatusSerializer(domain).data)
 
     @action(detail=True, renderer_classes=[PlainTextRenderer])
     def zonefile(self, request, name=None):
