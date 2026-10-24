@@ -118,6 +118,20 @@ describe('CrudListDomain', () => {
     expect(wrapper.vm.checking).toEqual({});
   });
 
+  it('explains the limit with the number of securely delegated domains', async () => {
+    const {wrapper} = await mount();
+    expect(wrapper.vm.createText).toContain('You have 2 of 5 domains left.');
+    expect(wrapper.vm.createText).toContain('2 of your 3 domains are securely delegated (with DNSSEC). Each domain you secure raises your limit.');
+    expect(wrapper.vm.createWarningText).toBe('');
+  });
+
+  it('says what raises the limit once it is reached', async () => {
+    const {wrapper} = await mount({account: {limit_domains: 3, secure_domains: 1}});
+    expect(wrapper.vm.createWarningText).toBe(
+        'Domain limit reached. 1 of your 3 domains is securely delegated (with DNSSEC). Securing another one raises your limit. The Delegation column shows what each domain is missing.',
+    );
+  });
+
   it('does not match every row when searching for "object"', async () => {
     const {wrapper} = await mount();
     wrapper.vm.search = 'object';

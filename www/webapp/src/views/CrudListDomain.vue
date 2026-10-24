@@ -19,12 +19,22 @@ export default {
   },
   data() {
     const self = this;
+    // "3 of your 5 domains are securely delegated (with DNSSEC)."
+    const securedSentence = () => {
+      const n = self.rows.length;
+      const s = self.secure_domains;
+      if (s == null || !n) {
+        return '';
+      }
+      return `${s} of your ${n} domain${n === 1 ? '' : 's'} ${s === 1 ? 'is' : 'are'} securely delegated (with DNSSEC).`;
+    };
     return {
         creatable: true,
         updatable: false,
         destroyable: true,
         rowsClickable: true,
         limit_domains: null,  // unknown until auth/account/ has been retrieved
+        secure_domains: null,  // likewise
         checking: {},  // domain name -> true, while a re-check is under way
         unmounted: false,
         headlines: {
@@ -34,8 +44,25 @@ export default {
         },
         texts: {
           banner: () => 'To edit your DNS records, click on one of your domains.',
-          create: () => self.limit_domains != null ? `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>The limit grows as you delegate your domains to us securely (with DNSSEC).</small>` : '',
-          createWarning: () => (self.availableCount <= 0 ? 'Domain limit exceeded. Delegate all of your domains to us securely (with DNSSEC) to make the limit grow.' : ''),
+          create: () => {
+            if (self.limit_domains == null) {
+              return '';
+            }
+            const secured = securedSentence();
+            const growth = secured
+                ? `${secured} Each domain you secure raises your limit.`
+                : 'The limit grows as you delegate your domains to us securely (with DNSSEC).';
+            return `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>${growth}</small>`;
+          },
+          createWarning: () => {
+            if (self.availableCount > 0) {
+              return '';
+            }
+            const secured = securedSentence();
+            return secured
+                ? `Domain limit reached. ${secured} Securing another one raises your limit. The Delegation column shows what each domain is missing.`
+                : 'Domain limit reached. Delegate your domains to us securely (with DNSSEC) to make the limit grow.';
+          },
           destroy: d => (`Delete domain ${d.name}?`),
           destroyInfo: () => 'This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet.',
         },
@@ -178,6 +205,7 @@ export default {
           .get('auth/account/')
           .then(r => {
             this.limit_domains = r.data.limit_domains;
+            this.secure_domains = r.data.secure_domains;
           })
       );
     },
