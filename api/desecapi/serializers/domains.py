@@ -3,10 +3,64 @@ import dns.zone
 from django.conf import settings
 from rest_framework import serializers
 
-from desecapi.models import RR_SET_TYPES_AUTOMATIC, Domain
+from desecapi.models import RR_SET_TYPES_AUTOMATIC, DelegationCheck, Domain
 from desecapi.validators import ReadOnlyOnUpdateValidator
 
 from .records import RRsetSerializer
+
+
+class DomainStatusSerializer(serializers.Serializer):
+    """
+    What the delegation checks found for a domain.
+
+    Statuses are the lowercased names of DelegationCheck's choices; the stored
+    integers stay an implementation detail. Everything that comes from the
+    current check is null until the domain has been checked.
+    """
+
+    secure_since = serializers.DateTimeField(
+        source="secure_delegation_since", read_only=True
+    )
+    checked = serializers.SerializerMethodField()
+    nameserver_status = serializers.SerializerMethodField()
+    security_status = serializers.SerializerMethodField()
+    nameservers = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_checked(domain):
+        check = domain.current_delegation_check
+        return (
+            serializers.DateTimeField().to_representation(check.checked)
+            if check
+            else None
+        )
+
+    @staticmethod
+    def get_nameserver_status(domain):
+        check = domain.current_delegation_check
+        return (
+            DelegationCheck.NameserverStatus(check.nameserver_status).name.lower()
+            if check
+            else None
+        )
+
+    @staticmethod
+    def get_security_status(domain):
+        check = domain.current_delegation_check
+        if (
+            check is None
+            # Without a delegation, the check asks about the parent instead
+            # (whether it is signed), so the stored value is not a statement
+            # about this domain.
+            or check.nameserver_status == DelegationCheck.NameserverStatus.NOT_DELEGATED
+        ):
+            return None
+        return DelegationCheck.SecurityStatus(check.security_status).name.lower()
+
+    @staticmethod
+    def get_nameservers(domain):
+        check = domain.current_delegation_check
+        return list(check.nameservers) if check else []
 
 
 class DomainSerializer(serializers.ModelSerializer):
@@ -21,6 +75,7 @@ class DomainSerializer(serializers.ModelSerializer):
     minimum_ttl = serializers.IntegerField(
         read_only=True, source="effective_minimum_ttl"
     )
+    status = DomainStatusSerializer(source="*", read_only=True)
 
     class Meta:
         model = Domain
@@ -30,6 +85,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "name",
             "keys",
             "minimum_ttl",
+            "status",
             "touched",
             "zonefile",
         )

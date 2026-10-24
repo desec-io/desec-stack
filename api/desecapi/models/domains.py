@@ -288,6 +288,14 @@ class Domain(ExportModelOperationsMixin("Domain"), models.Model):
         return self.parent_domain_name in settings.LOCAL_PUBLIC_SUFFIXES
 
     @property
+    def is_under_local_public_suffix(self):
+        """Per-object counterpart of under_local_public_suffix_q(): any depth."""
+        return any(
+            self.name.endswith(f".{suffix}")
+            for suffix in settings.LOCAL_PUBLIC_SUFFIXES
+        )
+
+    @property
     def _owner_or_none(self):
         try:
             return self.owner

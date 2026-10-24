@@ -389,7 +389,15 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
             self.assertStatus(response, status.HTTP_200_OK)
             self.assertEqual(
                 response.data.keys(),
-                {"created", "keys", "minimum_ttl", "name", "published", "touched"},
+                {
+                    "created",
+                    "keys",
+                    "minimum_ttl",
+                    "name",
+                    "published",
+                    "status",
+                    "touched",
+                },
             )
             self.assertEqual(response.data["name"], self.my_domain.name)
             self.assertTrue(isinstance(response.data["keys"], list))
@@ -449,6 +457,7 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                             "name",
                             "keys",
                             "minimum_ttl",
+                            "status",
                             "touched",
                         ]
                     )

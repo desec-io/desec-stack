@@ -88,9 +88,12 @@ class DomainViewSet(
 
         owns_qname = self.request.query_params.get("owns_qname")
         if owns_qname is not None:
-            qs = qs.filter_qname(owns_qname).order_by("-name_length")[:1]
+            qs = qs.filter_qname(owns_qname).order_by("-name_length")
 
-        return qs
+        # The status field reads the current check, which would otherwise cost
+        # a query per domain in the list.
+        qs = qs.select_related("current_delegation_check")
+        return qs[:1] if owns_qname is not None else qs
 
     def get_serializer(self, *args, **kwargs):
         include_keys = self.action in ["create", "retrieve"]

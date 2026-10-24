@@ -36,6 +36,13 @@ A JSON object representing a domain has the following structure::
         "minimum_ttl": 3600,
         "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z",
+        "status": {
+            "checked": "2018-09-19T08:12:03.081274Z",
+            "nameserver_status": "correctly_delegated",
+            "nameservers": ["ns1.desec.io.", "ns2.desec.org."],
+            "secure_since": "2018-09-18T19:02:27.629012Z",
+            "security_status": "secure"
+        },
         "touched": "2018-09-18T17:21:38.348112Z",
         "zonefile": "import-me.example A 127.0.0.1 ..."
     }
@@ -104,6 +111,63 @@ Field details:
     As we publish record modifications immediately, this indicates the
     point in time of the last successful write request to a domain's
     ``rrsets/`` endpoint.
+
+.. _`domain status`:
+
+``status``
+    :Access mode: read-only
+
+    What we found when checking how the domain is delegated.  We check every
+    domain at least once a day.  The object has the following fields:
+
+    ``checked``
+        Timestamp of the most recent check, or ``null`` if the domain has not
+        been checked yet.
+
+    ``nameserver_status``
+        To which nameservers the parent zone delegates the domain:
+
+        - ``correctly_delegated``: to deSEC's,
+        - ``multi_provider``: to deSEC's and others,
+        - ``other_provider``: to other nameservers only,
+        - ``not_delegated``: not at all,
+        - ``error``: this could not be determined.
+
+        ``null`` if the domain has not been checked yet.
+
+    ``nameservers``
+        The nameservers the parent zone delegates the domain to, as observed
+        in the most recent check.  Empty if the domain has not been checked
+        yet, or is not delegated.
+
+    ``secure_since``
+        Timestamp of when the domain was first found securely delegated to us
+        (delegated to our nameservers, with DS records in the parent zone that
+        let resolvers validate it), or ``null`` if it is not.  Securely
+        delegated domains raise your domain limit (see ``limit_domains`` and
+        ``secure_domains`` in :ref:`retrieve-account-information`).
+
+        A check that could not be completed (``error``) does not reset this
+        value.
+
+    ``security_status``
+        Whether the delegation is secured with DNSSEC:
+
+        - ``secure``: yes,
+        - ``insecure``: no, as the parent zone has no DS records for the
+          domain (or is not signed itself),
+        - ``misconfigured``: DNSSEC validation fails, so validating resolvers
+          cannot resolve the domain.  This is usually caused by outdated DS
+          records,
+        - ``error``: this could not be determined.
+
+        ``null`` if the domain has not been checked yet, or if it is not
+        delegated.
+
+    Domains under domains that we offer for registration ourselves (such as
+    ``dedyn.io``) are delegated and secured by us automatically, and are
+    therefore not checked.  Their ``secure_since`` is ``null``, but they
+    always count as securely delegated.
 
 ``touched``
     :Access mode: read-only
