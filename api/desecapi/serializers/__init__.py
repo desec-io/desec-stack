@@ -11,7 +11,7 @@ from .authenticated_actions import (
     AuthenticatedResetPasswordUserActionSerializer,
 )
 from .captcha import CaptchaSerializer, CaptchaSolutionSerializer
-from .domains import DomainSerializer
+from .domains import DomainSerializer, DomainStatusSerializer
 from .donation import DonationSerializer
 from .mfa import TOTPCodeSerializer, TOTPFactorSerializer
 from .records import RRsetSerializer

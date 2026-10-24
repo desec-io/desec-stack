@@ -102,6 +102,17 @@ class DelegationCheck(ExportModelOperationsMixin("DelegationCheck"), models.Mode
     class Meta:
         ordering = ("created",)
 
+    @property
+    def reported_security_status(self):
+        """
+        The security status as reported to users: a statement about the domain,
+        or None if the domain is not delegated, as the check then asks about
+        the parent instead (whether it is signed).
+        """
+        if self.nameserver_status == self.NameserverStatus.NOT_DELEGATED:
+            return None
+        return self.security_status
+
     def agrees_with(self, result):
         # Only the two status dimensions and the NS set constitute the state;
         # a changed EDE text or rcode does not start a new one.

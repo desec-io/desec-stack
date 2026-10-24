@@ -3,10 +3,59 @@ import dns.zone
 from django.conf import settings
 from rest_framework import serializers
 
-from desecapi.models import RR_SET_TYPES_AUTOMATIC, Domain
+from desecapi.models import RR_SET_TYPES_AUTOMATIC, DelegationCheck, Domain
 from desecapi.validators import ReadOnlyOnUpdateValidator
 
 from .records import RRsetSerializer
+
+
+class EnumNameField(serializers.Field):
+    """
+    Represents a value of an enum (such as IntegerChoices) by its lowercased
+    name, so that the stored values stay an implementation detail.
+    """
+
+    def __init__(self, enum, **kwargs):
+        self.enum = enum
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        return self.enum(value).name.lower()
+
+
+class DomainStatusSerializer(serializers.Serializer):
+    """
+    What the delegation checks found for a domain.
+
+    Everything that comes from the current check is null (nameservers: empty)
+    until the domain has been checked: DRF resolves a source through a null
+    relation to the field's default, or else to null where allow_null is set.
+    """
+
+    secure_since = serializers.DateTimeField(
+        source="secure_delegation_since", read_only=True
+    )
+    checked = serializers.DateTimeField(
+        source="current_delegation_check.checked", read_only=True, allow_null=True
+    )
+    nameserver_status = EnumNameField(
+        DelegationCheck.NameserverStatus,
+        source="current_delegation_check.nameserver_status",
+        read_only=True,
+        allow_null=True,
+    )
+    security_status = EnumNameField(
+        DelegationCheck.SecurityStatus,
+        source="current_delegation_check.reported_security_status",
+        read_only=True,
+        allow_null=True,
+    )
+    nameservers = serializers.ListField(
+        child=serializers.CharField(),
+        source="current_delegation_check.nameservers",
+        read_only=True,
+        default=list,
+    )
 
 
 class DomainSerializer(serializers.ModelSerializer):
@@ -21,6 +70,7 @@ class DomainSerializer(serializers.ModelSerializer):
     minimum_ttl = serializers.IntegerField(
         read_only=True, source="effective_minimum_ttl"
     )
+    status = DomainStatusSerializer(source="*", read_only=True)
 
     class Meta:
         model = Domain
@@ -30,6 +80,7 @@ class DomainSerializer(serializers.ModelSerializer):
             "name",
             "keys",
             "minimum_ttl",
+            "status",
             "touched",
             "zonefile",
         )
