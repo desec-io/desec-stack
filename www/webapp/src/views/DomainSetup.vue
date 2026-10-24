@@ -167,6 +167,7 @@
 
 <script>
 import RecordList from '@/components/Field/RecordList.vue';
+import {isLocallyRegistrable} from "@/delegation";
 import {useUserStore} from "@/store/user";
 import {mdiContentCopy, mdiAlert, mdiInformation, mdiNumeric0Circle, mdiNumeric1Circle, mdiNumeric2Circle, mdiNumeric3Circle, mdiCheck} from "@mdi/js";
 
@@ -206,17 +207,12 @@ export default {
     snackbar: false,
     snackbar_icon: '',
     snackbar_text: '',
-    LOCAL_PUBLIC_SUFFIXES: import.meta.env.VITE_APP_LOCAL_PUBLIC_SUFFIXES.split(' '),
   }),
   computed: {
     hasAutomaticDelegationMaintenance: function () {
-      let self = this;
-      return self.LOCAL_PUBLIC_SUFFIXES.some(
-          (suffix) => (
-              self.domain.split('.').length == suffix.split('.').length + 1
-              && self.domain.endsWith('.' + suffix)
-          )
-      )
+      // Immediate children only: deeper names under our suffixes are not
+      // auto-delegated (unlike what isUnderLocalPublicSuffix() covers).
+      return isLocallyRegistrable(this.domain);
     },
   },
   methods: {

@@ -493,6 +493,10 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
+      if (this.display.xs) {
+        // Columns that are not worth pushing the actions out of view on phones
+        cols = cols.filter(col => !(col.hideOnXs || false));
+      }
       cols = cols.map(col => ({
         ...col,
         title: col.title || col.text,
@@ -630,7 +634,9 @@ export default {
       return column.readonly || this.itemIsReadOnly(item);
     },
     cellUsesPlainText(column, item) {
-      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name;
+      // Read-only cells are plain text, except for display components (TimeAgo,
+      // or any column with richReadonly), which render themselves.
+      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name && !column.richReadonly;
     },
     readonlyDisplayValue(column, item) {
       const value = item[column.value];
@@ -827,6 +833,9 @@ export default {
       return value != null &&
               search != null &&
               typeof value !== 'boolean' &&
+              // Objects would match "object" via "[object Object]"; arrays
+              // (record contents) are searched as their joined values.
+              (typeof value !== 'object' || Array.isArray(value)) &&
               value.toString().toLocaleLowerCase().indexOf(search.toLocaleLowerCase()) !== -1
     },
   },
