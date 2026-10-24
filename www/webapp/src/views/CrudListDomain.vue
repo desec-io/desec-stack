@@ -2,12 +2,13 @@
 import { HTTP, withWorking } from '@/utils';
 import CrudList from './CrudList.vue';
 import DomainSetupDialog from '@/views/Console/DomainSetupDialog.vue';
-import {mdiDownload, mdiInformation} from "@mdi/js";
+import {mdiDownload, mdiInformation, mdiRefresh} from "@mdi/js";
 import DelegationStatus from "@/components/Field/DelegationStatus.vue";
 import GenericText from "@/components/Field/GenericText.vue";
 import GenericTextarea from "@/components/Field/GenericTextarea.vue";
 import TimeAgo from "@/components/Field/TimeAgo.vue";
-import {compareBySecurity} from "@/delegation";
+import {compareBySecurity, isRecheckable, isSecure} from "@/delegation";
+import {recheckDelegation} from "@/delegationCheck";
 
 export default {
   name: 'CrudListDomain',
@@ -24,6 +25,8 @@ export default {
         destroyable: true,
         rowsClickable: true,
         limit_domains: null,  // unknown until auth/account/ has been retrieved
+        checking: {},  // domain name -> true, while a re-check is under way
+        unmounted: false,
         headlines: {
           table: 'Domains',
           create: 'Create New Domain',
@@ -61,7 +64,7 @@ export default {
             richReadonly: true,
             datatype: DelegationStatus.name,
             searchable: false,
-            fieldProps: item => ({domain: item.name}),
+            fieldProps: item => ({domain: item.name, checking: !!self.checking[item.name]}),
           },
           published: {
             name: 'item.published',
@@ -140,6 +143,15 @@ export default {
   computed: {
     actions() {
       return {
+        'recheck': {
+          go: d => this.recheckStatus(d),
+          // On phones, the setup instructions offer it instead, along with the
+          // explanation that the tooltip gives elsewhere; the row has no room.
+          if: d => !this.display.xs && isRecheckable(d),
+          loading: d => !!this.checking[d.name],
+          icon: mdiRefresh,
+          tooltip: 'Re-check delegation',
+        },
         'info': {
           go: d => this.showDomainInfo(d),
           icon: mdiInformation,
@@ -160,12 +172,62 @@ export default {
       return this.availableCount <= 0;
     },
   },
+  methods: {
+    async fetchAccount() {
+      await withWorking(this.error, () => HTTP
+          .get('auth/account/')
+          .then(r => {
+            this.limit_domains = r.data.limit_domains;
+          })
+      );
+    },
+    /** *
+     * Asks for the domain's delegation to be re-checked, and shows the result
+     * once it is in. Not through withWorking(): waiting for the result may
+     * take a while, and must not block the rest of the page.
+     */
+    async recheckStatus(domain) {
+      if (this.checking[domain.name]) {
+        return;
+      }
+      this.checking[domain.name] = true;
+      const wasSecure = isSecure(domain.status);
+      try {
+        const {status, done} = await recheckDelegation(HTTP, domain.name, {
+          shouldStop: () => this.unmounted,
+        });
+        if (this.unmounted) {
+          return;
+        }
+        domain.status = status;
+        if (!done) {
+          this.notify('The check is taking longer than expected. It will finish in the background; reload later to see the result.', 'info');
+        } else if (!wasSecure && isSecure(status)) {
+          await this.fetchAccount();
+          this.notify(`${domain.name} is now securely delegated. Your domain limit is now ${this.limit_domains}.`);
+        }
+      } catch (e) {
+        if (e.response?.status === 429) {
+          const wait = Number.parseInt(e.response.headers?.['retry-after'], 10);
+          this.notify(
+              Number.isFinite(wait)
+                  ? `You can re-check ${domain.name} again in ${wait} seconds.`
+                  : `You cannot re-check ${domain.name} again right now. Please try again later.`,
+              'info',
+          );
+        } else {
+          this.error(e);
+        }
+      } finally {
+        delete this.checking[domain.name];
+      }
+    },
+  },
   async created() {
-    const self = this;
-    await withWorking(this.error, () => HTTP
-        .get('auth/account/')
-        .then(r => self.limit_domains = r.data.limit_domains)
-    );
+    await this.fetchAccount();
+  },
+  beforeUnmount() {
+    this.unmounted = true;
   },
 };
 </script>

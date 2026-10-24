@@ -45,6 +45,14 @@ export function isSecure(status) {
 }
 
 /**
+ * Whether asking for a re-check makes sense: the API does not re-check secure
+ * domains, nor domains under a local public suffix.
+ */
+export function isRecheckable(domain) {
+  return !isSecure(domain.status) && !isUnderLocalPublicSuffix(domain.name);
+}
+
+/**
  * Sort order for the domain list: domains holding the limit back first, then
  * by name.
  */
