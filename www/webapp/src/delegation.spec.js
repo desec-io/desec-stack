@@ -4,8 +4,10 @@ import {
   compareBySecurity,
   delegationSummary,
   isLocallyRegistrable,
+  isRecheckable,
   isSecure,
   isUnderLocalPublicSuffix,
+  lastCheckFailed,
   localSummary,
 } from './delegation';
 
@@ -60,13 +62,31 @@ describe('local public suffixes', () => {
   });
 });
 
-describe('isSecure', () => {
-  it('goes by secure_since', () => {
+describe('isSecure and isRecheckable', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('go by secure_since', () => {
     expect(isSecure(null)).toBe(false);
     expect(isSecure(status())).toBe(false);
     expect(isSecure(status(SECURE))).toBe(true);
     // Error-immune: the latest check failing does not undo it.
     expect(isSecure(status({...SECURE, security_status: 'error', nameserver_status: 'error'}))).toBe(true);
+  });
+
+  it('offer re-checks for all domains that are not local', () => {
+    vi.stubEnv('VITE_APP_LOCAL_PUBLIC_SUFFIXES', 'dedyn.io');
+    expect(isRecheckable({name: 'example.com', status: status()})).toBe(true);
+    expect(isRecheckable({name: 'example.com', status: status(SECURE)})).toBe(true);
+    expect(isRecheckable({name: 'mine.dedyn.io', status: status({checked: null})})).toBe(false);
+  });
+
+  it('tell a failed check by either status', () => {
+    expect(lastCheckFailed(null)).toBe(false);
+    expect(lastCheckFailed(status())).toBe(false);
+    expect(lastCheckFailed(status({security_status: 'error'}))).toBe(true);
+    expect(lastCheckFailed(status({...SECURE, nameserver_status: 'error', security_status: 'error'}))).toBe(true);
   });
 });
 

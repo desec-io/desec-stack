@@ -68,11 +68,85 @@ describe('CrudListDomain', () => {
     expect(row(wrapper, 'mine.dedyn.io').find('.v-chip').text()).toBe('Secure');
   });
 
-  it('makes room for the status on phones', async () => {
+  it('offers a re-check only where one can tell something new', async () => {
+    const {wrapper} = await mount();
+    expect(row(wrapper, 'insecure.example').find('.button-recheck').exists()).toBe(true);
+    expect(row(wrapper, 'secure.example').find('.button-recheck').exists()).toBe(true);
+    expect(row(wrapper, 'mine.dedyn.io').find('.button-recheck').exists()).toBe(false);
+    // The other actions are unaffected.
+    expect(row(wrapper, 'mine.dedyn.io').find('.button-info').exists()).toBe(true);
+  });
+
+  it('leaves the re-check to the setup instructions on phones', async () => {
     // Everything below 2000px counts as xs here.
     const {wrapper} = await mount({vuetify: {display: {thresholds: {sm: 2000}}}});
-    expect(wrapper.findAll('thead th').map(th => th.text())).not.toContain('Published');
+    expect(row(wrapper, 'insecure.example').find('.button-recheck').exists()).toBe(false);
     expect(row(wrapper, 'insecure.example').find('.button-info').exists()).toBe(true);
+    expect(wrapper.findAll('thead th').map(th => th.text())).not.toContain('Published');
+  });
+
+  async function recheck(wrapper, get, name, found, account) {
+    const post = vi.spyOn(HTTP, 'post').mockResolvedValue({status: 200, data: found});
+    get.mockImplementation(async url => {
+      if (url === 'auth/account/') return {status: 200, data: account};
+      throw new Error(`unexpected GET ${url}`);
+    });
+    await row(wrapper, name).find('.button-recheck').trigger('click');
+    await flushPromises();
+    return post;
+  }
+
+  it('updates the row and the limit when a re-check finds the domain secure', async () => {
+    const {wrapper, get} = await mount();
+    const found = {...SECURE, secure_since: '2026-10-24T12:00:00.000000Z'};
+    const post = await recheck(wrapper, get, 'insecure.example', found, {limit_domains: 7, secure_domains: 3});
+
+    expect(post).toHaveBeenCalledWith('domains/insecure.example/status/');
+    expect(row(wrapper, 'insecure.example').text()).toContain('Secure');
+    expect(wrapper.vm.limit_domains).toBe(7);
+    expect(wrapper.vm.notification).toBe('insecure.example is now securely delegated. Your domain limit has grown to 7.');
+    expect(wrapper.vm.notificationColor).toBe('success');
+  });
+
+  it('updates the row and the limit when a re-check finds the domain no longer secure', async () => {
+    const {wrapper, get} = await mount();
+    await recheck(wrapper, get, 'secure.example', INSECURE, {limit_domains: 4, secure_domains: 1});
+
+    expect(row(wrapper, 'secure.example').text()).toContain('No DNSSEC');
+    expect(wrapper.vm.limit_domains).toBe(4);
+    expect(wrapper.vm.notification).toBe('secure.example is no longer securely delegated. Your domain limit has dropped to 4.');
+    expect(wrapper.vm.notificationColor).toBe('warning');
+  });
+
+  it('mentions the limit only when it changed', async () => {
+    // As for accounts whose limit support has set.
+    const {wrapper, get} = await mount();
+    await recheck(wrapper, get, 'insecure.example', SECURE, {limit_domains: 5, secure_domains: 3});
+    expect(wrapper.vm.notification).toBe('insecure.example is now securely delegated.');
+  });
+
+  it('tells when a re-check could not be completed', async () => {
+    const {wrapper, get} = await mount();
+    const failed = {...SECURE, nameserver_status: 'error', security_status: 'error', nameservers: []};
+    await recheck(wrapper, get, 'secure.example', failed, {limit_domains: 5, secure_domains: 2});
+
+    expect(row(wrapper, 'secure.example').text()).toContain('Secure');
+    expect(wrapper.vm.notification).toBe('We could not complete the check of secure.example. Please try again in a few minutes.');
+    expect(wrapper.vm.notificationColor).toBe('warning');
+  });
+
+  it('tells when a re-check is throttled, without an error', async () => {
+    const {wrapper} = await mount();
+    const error = Object.assign(new Error('throttled'), {response: {status: 429, headers: {'retry-after': '42'}}});
+    vi.spyOn(HTTP, 'post').mockRejectedValue(error);
+
+    await row(wrapper, 'insecure.example').find('.button-recheck').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.vm.notification).toBe('You can re-check insecure.example again in 42 seconds.');
+    expect(wrapper.vm.notificationColor).toBe('info');
+    expect(wrapper.vm.snackbar).toBe(false);
+    expect(wrapper.vm.checking).toEqual({});
   });
 
   it('does not match every row when searching for "object"', async () => {

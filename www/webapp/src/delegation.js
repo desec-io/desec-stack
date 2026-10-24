@@ -46,6 +46,23 @@ export function isSecure(status) {
 }
 
 /**
+ * Whether asking for a re-check makes sense: for all domains but those under
+ * a local public suffix, which are secure by construction. Secure domains are
+ * included, so that users can confirm a change to their DNSSEC setup.
+ */
+export function isRecheckable(domain) {
+  return !isUnderLocalPublicSuffix(domain.name);
+}
+
+/**
+ * Whether the most recent check could not be completed. That says nothing
+ * about the domain, so a secure domain stays secure.
+ */
+export function lastCheckFailed(status) {
+  return status?.nameserver_status === 'error' || status?.security_status === 'error';
+}
+
+/**
  * Sort order for the domain list: domains holding the limit back first, then
  * by how urgently their state needs attention (DELEGATION_RANKS). Domains in
  * the same state compare equal, so that the table's other sort columns order
@@ -110,7 +127,7 @@ export function localSummary(name = 'This domain') {
  * the API reports no security status, so the nameserver status decides.
  */
 export function delegationSummary(status, name = 'This domain') {
-  const failed = status?.nameserver_status === 'error' || status?.security_status === 'error';
+  const failed = lastCheckFailed(status);
 
   if (isSecure(status)) {
     const since = formatDate(status.secure_since);
