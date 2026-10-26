@@ -19,6 +19,21 @@
             </template>
           </v-snackbar>
 
+          <!-- Notification Snackbar -->
+          <v-snackbar
+            v-model="notificationShown"
+            :color="notificationColor"
+            multi-line
+            :timeout="10000"
+          >
+            {{ notification }}
+            <template #actions>
+              <v-btn variant="text" @click="notificationShown = false">
+                Dismiss
+              </v-btn>
+            </template>
+          </v-snackbar>
+
           <!-- The Actual Table -->
           <v-data-table
                   :headers="headers"
@@ -219,10 +234,11 @@
             <template #[`item.actions`]="itemFieldProps">
               <div class="crud-actions my-1 py-3">
                 <v-btn
-                    v-for="[key, action] in getActions(actions)"
+                    v-for="[key, action] in getActions(actions, rawItem(itemFieldProps.item))"
                     :key="key"
                     variant="text"
-                    :disabled="user.working || itemIsReadOnly(rawItem(itemFieldProps.item), key)"
+                    :disabled="user.working || itemIsReadOnly(rawItem(itemFieldProps.item), key) || !!action.loading?.(rawItem(itemFieldProps.item))"
+                    :loading="!!action.loading?.(rawItem(itemFieldProps.item))"
                     :class="'button-' + key"
                     color="grey"
                     density="compact"
@@ -403,6 +419,9 @@ export default {
     extraComponentName: '',
     extraComponentBind: {},
     fullWidth: false,
+    notification: '',
+    notificationColor: 'success',
+    notificationShown: false,
     snackbar: false,
     showAdvanced: false,
     search: '',
@@ -493,6 +512,10 @@ export default {
         cols = cols.filter(col => !(col.advanced || false));
       }
       cols = cols.filter(col => !(col.hideFromTable || false));
+      if (this.display.xs) {
+        // Columns that are not worth pushing the actions out of view on phones
+        cols = cols.filter(col => !(col.hideOnXs || false));
+      }
       cols = cols.map(col => ({
         ...col,
         title: col.title || col.text,
@@ -630,7 +653,9 @@ export default {
       return column.readonly || this.itemIsReadOnly(item);
     },
     cellUsesPlainText(column, item) {
-      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name;
+      // Read-only cells are plain text, except for display components (TimeAgo,
+      // or any column with richReadonly), which render themselves.
+      return this.cellIsReadOnly(column, item) && column.datatype !== TimeAgo.name && !column.richReadonly;
     },
     readonlyDisplayValue(column, item) {
       const value = item[column.value];
@@ -655,8 +680,22 @@ export default {
     updateItemValue(item, key, value) {
       item[key] = value;
     },
-    getActions(actions) {
-      return Object.entries({...actions, ...this.defaultActions}).filter(([, action]) => action.if ?? true);
+    /** *
+     * The row actions to show. An action's `if` may be a boolean, or a
+     * function of the row, to show the action for some rows only.
+     */
+    getActions(actions, item) {
+      return Object.entries({...actions, ...this.defaultActions}).filter(
+          ([, action]) => (typeof action.if === 'function' ? action.if(item) : action.if ?? true)
+      );
+    },
+    /** *
+     * Show a message that is not an error.
+     */
+    notify(text, color = 'success') {
+      this.notification = text;
+      this.notificationColor = color;
+      this.notificationShown = true;
     },
     updatePagination(options) {
       this.user.updateComponentArg(`${this.$options.name}/itemsPerPage`, options.itemsPerPage);
@@ -827,6 +866,9 @@ export default {
       return value != null &&
               search != null &&
               typeof value !== 'boolean' &&
+              // Objects would match "object" via "[object Object]"; arrays
+              // (record contents) are searched as their joined values.
+              (typeof value !== 'object' || Array.isArray(value)) &&
               value.toString().toLocaleLowerCase().indexOf(search.toLocaleLowerCase()) !== -1
     },
   },

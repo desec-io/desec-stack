@@ -36,6 +36,13 @@ A JSON object representing a domain has the following structure::
         "minimum_ttl": 3600,
         "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z",
+        "status": {
+            "checked": "2018-09-19T08:12:03.081274Z",
+            "nameserver_status": "correctly_delegated",
+            "nameservers": ["ns1.desec.io.", "ns2.desec.org."],
+            "secure_since": "2018-09-18T19:02:27.629012Z",
+            "security_status": "secure"
+        },
         "touched": "2018-09-18T17:21:38.348112Z",
         "zonefile": "import-me.example A 127.0.0.1 ..."
     }
@@ -104,6 +111,64 @@ Field details:
     As we publish record modifications immediately, this indicates the
     point in time of the last successful write request to a domain's
     ``rrsets/`` endpoint.
+
+.. _`domain status`:
+
+``status``
+    :Access mode: read-only
+
+    What we found when checking how the domain is delegated.  We check every
+    domain at least once a day, and you can ask for a re-check (see
+    `Checking a Domain's Delegation`_).  The object has the following fields:
+
+    ``checked``
+        Timestamp of the most recent check, or ``null`` if the domain has not
+        been checked yet.
+
+    ``nameserver_status``
+        To which nameservers the parent zone delegates the domain:
+
+        - ``correctly_delegated``: to deSEC's,
+        - ``multi_provider``: to deSEC's and others,
+        - ``other_provider``: to other nameservers only,
+        - ``not_delegated``: not at all,
+        - ``error``: this could not be determined.
+
+        ``null`` if the domain has not been checked yet.
+
+    ``nameservers``
+        The nameservers the parent zone delegates the domain to, as observed
+        in the most recent check.  Empty if the domain has not been checked
+        yet, or is not delegated.
+
+    ``secure_since``
+        Timestamp of when the domain was first found securely delegated to us
+        (delegated to our nameservers, with DS records in the parent zone that
+        let resolvers validate it), or ``null`` if it is not.  Securely
+        delegated domains raise your domain limit (see ``limit_domains`` and
+        ``secure_domains`` in :ref:`retrieve-account-information`).
+
+        A check that could not be completed (``error``) does not reset this
+        value.
+
+    ``security_status``
+        Whether the delegation is secured with DNSSEC:
+
+        - ``secure``: yes,
+        - ``insecure``: no, as the parent zone has no DS records for the
+          domain (or is not signed itself),
+        - ``misconfigured``: DNSSEC validation fails, so validating resolvers
+          cannot resolve the domain.  This is usually caused by outdated DS
+          records,
+        - ``error``: this could not be determined.
+
+        ``null`` if the domain has not been checked yet, or if it is not
+        delegated.
+
+    Domains under domains that we offer for registration ourselves (such as
+    ``dedyn.io``) are delegated and secured by us automatically, and are
+    therefore not checked.  Their ``secure_since`` is ``null``, but they
+    always count as securely delegated.
 
 ``touched``
     :Access mode: read-only
@@ -221,6 +286,45 @@ This will return only one domain (i.e., the response is not a JSON array).
 If you own a domain with that name, the API responds with ``200 OK`` and
 returns the domain object in the response body.  Otherwise, the return status
 code is ``404 Not Found``.
+
+
+Checking a Domain's Delegation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The domain's ``status`` field (see :ref:`domain status`) is also available on
+its own, by issuing a ``GET`` request to the domain's ``status/`` endpoint::
+
+    curl https://desec.io/api/v1/domains/{name}/status/ \
+        --header "Authorization: Token {secret}"
+
+The response body is the status object.  Unlike retrieving the domain, this is
+cheap enough to repeat while waiting for a check to finish (see below).
+
+After changing your domain's delegation (e.g. after giving the DS records to
+your registrar), you can ask for a re-check by issuing a ``POST`` request to
+the same endpoint::
+
+    curl -X POST https://desec.io/api/v1/domains/{name}/status/ \
+        --header "Authorization: Token {secret}"
+
+If a check is needed, the API responds with ``202 Accepted``, and the domain
+will be checked within a few seconds.  The response body is the current status
+object, with an additional ``requested`` field holding the server's time of
+the request.  Once the check is done, the status object's ``checked`` field
+is at least that value.
+
+If no check is needed, the API responds with ``200 OK`` and the current status
+object.  This is the case when the domain was checked during the last minute,
+and when it is already securely delegated (including domains under domains
+that we offer for registration ourselves, such as ``dedyn.io``).  Securely
+delegated domains are checked daily, as all others are.
+
+Re-checks are subject to rate limiting (see :ref:`rate-limits`).  If our
+checking service is temporarily unavailable, the API responds with
+``503 Service Unavailable``.
+
+Requesting a re-check requires the ``perm_create_domain`` permission on the
+token, as it serves to update your domain limit.  Reading the status does not.
 
 
 Identifying the Responsible Domain for a DNS Name

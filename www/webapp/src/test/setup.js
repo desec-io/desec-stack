@@ -19,6 +19,16 @@ globalThis.matchMedia = globalThis.matchMedia || (() => ({
   addEventListener: () => {},
   removeEventListener: () => {},
 }));
+// Used by Vuetify overlays (e.g. snackbars) to position themselves.
+globalThis.visualViewport = globalThis.visualViewport || {
+  width: 1024,
+  height: 768,
+  offsetLeft: 0,
+  offsetTop: 0,
+  scale: 1,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+};
 
 config.global.stubs = {
   transition: false,
