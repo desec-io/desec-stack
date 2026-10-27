@@ -241,15 +241,15 @@ New compose service `unbound`, built from a new top-level `unbound/` directory
   concurrently and a single-threaded resolver would serialize them again.
 - **Env**: the service adds no new environment variables. `DESECSTACK_API_UNBOUND_HOST`/`_PORT`
   are not needed (the service name resolves inside compose), and the deSEC
-  nameserver set comes from `DESECSTACK_NS` (below).
+  nameserver set comes from `DESECSTACK_NS` and `DESECSTACK_NS_ALTERNATIVE`
+  (below).
 
 ### Our nameservers
 
 The set a delegation is expected to point at is `settings.DEFAULT_NS` (from
-`DESECSTACK_NS`), i.e. the same names we publish in NS RRsets — no separate
-setting. Should the two ever need to diverge (a delegation pointing at names we
-accept but do not publish, such as `ns.desec.{ch,cz,li}`), `check()` takes the
-set as an argument, so adding a setting then is a one-line change.
+`DESECSTACK_NS`), i.e. the same names we publish in NS RRsets, plus
+`settings.ALTERNATIVE_NS` (from `DESECSTACK_NS_ALTERNATIVE`): names we accept
+but do not publish, such as `ns.desec.{ch,cz,li}`.
 
 ## 5. Where outcomes are stored
 

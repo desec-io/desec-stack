@@ -609,7 +609,7 @@ class DelegationCheckTestCase(SimpleTestCase):
         with self.assertRaises(unbound.UnboundQueryException):
             self.check(ds=unbound.UnboundQueryException("nope"))
 
-    @override_settings(DEFAULT_NS=["ns1.example.net."])
+    @override_settings(DEFAULT_NS=["ns1.example.net."], ALTERNATIVE_NS=[])
     def test_our_nameservers_default_to_setting(self):
         result = self.check(
             delegation_=make_response(authority=[ns_rrset("ns1.example.net.")]),
@@ -619,6 +619,28 @@ class DelegationCheckTestCase(SimpleTestCase):
             result.nameserver_status,
             DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
         )
+
+    @override_settings(
+        DEFAULT_NS=["ns1.example.net."], ALTERNATIVE_NS=["ns.example.org."]
+    )
+    def test_our_nameservers_default_to_include_alternative_names(self):
+        for targets, nameserver_status in [
+            (["ns.example.org."], DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED),
+            (
+                ["ns1.example.net.", "ns.example.org."],
+                DelegationCheck.NameserverStatus.CORRECTLY_DELEGATED,
+            ),
+            (
+                ["ns.example.org.", "ns1.other.example."],
+                DelegationCheck.NameserverStatus.MULTI_PROVIDER,
+            ),
+        ]:
+            with self.subTest(targets=targets):
+                result = self.check(
+                    delegation_=make_response(authority=[ns_rrset(*targets)]),
+                    our_nameservers=None,
+                )
+                self.assertEqual(result.nameserver_status, nameserver_status)
 
 
 class UnboundControlTestCase(SimpleTestCase):

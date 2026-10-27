@@ -163,9 +163,16 @@ DESECSTACK_DOMAIN = os.environ["DESECSTACK_DOMAIN"]
 # default NS records
 DEFAULT_NS = [name + "." for name in os.environ["DESECSTACK_NS"].strip().split()]
 DEFAULT_NS_TTL = int(os.environ["DESECSTACK_NSLORD_DEFAULT_TTL"])
+# Names of our nameservers that are not published in NS records, but which
+# users may delegate to (e.g. ns.desec.{ch,cz,li}). Trailing dot optional.
+ALTERNATIVE_NS = [
+    name.rstrip(".") + "."
+    for name in os.environ.get("DESECSTACK_NS_ALTERNATIVE", "").split()
+]
 
 # Delegation checks: where to reach our resolver. (The nameservers a delegation
-# is expected to point at are DEFAULT_NS, i.e. the ones we publish.)
+# is expected to point at are DEFAULT_NS, i.e. the ones we publish, and
+# ALTERNATIVE_NS.)
 UNBOUND_HOST = "unbound"
 UNBOUND_PORT = 53
 UNBOUND_CONTROL_PORT = 8953
