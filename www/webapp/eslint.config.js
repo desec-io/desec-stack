@@ -1,6 +1,7 @@
+import {resolve} from 'node:path';
 import js from '@eslint/js';
 import globals from 'globals';
-import pluginImport from 'eslint-plugin-import';
+import {createNodeResolver, importX} from 'eslint-plugin-import-x';
 import pluginVue from 'eslint-plugin-vue';
 import pluginVueScopedCss from 'eslint-plugin-vue-scoped-css';
 import pluginVuetify from 'eslint-plugin-vuetify';
@@ -13,7 +14,7 @@ export default [
   // ...pluginVue.configs['flat/strongly-recommended'],
   // ...pluginVue.configs['flat/recommended'],
   ...pluginVuetify.configs['flat/base'],
-  pluginImport.flatConfigs.recommended,
+  importX.flatConfigs.recommended,
   ...pluginVueScopedCss.configs['flat/recommended'],
   js.configs.recommended,
   {
@@ -24,11 +25,9 @@ export default [
       globals: globals.browser,
     },
     settings: {
-      'import/resolver': {
-        alias: {
-          map: [['@', './src']],
-        },
-      },
+      'import-x/resolver-next': [
+        createNodeResolver({alias: {'@': [resolve(import.meta.dirname, 'src')]}}),
+      ],
     },
     rules: {
       'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
