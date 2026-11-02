@@ -770,7 +770,7 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ("SPF", ('"foobar"', '"foobar"')),
             ("SRV", ("0 000 0 .", "0 0 0 .")),
             ("SRV", ("100 1 5061 EXAMPLE.com.", "100 1 5061 EXAMPLE.com.")),
-            ("SSHFP", ("2 2 aabbccEEddff", "2 2 aabbcceeddff")),
+            ("SSHFP", ("2 2 " + "aabbccEE" * 8, "2 2 " + "aabbccee" * 8)),
             (
                 "SVCB",
                 (
@@ -788,8 +788,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             (
                 "TLSA",
                 (
-                    "3 0001 1 000AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                    "3 1 1 000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "3 0001 1 000" + "A" * 61,
+                    "3 1 1 000" + "a" * 61,
                 ),
             ),
             (
@@ -802,8 +802,8 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             (
                 "TLSA",
                 (
-                    "3 0 2 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
-                    "3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
+                    "3 0 0 696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696B8F6B92A913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
+                    "3 0 0 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
                 ),
             ),
             ("TXT", ('"foo" "bar"', '"foo" "bar"')),
@@ -950,7 +950,6 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             "NS": ["ns1.example.com."],
             "OPENPGPKEY": [
                 "mG8EXtVIsRMFK4EEACIDAwQSZPNqE4tSxLFJYhX+uabSgMrhOqUizJhkLx82",  # key incomplete
-                "YWFh\xf0\x9f\x92\xa9YWFh",  # valid as non-alphabet bytes will be ignored
             ],
             "PTR": ["example.com.", "*.example.com."],
             "RP": ["hostmaster.example.com. ."],
@@ -961,16 +960,20 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 '"spf2.0/pra,mfrom ip6:2001:558:fe14:76:68:87:28:0/120 -all"',
             ],
             "SRV": ["0 0 0 .", "100 1 5061 example.com."],
-            "SSHFP": ["2 2 aabbcceeddff"],
+            "SSHFP": [
+                "1 1 " + "aabbccee" * 5,  # SHA-1
+                "2 2 " + "aabbccee" * 8,  # SHA-256
+                "2 3 aabbcceeddff",  # unassigned fingerprint type, any length
+            ],
             "SVCB": [
                 "0 svc4-baz.example.net.",
                 "1 . key65333=...",
                 '2 svc2.example.net. ech="AAQBAgME" ipv6hint=2001:db8::2 port=1234',
             ],
             "TLSA": [
-                "3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "3 1 1 " + "A" * 64,
                 "3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
-                "3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
+                "3 0 0 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd",
             ],
             "TXT": [
                 '"foobar"',
@@ -1112,7 +1115,10 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
             ],
             "NID": ["010 14:4fff:ff20:Ee64", "d 0014:4fff:ff20:ee64", "20 ::14::ee64"],
             "NS": ["ns1.example.com", "127.0.0.1", "_foobar.example.dedyn.io.", "."],
-            "OPENPGPKEY": ["1 2 3"],
+            "OPENPGPKEY": [
+                "1 2 3",
+                "YWFh\xf0\x9f\x92\xa9YWFh",  # non-alphabet bytes
+            ],
             "PTR": ['"example.com."', "10 *.example.com."],
             "RP": ["hostmaster.example.com.", "10 foo."],
             "SMIMEA": ["3 1 0 aGVsbG8gd29ybGQh"],
@@ -1123,13 +1129,21 @@ class AuthenticatedRRSetTestCase(AuthenticatedRRSetBaseTestCase):
                 "0 0 16920 _foo.example.com.",
                 "0 0 16920 $url.",
             ],
-            "SSHFP": ["aabbcceeddff"],
+            "SSHFP": [
+                "aabbcceeddff",
+                "1 1 aabbcceeddff",  # too short for SHA-1
+                "2 2 " + "aabbccee" * 5,  # SHA-1 length, but SHA-256 type
+            ],
             "SVCB": [
                 "0 svc4-baz.example.net. keys=val",
                 "1 not.fully.qualified key65333=...",
                 '2 duplicate.key. ech="AAQBAgME" ech="AAQBAgME"',
             ],
-            "TLSA": ["3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
+            "TLSA": [
+                "3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "3 1 1 aabbccddeeff",  # too short for SHA-256
+                "3 0 2 " + "aa" * 32,  # SHA-256 length, but SHA-512 type
+            ],
             "TXT": [
                 'foob"ar',
                 "v=spf1 include:example.com ~all",

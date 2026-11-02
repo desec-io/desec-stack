@@ -130,12 +130,15 @@ VALID_RECORDS_CANONICAL = {
         '"spf2.0/pra,mfrom ip6:2001:558:fe14:76:68:87:28:0/120 -all"',
     ],
     'SRV': ['0 0 0 .', '100 1 5061 exaMPLe.com.'],
-    'SSHFP': ['2 2 aabbcceeddff'],
+    'SSHFP': ['2 2 ' + 'aabbccee' * 8],
     'SVCB': [
         '2 sVc2.example.NET. port=1234 ipv6hint=2001:db8::2',
         '2 sVc2.example.NET. port=1234 ech="AAQBAgME" ipv6hint=2001:db8::2',
     ],
-    'TLSA': ['3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',],
+    'TLSA': [
+        '3 0 2 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',
+        '3 0 0 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd 696b8f6b92a913560b23ef5720c378881faffe74432d04eb35db957c0a93987b47adf26abb5dac10ba482597ae16edb069b511bec3e26010d1927bf6392760dd',
+    ],
     'TXT': [
         '"foobar"',
         '"foo" "bar"',
@@ -268,7 +271,7 @@ VALID_RECORDS_NON_CANONICAL = {
     'SMIMEA': ['3 01 0 aabbccDDeeff'],
     'SPF': [],
     'SRV': ['100 01 5061 example.com.'],
-    'SSHFP': ['02 2 aabbcceeddff'],
+    'SSHFP': ['02 2 ' + 'aabbccee' * 8],
     'SVCB': [
         '0 svc4-baz.example.net.',
         '1 . key65333=...',
@@ -347,13 +350,13 @@ INVALID_RECORDS = {
     'SMIMEA': ['3 1 0 aGVsbG8gd29ybGQh', 'x 0 0 aabbccddeeff'],
     'SPF': ['"v=spf1', 'v=spf1 include:example.com ~all'],
     'SRV': ['0 0 0 0', '100 5061 example.com.', '0 0 16920 _foo.example.com.', '0 0 16920 $url.'],
-    'SSHFP': ['aabbcceeddff'],
+    'SSHFP': ['aabbcceeddff', '2 2 aabbcceeddff'],
     'SVCB': [
         '0 svc4-baz.example.net. keys=val',
         '1 not.fully.qualified key65333=...',
         '2 duplicate.key. ech="AAQBAgME" ech="AAQBAgME"',
     ],
-    'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
+    'TLSA': ['3 1 1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', '3 1 1 aabbccddeeff', '3 0 2 ' + 'aa' * 32],
     'TXT': [
         'foob"ar',
         'v=spf1 include:example.com ~all',
