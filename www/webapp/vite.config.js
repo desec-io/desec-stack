@@ -34,6 +34,13 @@ export default defineConfig({
         vuetify({ autoImport: true }),
         legacy(), // Build for old browser.
     ],
+    optimizeDeps: {
+        // vite-plugin-vuetify adds Vuetify component imports when it compiles
+        // a template, after Vite's dependency scan at startup. Pre-bundling
+        // each newly seen component would force a full page reload in the
+        // dev server, so Vuetify is served unbundled there instead.
+        exclude: ['vuetify'],
+    },
     server: {
         port: 8080,
     },
