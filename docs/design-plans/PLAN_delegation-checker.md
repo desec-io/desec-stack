@@ -148,14 +148,17 @@ Notes:
 
 ### Cache independence
 
-Each check starts with `flush_delegation <name>` on the resolver, from your
+Each check starts with `flush_delegation +s <name>` on the resolver, from your
 [patched unbound](https://github.com/peterthomassen/unbound/tree/flush-delegation)
 (`37c8e65d19` adds `val_neg_remove_ds_denial()`, `407b674c07` adds the
-`unbound-control` command on top). It removes SOA/NS/DS/DNSKEY/NSEC/CNAME at
-the name, the parent-side copy of the NS RRset, the validator key-cache entry,
-and — the part no stock command reaches — the NSEC/NSEC3 records in the parent
-that deny the DS. Without the last one, a newly created DS stays invisible
-until the denial expires.
+`unbound-control` command on top, `6801d00705` its `+s` option). It removes
+SOA/NS/DS/DNSKEY/NSEC/CNAME at the name, the parent-side copy of the NS RRset,
+the validator key-cache entry, and — the part no stock command reaches — the
+NSEC/NSEC3 records in the parent that deny the DS. Without the last one, a
+newly created DS stays invisible until the denial expires. With `+s`, it also
+removes CDS/CDNSKEY/CSYNC at the name: they keep the validation status from
+when they were cached, and the security status is read off CDS, so a changed
+DS would otherwise go unnoticed until they expire.
 
 Flush **before** each query, not after: a check is then independent of anything
 that happened earlier, including a crash between check and cleanup, or a

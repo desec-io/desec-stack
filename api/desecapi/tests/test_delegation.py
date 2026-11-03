@@ -656,7 +656,7 @@ class UnboundControlTestCase(SimpleTestCase):
     def test_command(self):
         with self.server() as received:
             unbound.flush_delegation("example.com.")
-        self.assertEqual(received, [b"UBCT1 flush_delegation example.com.\n"])
+        self.assertEqual(received, [b"UBCT1 flush_delegation +s example.com.\n"])
 
     def test_error_response(self):
         with self.server(response=b"error unknown command\n"):

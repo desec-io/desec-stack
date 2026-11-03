@@ -2,11 +2,13 @@
 # which is not (yet) upstream. It removes the delegation of a name from the
 # cache, including the parent-side NS RRset, the validator key cache entry, and
 # the NSEC/NSEC3 records denying the DS -- without the latter, a newly created
-# DS stays invisible until the denial expires.
+# DS stays invisible until the denial expires. With +s, it also removes the
+# zone's CDS, CDNSKEY and CSYNC, whose cached validation status would otherwise
+# outlast a changed DS (the delegation check reads its verdict off CDS).
 # https://github.com/peterthomassen/unbound/tree/flush-delegation
 # When flush_delegation lands upstream, drop the build stage and install the
 # distribution package like everything else in this stack does.
-ARG UNBOUND_COMMIT=407b674c070b98e7af7d0b4055443e73fbaad6b1
+ARG UNBOUND_COMMIT=6801d0070547165bd5bc0470f9a4211606d79cc2
 
 FROM debian:bookworm-slim AS build
 ARG UNBOUND_COMMIT

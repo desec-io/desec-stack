@@ -273,7 +273,8 @@ def _classify_security(qname, parent, nameservers):
         # there validates the whole chain, DS included. CDS specifically,
         # because comparing what the child publishes there against the parent's
         # DS is the natural next thing to check -- and then this response is
-        # already at hand.
+        # already at hand. flush_delegation() removes the cached CDS, so that
+        # it is validated against the current DS.
         name, rdtype = qname, dns.rdatatype.CDS
     else:
         # There is no delegation to ask below, so the question becomes whether

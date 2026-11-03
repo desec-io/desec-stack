@@ -61,8 +61,13 @@ def flush_delegation(name):
     """
     Makes the resolver forget everything it knows about the delegation of the
     given name, so that the next query resolves the zone cut from scratch.
+
+    With +s, this includes the zone's CDS, CDNSKEY and CSYNC: they keep the
+    validation status from when they were cached, and the check reads its
+    verdict off CDS, so a changed DS would otherwise go unnoticed until they
+    expire.
     """
-    _control(f"flush_delegation {name}")
+    _control(f"flush_delegation +s {name}")
 
 
 def query(qname, rdtype, *, cd=False):
