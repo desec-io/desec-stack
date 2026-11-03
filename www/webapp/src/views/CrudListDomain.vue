@@ -28,6 +28,8 @@ export default {
       }
       return `<b>${s}</b> of your <b>${n}</b> domain${n === 1 ? '' : 's'} ${s === 1 ? 'is' : 'are'} correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column).`;
     };
+    // In a new tab, so that the dialog stays open.
+    const faqLink = '<a href="/faq/#domain-limit" target="_blank">How does the limit work?</a>';
     return {
         creatable: true,
         updatable: false,
@@ -52,7 +54,7 @@ export default {
             const growth = secured
                 ? `${secured} Each domain you secure raises your limit.`
                 : 'The limit grows as you delegate your domains to us securely (with DNSSEC).';
-            return `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>${growth}</small>`;
+            return `You have ${self.availableCount} of ${self.limit_domains} domains left.<br /><small>${growth} ${faqLink}</small>`;
           },
           createWarning: () => {
             if (self.availableCount > 0) {
@@ -60,8 +62,8 @@ export default {
             }
             const secured = securedSentence();
             return secured
-                ? `Domain limit reached. ${secured} Securing another one will raise your limit.`
-                : 'Domain limit reached. Delegate your domains to us securely (with DNSSEC) to make the limit grow.';
+                ? `Domain limit reached. ${secured} Securing another one will raise your limit. ${faqLink}`
+                : `Domain limit reached. Delegate your domains to us securely (with DNSSEC) to make the limit grow. ${faqLink}`;
           },
           destroy: d => (`Delete domain ${d.name}?`),
           destroyInfo: () => 'This operation will cause the domain to disappear from the DNS. It will no longer be reachable from the Internet.',

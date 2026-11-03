@@ -153,13 +153,15 @@ describe('CrudListDomain', () => {
     const {wrapper} = await mount();
     expect(wrapper.vm.createText).toContain('You have 2 of 5 domains left.');
     expect(wrapper.vm.createText).toContain('<b>2</b> of your <b>3</b> domains are correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column). Each domain you secure raises your limit.');
+    expect(wrapper.vm.createText).toContain('<a href="/faq/#domain-limit" target="_blank">How does the limit work?</a>');
     expect(wrapper.vm.createWarningText).toBe('');
   });
 
   it('says what raises the limit once it is reached', async () => {
     const {wrapper} = await mount({account: {limit_domains: 3, secure_domains: 1}});
     expect(wrapper.vm.createWarningText).toBe(
-        'Domain limit reached. <b>1</b> of your <b>3</b> domains is correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column). Securing another one will raise your limit.',
+        'Domain limit reached. <b>1</b> of your <b>3</b> domains is correctly delegated, with DNSSEC enabled (see <i>Delegation</i> column). Securing another one will raise your limit.'
+        + ' <a href="/faq/#domain-limit" target="_blank">How does the limit work?</a>',
     );
   });
 

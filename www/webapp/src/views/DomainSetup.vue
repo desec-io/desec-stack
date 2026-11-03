@@ -42,7 +42,8 @@
             To prevent this, choose one of the following:
             <ul>
               <li>
-                Keep DNSSEC enabled throughout: please contact support to configure a temporary "multi-signer" setup (RFC 8901).
+                Keep DNSSEC enabled throughout, with a temporary "multi-signer" setup (RFC 8901): see our
+                <router-link to="/faq/#migrate-dnssec-guide" target="_blank">step-by-step guide</router-link>.
               </li>
               <li>
                 Temporarily "go insecure" (easier): turn off old DNSSEC, wait 24h, change NS records, wait 24h, re-enable DNSSEC.

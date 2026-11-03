@@ -64,7 +64,10 @@
           >
             {{ copied ? 'Copied' : 'Copy request for your registrar' }}
           </v-btn>
-          <div v-if="checkedAgo" class="text-caption mt-2 text-medium-emphasis">Checked {{ checkedAgo }}.</div>
+          <div class="text-caption mt-2 text-medium-emphasis">
+            <template v-if="checkedAgo">Checked {{ checkedAgo }}. </template>
+            <a href="/faq/#delegation-states" target="_blank">What the states mean</a>
+          </div>
         </div>
       </v-alert>
 
