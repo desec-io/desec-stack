@@ -33,7 +33,7 @@ A JSON object representing a domain has the following structure::
             },
             ...
         ],
-        "minimum_ttl": 3600,
+        "minimum_ttl": 900,
         "name": "example.com",
         "published": "2018-09-18T17:21:38.348112Z",
         "status": {
