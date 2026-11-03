@@ -112,3 +112,12 @@ export async function digestError(error, component) {
     return e;
   }
 }
+
+/**
+ * How far below the top of the window an anchor target should end up: the app
+ * bar is fixed, and would cover it otherwise.
+ */
+export function headerOffset() {
+  const bar = document.querySelector('.v-app-bar');
+  return (bar ? bar.offsetHeight : 64) + 16;
+}

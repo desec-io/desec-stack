@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/views/HomePage.vue'
-import {HTTP} from '@/utils';
+import {HTTP, headerOffset} from '@/utils';
 import {useUserStore} from "@/store/user";
 
 const lazy = (loader) => () => loader().catch((error) => {
@@ -105,6 +105,11 @@ const routes = [
     component: lazy(() => import('@/views/DonatePage.vue')),
   },
   {
+    path: '/faq/',
+    name: 'faq',
+    component: lazy(() => import('@/views/FaqPage.vue')),
+  },
+  {
     path: '/roadmap',
     name: 'roadmap',
     beforeEnter() {
@@ -163,6 +168,9 @@ const router = createRouter({
     // Skip if destination full path has query parameters and differs in no other way from previous
     if (from && Object.keys(to.query).length) {
       if (to.fullPath.split('?')[0] == from.fullPath.split('?')[0]) return;
+    }
+    if (to.hash) {
+      return { el: to.hash, top: headerOffset() }
     }
     return { left: 0, top: 0 }
   },

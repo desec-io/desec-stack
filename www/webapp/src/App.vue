@@ -190,6 +190,7 @@ import {useUserStore} from "@/store/user";
 import {
     mdiBookOpenPageVariant,
     mdiForumOutline,
+    mdiFrequentlyAskedQuestions,
     mdiGiftOutline,
     mdiHeart,
     mdiHome,
@@ -217,6 +218,11 @@ export default {
           'name': 'docs',
           'icon': mdiBookOpenPageVariant,
           'text': 'Docs',
+        },
+        'faq': {
+          'name': 'faq',
+          'icon': mdiFrequentlyAskedQuestions,
+          'text': 'FAQ',
         },
         'roadmap': {
           'name': 'roadmap',
