@@ -1,5 +1,6 @@
 from ipaddress import IPv4Address, IPv4Network
 
+from django.conf import settings
 from rest_framework import permissions
 
 
@@ -178,7 +179,8 @@ class WithinDomainLimit(permissions.BasePermission):
 
     message = (
         "Domain limit exceeded. The limit grows as you delegate your domains to us "
-        "securely (with DNSSEC); we are re-checking yours now."
+        "securely (with DNSSEC); we are re-checking yours now. For details, see "
+        f"https://desec.{settings.DESECSTACK_DOMAIN}/faq/#domain-limit"
     )
     # Let views recognize this denial; DomainViewSet uses it to schedule a check.
     code = "domain_limit_exceeded"
