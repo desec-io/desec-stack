@@ -158,7 +158,7 @@ To create a new RRset, simply issue a ``POST`` request to the
 
     curl https://desec.io/api/v1/domains/{name}/rrsets/ \
         --header "Authorization: Token {secret}" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"subname": "www", "type": "A", "ttl": 3600, "records": ["127.0.0.1", "127.0.0.2"]}'
 
 ``type``, ``records``, and ``ttl`` are mandatory, whereas the ``subname``
@@ -388,7 +388,7 @@ Examples::
 
     curl -X PATCH https://desec.io/api/v1/domains/{name}/rrsets/{subname}/{type}/ \
         --header "Authorization: Token {secret}" \
-        --header "Content-Type: application/json" --data @- <<< \
+        --header "Content-Type: application/json" --data \
         '{"ttl": 86400}'
 
 If the RRset was updated successfully, the API returns ``200 OK`` with the
@@ -683,7 +683,7 @@ Record types with priority field
 
           curl https://desec.io/api/v1/domains/{name}/rrsets/ \
               --header "Authorization: Token {secret}" \
-              --header "Content-Type: application/json" --data @- <<< \
+              --header "Content-Type: application/json" --data \
               '{"type": "TXT", "records": ["\"test value1\"","\"value2\""], "ttl": 3600}'
 
     - Record values consisting of several token strings separated by
