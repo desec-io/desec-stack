@@ -23,9 +23,9 @@
     "@vuelidate/validators": "^2.0.4",
     "axios": "^1.19.0",
     "date-fns": "^4.1.0",
-    "pinia": "^2.0.30",
+    "pinia": "^4.1.0",
     "vue": "^3.4.19",
-    "vue-router": "^4.3.0",
+    "vue-router": "^5.4.0",
     "vuetify": "^3.7.5"
   },
   "devDependencies": {
