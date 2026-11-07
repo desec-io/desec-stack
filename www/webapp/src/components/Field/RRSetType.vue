@@ -3,7 +3,8 @@
     :label="label"
     :disabled="disabled || readonly"
     :error-messages="errorMessages"
-    hint="You can also enter other types. For a full list, check the documentation."
+    :hint="hint"
+    :placeholder="placeholder"
     :persistent-hint="!readonly"
     :model-value="inputValue"
     :items="types"
@@ -33,6 +34,14 @@ export default {
     readonly: {
       type: Boolean,
       required: false,
+    },
+    hint: {
+      type: String,
+      default: 'You can also enter other types. For a full list, check the documentation.',
+    },
+    placeholder: {
+      type: String,
+      default: undefined,
     },
     required: {
       type: Boolean,
@@ -74,6 +83,7 @@ export default {
     input(event) {
       this.$emit('update:modelValue', event);
       this.$emit('input', event);
+      this.$emit('dirty');
     },
   },
 };
