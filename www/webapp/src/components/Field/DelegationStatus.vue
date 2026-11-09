@@ -16,7 +16,7 @@
         <template v-else>
           <div v-if="compact" class="font-weight-bold">{{ summary.label }}</div>
           <div>{{ summary.hint }}</div>
-          <div v-if="checkedAgo" class="text-caption">Checked {{ checkedAgo }}.</div>
+          <div v-if="checkedAgo" class="text-body-small">Checked {{ checkedAgo }}.</div>
         </template>
       </v-tooltip>
     </v-chip>
