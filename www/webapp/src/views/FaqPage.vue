@@ -3,10 +3,10 @@
     <v-card rounded="0" class="pa-md-12 pa-8 elevation-4" style="overflow: hidden">
       <div class="d-none d-md-block triangle-bg">?</div>
       <v-container class="pa-0">
-        <v-row align="center">
+        <v-row class="align-center">
           <v-col cols="12" md="6" class="py-8 triangle-fg">
-            <h1 class="text-h4 font-weight-bold">Frequently Asked Questions</h1>
-            <div class="text-subtitle-1 mt-2 py-8 font-weight-regular">
+            <h1 class="text-headline-large font-weight-bold">Frequently Asked Questions</h1>
+            <div class="text-body-large mt-2 py-8 font-weight-regular">
               <p>
                 Answers to the questions we are asked most often. Can't find yours? Have a look at our
                 <a :href="docs">documentation</a> and our <a href="https://talk.desec.io/">community forum</a>,
@@ -22,7 +22,7 @@
         <v-col cols="12" lg="4">
           <nav class="faq-toc" aria-label="Questions">
             <div v-for="section in sections" :key="section.id" class="mb-4">
-              <a :href="`#${section.id}`" class="text-subtitle-1 font-weight-bold">{{ section.title }}</a>
+              <a :href="`#${section.id}`" class="text-body-large font-weight-bold">{{ section.title }}</a>
               <ul class="mt-1">
                 <li v-for="q in section.questions" :key="q.id"><a :href="`#${q.id}`">{{ q.q }}</a></li>
               </ul>
@@ -31,9 +31,9 @@
         </v-col>
         <v-col cols="12" lg="8">
           <section v-for="section in sections" :key="section.id" class="mb-6">
-            <h2 :id="section.id" class="text-h5 font-weight-bold mb-4">{{ section.title }}</h2>
+            <h2 :id="section.id" class="text-headline-small font-weight-bold mb-4">{{ section.title }}</h2>
             <div v-for="q in section.questions" :key="q.id" class="mb-8">
-              <h3 :id="q.id" class="text-h6 mb-2 faq-question">
+              <h3 :id="q.id" class="text-title-large mb-2 faq-question">
                 <a :href="`#${q.id}`">{{ q.q }}</a>
               </h3>
               <div class="faq-answer" v-html="q.a"></div>

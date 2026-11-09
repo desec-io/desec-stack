@@ -1,12 +1,9 @@
 <template>
   <v-container
-          class="fill-height"
+          class="fill-height d-flex align-center flex-wrap"
           fluid
   >
-    <v-row
-            align="center"
-            justify="center"
-    >
+    <v-row class="align-center justify-center">
       <v-col
               cols="12"
               sm="10"
@@ -18,7 +15,7 @@
             :disabled="working"
             ref="form"
         >
-          <v-card class="elevation-12 pb-4">
+          <v-card class="elevation-5 pb-4">
             <v-toolbar
                     color="primary"
                     flat
@@ -65,7 +62,7 @@
                       type="info"
                       variant="outlined"
                   >
-                    <p class="text-h6">Limitations of Domains Registered under {{ LOCAL_PUBLIC_SUFFIXES[0] }}</p>
+                    <p class="text-title-large">Limitations of Domains Registered under {{ LOCAL_PUBLIC_SUFFIXES[0] }}</p>
                     <p>
                       deSEC provides dynDNS service with DNSSEC protection for residential Internet users.
                       These domains are subject to the following limitations:
@@ -126,7 +123,7 @@
                 />
               </div>
 
-              <v-row class="justify-center">
+              <v-row class="justify-center" no-gutters>
                 <v-checkbox
                       v-model="outreach_preference"
                       hide-details
@@ -140,7 +137,7 @@
                 </v-checkbox>
               </v-row>
 
-              <v-row class="justify-center">
+              <v-row class="justify-center" no-gutters>
                 <v-checkbox
                       v-model="terms"
                       hide-details="auto"

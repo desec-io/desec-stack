@@ -8,7 +8,7 @@
   >
     <v-card>
       <v-card-title class="domain-setup-title">
-        <div class="text-h6">
+        <div class="text-title-large">
           Setup Instructions for <b>{{ domain }}</b>
         </div>
         <v-spacer/>
@@ -34,7 +34,7 @@
           rounded="0"
       >
         <div class="d-flex flex-wrap align-center ga-2">
-          <div class="text-subtitle-1 font-weight-bold">{{ isChecking ? 'Checking…' : summary.label }}</div>
+          <div class="text-body-large font-weight-bold">{{ isChecking ? 'Checking…' : summary.label }}</div>
           <v-spacer/>
           <v-btn
               v-if="recheckable"
@@ -64,7 +64,7 @@
           >
             {{ copied ? 'Copied' : 'Copy request for your registrar' }}
           </v-btn>
-          <div class="text-caption mt-2 text-medium-emphasis">
+          <div class="text-body-small mt-2 text-medium-emphasis">
             <template v-if="checkedAgo">Checked {{ checkedAgo }}. </template>
             <a href="/faq/#delegation-states" target="_blank">What the states mean</a>
           </div>
