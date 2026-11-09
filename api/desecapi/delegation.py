@@ -95,7 +95,7 @@ def check(name, *, our_nameservers=None):
     the name being unresolvable, which is a legitimate outcome).
     """
     if our_nameservers is None:
-        our_nameservers = settings.DEFAULT_NS
+        our_nameservers = settings.DEFAULT_NS + settings.ALTERNATIVE_NS
     our_nameservers = {_normalize(ns) for ns in our_nameservers}
 
     try:

@@ -37,6 +37,7 @@ Although most configuration is contained in this repository, some external depen
     - global
       - `DESECSTACK_DOMAIN`: domain name under which the entire system will be running. The API will be reachable at https://desec.$DESECSTACK_DOMAIN/api/. For development setup, we recommend using `yourname.dedyn.io`
       - `DESECSTACK_NS`: the names of the authoritative name servers, i.e. names pointing to your secondary name servers. Minimum 2.
+      - `DESECSTACK_NS_ALTERNATIVE`: further names of the authoritative name servers that users may delegate to, but which are not published in NS records (e.g. `ns.desec.ch ns.desec.cz`). Optional.
     - network
       - `DESECSTACK_IPV4_REAR_PREFIX16`: IPv4 net, size /16, for assignment of internal container IPv4 addresses. **NOTE:** If you change this in an existing setup, you 
         need to manually update persisted data structures such as the MySQL grant tables! Better don't do it.
