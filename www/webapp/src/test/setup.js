@@ -14,10 +14,25 @@ class IntersectionObserver {
 
 globalThis.ResizeObserver = globalThis.ResizeObserver || ResizeObserver;
 globalThis.IntersectionObserver = globalThis.IntersectionObserver || IntersectionObserver;
-globalThis.matchMedia = globalThis.matchMedia || (() => ({
-  matches: false,
+// Vuetify (>= 4.3) computes its display breakpoints from min-width media
+// queries, so they are evaluated against the window width. Anything else
+// does not match.
+function matchesMediaQuery(query) {
+  const width = window.innerWidth;
+  return query.split(/\s+and\s+/).every(part => {
+    const m = part.match(/^\(\s*(min|max)-width:\s*([\d.]+)px\s*\)$/);
+    if (!m) return false;
+    return m[1] === 'min' ? width >= Number(m[2]) : width <= Number(m[2]);
+  });
+}
+globalThis.matchMedia = globalThis.matchMedia || (query => ({
+  media: query,
+  matches: matchesMediaQuery(query),
+  onchange: null,
   addEventListener: () => {},
   removeEventListener: () => {},
+  addListener: () => {},
+  removeListener: () => {},
 }));
 // Used by Vuetify overlays (e.g. snackbars) to position themselves.
 globalThis.visualViewport = globalThis.visualViewport || {

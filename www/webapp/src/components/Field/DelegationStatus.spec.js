@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mountWithVuetify } from '@/test/vuetify';
 import DelegationStatus from './DelegationStatus.vue';
@@ -18,6 +18,10 @@ function mount(props) {
 }
 
 describe('DelegationStatus', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('shows the status as a chip', () => {
     const wrapper = mount({modelValue: INSECURE});
     expect(wrapper.find('.v-chip').exists()).toBe(true);
@@ -40,10 +44,9 @@ describe('DelegationStatus', () => {
   });
 
   it('shows only the icon on phones', () => {
+    vi.stubGlobal('innerWidth', 400);
     const wrapper = mountWithVuetify(DelegationStatus, {
       props: {domain: 'example.com', modelValue: INSECURE, suffixes: []},
-      // Everything below 2000px counts as xs here.
-      vuetify: {display: {thresholds: {sm: 2000}}},
     });
     const chip = wrapper.find('.v-chip');
     expect(chip.text()).not.toContain('No DNSSEC');

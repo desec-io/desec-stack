@@ -58,6 +58,7 @@ describe('CrudListDomain', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     document.body.innerHTML = '';
   });
 
@@ -78,8 +79,8 @@ describe('CrudListDomain', () => {
   });
 
   it('leaves the re-check to the setup instructions on phones', async () => {
-    // Everything below 2000px counts as xs here.
-    const {wrapper} = await mount({vuetify: {display: {thresholds: {sm: 2000}}}});
+    vi.stubGlobal('innerWidth', 400);
+    const {wrapper} = await mount();
     expect(row(wrapper, 'insecure.example').find('.button-recheck').exists()).toBe(false);
     expect(row(wrapper, 'insecure.example').find('.button-info').exists()).toBe(true);
     expect(wrapper.findAll('thead th').map(th => th.text())).not.toContain('Published');
