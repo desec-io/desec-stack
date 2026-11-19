@@ -4,7 +4,7 @@
     <div class="d-none d-md-block triangle-bg"></div>
     <v-container class="pa-0">
       <v-row class="align-center">
-        <v-col cols="12" md="6" class="py-8 triangle-fg">
+        <v-col cols="12" md="7" lg="6" class="py-8 triangle-fg">
           <h1 class="text-headline-large font-weight-bold">Modern DNS Hosting for Everyone</h1>
           <div class="text-body-large mt-2 pt-8 font-weight-regular">
             <p>
@@ -15,7 +15,7 @@
               deSEC is free for everyone to use.
             </p>
           </div>
-          <div class="pa-2" style="width: 84%" v-if="!user.authenticated">
+          <div class="pa-2" style="max-width: 500px" v-if="!user.authenticated">
             <v-form @submit.prevent="signup" v-model="valid" ref="form">
               <v-row>
                 <v-col class="pb-0">
@@ -35,7 +35,7 @@
                 </v-col>
               </v-row>
               <v-row>
-                <v-col class="py-0">
+                <v-col class="py-0 signup-email">
                   <v-text-field
                     variant="outlined"
                     v-model="email"
@@ -227,7 +227,9 @@
     border: 80em solid transparent;
     border-right: 60em solid #FFC107;
     position: absolute;
-    right: 0;
+    /* In narrower windows, the triangle moves out to the right, which keeps
+       it clear of the text. */
+    right: min(0px, 100vw - 1200px);
     bottom: -20em;
     width: 0;
     z-index: 1;
@@ -247,7 +249,8 @@
     white-space: nowrap;
   }
   .domain-type-options {
-    flex: 1 1 280px;
+    /* Room for both options side by side; with less, they go below the label. */
+    flex: 1 1 340px;
   }
   .domain-type-options :deep(.v-selection-control-group) {
     align-items: center;
@@ -256,6 +259,10 @@
   }
   .domain-type-options :deep(.v-selection-control) {
     min-height: 40px;
+  }
+  .signup-email {
+    /* The button moves below the field where the placeholder would not fit. */
+    min-width: 210px;
   }
   .partner-logo {
     max-height: 113px;

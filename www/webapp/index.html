@@ -6,6 +6,15 @@
     <link rel="icon" href="/favicon.svg" sizes="any">
     <link rel="icon" href="/favicon.ico">
     <title>deSEC – Free Secure DNS</title>
+    <!-- Vuetify's styles are spread over several stylesheets, any of which may
+         load first. Declaring the order of its cascade layers up front (as in
+         vuetify/styles/layers) makes the cascade independent of that. -->
+    <style>
+      @layer vuetify-core.reset, vuetify-core.base, vuetify-components, vuetify-overrides,
+        vuetify-utilities.theme-base, vuetify-utilities.typography, vuetify-utilities.helpers,
+        vuetify-utilities.theme-background, vuetify-utilities.theme-foreground,
+        vuetify-final.transitions, vuetify-final.trumps;
+    </style>
   </head>
   <body>
     <noscript>

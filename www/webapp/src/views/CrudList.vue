@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex align-center flex-wrap" fluid>
+  <v-container class="flex-grow-1 d-flex align-center flex-wrap" fluid>
     <v-row class="align-center justify-center" style="max-width: 100%">
 
       <v-col cols="12" :sm="fullWidth ? '12' : '10'">

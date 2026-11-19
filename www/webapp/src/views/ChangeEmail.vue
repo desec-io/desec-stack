@@ -1,6 +1,6 @@
 <template>
     <v-container
-            class="fill-height d-flex align-center flex-wrap"
+            class="flex-grow-1 d-flex align-center flex-wrap"
             fluid
     >
         <v-row class="align-center justify-center">

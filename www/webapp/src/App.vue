@@ -35,7 +35,7 @@
         ></v-img>
       </router-link></v-app-bar-title>
       <v-spacer/>
-      <div class="d-none d-md-block mr-4">
+      <div class="d-none d-lg-block mr-4">
         <span class="mx-2" v-for="(item, key) in menu" :key="key">
           <router-link
             class="main-menu-link"
@@ -47,7 +47,7 @@
       <v-btn class="mx-4" color="primary" variant="flat" :to="{name: 'signup', query: $route.query}" v-if="!authenticated">Create Account</v-btn>
       <v-btn class="mx-4 ml-0" color="primary" variant="flat" :to="{name: 'login'}" v-if="!authenticated">Log In</v-btn>
       <v-btn class="mx-4 ml-0" color="primary" variant="outlined" @click="logout" v-if="authenticated">Log Out</v-btn>
-      <v-app-bar-nav-icon class="d-md-none" @click.stop="drawer = !drawer" />
+      <v-app-bar-nav-icon class="d-lg-none" @click.stop="drawer = !drawer" />
       <template #extension v-if="authenticated">
         <div class="authenticated-tabs d-flex align-center w-100 bg-primary text-white">
           <v-tabs v-model="activeTab" class="flex-grow-1 text-white" bg-color="primary" color="white" slider-color="white" grow>
@@ -88,7 +88,7 @@
       </template>
     </v-app-bar>
 
-    <v-main>
+    <v-main class="d-flex flex-column">
       <v-alert
         v-for="alert in user.alerts"
         :key="alert.id"
@@ -396,13 +396,6 @@ export default {
   display: flex;
   align-items: center;
 }
-/* Vuetify 4 puts component styles in @layer, so a button placed inside a
-   VCardTitle inherits the title's large font (22px) instead of its own size.
-   This unlayered rule restores each button's intended size (e.g. the "Copy"
-   buttons in the domain setup cards). */
-.v-card-title .v-btn {
-  font-size: var(--v-btn-size, 0.875rem);
-}
 .v-card-text {
   letter-spacing: 0;
 }
@@ -413,9 +406,34 @@ export default {
 }
 /* Vuetify gives alerts `flex: 1 1 0`, so an alert sitting directly in a card is
    a shrinkable flex item: once a dialog is taller than the viewport, the alert
-   is squeezed into its own padding, and the text ends up against the edge. */
-.v-card > .v-alert {
+   is squeezed into its own padding, and the text ends up against the edge.
+   Likewise, the alerts above a view must not take part in filling the page. */
+.v-card > .v-alert,
+.v-main > .v-alert {
   flex: none;
+}
+/* Buttons are set in uppercase, with the letter spacing that goes with it.
+   Vuetify's override layer ranks above its component styles and below its
+   utility classes, so `text-none` still applies. */
+@layer vuetify-overrides {
+  .v-btn {
+    letter-spacing: 0.0892857143em;
+    text-indent: 0.0892857143em;
+    text-transform: uppercase;
+  }
+}
+/* Vuetify's container is 700px wide on medium screens, which leaves much of
+   the window unused, and 1400px on extra-large ones, which spreads the content
+   thin. The ranges are those of Vuetify's md and xl breakpoints. */
+@media (min-width: 840px) and (max-width: 1144.98px) {
+  .v-container:not(.v-container--fluid) {
+    max-width: 900px;
+  }
+}
+@media (min-width: 1545px) and (max-width: 2137.98px) {
+  .v-container:not(.v-container--fluid) {
+    max-width: 1200px;
+  }
 }
 .v-application .text-primary,
 .v-overlay-container .text-primary {
