@@ -68,10 +68,11 @@ class DomainManager(Manager.from_queryset(DomainQuerySet)):
         qs = self.annotate(
             name_length=Length("name")
         )  # callers expect this to be present after returning
+        # DNS names are case-insensitive (RFC 4343), and domain names are stored
+        # in lowercase, so the suffix comparison below has to be done in lowercase.
+        qname = qname.lower()
         try:
-            Domain._meta.get_field("name").run_validators(
-                qname.removeprefix("*.").lower()
-            )
+            Domain._meta.get_field("name").run_validators(qname.removeprefix("*."))
         except ValidationError:
             return qs.none()
         return qs.annotate(

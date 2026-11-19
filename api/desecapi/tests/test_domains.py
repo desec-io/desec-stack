@@ -300,6 +300,8 @@ class DomainOwnerTestCase1(DomainOwnerTestCase):
                 domain.name,
                 f"foo.bar.{domain.name}",
                 f"foo.BAR.{domain.name}",
+                domain.name.upper(),
+                f"Foo.Bar.{domain.name.upper()}",
             ]:
                 response = self.client.get(
                     self.reverse("v1:domain-list"), data={"owns_qname": name}
