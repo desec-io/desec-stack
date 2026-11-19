@@ -1,3 +1,9 @@
+# The Vite dev server serves modules one by one, which makes for hundreds of
+# requests per page load. A connection that reaches its request limit while
+# such a load is under way is closed with requests still pending, and the page
+# stays blank.
+keepalive_requests 1000000;
+
 location / {
     expires epoch;
     etag off;
