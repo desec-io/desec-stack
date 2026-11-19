@@ -161,7 +161,7 @@ def test_security_headers(api_anon, url):
         'Alt-Svc': alt_svc,
         'Content-Security-Policy': "default-src 'self'; frame-src 'none'; connect-src 'self'; font-src 'self' data:; "
                                    "img-src 'self' data:; media-src data:; "
-                                   "script-src 'self' 'unsafe-eval'; "
+                                   "script-src 'self'; "
                                    "style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'; "
                                    "block-all-mixed-content; form-action 'none';",
         'X-Frame-Options': 'deny',
