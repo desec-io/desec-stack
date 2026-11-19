@@ -446,6 +446,14 @@ export default {
   background-color: transparent;
   opacity: 0;
 }
+/* While a field's label rests in the input, Vuetify hides the placeholder
+   beneath it through the placeholder's opacity alone. Dark Reader sets
+   `::placeholder { opacity: 0.5 !important }` on every site, which shows the
+   placeholder on top of the label. */
+.v-field:not(.v-field--no-label, .v-field--active) input::placeholder,
+.v-field:not(.v-field--no-label, .v-field--active) textarea::placeholder {
+  opacity: 0 !important;
+}
 .v-input--disabled {
   opacity: 1;
 }
