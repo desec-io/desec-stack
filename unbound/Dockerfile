@@ -8,7 +8,7 @@
 # https://github.com/peterthomassen/unbound/tree/flush-delegation
 # When flush_delegation lands upstream, drop the build stage and install the
 # distribution package like everything else in this stack does.
-ARG UNBOUND_COMMIT=6801d0070547165bd5bc0470f9a4211606d79cc2
+ARG UNBOUND_COMMIT=flush-delegation
 
 FROM debian:bookworm-slim AS build
 ARG UNBOUND_COMMIT
