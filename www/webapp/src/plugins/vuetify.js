@@ -1,7 +1,8 @@
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
-import { VDataTable, VOtpInput } from 'vuetify/components'
+import { VDataTable } from 'vuetify/components/VDataTable'
+import { VOtpInput } from 'vuetify/components/VOtpInput'
 import { amber, lightBlue } from 'vuetify/util/colors'
 
 export default createVuetify({
