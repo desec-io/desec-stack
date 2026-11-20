@@ -234,6 +234,10 @@ export default {
     },
     async update(value, caretPosition) {
       await this.$nextTick();
+      if (!this.$refs.input?.length) {
+        // Unmounted in the meantime, e.g. as the record type changed
+        return;
+      }
 
       // Right-trim if the cursor position is not after the last character
       let trimmed = value.replace(/ +$/g, '');
