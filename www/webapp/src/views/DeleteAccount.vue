@@ -133,7 +133,7 @@
   };
 </script>
 
-<style lang="scss">
+<style>
     .uppercase input {
         text-transform: uppercase;
     }
