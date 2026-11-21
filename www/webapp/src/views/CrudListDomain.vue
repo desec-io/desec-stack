@@ -81,6 +81,7 @@ export default {
             writeOnCreate: true,
             datatype: GenericText.name,
             searchable: true,
+            link: item => ({name: 'domain', params: {domain: item.name}}),
           },
           status: {
             name: 'item.status',
