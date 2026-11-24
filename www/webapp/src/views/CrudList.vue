@@ -24,7 +24,7 @@
           <v-snackbar
             v-model="notificationShown"
             :color="notificationColor"
-            multi-line
+            min-height="68"
             :timeout="10000"
           >
             <span v-html="notification"></span>

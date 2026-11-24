@@ -14,6 +14,7 @@ export default [
   // ...pluginVue.configs['flat/strongly-recommended'],
   // ...pluginVue.configs['flat/recommended'],
   ...pluginVuetify.configs['flat/base'],
+  ...pluginVuetify.configs['flat/recommended-v4'],
   importX.flatConfigs.recommended,
   ...pluginVueScopedCss.configs['flat/recommended'],
   js.configs.recommended,
